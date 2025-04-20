@@ -1,0 +1,14 @@
+{
+    "name": "saas-restaurant",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": ["frontend", "backend"],
+    "scripts": {
+        "front": "cd frontend && bun run dev",
+        "back": "cd backend && bun run start"
+    },
+    "dependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.49.4"
+    }
+}
