@@ -1,11 +1,3 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
 /**
  * Middleware de autenticación para Express
  * Verifica el token JWT de Supabase
@@ -25,6 +17,14 @@ const authenticateUser = async (req, res, next) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
+      // Verificar si es un error de token expirado
+      if (error && error.message.includes('expired')) {
+        return res.status(401).json({
+          error: 'Token expirado',
+          code: 'TOKEN_EXPIRED'
+        });
+      }
+      
       return res.status(401).json({ 
         error: 'Token inválido o expirado.' 
       });
@@ -38,6 +38,3 @@ const authenticateUser = async (req, res, next) => {
     return res.status(500).json({ error: 'Error en el servidor.' });
   }
 };
-
-module.exports = { authenticateUser };
-
