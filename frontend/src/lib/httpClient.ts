@@ -1,8 +1,7 @@
 import { supabase } from './supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-// Cliente HTTP para interactuar con la API del backend
 class HttpClient {
   private baseUrl: string;
 
@@ -10,7 +9,6 @@ class HttpClient {
     this.baseUrl = baseUrl;
   }
 
-  // Método para agregar el token de autenticación a las cabeceras
   private async getHeaders(): Promise<HeadersInit> {
     const { data } = await supabase.auth.getSession();
     const session = data.session;
@@ -26,70 +24,93 @@ class HttpClient {
     return headers;
   }
 
-  // Método GET
   async get<T>(endpoint: string): Promise<T> {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'GET',
-      headers,
-      credentials: 'include',
-    });
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
 
-    if (!response.ok) {
-      await this.handleResponseError(response);
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error en GET ${endpoint}:`, error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   // Método POST
   async post<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
 
-    if (!response.ok) {
-      await this.handleResponseError(response);
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error en POST ${endpoint}:`, error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   // Método PUT
   async put<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'PUT',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'PUT',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
 
-    if (!response.ok) {
-      await this.handleResponseError(response);
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error en PUT ${endpoint}:`, error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   // Método DELETE
   async delete<T>(endpoint: string): Promise<T> {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'DELETE',
-      headers,
-      credentials: 'include',
-    });
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+      });
 
-    if (!response.ok) {
-      await this.handleResponseError(response);
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error en DELETE ${endpoint}:`, error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   private async handleResponseError(response: Response): Promise<never> {

@@ -2,14 +2,18 @@
   "name": "backend",
   "version": "1.0.0",
   "scripts": {
-  "start": "bun run server.js"
-},
+    "start": "bun run server.js",
+    "dev": "bun --watch run server.js",
+    "test:connection": "bun run test-connection.js"
+  },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
     "axios": "^1.8.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mercadopago": "^2.3.0",
+    "node-fetch": "^2.7.0",
     "pg": "^8.14.0",
     "supabase": "^2.19.7"
   }

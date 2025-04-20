@@ -1,3 +1,8 @@
+const { supabase } = require('../config/supabase');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 /**
  * Middleware de autenticación para Express
  * Verifica el token JWT de Supabase
@@ -17,17 +22,32 @@ const authenticateUser = async (req, res, next) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
-      // Verificar si es un error de token expirado
-      if (error && error.message.includes('expired')) {
+      if (error && error.message?.includes('expired')) {
         return res.status(401).json({
-          error: 'Token expirado',
+          error: 'Token expirado o inválido',
           code: 'TOKEN_EXPIRED'
         });
       }
       
+      console.error('Error de autenticación:', error?.message || 'Usuario no encontrado');
+      
       return res.status(401).json({ 
-        error: 'Token inválido o expirado.' 
+        error: 'Error de autenticación.'
       });
+    }
+    
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!userError && userData) {
+        user.db_info = userData;
+      }
+    } catch (dbError) {
+      console.error('Error al obtener información adicional del usuario:', dbError.message);
     }
     
     req.user = user;
@@ -38,3 +58,5 @@ const authenticateUser = async (req, res, next) => {
     return res.status(500).json({ error: 'Error en el servidor.' });
   }
 };
+
+module.exports = { authenticateUser };
