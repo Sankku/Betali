@@ -7,14 +7,26 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshSession } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login", { replace: true });
     }
-  }, [user, loading, navigate]);
+
+    const setupTokenRefresh = async () => {
+      if (user) {
+        const refreshInterval = setInterval(async () => {
+          await refreshSession();
+        }, 55 * 60 * 1000);
+
+        return () => clearInterval(refreshInterval);
+      }
+    };
+
+    setupTokenRefresh();
+  }, [user, loading, navigate, refreshSession]);
 
   if (loading) {
     return (
