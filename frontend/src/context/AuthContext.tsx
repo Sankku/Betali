@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "../src/lib/supabase";
+import { supabase } from "../lib/supabase";
 
 type AuthContextType = {
   user: User | null;
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshSession = async () => {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
+      const { error } = await supabase.auth.refreshSession();
       if (error) throw error;
       return;
     } catch (error) {

@@ -1,8 +1,11 @@
-import { httpClient } from "../lib/httpClient";
-import { Database } from "../types/database";
+import { httpClient } from "../http/httpClient";
+import { Database } from "../../types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
+/**
+ * Servicio para gestionar productos
+ */
 export const productsService = {
   /**
    * Obtiene todos los productos del usuario autenticado

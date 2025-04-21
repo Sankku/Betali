@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -89,6 +89,9 @@ class HttpClient {
     }
   }
 
+  /**
+   * Realiza una petición DELETE
+   */
   async delete<T>(endpoint: string): Promise<T> {
     const headers = await this.getHeaders();
     
@@ -116,7 +119,7 @@ class HttpClient {
       
       if (error) {
         await supabase.auth.signOut();
-        window.location.href = '/login';
+        window.location.href = '/login?error=session_expired';
         throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
       }
     }
