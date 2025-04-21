@@ -4,7 +4,6 @@
 **/bun.lock
 **/node_modules
 /supabase
-/backend
 /.vscode
 /bun-workspace.json
 /.pnp

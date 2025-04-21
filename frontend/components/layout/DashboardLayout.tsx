@@ -90,9 +90,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
               <Package className="h-5 w-5 text-white" />
             </div>
-            <h1 className="ml-3 text-xl font-semibold text-gray-900">
-              AgroPanel
-            </h1>
+            <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -129,10 +127,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </div>
       </aside>
-
-      {/* Contenido principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 z-10">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -148,7 +143,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   )}
                 </button>
                 <h1 className="ml-3 text-xl font-semibold text-gray-900">
-                  AgroPanel
+                  Betali
                 </h1>
               </div>
               <div className="hidden md:block">
@@ -168,8 +163,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
-
-        {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 flex z-40 md:hidden">
             <div
@@ -223,8 +216,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
         )}
-
-        {/* Contenido de la página */}
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
           {children}
         </main>

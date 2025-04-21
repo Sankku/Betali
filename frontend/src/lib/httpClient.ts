@@ -45,7 +45,6 @@ class HttpClient {
     }
   }
 
-  // Método POST
   async post<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
     
@@ -68,7 +67,6 @@ class HttpClient {
     }
   }
 
-  // Método PUT
   async put<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
     
@@ -91,7 +89,6 @@ class HttpClient {
     }
   }
 
-  // Método DELETE
   async delete<T>(endpoint: string): Promise<T> {
     const headers = await this.getHeaders();
     
@@ -115,7 +112,7 @@ class HttpClient {
 
   private async handleResponseError(response: Response): Promise<never> {
     if (response.status === 401) {
-      const { data, error } = await supabase.auth.refreshSession();
+      const {  error } = await supabase.auth.refreshSession();
       
       if (error) {
         await supabase.auth.signOut();
