@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Package } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { Button } from "../../components/ui/button";
+import { useAuth } from "../context/AuthContext";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,10 +10,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Checkbox } from "../../components/ui/checkbox";
+} from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);

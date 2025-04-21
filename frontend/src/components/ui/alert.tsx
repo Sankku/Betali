@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "../../src/lib/utils";
+import { cn } from "../../lib/utils";
 import { AlertTriangle, CheckCircle, Info, XCircle, X } from "lucide-react";
 
 type AlertVariant = "default" | "destructive" | "success" | "warning" | "info";

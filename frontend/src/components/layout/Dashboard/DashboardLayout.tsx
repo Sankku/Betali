@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Package,
   Warehouse,
@@ -9,40 +9,15 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-
-interface SidebarItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-}
-
-const SidebarItem: React.FC<SidebarItemProps> = ({
-  to,
-  icon,
-  label,
-  isActive,
-}) => (
-  <Link
-    to={to}
-    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-      isActive
-        ? "bg-green-100 text-green-700 font-medium"
-        : "text-gray-600 hover:bg-gray-100"
-    }`}
-  >
-    <div className="w-5 h-5">{icon}</div>
-    <span>{label}</span>
-  </Link>
-);
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+import { SidebarItem } from "../Sidebar/SidebarItem";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -81,9 +56,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     },
   ];
 
+  const getPageTitle = () => {
+    const currentRoute = routes.find(
+      (route) => route.path === location.pathname
+    );
+    return currentRoute?.label || "Dashboard";
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar para desktop */}
       <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center">
@@ -121,13 +102,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <button
               onClick={handleSignOut}
               className="p-1 rounded-full text-gray-400 hover:text-gray-600"
+              aria-label="Cerrar sesión"
             >
               <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
       </aside>
+
+      {/* Contenido principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
         <header className="bg-white border-b border-gray-200 z-10">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -135,6 +120,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+                  aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                 >
                   {isMobileMenuOpen ? (
                     <X className="h-6 w-6" />
@@ -148,14 +134,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <div className="hidden md:block">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {routes.find((route) => route.path === location.pathname)
-                    ?.label || "Dashboard"}
+                  {getPageTitle()}
                 </h1>
               </div>
               <div className="flex items-center md:hidden">
                 <button
                   onClick={handleSignOut}
                   className="ml-4 p-1 rounded-full text-gray-400 hover:text-gray-600"
+                  aria-label="Cerrar sesión"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
@@ -163,11 +149,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
+
         {isMobileMenuOpen && (
           <div className="fixed inset-0 flex z-40 md:hidden">
             <div
               className="fixed inset-0 bg-gray-600 bg-opacity-75"
               onClick={() => setIsMobileMenuOpen(false)}
+              aria-hidden="true"
             ></div>
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
               <div className="p-4 border-b border-gray-200">
@@ -177,12 +165,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       <Package className="h-5 w-5 text-white" />
                     </div>
                     <h1 className="ml-3 text-xl font-semibold text-gray-900">
-                      AgroPanel
+                      Betali
                     </h1>
                   </div>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+                    aria-label="Cerrar menú"
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -216,12 +205,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
         )}
+
+        {/* Contenido de la página */}
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
     </div>
   );
-};
-
-export default DashboardLayout;
+}
