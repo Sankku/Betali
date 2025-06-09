@@ -88,7 +88,6 @@ export function ProductForm({
     },
   ];
 
-  // Valores iniciales
   const initialValues: Partial<Product> = product || {
     name: "",
     batch_number: "",

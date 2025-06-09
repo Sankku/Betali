@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
+import { cn } from "../../../lib/utils";
 import { Button } from "../../ui/button";
-import { ModalProps, ModalFooterProps } from "./types";
+import { ModalFooterProps, ModalProps } from "./types";
 
 export function Modal({
   isOpen,
@@ -40,6 +41,9 @@ export function Modal({
     lg: "max-w-lg",
     xl: "max-w-xl",
     "2xl": "max-w-2xl",
+    "3xl": "max-w-3xl",
+    "4xl": "max-w-4xl",
+    "5xl": "max-w-5xl",
     full: "max-w-full mx-4",
   };
 
@@ -50,26 +54,26 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div
-        className="fixed inset-0 bg-black bg-opacity-25 transition-opacity"
+        className="fixed inset-0 z-[101] bg-black/40 backdrop-blur-sm transition-opacity duration-300"
         onClick={handleBackdropClick}
       ></div>
 
-      <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 z-[102] relative">
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full ${maxWidthClasses[maxWidth]} mx-auto`}
+          className={`relative bg-white rounded-lg shadow-lg shadow-black/10 border border-gray-200/50 w-full ${maxWidthClasses[maxWidth]} mx-auto transform transition-all duration-300 ease-out z-[103]`}
           role="dialog"
           aria-modal="true"
         >
           {title && (
-            <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200/70 rounded-t">
               <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
               {!preventClose && (
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center"
+                  className="text-gray-400 bg-transparent hover:bg-gray-100 hover:text-gray-900 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center transition-colors"
                   aria-label="Cerrar"
                 >
                   <X className="w-5 h-5" />
@@ -78,9 +82,17 @@ export function Modal({
             </div>
           )}
 
-          <div className="p-4 md:p-5 space-y-4">{children}</div>
+          <div className="p-2 md:p-4">
+            <div
+              className="overflow-y-auto"
+              style={{ maxHeight: "calc(90vh - 180px)" }}
+            >
+              {children}
+            </div>
+          </div>
+
           {footer && (
-            <div className="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b">
+            <div className="flex items-center justify-end p-4 md:p-6 border-t border-gray-200/70 rounded-b">
               {footer}
             </div>
           )}
@@ -94,7 +106,7 @@ export function ModalFooter({
   onClose,
   onConfirm,
   closeText = "Cancelar",
-  confirmText = "Confirmar",
+  confirmText = "Crear",
   isLoading = false,
   showConfirm = true,
   variant = "primary",
@@ -105,7 +117,7 @@ export function ModalFooter({
         type="button"
         variant="outline"
         onClick={onClose}
-        className="mr-3"
+        className="mr-3 min-w-[100px]"
         disabled={isLoading}
       >
         {closeText}
@@ -117,10 +129,31 @@ export function ModalFooter({
           variant={variant === "danger" ? "destructive" : "default"}
           onClick={onConfirm}
           disabled={isLoading}
+          className={cn(
+            "min-w-[100px]",
+            variant === "primary" ? "bg-green-600 hover:bg-green-700" : ""
+          )}
         >
           {isLoading ? "Procesando..." : confirmText}
         </Button>
       )}
     </>
   );
+}
+
+if (typeof document !== "undefined") {
+  const styleEl = document.createElement("style");
+  styleEl.innerHTML = `
+    @keyframes modalEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  `;
+  document.head.appendChild(styleEl);
 }

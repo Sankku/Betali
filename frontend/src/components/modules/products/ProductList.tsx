@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createColumnHelper } from "@tanstack/react-table";
-import { Eye, Edit, Trash2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { DataTable } from "../../common/Table";
 import { Modal, ModalFooter } from "../../common/Modals";
 import { Button } from "../../ui/button";
@@ -9,6 +8,7 @@ import { Alert } from "../../ui/alert";
 import { ProductForm } from "./ProductForm";
 import { Database } from "../../../types/database";
 import { productsService } from "../../../services/api/productsService";
+import { getProductColumns } from "../../../utils/tableUtils";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
@@ -22,6 +22,10 @@ export function ProductList() {
     isOpen: false,
     mode: "create",
   });
+
+  const settings = {}; //useSettings();
+
+  const senasaEnabled = settings?.modules?.senasa?.enabled || false;
 
   const {
     data: products,
@@ -71,60 +75,16 @@ export function ProductList() {
     }
   };
 
-  const columnHelper = createColumnHelper<Product>();
-  const columns = [
-    columnHelper.accessor("name", {
-      header: "Nombre",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("batch_number", {
-      header: "Número de Lote",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("origin_country", {
-      header: "País de Origen",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("expiration_date", {
-      header: "Fecha de Vencimiento",
-      cell: (info) => {
-        const date = new Date(info.getValue());
-        return date.toLocaleDateString();
-      },
-    }),
-    columnHelper.accessor("product_id", {
-      header: "Acciones",
-      cell: (info) => {
-        const product = info.row.original;
-        return (
-          <div className="flex space-x-2">
-            <button
-              onClick={() => openViewModal(product)}
-              className="text-blue-600 hover:text-blue-900"
-              aria-label="Ver detalles"
-            >
-              <Eye className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => openEditModal(product)}
-              className="text-yellow-600 hover:text-yellow-900"
-              aria-label="Editar"
-            >
-              <Edit className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => openDeleteModal(product)}
-              className="text-red-600 hover:text-red-900"
-              aria-label="Eliminar"
-              disabled={deleteMutation.isPending}
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
-          </div>
-        );
-      },
-    }),
-  ];
+  // Configuración de acciones para las columnas
+  const actionConfig: ActionConfig<Product> = {
+    onView: openViewModal,
+    onEdit: openEditModal,
+    onDelete: openDeleteModal,
+    idField: "product_id",
+    disableDelete: deleteMutation.isPending,
+  };
+
+  const columns = getProductColumns(senasaEnabled, actionConfig);
 
   if (error) {
     return (
@@ -150,6 +110,7 @@ export function ProductList() {
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             Gestiona tu inventario de productos
+            {senasaEnabled && " con integración SENASA"}
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
@@ -168,6 +129,7 @@ export function ProductList() {
         searchPlaceholder="Buscar productos..."
         noResultsMessage="No se encontraron productos"
       />
+
       {modalState.isOpen && modalState.mode !== "delete" && (
         <Modal
           isOpen={modalState.isOpen}
@@ -184,11 +146,13 @@ export function ProductList() {
           <ProductForm
             product={selectedProduct}
             mode={modalState.mode}
+            senasaEnabled={senasaEnabled}
             onSuccess={closeModal}
             onCancel={closeModal}
           />
         </Modal>
       )}
+
       {modalState.isOpen && modalState.mode === "delete" && selectedProduct && (
         <Modal
           isOpen={modalState.isOpen}
@@ -207,7 +171,7 @@ export function ProductList() {
         >
           <div className="text-center sm:text-left">
             <p className="text-sm text-gray-500">
-              ¿Estás seguro que deseas eliminar el producto
+              ¿Estás seguro que deseas eliminar el producto{" "}
               <span className="font-medium text-gray-900">
                 {selectedProduct.name}
               </span>

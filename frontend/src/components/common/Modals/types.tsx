@@ -4,7 +4,7 @@ export interface ModalProps {
   title?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
   preventClose?: boolean;
   closeOnEsc?: boolean;
   closeOnOutsideClick?: boolean;
@@ -17,5 +17,5 @@ export interface ModalFooterProps {
   confirmText?: string;
   isLoading?: boolean;
   showConfirm?: boolean;
-  variant?: "primary" | "danger";
+  variant?: "primary" | "danger" | "success";
 }

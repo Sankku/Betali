@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Button } from "../../ui/button";
 import { Alert } from "../../ui/alert";
 import { FormProps, FormField } from "./types";
+import { Input } from "../../ui/input";
+import { Textarea } from "../../ui/textarea";
+import { Select } from "../../ui/select";
 
 export function Form<T>({
   title,
@@ -108,25 +111,23 @@ export function Form<T>({
     switch (field.type) {
       case "textarea":
         return (
-          <textarea
+          <Textarea
             {...commonProps}
             value={value || ""}
             onChange={(e) =>
               handleChange(field.name, e.target.value, field.validate)
             }
             rows={4}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 disabled:bg-gray-100 disabled:text-gray-500 ${commonProps.className}`}
           />
         );
       case "select":
         return (
-          <select
+          <Select
             {...commonProps}
             value={value || ""}
             onChange={(e) =>
               handleChange(field.name, e.target.value, field.validate)
             }
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 disabled:bg-gray-100 disabled:text-gray-500 ${commonProps.className}`}
           >
             <option value="">Seleccionar</option>
             {field.options?.map((option) => (
@@ -134,26 +135,25 @@ export function Form<T>({
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         );
       case "checkbox":
         return (
           <div className="flex items-center">
-            <input
+            <Input
               type="checkbox"
               {...commonProps}
               checked={Boolean(value)}
               onChange={(e) =>
                 handleChange(field.name, e.target.checked, field.validate)
               }
-              className={`h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 ${commonProps.className}`}
             />
             <span className="ml-2 text-sm">{field.label}</span>
           </div>
         );
       default:
         return (
-          <input
+          <Input
             type={field.type}
             {...commonProps}
             value={value !== null && value !== undefined ? value : ""}
@@ -166,7 +166,6 @@ export function Form<T>({
                   : e.target.value;
               handleChange(field.name, newValue, field.validate);
             }}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 disabled:bg-gray-100 disabled:text-gray-500 ${commonProps.className}`}
           />
         );
     }
@@ -175,7 +174,7 @@ export function Form<T>({
   const getLayoutClass = () => {
     switch (layout) {
       case "horizontal":
-        return "space-y-0 grid grid-cols-[200px_1fr] gap-4 items-center";
+        return "space-y-0 grid grid-cols-4 gap-4 items-center";
       case "grid":
         return `grid grid-cols-1 md:grid-cols-${gridCols} gap-x-6 gap-y-4`;
       case "vertical":
