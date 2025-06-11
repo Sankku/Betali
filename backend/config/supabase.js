@@ -1,4 +1,4 @@
-// backend/config/supabase.js
+const { Logger } = require('../utils/Logger');
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 
@@ -39,13 +39,13 @@ class DatabaseManager {
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
-        console.error(`Error to get data of ${table}:`, error.message);
+        Logger(`Error to get data of ${table}:`, error.message);
         throw new Error(`Error while getting data: ${error.message}`);
       }
       
       return data || [];
     } catch (error) {
-      console.error(`Error in getAll to ${table}:`, error.message);
+      Logger(`Error in getAll to ${table}:`, error.message);
       throw error;
     }
   }
@@ -66,13 +66,13 @@ class DatabaseManager {
         .single();
       
       if (error && error.code !== 'PGRST116') {
-        console.error(`Error to get ${table} by ID:`, error.message);
+        Logger(`Error to get ${table} by ID:`, error.message);
         throw new Error(`Error while getting a record: ${error.message}`);
       }
       
       return data || null;
     } catch (error) {
-      console.error(`Error in getById ptoara ${table}:`, error.message);
+      Logger(`Error in getById ptoara ${table}:`, error.message);
       throw error;
     }
   }
@@ -92,13 +92,13 @@ class DatabaseManager {
         .single();
       
       if (error) {
-        console.error(`Error while create a record in ${table}:`, error.message);
+        Logger(`Error while create a record in ${table}:`, error.message);
         throw new Error(`Error creating a record: ${error.message}`);
       }
       
       return result;
     } catch (error) {
-      console.error(`Error in create ${table}:`, error.message);
+      Logger(`Error in create ${table}:`, error.message);
       throw error;
     }
   }
@@ -121,13 +121,13 @@ class DatabaseManager {
         .single();
       
       if (error) {
-        console.error(`Error to update ${table}:`, error.message);
+        Logger(`Error to update ${table}:`, error.message);
         throw new Error(`Error updating a record: ${error.message}`);
       }
       
       return result;
     } catch (error) {
-      console.error(`Error in update to ${table}:`, error.message);
+      Logger(`Error in update to ${table}:`, error.message);
       throw error;
     }
   }
@@ -152,13 +152,13 @@ class DatabaseManager {
         .single();
       
       if (error) {
-        console.error(`Error while unactivate ${table}:`, error.message);
+        Logger(`Error while unactivate ${table}:`, error.message);
         throw new Error(`Error to unactivate a record: ${error.message}`);
       }
       
       return result;
     } catch (error) {
-      console.error(`Error in softDelete to ${table}:`, error.message);
+      Logger(`Error in softDelete to ${table}:`, error.message);
       throw error;
     }
   }
@@ -180,13 +180,13 @@ class DatabaseManager {
         .single();
       
       if (error) {
-        console.error(`Error while deleting ${table}:`, error.message);
+        Logger(`Error while deleting ${table}:`, error.message);
         throw new Error(`Error to delete a record: ${error.message}`);
       }
       
       return result;
     } catch (error) {
-      console.error(`Error in hardDelete to ${table}:`, error.message);
+      Logger(`Error in hardDelete to ${table}:`, error.message);
       throw error;
     }
   }
@@ -204,13 +204,13 @@ class DatabaseManager {
         .eq('warehouse_id', warehouseId);
       
       if (error) {
-        console.error('Error to check stock movements:', error.message);
+        Logger('Error to check stock movements:', error.message);
         throw new Error(`Error to check movements: ${error.message}`);
       }
       
       return (count || 0) > 0;
     } catch (error) {
-      console.error('Error in hasStockMovements:', error.message);
+      Logger('Error in hasStockMovements:', error.message);
       throw error;
     }
   }
@@ -228,7 +228,7 @@ class DatabaseManager {
         .eq('warehouse_id', warehouseId);
 
       if (movError) {
-        console.error('Error counting movements:', movError.message);
+        Logger('Error counting movements:', movError.message);
       }
 
       const { data: recentMovements, error: recentError } = await this.supabase
@@ -245,7 +245,7 @@ class DatabaseManager {
         .limit(5);
 
       if (recentError) {
-        console.error('Error to get recent movements', recentError.message);
+        Logger('Error to get recent movements', recentError.message);
       }
 
       return {
@@ -253,7 +253,7 @@ class DatabaseManager {
         recentMovements: recentMovements || []
       };
     } catch (error) {
-      console.error('Error in getWarehouseStats:', error.message);
+      Logger('Error in getWarehouseStats:', error.message);
       throw error;
     }
   }

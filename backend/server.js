@@ -1,157 +1,220 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { authenticateUser } = require('./middleware/auth');
-const productsRoutes = require('./routes/products');
-const warehousesRoutes = require('./routes/warehouses');
-const { db } = require('./config/supabase');
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 4000;
+const { Logger } = require('./utils/Logger');
+const { DatabaseConfig } = require('./config/database');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { container } = require('./config/container');
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  console.error('Error: Se requieren las variables de entorno SUPABASE_URL y SUPABASE_SERVICE_KEY');
-  process.exit(1);
+const productRoutes = require('./routes/products');
+const dashboardRoutes = require('./routes/dashboard');
+const warehouseRoutes = require('./routes/warehouse')
+const healthRoutes = require('./routes/health');
+
+/**
+ * Application class following OOP principles
+ * Implements proper separation of concerns and dependency injection
+ */
+class Application {
+  constructor() {
+    this.app = express();
+    this.port = process.env.PORT || 4000;
+    this.logger = new Logger('Application');
+    this.dbConfig = new DatabaseConfig();
+  }
+
+  /**
+   * Initialize application with all necessary configurations
+   */
+  async initialize() {
+    try {
+      // Validate environment variables
+      this.validateEnvironment();
+      
+      // Setup middleware
+      this.setupMiddleware();
+      
+      // Setup routes
+      this.setupRoutes();
+      
+      // Setup error handling
+      this.setupErrorHandling();
+      
+      // Test database connection
+      await this.testDatabaseConnection();
+      
+      this.logger.info('Application initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize application', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Validate required environment variables
+   */
+  validateEnvironment() {
+    const requiredVars = [
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_KEY'
+    ];
+
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+
+    this.logger.info('Environment variables validated successfully');
+  }
+
+  /**
+   * Setup Express middleware
+   */
+  setupMiddleware() {
+    // CORS configuration
+    this.app.use(cors({
+      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }));
+
+    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    this.app.use((req, res, next) => {
+      this.logger.info('Incoming request', {
+        method: req.method,
+        url: req.url,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      });
+      next();
+    });
+
+    this.app.use((req, res, next) => {
+      res.set({
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block'
+      });
+      next();
+    });
+
+    this.logger.info('Middleware configured successfully');
+  }
+
+  /**
+   * Setup application routes
+   */
+  setupRoutes() {
+    this.app.use('/health', healthRoutes);
+
+    this.app.use('/api/products', productRoutes);
+    this.app.use('/api/dashboard', dashboardRoutes);
+    this.app.use('/api/warehouse', warehouseRoutes)
+
+    this.app.get('/', (req, res) => {
+      res.json({
+        message: 'AgroPanel API',
+        version: '1.0.0',
+        status: 'operational',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+          health: '/health',
+          products: '/api/products',
+          dashboard: '/api/dashboard'
+        }
+      });
+    });
+
+    this.logger.info('Routes configured successfully');
+  }
+
+  /**
+   * Setup error handling middleware
+   */
+  setupErrorHandling() {
+    this.app.use(notFoundHandler);
+    
+    this.app.use(errorHandler);
+
+    this.logger.info('Error handling configured successfully');
+  }
+
+  /**
+   * Test database connection
+   */
+  async testDatabaseConnection() {
+    try {
+      await this.dbConfig.healthCheck();
+      this.logger.info('Database connection verified successfully');
+    } catch (error) {
+      this.logger.error('Database connection failed', { error: error.message });
+      throw new Error(`Database connection failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Start the server
+   */
+  async start() {
+    try {
+      await this.initialize();
+      
+      const server = this.app.listen(this.port, () => {
+        this.logger.info(`Server started successfully`, {
+          port: this.port,
+          environment: process.env.NODE_ENV || 'development',
+          url: `http://localhost:${this.port}`
+        });
+      });
+
+      this.setupGracefulShutdown(server);
+
+      return server;
+    } catch (error) {
+      this.logger.error('Failed to start server', { error: error.message });
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Setup graceful shutdown
+   * @param {Object} server - Express server instance
+   */
+  setupGracefulShutdown(server) {
+    const shutdown = (signal) => {
+      this.logger.info(`Received ${signal}, starting graceful shutdown`);
+      
+      server.close(() => {
+        this.logger.info('HTTP server closed');
+        
+        
+        this.logger.info('Graceful shutdown completed');
+        process.exit(0);
+      });
+
+      setTimeout(() => {
+        this.logger.error('Forced shutdown due to timeout');
+        process.exit(1);
+      }, 30000);
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+  }
 }
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.json({ message: 'API funcionando correctamente' });
-});
-
-app.get('/api/test-connection', async (req, res) => {
-  try {
-    console.log('Probando conexión a Supabase...');
-    const data = await db.getAll('products');
-    res.json({ 
-      success: true, 
-      message: 'Conexión establecida correctamente',
-      count: data.length,
-      sample: data.slice(0, 2) 
-    });
-  } catch (error) {
-    console.error('Error al conectar con Supabase:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error al conectar con Supabase',
-      details: error.message
-    });
-  }
-});
-
-app.get('/api/user/profile', authenticateUser, (req, res) => {
-  res.json({ 
-    message: 'Datos de perfil obtenidos correctamente',
-    user: req.user 
+if (require.main === module) {
+  const app = new Application();
+  app.start().catch(error => {
+    error.exit(1);
   });
-});
+}
 
-app.get('/api/dashboard/data', authenticateUser, async (req, res) => {
-  try {
-    let products = [];
-    try {
-      products = await db.getAll('products');
-    } catch (error) {
-      console.error('Error al obtener productos:', error.message);
-    }
-    
-    let warehouses = [];
-    try {
-      warehouses = await db.getAll('warehouse');
-    } catch (error) {
-      console.error('Error al obtener depósitos:', error.message);
-    }
-    
-    let movements = [];
-    try {
-      movements = await db.getAll('stock_movements');
-    } catch (error) {
-      console.error('Error al obtener movimientos:', error.message);
-    }
-    
-    const recentMovements = movements
-      .sort((a, b) => new Date(b.movement_date || 0) - new Date(a.movement_date || 0))
-      .slice(0, 5);
-    
-    const enhancedMovements = await Promise.all(recentMovements.map(async (movement) => {
-      let productName = 'Desconocido';
-      let warehouseName = 'Desconocido';
-      
-      if (movement.product_id) {
-        try {
-          const product = await db.getById('products', 'product_id', movement.product_id);
-          if (product) {
-            productName = product.name;
-          }
-        } catch (error) {
-          console.error(`Error al obtener producto ${movement.product_id}:`, error.message);
-        }
-      }
-      
-      if (movement.warehouse_id) {
-        try {
-          const warehouse = await db.getById('warehouse', 'warehouse_id', movement.warehouse_id);
-          if (warehouse) {
-            warehouseName = warehouse.name;
-          }
-        } catch (error) {
-          console.error(`Error al obtener depósito ${movement.warehouse_id}:`, error.message);
-        }
-      }
-      
-      return {
-        ...movement,
-        product_name: productName,
-        warehouse_name: warehouseName
-      };
-    }));
-    
-    res.json({
-      stats: {
-        productsCount: products.length,
-        warehousesCount: warehouses.length,
-      },
-      recentMovements: enhancedMovements,
-    });
-  } catch (error) {
-    console.error('Error al obtener datos del dashboard:', error.message);
-    res.status(500).json({ error: 'Error al obtener datos del dashboard' });
-  }
-});
-
-app.use('/api/products', productsRoutes);
-app.use('/api/warehouses', warehousesRoutes);
-
-app.use((req, res) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
-});
-
-app.use((err, req, res, next) => {
-  console.error('Error no controlado:', err.message);
-  res.status(500).json({ 
-    error: 'Error interno del servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-(async () => {
-  try {
-    console.log('Verificando conexión a Supabase...');
-    await db.getAll('products');
-    console.log('Conexión a Supabase establecida correctamente');
-    
-    app.listen(PORT, () => {
-      console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('Error al conectar con Supabase. No se puede iniciar el servidor:', error.message);
-    process.exit(1);
-  }
-})();
+module.exports = { Application };

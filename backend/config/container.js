@@ -1,0 +1,192 @@
+const { Logger } = require('../utils/Logger');
+const { DatabaseConfig } = require('./database');
+
+const { ProductRepository } = require('../repositories/ProductRepository');
+const { WarehouseRepository } = require('../repositories/WarehouseRepository');
+const { StockMovementRepository } = require('../repositories/StockMovementRepository');
+
+const { ProductService } = require('../services/ProductService');
+const { DashboardService } = require('../services/DashboardService');
+const { WarehouseService } = require('../services/WarehouseService');
+
+const { ProductController } = require('../controllers/ProductController');
+const { DashboardController } = require('../controllers/DashboardController');
+const { WarehouseController } = require('../controllers/WarehouseController');
+
+/**
+ * Dependency injection container
+ * Implements Singleton pattern for service management
+ */
+class Container {
+  constructor() {
+    this.services = new Map();
+    this.singletons = new Map();
+  }
+
+  /**
+   * Register a service factory
+   * @param {string} name - Service name
+   * @param {Function} factory - Factory function
+   * @param {boolean} singleton - Whether to create as singleton
+   */
+  register(name, factory, singleton = false) {
+    this.services.set(name, { factory, singleton });
+  }
+
+  /**
+   * Get service instance
+   * @param {string} name - Service name
+   * @returns {*} Service instance
+   */
+  get(name) {
+    const service = this.services.get(name);
+    
+    if (!service) {
+      throw new Error(`Service "${name}" not found`);
+    }
+
+    if (service.singleton) {
+      if (!this.singletons.has(name)) {
+        this.singletons.set(name, service.factory());
+      }
+      return this.singletons.get(name);
+    }
+
+    return service.factory();
+  }
+
+  /**
+   * Check if service is registered
+   * @param {string} name - Service name
+   * @returns {boolean}
+   */
+  has(name) {
+    return this.services.has(name);
+  }
+
+  /**
+   * Clear all registered services (useful for testing)
+   */
+  clear() {
+    this.services.clear();
+    this.singletons.clear();
+  }
+
+  /**
+   * Get list of registered service names
+   * @returns {Array<string>} Service names
+   */
+  getRegisteredServices() {
+    return Array.from(this.services.keys());
+  }
+}
+
+// Create and configure container
+const container = new Container();
+
+/**
+ * Initialize container with all application dependencies
+ */
+function initializeContainer() {
+  container.register('logger', () => new Logger('Application'), true);
+  container.register('dbConfig', () => new DatabaseConfig(), true);
+
+  container.register('productRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('warehouseRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new WarehouseRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('stockMovementRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new StockMovementRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('productService', () => {
+    const productRepository = container.get('productRepository');
+    const logger = container.get('logger');
+    return new ProductService(productRepository, logger);
+  }, true);
+
+  container.register('warehouseService', () => {
+    const warehouseRepository = container.get('warehouseRepository');
+    const stockMovementRepository = container.get('stockMovementRepository');
+    const logger = container.get('logger');
+    return new WarehouseService(warehouseRepository, stockMovementRepository, logger);
+  }, true);
+
+  container.register('dashboardService', () => {
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const stockMovementRepository = container.get('stockMovementRepository');
+    const logger = container.get('logger');
+    return new DashboardService(
+      productRepository, 
+      warehouseRepository, 
+      stockMovementRepository, 
+      logger
+    );
+  }, true);
+
+  container.register('productController', () => {
+    const productService = container.get('productService');
+    return new ProductController(productService);
+  }, true);
+
+  container.register('warehouseController', () => {
+    const warehouseService = container.get('warehouseService');
+    return new WarehouseController(warehouseService);
+  }, true);
+
+  container.register('dashboardController', () => {
+    const dashboardService = container.get('dashboardService');
+    return new DashboardController(dashboardService);
+  }, true);
+}
+
+initializeContainer();
+
+/**
+ * Factory function to create service instances
+ * Useful for routes that need specific instances
+ */
+const ServiceFactory = {
+  createProductController() {
+    return container.get('productController');
+  },
+
+  createWarehouseController() {
+    return container.get('warehouseController');
+  },
+
+  createDashboardController() {
+    return container.get('dashboardController');
+  },
+
+  createProductService() {
+    return container.get('productService');
+  },
+
+  createWarehouseService() {
+    return container.get('warehouseService');
+  },
+
+  createDashboardService() {
+    return container.get('dashboardService');
+  },
+
+  createLogger(context = 'Default') {
+    return new Logger(context);
+  }
+};
+
+module.exports = { 
+  Container, 
+  container, 
+  ServiceFactory, 
+  initializeContainer 
+}
