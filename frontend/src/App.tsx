@@ -37,7 +37,7 @@ function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/warehouses"
+                  path="/dashboard/warehouse"
                   element={
                     <ProtectedRoute>
                       <Warehouses />

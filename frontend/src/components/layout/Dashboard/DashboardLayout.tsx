@@ -35,7 +35,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       label: "Productos",
     },
     {
-      path: "/dashboard/warehouses",
+      path: "/dashboard/warehouse",
       icon: <Warehouse className="w-5 h-5" />,
       label: "Depósitos",
     },
@@ -58,7 +58,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const getPageTitle = () => {
     const currentRoute = routes.find(
-      (route) => route.path === location.pathname
+      (route) => route.path === location.pathname,
     );
     return currentRoute?.label || "Dashboard";
   };

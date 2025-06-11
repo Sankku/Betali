@@ -1,131 +1,171 @@
 const express = require('express');
-const { db } = require('../config/supabase');
+const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
+const { validateRequest, validateQuery } = require('../middleware/validation');
+
+// TODO: Validation schemas (using a simple validation approach for now)
+const createProductSchema = {
+  validate: (data) => {
+    const errors = [];
+    
+    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+      errors.push({ message: 'Name is required and must be a string' });
+    }
+    
+    if (!data.batch_number || typeof data.batch_number !== 'string' || data.batch_number.trim() === '') {
+      errors.push({ message: 'Batch number is required and must be a string' });
+    }
+    
+    if (!data.origin_country || typeof data.origin_country !== 'string' || data.origin_country.trim() === '') {
+      errors.push({ message: 'Origin country is required and must be a string' });
+    }
+    
+    if (!data.expiration_date) {
+      errors.push({ message: 'Expiration date is required' });
+    } else {
+      const date = new Date(data.expiration_date);
+      if (isNaN(date.getTime())) {
+        errors.push({ message: 'Expiration date must be a valid date' });
+      }
+    }
+    
+    return {
+      error: errors.length > 0 ? { details: errors } : null,
+      value: data
+    };
+  }
+};
+
+const updateProductSchema = {
+  validate: (data) => {
+    const errors = [];
+    
+    if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim() === '')) {
+      errors.push({ message: 'Name must be a non-empty string' });
+    }
+    
+    if (data.batch_number !== undefined && (typeof data.batch_number !== 'string' || data.batch_number.trim() === '')) {
+      errors.push({ message: 'Batch number must be a non-empty string' });
+    }
+    
+    if (data.origin_country !== undefined && (typeof data.origin_country !== 'string' || data.origin_country.trim() === '')) {
+      errors.push({ message: 'Origin country must be a non-empty string' });
+    }
+    
+    if (data.expiration_date !== undefined) {
+      const date = new Date(data.expiration_date);
+      if (isNaN(date.getTime())) {
+        errors.push({ message: 'Expiration date must be a valid date' });
+      }
+    }
+    
+    return {
+      error: errors.length > 0 ? { details: errors } : null,
+      value: data
+    };
+  }
+};
+
+const queryParamsSchema = {
+  validate: (query) => ({
+    error: null,
+    value: {
+      limit: query.limit ? Math.min(parseInt(query.limit), 100) : undefined,
+      offset: query.offset ? parseInt(query.offset) : undefined,
+      sortBy: query.sortBy || undefined,
+      sortOrder: query.sortOrder || undefined,
+      days: query.days ? parseInt(query.days) : undefined,
+      q: query.q || undefined
+    }
+  })
+};
 
 const router = express.Router();
 
+const productController = ServiceFactory.createProductController();
+
 router.use(authenticateUser);
 
-/**
- * GET /api/products
- * Get all the products of auth users
- */
-router.get('/', async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const products = await db.getAll('products', 'owner_id', userId);
-    
-    res.json(products);
-  } catch (error) {
-    console.error('Error al obtener productos:', error.message);
-    res.status(500).json({ error: 'Error al obtener productos' });
+router.get(
+  '/',
+  validateQuery(queryParamsSchema),
+  async (req, res, next) => {
+    try {
+      await productController.getProducts(req, res, next);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-/**
- * GET /api/products/:id
- * Get an specific product for the user
- */
-router.get('/:id', async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const userId = req.user.id;
-    
-    const product = await db.getById('products', 'product_id', productId);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+router.get(
+  '/search',
+  validateQuery(queryParamsSchema),
+  async (req, res, next) => {
+    try {
+      await productController.searchProducts(req, res, next);
+    } catch (error) {
+      next(error);
     }
-    
-    if (product.owner_id !== userId) {
-      return res.status(403).json({ error: 'No tiene permiso para acceder a este producto' });
-    }
-    
-    res.json(product);
-  } catch (error) {
-    console.error('Error al obtener el producto:', error.message);
-    res.status(500).json({ error: 'Error al obtener el producto' });
   }
-});
+);
 
-/**
- * POST /api/products
- */
-router.post('/', async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    const productData = {
-      ...req.body,
-      owner_id: userId,
-      created_at: new Date().toISOString()
-    };
-    
-    const newProduct = await db.create('products', productData);
-    res.status(201).json(newProduct);
-  } catch (error) {
-    console.error('Error al crear producto:', error.message);
-    res.status(500).json({ error: 'Error al crear producto' });
+router.get(
+  '/expiring',
+  validateQuery(queryParamsSchema),
+  async (req, res, next) => {
+    try {
+      await productController.getExpiringProducts(req, res, next);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-/**
- * PUT /api/products/:id
- */
-router.put('/:id', async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const userId = req.user.id;
-    
-    const existingProduct = await db.getById('products', 'product_id', productId);
-    
-    if (!existingProduct) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+router.get(
+  '/:id',
+  async (req, res, next) => {
+    try {
+      await productController.getProductById(req, res, next);
+    } catch (error) {
+      next(error);
     }
-    
-    if (existingProduct.owner_id !== userId) {
-      return res.status(403).json({ error: 'No tiene permiso para modificar este producto' });
-    }
-    
-    const productData = {
-      ...req.body,
-      updated_at: new Date().toISOString()
-    };
-    
-    delete productData.owner_id;
-    
-    const updatedProduct = await db.update('products', 'product_id', productId, productData);
-    res.json(updatedProduct);
-  } catch (error) {
-    console.error('Error al actualizar producto:', error.message);
-    res.status(500).json({ error: 'Error al actualizar producto' });
   }
-});
+);
 
-/**
- * DELETE /api/products/:id
- */
-router.delete('/:id', async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const userId = req.user.id;
-    
-    const existingProduct = await db.getById('products', 'product_id', productId);
-    
-    if (!existingProduct) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+router.post(
+  '/',
+  validateRequest(createProductSchema),
+  async (req, res, next) => {
+    try {
+      await productController.createProduct(req, res, next);
+    } catch (error) {
+      next(error);
     }
-    
-    if (existingProduct.owner_id !== userId) {
-      return res.status(403).json({ error: 'No tiene permiso para eliminar este producto' });
-    }
-    
-    await db.delete('products', 'product_id', productId);
-    res.json({ message: 'Producto eliminado correctamente' });
-  } catch (error) {
-    console.error('Error al eliminar producto:', error.message);
-    res.status(500).json({ error: 'Error al eliminar producto' });
   }
-});
+);
+
+router.put(
+  '/:id',
+  validateRequest(updateProductSchema),
+  async (req, res, next) => {
+    try {
+      await productController.updateProduct(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.delete(
+  '/:id',
+  async (req, res, next) => {
+    try {
+      await productController.deleteProduct(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 module.exports = router;

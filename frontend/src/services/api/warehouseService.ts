@@ -46,14 +46,14 @@ export const warehouseService = {
    * Obtener todos los almacenes del usuario autenticado
    */
   async getAll(): Promise<WarehouseWithStats[]> {
-    return await httpClient.get<WarehouseWithStats[]>('/api/warehouses');
+    return await httpClient.get<WarehouseWithStats[]>('/api/warehouse');
   },
 
   /**
    * Obtener un almacén específico por ID
    */
   async getById(id: string): Promise<WarehouseWithStats> {
-    return await httpClient.get<WarehouseWithStats>(`/api/warehouses/${id}`);
+    return await httpClient.get<WarehouseWithStats>(`/api/warehouse/${id}`);
   },
 
   /**
@@ -69,7 +69,7 @@ export const warehouseService = {
     return await httpClient.post<{
       message: string;
       warehouse: Warehouse;
-    }>('/api/warehouses', warehouseData);
+    }>('/api/warehouse', warehouseData);
   },
 
   /**
@@ -89,7 +89,7 @@ export const warehouseService = {
     return await httpClient.put<{
       message: string;
       warehouse: Warehouse;
-    }>(`/api/warehouses/${id}`, warehouseData);
+    }>(`/api/warehouse/${id}`, warehouseData);
   },
 
   /**
@@ -102,7 +102,7 @@ export const warehouseService = {
     return await httpClient.delete<{
       message: string;
       warehouse: Warehouse;
-    }>(`/api/warehouses/${id}`);
+    }>(`/api/warehouse/${id}`);
   },
 
   /**
@@ -115,7 +115,7 @@ export const warehouseService = {
     return await httpClient.delete<{
       message: string;
       warehouse: Warehouse;
-    }>(`/api/warehouses/${id}/permanent`);
+    }>(`/api/warehouse/${id}/permanent`);
   },
 
   /**
@@ -139,7 +139,7 @@ export const warehouseService = {
     }
     
     const queryString = params.toString();
-    const endpoint = `/api/warehouses/${id}/movements${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/warehouse/${id}/movements${queryString ? `?${queryString}` : ''}`;
     
     return await httpClient.get<WarehouseMovementsResponse>(endpoint);
   },

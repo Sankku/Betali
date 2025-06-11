@@ -1,19 +1,31 @@
-const { supabase } = require('../config/supabase');
-const dotenv = require('dotenv');
+const { createClient } = require('@supabase/supabase-js');
+const { Logger } = require('../utils/Logger');
+require('dotenv').config();
 
-dotenv.config();
+const logger = new Logger('AuthMiddleware');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 /**
- * Middleware de autenticación para Express
- * Verifica el token JWT de Supabase
+ * Authentication middleware
+ * Provides error handling and logging
  */
 const authenticateUser = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('Authentication attempt without proper authorization header', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       return res.status(401).json({ 
-        error: 'No autorizado. Se requiere token de autenticación.' 
+        error: 'Unauthorized. Bearer token required.',
+        code: 'MISSING_TOKEN'
       });
     }
     
@@ -22,17 +34,23 @@ const authenticateUser = async (req, res, next) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
+      let errorCode = 'INVALID_TOKEN';
+      let errorMessage = 'Invalid or expired token.';
+      
       if (error && error.message?.includes('expired')) {
-        return res.status(401).json({
-          error: 'Token expirado o inválido',
-          code: 'TOKEN_EXPIRED'
-        });
+        errorCode = 'TOKEN_EXPIRED';
+        errorMessage = 'Token has expired.';
       }
       
-      console.error('Error de autenticación:', error?.message || 'Usuario no encontrado');
+      logger.warn('Authentication failed', {
+        error: error?.message || 'User not found',
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
       
       return res.status(401).json({ 
-        error: 'Error de autenticación.'
+        error: errorMessage,
+        code: errorCode
       });
     }
     
@@ -44,19 +62,64 @@ const authenticateUser = async (req, res, next) => {
         .single();
       
       if (!userError && userData) {
-        user.db_info = userData;
+        user.profile = userData;
       }
     } catch (dbError) {
-      console.error('Error al obtener información adicional del usuario:', dbError.message);
+      logger.warn('Could not fetch user profile data', {
+        userId: user.id,
+        error: dbError.message
+      });
     }
     
     req.user = user;
     
+    logger.info('User authenticated successfully', {
+      userId: user.id,
+      email: user.email
+    });
+    
     next();
   } catch (error) {
-    console.error('Error en middleware de autenticación:', error.message);
-    return res.status(500).json({ error: 'Error en el servidor.' });
+    logger.error('Authentication middleware error', {
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip
+    });
+    
+    return res.status(500).json({ 
+      error: 'Internal authentication error.',
+      code: 'AUTH_ERROR'
+    });
   }
 };
 
-module.exports = { authenticateUser };
+/**
+ * Optional authentication middleware
+ * Sets user if token is valid, but doesn't require it
+ */
+const optionalAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+  
+  try {
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (!error && user) {
+      req.user = user;
+    }
+  } catch (error) {
+    logger.warn('Optional authentication failed', { error: error.message });
+  }
+  
+  next();
+};
+
+module.exports = { 
+  authenticateUser, 
+  optionalAuth,
+  supabase 
+};

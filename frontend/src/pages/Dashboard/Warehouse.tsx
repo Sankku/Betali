@@ -1,4 +1,3 @@
-// frontend/src/pages/Dashboard/Warehouses.tsx
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -75,7 +74,7 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
       name: "",
       location: "",
       is_active: true,
-    }
+    },
   );
 
   const createWarehouseMutation = useMutation({
@@ -98,7 +97,7 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
         throw new Error("ID de almacén no disponible");
       return await warehouseService.update(
         warehouse.warehouse_id,
-        updatedWarehouse
+        updatedWarehouse,
       );
     },
     onSuccess: () => {
@@ -108,7 +107,7 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -138,8 +137,8 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
     mode === "create"
       ? "Crear Nuevo Almacén"
       : mode === "edit"
-      ? "Editar Almacén"
-      : "Detalles del Almacén";
+        ? "Editar Almacén"
+        : "Detalles del Almacén";
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -265,7 +264,7 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
                           <p className="text-sm font-bold text-green-900">
                             {warehouse.created_at
                               ? new Date(
-                                  warehouse.created_at
+                                  warehouse.created_at,
                                 ).toLocaleDateString()
                               : "N/A"}
                           </p>
@@ -317,7 +316,7 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
                                   <div className="text-right">
                                     <span className="text-gray-500">
                                       {new Date(
-                                        movement.movement_date
+                                        movement.movement_date,
                                       ).toLocaleDateString()}
                                     </span>
                                     <span className="ml-2 font-medium">
@@ -356,8 +355,8 @@ const WarehouseModal: React.FC<WarehouseModalProps> = ({
                   updateWarehouseMutation.isPending
                     ? "Guardando..."
                     : mode === "create"
-                    ? "Crear Almacén"
-                    : "Actualizar Almacén"}
+                      ? "Crear Almacén"
+                      : "Actualizar Almacén"}
                 </button>
               )}
             </div>
@@ -404,7 +403,7 @@ const Warehouses: React.FC = () => {
   const handleDelete = (warehouseId: string) => {
     if (
       window.confirm(
-        "¿Estás seguro que deseas desactivar este almacén? Esta acción se puede revertir editando el almacén."
+        "¿Estás seguro que deseas desactivar este almacén? Esta acción se puede revertir editando el almacén.",
       )
     ) {
       deleteWarehouseMutation.mutate(warehouseId);
@@ -635,7 +634,7 @@ const Warehouses: React.FC = () => {
                                   >
                                     {flexRender(
                                       header.column.columnDef.header,
-                                      header.getContext()
+                                      header.getContext(),
                                     )}
                                   </div>
                                 </th>
@@ -654,7 +653,7 @@ const Warehouses: React.FC = () => {
                                   >
                                     {flexRender(
                                       cell.column.columnDef.cell,
-                                      cell.getContext()
+                                      cell.getContext(),
                                     )}
                                   </td>
                                 ))}
@@ -699,7 +698,7 @@ const Warehouses: React.FC = () => {
                           {Math.min(
                             (table.getState().pagination.pageIndex + 1) *
                               table.getState().pagination.pageSize,
-                            table.getFilteredRowModel().rows.length
+                            table.getFilteredRowModel().rows.length,
                           )}
                         </span>{" "}
                         de{" "}
