@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Dashboard/Products";
+import Warehouses from "./pages/Dashboard/Warehouse";
 
 function App() {
   return (
@@ -28,10 +29,18 @@ function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/productos"
+                  path="/dashboard/products"
                   element={
                     <ProtectedRoute>
                       <Products />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/warehouses"
+                  element={
+                    <ProtectedRoute>
+                      <Warehouses />
                     </ProtectedRoute>
                   }
                 />

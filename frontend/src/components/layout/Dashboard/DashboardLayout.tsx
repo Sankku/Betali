@@ -30,12 +30,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const routes = [
     {
-      path: "/dashboard/productos",
+      path: "/dashboard/products",
       icon: <Package className="w-5 h-5" />,
       label: "Productos",
     },
     {
-      path: "/dashboard/depositos",
+      path: "/dashboard/warehouses",
       icon: <Warehouse className="w-5 h-5" />,
       label: "Depósitos",
     },
@@ -66,7 +66,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50">
       <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 h-16">
           <div className="flex items-center">
             <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
               <Package className="h-5 w-5 text-white" />
@@ -113,7 +113,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 z-10">
+        <header className="bg-white border-b border-gray-200 z-10 h-16">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center md:hidden">

@@ -40,7 +40,7 @@ class HttpClient {
 
       return await response.json();
     } catch (error) {
-      console.error(`Error en GET ${endpoint}:`, error);
+      console.error(`Error in GET ${endpoint}:`, error);
       throw error;
     }
   }

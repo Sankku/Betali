@@ -1,11 +1,11 @@
+// backend/config/supabase.js
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  console.error('ERROR: Se requieren las variables de entorno SUPABASE_URL y SUPABASE_SERVICE_KEY');
-  process.exit(1);
+  throw new Error('Need to define SUPABASE_URL & SUPABASE_SERVICE_KEY this variables are required.');
 }
 
 const supabase = createClient(
@@ -14,89 +14,254 @@ const supabase = createClient(
 );
 
 /**
- * Utility db functions
+ * Class to manage requests to bbdd
  */
-const db = {
+class DatabaseManager {
+  constructor() {
+    this.supabase = supabase;
+  }
 
-  async getAll(table, filterField = null, filterValue = null) {
-    let query = supabase.from(table).select('*');
-    
-    if (filterField && filterValue !== null && filterValue !== undefined) {
-      query = query.eq(filterField, filterValue);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error(`Error al obtener registros de ${table}:`, error);
+  /**
+   * Get all the records from a table 
+   * @param {string} table - The name of the table
+   * @param {string} userField - Field to filter by user (optional)
+   * @param {string} userId - Identificator of the user (optional)
+   * @returns {Promise<Array>}
+   */
+  async getAll(table, userField = null, userId = null) {
+    try {
+      let query = this.supabase.from(table).select('*');
+      
+      if (userField && userId) {
+        query = query.eq(userField, userId);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error(`Error to get data of ${table}:`, error.message);
+        throw new Error(`Error while getting data: ${error.message}`);
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error(`Error in getAll to ${table}:`, error.message);
       throw error;
     }
-    
-    return data || [];
-  },
-  
+  }
+
   /**
-   * Get register by id
+   * Get a record by ID
+   * @param {string} table - The name of the table 
+   * @param {string} idField - Field ID
+   * @param {string} id - Value ID
+   * @returns {Promise<Object|null>}
    */
   async getById(table, idField, id) {
-    const { data, error } = await supabase
-      .from(table)
-      .select('*')
-      .eq(idField, id)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 this is when no register was found
-      console.error(`Error al obtener registro de ${table} con ${idField}=${id}:`, error);
+    try {
+      const { data, error } = await this.supabase
+        .from(table)
+        .select('*')
+        .eq(idField, id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error(`Error to get ${table} by ID:`, error.message);
+        throw new Error(`Error while getting a record: ${error.message}`);
+      }
+      
+      return data || null;
+    } catch (error) {
+      console.error(`Error in getById ptoara ${table}:`, error.message);
       throw error;
     }
-    
-    return data;
-  },
-  
-  async create(table, data) {
-    const { data: newRecord, error } = await supabase
-      .from(table)
-      .insert(data)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error(`Error al crear registro en ${table}:`, error);
-      throw error;
-    }
-    
-    return newRecord;
-  },
-
-  async update(table, idField, id, data) {
-    const { data: updatedRecord, error } = await supabase
-      .from(table)
-      .update(data)
-      .eq(idField, id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error(`Error al actualizar registro en ${table} con ${idField}=${id}:`, error);
-      throw error;
-    }
-    
-    return updatedRecord;
-  },
-  
-  async delete(table, idField, id) {
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq(idField, id);
-    
-    if (error) {
-      console.error(`Error al eliminar registro de ${table} con ${idField}=${id}:`, error);
-      throw error;
-    }
-    
-    return { success: true };
   }
-};
 
-module.exports = { supabase, db };
+  /**
+   * Create a new record 
+   * @param {string} table - The table name
+   * @param {Object} data - Data to insert
+   * @returns {Promise<Object>}
+   */
+  async create(table, data) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from(table)
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Error while create a record in ${table}:`, error.message);
+        throw new Error(`Error creating a record: ${error.message}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in create ${table}:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a record
+   * @param {string} table - The table name
+   * @param {string} idField - Field ID
+   * @param {string} id - Value  ID
+   * @param {Object} data - Data to update
+   * @returns {Promise<Object>}
+   */
+  async update(table, idField, id, data) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from(table)
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq(idField, id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Error to update ${table}:`, error.message);
+        throw new Error(`Error updating a record: ${error.message}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in update to ${table}:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a record (soft delete setting as inactive)
+   * @param {string} table - The name of the table
+   * @param {string} idField - Field ID
+   * @param {string} id - Value ID
+   * @returns {Promise<Object>}
+   */
+  async softDelete(table, idField, id) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from(table)
+        .update({ 
+          is_active: false, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq(idField, id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Error while unactivate ${table}:`, error.message);
+        throw new Error(`Error to unactivate a record: ${error.message}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in softDelete to ${table}:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Hard delete a record
+   * @param {string} table - The name of the table
+   * @param {string} idField - Field ID
+   * @param {string} id - Value ID
+   * @returns {Promise<Object>}
+   */
+  async hardDelete(table, idField, id) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from(table)
+        .delete()
+        .eq(idField, id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Error while deleting ${table}:`, error.message);
+        throw new Error(`Error to delete a record: ${error.message}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in hardDelete to ${table}:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if exist associatted movements to a warehouse
+   * @param {string} warehouseId - ID of the warehouse
+   * @returns {Promise<boolean>}
+   */
+  async hasStockMovements(warehouseId) {
+    try {
+      const { count, error } = await this.supabase
+        .from('stock_movements')
+        .select('movement_id', { count: 'exact', head: true })
+        .eq('warehouse_id', warehouseId);
+      
+      if (error) {
+        console.error('Error to check stock movements:', error.message);
+        throw new Error(`Error to check movements: ${error.message}`);
+      }
+      
+      return (count || 0) > 0;
+    } catch (error) {
+      console.error('Error in hasStockMovements:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get statistics of a warehouse
+   * @param {string} warehouseId - ID of the Warehouse
+   * @returns {Promise<Object>}
+   */
+  async getWarehouseStats(warehouseId) {
+    try {
+      const { count: movementsCount, error: movError } = await this.supabase
+        .from('stock_movements')
+        .select('movement_id', { count: 'exact', head: true })
+        .eq('warehouse_id', warehouseId);
+
+      if (movError) {
+        console.error('Error counting movements:', movError.message);
+      }
+
+      const { data: recentMovements, error: recentError } = await this.supabase
+        .from('stock_movements')
+        .select(`
+          movement_id,
+          movement_date,
+          movement_type,
+          quantity,
+          products(name)
+        `)
+        .eq('warehouse_id', warehouseId)
+        .order('movement_date', { ascending: false })
+        .limit(5);
+
+      if (recentError) {
+        console.error('Error to get recent movements', recentError.message);
+      }
+
+      return {
+        totalMovements: movementsCount || 0,
+        recentMovements: recentMovements || []
+      };
+    } catch (error) {
+      console.error('Error in getWarehouseStats:', error.message);
+      throw error;
+    }
+  }
+}
+
+const db = new DatabaseManager();
+
+module.exports = { 
+  supabase, 
+  db 
+};

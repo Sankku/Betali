@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { authenticateUser } = require('./middleware/auth');
 const productsRoutes = require('./routes/products');
+const warehousesRoutes = require('./routes/warehouses');
 const { db } = require('./config/supabase');
 
 dotenv.config();
@@ -126,6 +127,7 @@ app.get('/api/dashboard/data', authenticateUser, async (req, res) => {
 });
 
 app.use('/api/products', productsRoutes);
+app.use('/api/warehouses', warehousesRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
