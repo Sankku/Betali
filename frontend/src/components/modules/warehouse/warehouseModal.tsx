@@ -9,11 +9,14 @@ import {
   Calendar,
   ToggleLeft,
   ToggleRight,
-  Loader2,
 } from 'lucide-react';
 import { useWarehouseForm } from '../../../hooks/useWarehouseForm';
 import { Database } from '../../../types/database';
 import { useCreateWarehouse, useUpdateWarehouse } from '../../../hooks/useWarehouse';
+import { Input } from '../../ui/input';
+import { Button } from '../../ui/button';
+import { Checkbox } from '../../ui/checkbox';
+import { cn } from '../../../lib/utils';
 
 type WarehouseType = Database['public']['Tables']['warehouse']['Row'];
 
@@ -49,12 +52,21 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
 
+  // Preparar datos iniciales
+  const initialData = warehouse
+    ? {
+        name: warehouse.name,
+        location: warehouse.location,
+        is_active: warehouse.is_active,
+      }
+    : undefined;
+
   // Hooks de mutación
   const createWarehouse = useCreateWarehouse();
   const updateWarehouse = useUpdateWarehouse();
 
   const { form, handleSubmit, isValid, isDirty, resetForm } = useWarehouseForm({
-    initialData: warehouse,
+    initialData,
     mode,
     onSubmit: async data => {
       if (isCreateMode) {
@@ -121,140 +133,161 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
 
   const isPending = createWarehouse.isPending || updateWarehouse.isPending;
 
+  // Obtener valores actuales del formulario o del warehouse original
+  const currentName = form.watch('name') || warehouse?.name || '';
+  const currentLocation = form.watch('location') || warehouse?.location || '';
+  // Para is_active, usar el valor del warehouse directamente en modo view, sino el del form
+  const currentIsActive = isViewMode
+    ? (warehouse?.is_active ?? true)
+    : (form.watch('is_active') ?? warehouse?.is_active ?? true);
+
+  console.log('Modal values:', {
+    mode,
+    warehouseIsActive: warehouse?.is_active,
+    formIsActive: form.watch('is_active'),
+    currentIsActive,
+    warehouseName: warehouse?.name,
+  });
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto animate-fade-in">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 backdrop-blur-apple transition-all duration-300"
+        style={{ backgroundColor: 'hsl(var(--neutral-900) / 0.5)' }}
+        onClick={onClose}
+      />
 
       {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative w-full max-w-4xl transform rounded-lg bg-white shadow-xl transition-all ${
+          className={cn(
+            'card relative w-full transform transition-all duration-300 animate-slide-in-bottom',
             isViewMode ? 'max-w-5xl' : 'max-w-2xl'
-          }`}
+          )}
+          style={{
+            borderRadius: 'var(--radius-2xl)',
+            boxShadow: 'var(--shadow-2xl)',
+          }}
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-muted px-8 py-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Warehouse className="mr-2 h-5 w-5 text-green-600" />
+              <h3
+                className="text-xl font-semibold flex items-center"
+                style={{ color: 'hsl(var(--foreground))' }}
+              >
+                <div
+                  className="p-2 rounded-lg mr-3"
+                  style={{
+                    backgroundColor: 'hsl(var(--primary-50))',
+                    borderRadius: 'var(--radius-lg)',
+                  }}
+                >
+                  <Warehouse className="h-5 w-5 text-primary" />
+                </div>
                 {getModalTitle()}
                 <span
-                  className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    isViewMode
-                      ? 'bg-blue-100 text-blue-800'
-                      : isEditMode
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                  }`}
+                  className={cn(
+                    'badge ml-3',
+                    isViewMode && 'badge-primary',
+                    isEditMode && 'badge-warning',
+                    isCreateMode && 'badge-success'
+                  )}
                 >
                   {isViewMode ? 'Solo lectura' : isEditMode ? 'Editando' : 'Creando'}
                 </span>
               </h3>
-              <p className="mt-1 text-sm text-gray-500">{getModalDescription()}</p>
+              <p className="mt-1 text-sm text-muted">{getModalDescription()}</p>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={onClose}
-              className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
               disabled={isPending}
+              className="hover-lift"
             >
-              <X className="h-5 w-5" />
-            </button>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="px-8 py-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Debug temporal para modo edición */}
-              {process.env.NODE_ENV === 'development' && mode === 'edit' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
-                  <strong>Debug - Valores del formulario:</strong>
-                  <div>Mode: {mode}</div>
-                  <div>Warehouse name: {warehouse?.name}</div>
-                  <div>Form name: {form.watch('name')}</div>
-                  <div>Form location: {form.watch('location')}</div>
-                  <div>Form is_active: {String(form.watch('is_active'))}</div>
-                  <div>Initial data: {JSON.stringify(initialData)}</div>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Warehouse className="inline h-4 w-4 mr-2" />
-                    Nombre del Almacén
-                    {isPending && (
-                      <span className="ml-2 text-xs text-gray-500">(Guardando...)</span>
-                    )}
-                  </label>
-                  <input
-                    type="text"
+                {/* Input de Nombre */}
+                {isViewMode ? (
+                  <div>
+                    <label
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: 'hsl(var(--neutral-700))' }}
+                    >
+                      <Warehouse className="inline h-4 w-4 mr-2" />
+                      Nombre del Almacén
+                    </label>
+                    <div
+                      className="form-input flex items-center"
+                      style={{ backgroundColor: 'hsl(var(--neutral-50))' }}
+                    >
+                      <span style={{ color: 'hsl(var(--foreground))' }}>{currentName}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Input
                     {...form.register('name')}
-                    disabled={isViewMode || isPending}
+                    label="Nombre del Almacén"
                     placeholder="Ej: Almacén Central"
-                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm transition-colors ${
-                      isViewMode || isPending
-                        ? 'bg-gray-50 text-gray-500 cursor-not-allowed'
-                        : 'bg-white hover:border-gray-400'
-                    } ${
-                      form.formState.errors.name
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : ''
-                    }`}
+                    icon={<Warehouse className="h-4 w-4" />}
+                    disabled={isPending}
+                    error={form.formState.errors.name?.message}
+                    description="Nombre identificativo del almacén"
                   />
-                  {form.formState.errors.name && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="inline h-4 w-4 mr-2" />
-                    Ubicación
-                    {isPending && (
-                      <span className="ml-2 text-xs text-gray-500">(Guardando...)</span>
-                    )}
-                  </label>
-                  <input
-                    type="text"
+                {/* Input de Ubicación */}
+                {isViewMode ? (
+                  <div>
+                    <label
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: 'hsl(var(--neutral-700))' }}
+                    >
+                      <MapPin className="inline h-4 w-4 mr-2" />
+                      Ubicación
+                    </label>
+                    <div
+                      className="form-input flex items-center"
+                      style={{ backgroundColor: 'hsl(var(--neutral-50))' }}
+                    >
+                      <span style={{ color: 'hsl(var(--foreground))' }}>{currentLocation}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Input
                     {...form.register('location')}
-                    disabled={isViewMode || isPending}
+                    label="Ubicación"
                     placeholder="Ej: Córdoba, Argentina"
-                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm transition-colors ${
-                      isViewMode || isPending
-                        ? 'bg-gray-50 text-gray-500 cursor-not-allowed'
-                        : 'bg-white hover:border-gray-400'
-                    } ${
-                      form.formState.errors.location
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : ''
-                    }`}
+                    icon={<MapPin className="h-4 w-4" />}
+                    disabled={isPending}
+                    error={form.formState.errors.location?.message}
+                    description="Dirección o ubicación física"
                   />
-                  {form.formState.errors.location && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {form.formState.errors.location.message}
-                    </p>
-                  )}
-                </div>
+                )}
 
-                {(isEditMode || isViewMode) && (
-                  <div className="md:col-span-2">
-                    <div className="bg-gray-50 rounded-lg p-4 border">
-                      <label className="flex items-center justify-between">
+                <div className="md:col-span-2">
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+                    {isViewMode ? (
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-sm font-medium text-neutral-700">
                             Estado del Almacén
                           </span>
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              form.watch('is_active')
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
+                            className={cn(
+                              'badge',
+                              currentIsActive ? 'badge-success' : 'badge-danger'
+                            )}
                           >
-                            {form.watch('is_active') ? (
+                            {currentIsActive ? (
                               <>
                                 <ToggleRight className="w-3 h-3 mr-1" />
                                 Activo
@@ -267,73 +300,129 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                             )}
                           </span>
                         </div>
-
-                        {!isViewMode && (
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              {...form.register('is_active')}
-                              disabled={isPending}
-                              className="sr-only peer"
-                            />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                          </label>
-                        )}
-                      </label>
-
-                      {!isViewMode && (
-                        <p className="mt-2 text-xs text-gray-500">
-                          {form.watch('is_active')
+                      </div>
+                    ) : (
+                      <Checkbox
+                        {...form.register('is_active')}
+                        variant="switch"
+                        size="default"
+                        checked={currentIsActive}
+                        onCheckedChange={checked => form.setValue('is_active', checked)}
+                        label="Estado del Almacén"
+                        description={
+                          currentIsActive
                             ? 'El almacén está activo y puede recibir movimientos de stock.'
-                            : 'El almacén está inactivo y no puede recibir nuevos movimientos.'}
-                        </p>
-                      )}
-                    </div>
+                            : 'El almacén está inactivo y no puede recibir nuevos movimientos.'
+                        }
+                        disabled={isPending}
+                      />
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {isViewMode && warehouse && (
-                <div className="border-t pt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                    <Activity className="w-5 h-5 mr-2 text-blue-600" />
+                <div className="border-t border-muted pt-6">
+                  <h4
+                    className="text-lg font-semibold mb-6 flex items-center"
+                    style={{ color: 'hsl(var(--foreground))' }}
+                  >
+                    <Activity className="w-5 h-5 mr-2 text-primary" />
                     Estadísticas del Almacén
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-blue-50 rounded-lg p-4">
+                    {/* Card de Movimientos */}
+                    <div
+                      className="p-6 border hover-lift"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, hsl(var(--primary-50)), hsl(var(--primary-100)))',
+                        borderColor: 'hsl(var(--primary-200))',
+                        borderRadius: 'var(--radius-lg)',
+                      }}
+                    >
                       <div className="flex items-center">
-                        <Package className="w-8 h-8 text-blue-600" />
+                        <div
+                          className="p-3"
+                          style={{
+                            backgroundColor: 'hsl(var(--primary))',
+                            borderRadius: 'var(--radius-lg)',
+                          }}
+                        >
+                          <Package className="w-6 h-6 text-white" />
+                        </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium text-blue-600">Total Movimientos</p>
-                          <p className="text-2xl font-bold text-blue-900">
+                          <p className="text-sm font-medium text-primary">Total Movimientos</p>
+                          <p
+                            className="text-2xl font-bold"
+                            style={{ color: 'hsl(var(--primary-900))' }}
+                          >
                             {warehouse.stats?.totalMovements || 0}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-green-50 rounded-lg p-4">
+                    {/* Card de Fecha */}
+                    <div
+                      className="p-6 border hover-lift"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, hsl(var(--success-50)), hsl(var(--success-100)))',
+                        borderColor: 'hsl(var(--success-200))',
+                        borderRadius: 'var(--radius-lg)',
+                      }}
+                    >
                       <div className="flex items-center">
-                        <Calendar className="w-8 h-8 text-green-600" />
+                        <div
+                          className="p-3"
+                          style={{
+                            backgroundColor: 'hsl(var(--success))',
+                            borderRadius: 'var(--radius-lg)',
+                          }}
+                        >
+                          <Calendar className="w-6 h-6 text-white" />
+                        </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium text-green-600">Fecha Creación</p>
-                          <p className="text-sm font-bold text-green-900">
+                          <p className="text-sm font-medium text-success">Fecha Creación</p>
+                          <p
+                            className="text-sm font-bold"
+                            style={{ color: 'hsl(var(--success-900))' }}
+                          >
                             {warehouse.created_at
-                              ? new Date(warehouse.created_at).toLocaleDateString()
+                              ? new Date(warehouse.created_at).toLocaleDateString('es-ES')
                               : 'N/A'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-4">
+                    {/* Card de Estado */}
+                    <div
+                      className="p-6 border hover-lift"
+                      style={{
+                        background: 'linear-gradient(135deg, hsl(220 70% 97%), hsl(220 70% 93%))',
+                        borderColor: 'hsl(220 70% 85%)',
+                        borderRadius: 'var(--radius-lg)',
+                      }}
+                    >
                       <div className="flex items-center">
-                        <Activity className="w-8 h-8 text-purple-600" />
+                        <div
+                          className="p-3"
+                          style={{
+                            backgroundColor: 'hsl(220 70% 50%)',
+                            borderRadius: 'var(--radius-lg)',
+                          }}
+                        >
+                          <Activity className="w-6 h-6 text-white" />
+                        </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium text-purple-600">Estado</p>
-                          <p className="text-sm font-bold text-purple-900">
-                            {warehouse.is_active ? 'Activo' : 'Inactivo'}
+                          <p className="text-sm font-medium" style={{ color: 'hsl(220 70% 40%)' }}>
+                            Estado
+                          </p>
+                          <p className="text-sm font-bold" style={{ color: 'hsl(220 70% 15%)' }}>
+                            {currentIsActive ? 'Activo' : 'Inactivo'}
                           </p>
                         </div>
                       </div>
@@ -343,35 +432,60 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                   {warehouse.stats?.recentMovements &&
                     warehouse.stats.recentMovements.length > 0 && (
                       <div>
-                        <h5 className="text-md font-medium text-gray-900 mb-3">
+                        <h5
+                          className="text-md font-medium mb-4"
+                          style={{ color: 'hsl(var(--foreground))' }}
+                        >
                           Movimientos Recientes
                         </h5>
-                        <div className="bg-gray-50 rounded-lg p-4">
+                        <div
+                          className="p-4 border border-muted"
+                          style={{
+                            backgroundColor: 'hsl(var(--neutral-50))',
+                            borderRadius: 'var(--radius-lg)',
+                          }}
+                        >
                           <div className="space-y-3">
                             {warehouse.stats.recentMovements.slice(0, 5).map(movement => (
                               <div
                                 key={movement.movement_id}
-                                className="flex justify-between items-center p-3 bg-white rounded border"
+                                className="card p-4 hover-lift"
+                                style={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  borderColor: 'hsl(var(--neutral-100))',
+                                  borderRadius: 'var(--radius)',
+                                }}
                               >
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  <div>
-                                    <span className="font-medium text-gray-900">
-                                      {movement.movement_type}
-                                    </span>
-                                    {movement.products?.name && (
-                                      <span className="ml-2 text-gray-600">
-                                        - {movement.products.name}
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div
+                                      className="w-2 h-2 rounded-full"
+                                      style={{ backgroundColor: 'hsl(var(--primary))' }}
+                                    ></div>
+                                    <div>
+                                      <span
+                                        className="font-medium"
+                                        style={{ color: 'hsl(var(--foreground))' }}
+                                      >
+                                        {movement.movement_type}
                                       </span>
-                                    )}
+                                      {movement.products?.name && (
+                                        <span className="ml-2 text-muted">
+                                          - {movement.products.name}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-sm text-gray-500">
-                                    {new Date(movement.movement_date).toLocaleDateString()}
-                                  </div>
-                                  <div className="font-medium text-gray-900">
-                                    {movement.quantity} unidades
+                                  <div className="text-right">
+                                    <div className="text-sm text-muted">
+                                      {new Date(movement.movement_date).toLocaleDateString('es-ES')}
+                                    </div>
+                                    <div
+                                      className="font-medium"
+                                      style={{ color: 'hsl(var(--foreground))' }}
+                                    >
+                                      {movement.quantity} unidades
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -385,27 +499,28 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
             </form>
           </div>
 
-          <div className="flex justify-end space-x-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-lg">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+          {/* Footer */}
+          <div
+            className="flex justify-end space-x-3 border-t border-muted px-8 py-6"
+            style={{
+              backgroundColor: 'hsl(var(--neutral-50) / 0.5)',
+              borderBottomLeftRadius: 'var(--radius-2xl)',
+              borderBottomRightRadius: 'var(--radius-2xl)',
+            }}
+          >
+            <Button variant="outline" onClick={onClose} disabled={isPending}>
               {isViewMode ? 'Cerrar' : 'Cancelar'}
-            </button>
+            </Button>
 
             {!isViewMode && (
-              <button
-                type="submit"
-                form="warehouse-form"
+              <Button
+                variant="primary"
                 onClick={handleSubmit}
                 disabled={!isValid || isPending || (!isDirty && isEditMode)}
-                className="inline-flex items-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                loading={isPending}
               >
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isCreateMode ? 'Crear Almacén' : 'Actualizar Almacén'}
-              </button>
+              </Button>
             )}
           </div>
         </div>

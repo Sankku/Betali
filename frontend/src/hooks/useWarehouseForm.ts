@@ -1,10 +1,8 @@
-// frontend/src/hooks/useWarehouseForm.ts
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { WarehouseFormData } from "./useWarehouse";
-
 
 const warehouseSchema = z.object({
   name: z
@@ -35,86 +33,106 @@ export function useWarehouseForm({
   mode = "create",
   onSubmit,
 }: UseWarehouseFormOptions = {}) {
+  const defaultValues = useMemo(() => ({
+    name: initialData?.name || "",
+    location: initialData?.location || "",
+    is_active: initialData?.is_active ?? true,
+  }), [initialData?.name, initialData?.location, initialData?.is_active]);
+
   const form = useForm<WarehouseFormSchema>({
     resolver: zodResolver(warehouseSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      location: initialData?.location || "",
-      is_active: initialData?.is_active ?? true,
-    },
-    mode: "onChange", 
+    defaultValues,
+    mode: "onChange",
   });
 
-  useEffect(() => {
-    if (initialData && mode !== "create") {
-      form.setValue("name", initialData.name || "");
-      form.setValue("location", initialData.location || "");
-      form.setValue("is_active", initialData.is_active ?? true);
-      
-      form.trigger();
-    } else if (mode === "create") {
-      form.reset({
-        name: "",
-        location: "",
-        is_active: true,
-      });
-    }
-  }, [initialData, form, mode]);
-
-  const handleSubmit = form.handleSubmit(async (data) => {
-    try {
-      await onSubmit?.(data);
-      
-      if (mode === "create") {
-        form.reset();
-      }
-    } catch (error) {
-      console.error("Error en submit del formulario:", error);
-    }
-  });
-
-  // TODO: Connect with service
-    //   const validateUniqueName = async (name: string, excludeId?: string) => {
-    //     return true;
-    //   };
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     form.reset({
       name: "",
       location: "",
       is_active: true,
     });
-  };
+  }, [form]);
 
-  const isDirty = form.formState.isDirty;
+  useEffect(() => {
+    if (initialData && (mode === "edit")) {
+      const currentValues = form.getValues();
+      const newName = initialData.name || "";
+      const newLocation = initialData.location || "";
+      const newIsActive = initialData.is_active ?? true;
 
-  const getFieldError = (fieldName: keyof WarehouseFormSchema) => {
+      console.log('Loading initial data:', { 
+        newName, 
+        newLocation, 
+        newIsActive, 
+        initialData 
+      });
+
+      if (
+        currentValues.name !== newName ||
+        currentValues.location !== newLocation ||
+        currentValues.is_active !== newIsActive
+      ) {
+        form.reset({
+          name: newName,
+          location: newLocation,
+          is_active: newIsActive,
+        });
+      }
+    } else if (mode === "create") {
+      resetForm();
+    }
+  }, [
+    initialData?.name, 
+    initialData?.location, 
+    initialData?.is_active, 
+    mode, 
+    form, 
+    resetForm
+  ]);
+
+  const handleSubmit = useCallback(
+    (event?: React.FormEvent) => {
+      return form.handleSubmit(async (data) => {
+        try {
+          await onSubmit?.(data);
+          
+          if (mode === "create") {
+            resetForm();
+          }
+        } catch (error) {
+          console.error("Error en submit del formulario:", error);
+        }
+      })(event);
+    },
+    [form, onSubmit, mode, resetForm]
+  );
+
+  const getFieldError = useCallback((fieldName: keyof WarehouseFormSchema) => {
     return form.formState.errors[fieldName]?.message;
-  };
+  }, [form.formState.errors]);
 
   return {
     form,
     
     isValid: form.formState.isValid,
-    isDirty,
+    isDirty: form.formState.isDirty,
     isSubmitting: form.formState.isSubmitting,
     errors: form.formState.errors,
     
     handleSubmit,
     resetForm,
-    //validateUniqueName,
     getFieldError,
     
     watchedValues: form.watch(),
     
     setValue: form.setValue,
     getValue: form.getValues,
-    trigger: form.trigger, 
+    trigger: form.trigger,
   };
 }
 
 export function useWarehouseValidation() {
-  const validateWarehouseData = (data: Partial<WarehouseFormData>) => {
+  const validateWarehouseData = useCallback((data: Partial<WarehouseFormData>) => {
     try {
       warehouseSchema.parse(data);
       return { isValid: true, errors: null };
@@ -131,9 +149,9 @@ export function useWarehouseValidation() {
       }
       return { isValid: false, errors: { general: "Error de validación" } };
     }
-  };
+  }, []);
 
-  const validateField = (fieldName: keyof WarehouseFormSchema, value: any) => {
+  const validateField = useCallback((fieldName: keyof WarehouseFormSchema, value: any) => {
     try {
       const fieldSchema = warehouseSchema.shape[fieldName];
       fieldSchema.parse(value);
@@ -147,7 +165,7 @@ export function useWarehouseValidation() {
       }
       return { isValid: false, error: "Error de validación" };
     }
-  };
+  }, []);
 
   return {
     validateWarehouseData,
