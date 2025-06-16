@@ -1,26 +1,26 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createColumnHelper } from "@tanstack/react-table";
-import { Eye, Edit, Trash2, Plus } from "lucide-react";
-import { DataTable } from "../../common/Table";
-import { Modal, ModalFooter } from "../../common/Modals";
-import { Button } from "../../ui/button";
-import { Alert } from "../../ui/alert";
-import { ProductForm } from "./ProductForm";
-import { Database } from "../../../types/database";
-import { productsService } from "../../../services/api/productsService";
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Eye, Edit, Trash2, Plus } from 'lucide-react';
+import { DataTable } from '../../common/Table';
+import { Modal, ModalFooter } from '../../common/Modals';
+import { Button } from '../../ui/button';
+import { Alert } from '../../ui/alert';
+import { ProductForm } from './ProductForm';
+import { Database } from '../../../types/database';
+import { productsService } from '../../../services/api/productsService';
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+type Product = Database['public']['Tables']['products']['Row'];
 
 export function ProductList() {
   const queryClient = useQueryClient();
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    mode: "create" | "edit" | "view" | "delete";
+    mode: 'create' | 'edit' | 'view' | 'delete';
   }>({
     isOpen: false,
-    mode: "create",
+    mode: 'create',
   });
 
   const {
@@ -29,36 +29,36 @@ export function ProductList() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["products"],
+    queryKey: ['products'],
     queryFn: () => productsService.getAll(),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (productId: string) => productsService.delete(productId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       closeModal();
     },
   });
 
   const openCreateModal = () => {
     setSelectedProduct(undefined);
-    setModalState({ isOpen: true, mode: "create" });
+    setModalState({ isOpen: true, mode: 'create' });
   };
 
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
-    setModalState({ isOpen: true, mode: "edit" });
+    setModalState({ isOpen: true, mode: 'edit' });
   };
 
   const openViewModal = (product: Product) => {
     setSelectedProduct(product);
-    setModalState({ isOpen: true, mode: "view" });
+    setModalState({ isOpen: true, mode: 'view' });
   };
 
   const openDeleteModal = (product: Product) => {
     setSelectedProduct(product);
-    setModalState({ isOpen: true, mode: "delete" });
+    setModalState({ isOpen: true, mode: 'delete' });
   };
 
   const closeModal = () => {
@@ -73,28 +73,28 @@ export function ProductList() {
 
   const columnHelper = createColumnHelper<Product>();
   const columns = [
-    columnHelper.accessor("name", {
-      header: "Nombre",
-      cell: (info) => info.getValue(),
+    columnHelper.accessor('name', {
+      header: 'Nombre',
+      cell: info => info.getValue(),
     }),
-    columnHelper.accessor("batch_number", {
-      header: "Número de Lote",
-      cell: (info) => info.getValue(),
+    columnHelper.accessor('batch_number', {
+      header: 'Número de Lote',
+      cell: info => info.getValue(),
     }),
-    columnHelper.accessor("origin_country", {
-      header: "País de Origen",
-      cell: (info) => info.getValue(),
+    columnHelper.accessor('origin_country', {
+      header: 'País de Origen',
+      cell: info => info.getValue(),
     }),
-    columnHelper.accessor("expiration_date", {
-      header: "Fecha de Vencimiento",
-      cell: (info) => {
+    columnHelper.accessor('expiration_date', {
+      header: 'Fecha de Vencimiento',
+      cell: info => {
         const date = new Date(info.getValue());
         return date.toLocaleDateString();
       },
     }),
-    columnHelper.accessor("product_id", {
-      header: "Acciones",
-      cell: (info) => {
+    columnHelper.accessor('product_id', {
+      header: 'Acciones',
+      cell: info => {
         const product = info.row.original;
         return (
           <div className="flex space-x-2">
@@ -129,9 +129,7 @@ export function ProductList() {
   if (error) {
     return (
       <Alert variant="destructive" title="Error al cargar productos">
-        <p>
-          Ocurrió un error al cargar los productos. Por favor, intenta de nuevo.
-        </p>
+        <p>Ocurrió un error al cargar los productos. Por favor, intenta de nuevo.</p>
         <div className="mt-2">
           <Button onClick={() => refetch()} variant="outline" size="sm">
             Reintentar
@@ -148,9 +146,7 @@ export function ProductList() {
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
             Productos
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestiona tu inventario de productos
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Gestiona tu inventario de productos</p>
         </div>
         <div className="mt-4 sm:mt-0">
           <Button onClick={openCreateModal}>
@@ -168,16 +164,16 @@ export function ProductList() {
         searchPlaceholder="Buscar productos..."
         noResultsMessage="No se encontraron productos"
       />
-      {modalState.isOpen && modalState.mode !== "delete" && (
+      {modalState.isOpen && modalState.mode !== 'delete' && (
         <Modal
           isOpen={modalState.isOpen}
           onClose={closeModal}
           title={
-            modalState.mode === "create"
-              ? "Crear Nuevo Producto"
-              : modalState.mode === "edit"
-              ? "Editar Producto"
-              : "Detalles del Producto"
+            modalState.mode === 'create'
+              ? 'Crear Nuevo Producto'
+              : modalState.mode === 'edit'
+                ? 'Editar Producto'
+                : 'Detalles del Producto'
           }
           maxWidth="2xl"
         >
@@ -189,7 +185,7 @@ export function ProductList() {
           />
         </Modal>
       )}
-      {modalState.isOpen && modalState.mode === "delete" && selectedProduct && (
+      {modalState.isOpen && modalState.mode === 'delete' && selectedProduct && (
         <Modal
           isOpen={modalState.isOpen}
           onClose={closeModal}
@@ -208,16 +204,14 @@ export function ProductList() {
           <div className="text-center sm:text-left">
             <p className="text-sm text-gray-500">
               ¿Estás seguro que deseas eliminar el producto
-              <span className="font-medium text-gray-900">
-                {selectedProduct.name}
-              </span>
-              ? Esta acción no se puede deshacer.
+              <span className="font-medium text-gray-900">{selectedProduct.name}</span>? Esta acción
+              no se puede deshacer.
             </p>
             {deleteMutation.error && (
               <Alert variant="destructive" className="mt-4">
                 <p className="text-sm">
                   {(deleteMutation.error as Error).message ||
-                    "Ocurrió un error al eliminar el producto"}
+                    'Ocurrió un error al eliminar el producto'}
                 </p>
               </Alert>
             )}

@@ -1,10 +1,7 @@
-import { Helmet } from "react-helmet-async";
-import { DashboardLayout } from "../../components/layout/Dashboard";
-import {
-  DashboardStats,
-  ActivityList,
-  TrendChart,
-} from "../../components/modules/dashboard";
+import { Helmet } from 'react-helmet-async';
+import { DashboardLayout } from '../../components/layout/Dashboard';
+import { DashboardStats, ActivityList, TrendChart } from '../../components/modules/dashboard';
+import { DebugColors } from '../../components/ui/debugColors';
 
 export default function DashboardPage() {
   return (
@@ -26,6 +23,7 @@ export default function DashboardPage() {
             <ActivityList />
             <TrendChart />
           </div>
+          <DebugColors></DebugColors>
         </div>
       </DashboardLayout>
     </>

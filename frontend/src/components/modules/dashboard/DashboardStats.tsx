@@ -1,8 +1,8 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../../../lib/supabase";
-import { Link } from "react-router-dom";
-import { Package, Warehouse, RefreshCw, AlertTriangle } from "lucide-react";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../../lib/supabase';
+import { Link } from 'react-router-dom';
+import { Package, Warehouse, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -28,15 +28,11 @@ export const StatCard: React.FC<StatCardProps> = ({
           <div className={`flex-shrink-0 rounded-md p-3 ${color}`}>{icon}</div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">
-                {title}
-              </dt>
+              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
               <dd>
                 <div className="text-lg font-medium text-gray-900">{value}</div>
               </dd>
-              {description && (
-                <dd className="mt-1 text-sm text-gray-500">{description}</dd>
-              )}
+              {description && <dd className="mt-1 text-sm text-gray-500">{description}</dd>}
             </dl>
           </div>
         </div>
@@ -47,11 +43,11 @@ export const StatCard: React.FC<StatCardProps> = ({
 
 export function DashboardStats() {
   const { data: productsCount, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ["productsCount"],
+    queryKey: ['productsCount'],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true });
+        .from('products')
+        .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
       return count || 0;
@@ -59,11 +55,11 @@ export function DashboardStats() {
   });
 
   const { data: warehousesCount, isLoading: isLoadingWarehouses } = useQuery({
-    queryKey: ["warehousesCount"],
+    queryKey: ['warehousesCount'],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from("warehouse")
-        .select("*", { count: "exact", head: true });
+        .from('warehouse')
+        .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
       return count || 0;
@@ -71,11 +67,11 @@ export function DashboardStats() {
   });
 
   const { data: movementsCount, isLoading: isLoadingMovements } = useQuery({
-    queryKey: ["movementsCount"],
+    queryKey: ['movementsCount'],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from("stock_movements")
-        .select("*", { count: "exact", head: true });
+        .from('stock_movements')
+        .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
       return count || 0;
@@ -83,7 +79,7 @@ export function DashboardStats() {
   });
 
   const { data: alertsCount } = useQuery({
-    queryKey: ["alertsCount"],
+    queryKey: ['alertsCount'],
     queryFn: async () => {
       return 3;
     },
@@ -93,21 +89,21 @@ export function DashboardStats() {
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Productos"
-        value={isLoadingProducts ? "Cargando..." : productsCount}
+        value={isLoadingProducts ? 'Cargando...' : productsCount}
         icon={<Package className="h-5 w-5 text-white" />}
         to="/dashboard/productos"
         color="bg-blue-500"
       />
       <StatCard
         title="Depósitos"
-        value={isLoadingWarehouses ? "Cargando..." : warehousesCount}
+        value={isLoadingWarehouses ? 'Cargando...' : warehousesCount}
         icon={<Warehouse className="h-5 w-5 text-white" />}
         to="/dashboard/depositos"
         color="bg-green-500"
       />
       <StatCard
         title="Movimientos"
-        value={isLoadingMovements ? "Cargando..." : movementsCount}
+        value={isLoadingMovements ? 'Cargando...' : movementsCount}
         icon={<RefreshCw className="h-5 w-5 text-white" />}
         to="/dashboard/movimientos"
         color="bg-purple-500"

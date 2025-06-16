@@ -15,7 +15,6 @@ import {
   Package,
   Power,
 } from 'lucide-react';
-
 import { DashboardLayout } from '../../components/layout/Dashboard';
 import { DataTable } from '../../components/ui/data-table';
 import { Button } from '../../components/ui/button';
@@ -58,6 +57,11 @@ const WarehousesPage: React.FC = () => {
     mode: 'create',
   });
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
+    show: boolean;
+    warehouse?: WarehouseWithStats;
+  }>({ show: false });
+
   const { warehouses, isLoading, error, isAnyMutationLoading } = useWarehouseManagement();
 
   const deactivateWarehouse = useDeactivateWarehouse();
@@ -80,13 +84,19 @@ const WarehousesPage: React.FC = () => {
     });
   };
 
-  const handleToggleActive = async (warehouse: WarehouseWithStats) => {
-    const action = warehouse.is_active ? 'desactivar' : 'activar';
-    const confirmed = window.confirm(
-      `¿Estás seguro que deseas ${action} el almacén "${warehouse.name}"?`
-    );
+  const handleActionClick = (e: React.MouseEvent, action: () => void) => {
+    e.preventDefault();
+    e.stopPropagation();
+    action();
+  };
 
-    if (confirmed) {
+  const handleToggleActive = async (e: React.MouseEvent, warehouse: WarehouseWithStats) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const action = warehouse.is_active ? 'desactivar' : 'activar';
+
+    if (window.confirm(`¿Está seguro de que desea ${action} el almacén "${warehouse.name}"?`)) {
       try {
         if (warehouse.is_active) {
           await deactivateWarehouse.mutateAsync(warehouse.warehouse_id);
@@ -106,24 +116,25 @@ const WarehousesPage: React.FC = () => {
     }
   };
 
-  const handlePermanentDelete = async (warehouseId: string, warehouseName: string) => {
-    const confirmed = window.confirm(
-      `⚠️ ATENCIÓN: ¿Estás seguro que deseas ELIMINAR PERMANENTEMENTE el almacén "${warehouseName}"?\n\nEsta acción NO se puede deshacer y se perderán todos los datos asociados.`
-    );
+  const handleDeleteClick = (e: React.MouseEvent, warehouse: WarehouseWithStats) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDeleteConfirm({ show: true, warehouse });
+  };
 
-    if (confirmed) {
-      const doubleConfirm = window.confirm(
-        `Por favor, confirma una vez más que deseas eliminar permanentemente "${warehouseName}".\n\nEscribe "ELIMINAR" para confirmar.`
-      );
-
-      if (doubleConfirm) {
-        try {
-          await deleteWarehouse.mutateAsync(warehouseId);
-        } catch (error) {
-          console.error('Error al eliminar almacén permanentemente:', error);
-        }
+  const confirmDelete = async () => {
+    if (showDeleteConfirm.warehouse) {
+      try {
+        await deleteWarehouse.mutateAsync(showDeleteConfirm.warehouse.warehouse_id);
+        setShowDeleteConfirm({ show: false });
+      } catch (error) {
+        console.error('Error al eliminar almacén:', error);
       }
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm({ show: false });
   };
 
   const columns: ColumnDef<WarehouseWithStats>[] = [
@@ -131,9 +142,9 @@ const WarehousesPage: React.FC = () => {
       accessorKey: 'name',
       header: 'Nombre',
       cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          <Warehouse className="h-4 w-4 text-gray-400" />
-          <span className="font-medium">{row.getValue('name')}</span>
+        <div className="flex items-center">
+          <Warehouse className="h-4 w-4 text-gray-400 mr-2" />
+          <span className="font-medium text-gray-900">{row.original.name}</span>
         </div>
       ),
     },
@@ -141,114 +152,94 @@ const WarehousesPage: React.FC = () => {
       accessorKey: 'location',
       header: 'Ubicación',
       cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          <MapPin className="h-4 w-4 text-gray-400" />
-          <span>{row.getValue('location')}</span>
+        <div className="flex items-center">
+          <MapPin className="h-4 w-4 text-gray-400 mr-2" />
+          <span className="text-gray-700">{row.original.location}</span>
         </div>
       ),
     },
     {
       accessorKey: 'is_active',
       header: 'Estado',
-      cell: ({ row }) => {
-        const isActive = row.getValue('is_active') as boolean;
-        return (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {isActive ? (
-              <>
-                <ToggleRight className="w-3 h-3 mr-1" />
-                Activo
-              </>
-            ) : (
-              <>
-                <ToggleLeft className="w-3 h-3 mr-1" />
-                Inactivo
-              </>
-            )}
-          </span>
-        );
-      },
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          {row.original.is_active ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <Activity className="h-3 w-3 mr-1" />
+              Activo
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <Power className="h-3 w-3 mr-1" />
+              Inactivo
+            </span>
+          )}
+        </div>
+      ),
     },
     {
-      accessorKey: 'stats',
+      accessorKey: 'stats.totalMovements',
       header: 'Movimientos',
-      cell: ({ row }) => {
-        const stats = row.getValue('stats') as WarehouseWithStats['stats'];
-        return (
-          <div className="flex items-center space-x-2">
-            <Activity className="h-4 w-4 text-gray-400" />
-            <span className="font-medium">{stats?.totalMovements || 0}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Fecha Creación',
-      cell: ({ row }) => {
-        const date = row.getValue('created_at') as string;
-        return date ? new Date(date).toLocaleDateString() : 'N/A';
-      },
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          <Package className="h-4 w-4 text-gray-400 mr-2" />
+          <span className="text-gray-700">{row.original.stats?.totalMovements || 0}</span>
+        </div>
+      ),
     },
     {
       id: 'actions',
       header: 'Acciones',
       cell: ({ row }) => {
         const warehouse = row.original;
-        const isPending =
-          deactivateWarehouse.isPending || deleteWarehouse.isPending || updateWarehouse.isPending;
 
         return (
           <div className="flex items-center space-x-1">
+            {/* Botón Ver */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => openModal('view', warehouse)}
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-900 hover:bg-blue-50"
+              onClick={e => handleActionClick(e, () => openModal('view', warehouse))}
+              className="h-8 w-8 p-0 hover:bg-blue-50"
               title="Ver detalles"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 text-blue-600" />
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => openModal('edit', warehouse)}
-              disabled={isPending}
-              className="h-8 w-8 p-0 text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50"
+              onClick={e => handleActionClick(e, () => openModal('edit', warehouse))}
+              className="h-8 w-8 p-0 hover:bg-yellow-50"
               title="Editar almacén"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 text-yellow-600" />
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleToggleActive(warehouse)}
-              disabled={isPending}
-              className={`h-8 w-8 p-0 ${
-                warehouse.is_active
-                  ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50'
-                  : 'text-green-600 hover:text-green-900 hover:bg-green-50'
-              }`}
-              title={warehouse.is_active ? 'Desactivar almacén' : 'Activar almacén'}
+              onClick={e => handleToggleActive(e, warehouse)}
+              className="h-8 w-8 p-0 hover:bg-purple-50"
+              title={warehouse.is_active ? 'Desactivar' : 'Activar'}
+              disabled={isAnyMutationLoading}
             >
-              <Power className="h-4 w-4" />
+              {warehouse.is_active ? (
+                <ToggleRight className="h-4 w-4 text-green-600" />
+              ) : (
+                <ToggleLeft className="h-4 w-4 text-gray-400" />
+              )}
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handlePermanentDelete(warehouse.warehouse_id, warehouse.name)}
-              disabled={isPending}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 hover:bg-red-50"
-              title="Eliminar permanentemente"
+              onClick={e => handleDeleteClick(e, warehouse)}
+              className="h-8 w-8 p-0 hover:bg-red-50"
+              title="Eliminar almacén"
+              disabled={isAnyMutationLoading}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-red-600" />
             </Button>
           </div>
         );
@@ -256,176 +247,52 @@ const WarehousesPage: React.FC = () => {
     },
   ];
 
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Error al cargar almacenes</h3>
+          <p className="mt-1 text-sm text-gray-500">{error.message}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <>
       <Helmet>
-        <title>Almacenes | AgroPanel</title>
-        <meta name="description" content="Gestión de almacenes y depósitos" />
+        <title>Almacenes | SaaS Gestión de Stock</title>
       </Helmet>
 
       <DashboardLayout>
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+          {/* Header */}
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
                 Gestión de Almacenes
-              </h1>
+              </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Administra los almacenes y depósitos de tu sistema
+                Administra y controla todos los almacenes de tu organización
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
-              <Button
-                onClick={() => openModal('create')}
-                disabled={isAnyMutationLoading}
-                icon={<Plus className="h-5 w-5" />}
-                iconPosition="left"
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
+            <div className="mt-4 flex md:ml-4 md:mt-0">
+              <Button onClick={() => openModal('create')} className="inline-flex items-center">
+                <Plus className="mr-2 h-4 w-4" />
                 Nuevo Almacén
               </Button>
             </div>
           </div>
 
-          <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-xl">
-            <div className="p-6">
-              {error ? (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <AlertTriangle className="h-5 w-5 text-red-400" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">
-                        Error al cargar los almacenes
-                      </h3>
-                      <div className="mt-2 text-sm text-red-700">
-                        <p>
-                          {error?.message ||
-                            'Ocurrió un error al obtener los datos. Por favor, intenta de nuevo.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <DataTable
-                  columns={columns}
-                  data={warehouses || []}
-                  searchKey="name"
-                  searchPlaceholder="Buscar almacenes por nombre..."
-                  loading={isLoading}
-                  emptyMessage="No hay almacenes registrados"
-                  enablePagination={true}
-                  enableSorting={true}
-                  enableColumnFilters={true}
-                  pageSize={10}
-                  onRowClick={warehouse => openModal('view', warehouse)}
-                  className="mt-4"
-                />
-              )}
-
-              {!isLoading && !error && (!warehouses || warehouses.length === 0) && (
-                <div className="text-center py-12">
-                  <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No hay almacenes</h3>
-                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                    Comienza creando tu primer almacén para gestionar tu inventario.
-                  </p>
-                  <Button
-                    onClick={() => openModal('create')}
-                    icon={<Plus className="h-5 w-5" />}
-                    iconPosition="left"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Crear Primer Almacén
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {warehouses && warehouses.length > 0 && (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Warehouse className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Almacenes
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">{warehouses.length}</dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <ToggleRight className="h-6 w-6 text-green-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Almacenes Activos
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {warehouses.filter(w => w.is_active).length}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Activity className="h-6 w-6 text-blue-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Movimientos
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {warehouses.reduce((acc, w) => acc + (w.stats?.totalMovements || 0), 0)}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <ToggleLeft className="h-6 w-6 text-red-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Almacenes Inactivos
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {warehouses.filter(w => !w.is_active).length}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            data={warehouses || []}
+            loading={isLoading}
+            onRowClick={warehouse => openModal('view', warehouse)}
+            emptyMessage="No se encontraron almacenes"
+            className="cursor-pointer"
+          />
         </div>
 
         <WarehouseModal
@@ -434,9 +301,56 @@ const WarehousesPage: React.FC = () => {
           warehouse={modal.warehouse}
           mode={modal.mode}
         />
-      </DashboardLayout>
 
-      <ToastContainer />
+        {showDeleteConfirm.show && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                      <h3 className="text-base font-semibold leading-6 text-gray-900">
+                        Eliminar Almacén
+                      </h3>
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-500">
+                          ¿Está seguro de que desea eliminar permanentemente el almacén "
+                          <span className="font-medium">{showDeleteConfirm.warehouse?.name}</span>
+                          "? Esta acción no se puede deshacer.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <Button
+                    variant="destructive"
+                    onClick={confirmDelete}
+                    disabled={deleteWarehouse.isPending}
+                    className="ml-3"
+                  >
+                    {deleteWarehouse.isPending ? 'Eliminando...' : 'Eliminar'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={cancelDelete}
+                    disabled={deleteWarehouse.isPending}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ToastContainer />
+      </DashboardLayout>
     </>
   );
 };
