@@ -1,42 +1,31 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading, refreshSession } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login", { replace: true });
-    }
-
-    const setupTokenRefresh = async () => {
-      if (user) {
-        const refreshInterval = setInterval(async () => {
-          await refreshSession();
-        }, 55 * 60 * 1000);
-
-        return () => clearInterval(refreshInterval);
-      }
-    };
-
-    setupTokenRefresh();
-  }, [user, loading, navigate, refreshSession]);
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-green-600" />
+          <p className="mt-2 text-sm text-gray-500">Verificando autenticación...</p>
+        </div>
       </div>
     );
   }
 
-  return user ? <>{children}</> : null;
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
