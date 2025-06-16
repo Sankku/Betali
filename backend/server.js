@@ -7,11 +7,10 @@ dotenv.config();
 const { Logger } = require('./utils/Logger');
 const { DatabaseConfig } = require('./config/database');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const { container } = require('./config/container');
 
 const productRoutes = require('./routes/products');
 const dashboardRoutes = require('./routes/dashboard');
-const warehouseRoutes = require('./routes/warehouse')
+const warehouseRoutes = require('./routes/warehouse'); 
 const healthRoutes = require('./routes/health');
 
 /**
@@ -31,19 +30,14 @@ class Application {
    */
   async initialize() {
     try {
-      // Validate environment variables
       this.validateEnvironment();
       
-      // Setup middleware
       this.setupMiddleware();
       
-      // Setup routes
       this.setupRoutes();
       
-      // Setup error handling
       this.setupErrorHandling();
       
-      // Test database connection
       await this.testDatabaseConnection();
       
       this.logger.info('Application initialized successfully');
@@ -75,7 +69,6 @@ class Application {
    * Setup Express middleware
    */
   setupMiddleware() {
-    // CORS configuration
     this.app.use(cors({
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
       credentials: true,
@@ -115,8 +108,8 @@ class Application {
     this.app.use('/health', healthRoutes);
 
     this.app.use('/api/products', productRoutes);
+    this.app.use('/api/warehouse', warehouseRoutes); 
     this.app.use('/api/dashboard', dashboardRoutes);
-    this.app.use('/api/warehouse', warehouseRoutes)
 
     this.app.get('/', (req, res) => {
       res.json({
@@ -127,6 +120,7 @@ class Application {
         endpoints: {
           health: '/health',
           products: '/api/products',
+          warehouses: '/api/warehouse', 
           dashboard: '/api/dashboard'
         }
       });
@@ -139,6 +133,7 @@ class Application {
    * Setup error handling middleware
    */
   setupErrorHandling() {
+    // 404 handler
     this.app.use(notFoundHandler);
     
     this.app.use(errorHandler);
@@ -179,7 +174,7 @@ class Application {
       return server;
     } catch (error) {
       this.logger.error('Failed to start server', { error: error.message });
-      process.exit(1);
+      Logger.exit(1);
     }
   }
 
@@ -192,16 +187,15 @@ class Application {
       this.logger.info(`Received ${signal}, starting graceful shutdown`);
       
       server.close(() => {
-        this.logger.info('HTTP server closed');
-        
+
         
         this.logger.info('Graceful shutdown completed');
-        process.exit(0);
+        Logger.exit(0);
       });
 
       setTimeout(() => {
         this.logger.error('Forced shutdown due to timeout');
-        process.exit(1);
+        Logger.exit(1);
       }, 30000);
     };
 
@@ -213,7 +207,7 @@ class Application {
 if (require.main === module) {
   const app = new Application();
   app.start().catch(error => {
-    error.exit(1);
+    Logger.error('Application startup failed:', error);
   });
 }
 
