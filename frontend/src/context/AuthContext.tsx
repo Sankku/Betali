@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 type AuthContextType = {
   user: User | null;
@@ -30,14 +30,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (error) throw error;
       return;
     } catch (error) {
-      console.error("Error refreshing session:", error);
+      console.error('Error refreshing session:', error);
       await signOut();
     }
   };
@@ -112,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data } = await supabase.auth.getSession();
       return data.session?.access_token || null;
     } catch (error) {
-      console.error("Error getting access token:", error);
+      console.error('Error getting access token:', error);
       return null;
     }
   };

@@ -8,8 +8,14 @@
         "back": "cd backend && bun run start"
     },
     "dependencies": {
+        "@hookform/resolvers": "^5.1.1",
         "@supabase/ssr": "^0.6.1",
         "@supabase/supabase-js": "^2.49.4",
-        "react-helmet-async": "^2.0.5"
+        "class-variance-authority": "^0.7.1",
+        "radix-ui": "^1.4.2",
+        "react-helmet-async": "^2.0.5",
+        "react-hook-form": "^7.58.0",
+        "sonner": "^2.0.5",
+        "zod": "^3.25.64"
     }
 }

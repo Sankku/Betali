@@ -1,69 +1,38 @@
-"use client";
+import * as React from 'react';
+import { Check } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
-import * as React from "react";
-import { Check } from "lucide-react";
-import { cn } from "../../lib/utils";
-
-interface CheckboxProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "type" | "className" | "onChange"
-  > {
-  className?: string;
-  checked?: boolean;
+export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onCheckedChange?: (checked: boolean) => void;
 }
 
-const Checkbox = React.forwardRef<HTMLDivElement, CheckboxProps>(
-  ({ className, checked = false, onCheckedChange, ...props }, ref) => {
-    const [isChecked, setIsChecked] = React.useState(checked);
-
-    React.useEffect(() => {
-      setIsChecked(checked);
-    }, [checked]);
-
-    const handleClick = () => {
-      const newValue = !isChecked;
-      setIsChecked(newValue);
-      onCheckedChange?.(newValue);
+const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
+  ({ className, onCheckedChange, checked, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onCheckedChange?.(e.target.checked);
+      props.onChange?.(e);
     };
 
     return (
-      <div
-        ref={ref}
-        role="checkbox"
-        aria-checked={isChecked}
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleClick();
-          }
-        }}
-        className={cn(
-          "peer relative h-4 w-4 shrink-0 rounded-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-50 data-[checked=true]:border-green-600",
-          isChecked ? "bg-green-600 border-green-600" : "bg-white",
-          className
-        )}
-        data-checked={isChecked}
-        {...props}
-      >
-        {isChecked && (
-          <Check className="absolute top-0 left-0 h-3.5 w-3.5 text-white stroke-[3]" />
-        )}
+      <div className="relative inline-flex items-center">
         <input
           type="checkbox"
-          className="sr-only"
-          checked={isChecked}
-          onChange={(e) => onCheckedChange?.(e.target.checked)}
-          aria-hidden="true"
+          className={cn(
+            'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
+            className
+          )}
+          ref={ref}
+          checked={checked}
+          onChange={handleChange}
+          {...props}
         />
+        {checked && (
+          <Check className="absolute h-3 w-3 text-white pointer-events-none left-0.5 top-0.5" />
+        )}
       </div>
     );
   }
 );
-
-Checkbox.displayName = "Checkbox";
+Checkbox.displayName = 'Checkbox';
 
 export { Checkbox };

@@ -1,64 +1,82 @@
-"use client";
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '../../lib/utils';
+import React from 'react';
 
-import * as React from "react";
-import { cn } from "../../lib/utils";
+const buttonVariants = cva(
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+        success: 'bg-green-600 text-white hover:bg-green-700',
+        warning: 'bg-yellow-600 text-white hover:bg-yellow-700',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  }
+);
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
-  size?: "default" | "sm" | "lg";
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  loading?: boolean;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant = "default", size = "default", children, ...props },
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading = false,
+      icon,
+      iconPosition = 'left',
+      disabled,
+      children,
+      ...props
+    },
     ref
   ) => {
-    const baseStyles =
-      "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+    const Comp = asChild ? Slot : 'button';
 
-    const variantStyles = {
-      default:
-        "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500",
-      destructive:
-        "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500",
-      outline:
-        "border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-700 focus-visible:ring-gray-500",
-      secondary:
-        "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500",
-      ghost:
-        "hover:bg-gray-100 text-gray-700 hover:text-gray-900 focus-visible:ring-gray-500",
-      link: "text-green-600 hover:underline underline-offset-4 hover:text-green-700 focus-visible:ring-green-500",
-    };
-
-    const sizeStyles = {
-      default: "h-10 py-2 px-4 text-sm",
-      sm: "h-8 py-1.5 px-3 text-xs rounded-md",
-      lg: "h-12 py-2.5 px-6 text-base rounded-md",
-    };
+    const isDisabled = disabled || loading;
 
     return (
-      <button
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        className={cn(
-          baseStyles,
-          variantStyles[variant],
-          sizeStyles[size],
-          className
-        )}
+        disabled={isDisabled}
         {...props}
       >
+        {loading && (
+          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        )}
+        {!loading && icon && iconPosition === 'left' && <span className="mr-2">{icon}</span>}
         {children}
-      </button>
+        {!loading && icon && iconPosition === 'right' && <span className="ml-2">{icon}</span>}
+      </Comp>
     );
   }
 );
+Button.displayName = 'Button';
 
-Button.displayName = "Button";
-
-export { Button };
+export { Button, buttonVariants };
