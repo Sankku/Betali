@@ -2,6 +2,7 @@ const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { validateRequest, validateQuery } = require('../middleware/validation');
+const { Logger } = require('../utils/Logger');
 
 const createWarehouseSchema = {
   validate: (data) => {
@@ -57,9 +58,38 @@ const queryParamsSchema = {
     }
   })
 };
+
 const router = express.Router();
 
-const warehouseController = ServiceFactory.createWarehouseController();
+let warehouseController;
+try {
+  warehouseController = ServiceFactory.createWarehouseController();
+} catch (error) {
+  Logger.error('Failed to create warehouse controller:', error.message);
+  warehouseController = {
+    getWarehouses: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    getWarehouseById: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    createWarehouse: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    updateWarehouse: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    deactivateWarehouse: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    deleteWarehouse: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    },
+    getWarehouseMovements: (req, res) => {
+      res.status(500).json({ error: 'Warehouse controller not available', details: error.message });
+    }
+  };
+}
 
 router.use(authenticateUser);
 
