@@ -1,4 +1,3 @@
-// frontend/src/components/modules/warehouses/WarehouseModal.tsx
 import React, { useEffect } from 'react';
 import {
   X,
@@ -52,7 +51,6 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
 
-  // Preparar datos iniciales
   const initialData = warehouse
     ? {
         name: warehouse.name,
@@ -61,7 +59,6 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
       }
     : undefined;
 
-  // Hooks de mutación
   const createWarehouse = useCreateWarehouse();
   const updateWarehouse = useUpdateWarehouse();
 
@@ -153,39 +150,22 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto animate-fade-in">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 backdrop-blur-apple transition-all duration-300"
-        style={{ backgroundColor: 'hsl(var(--neutral-900) / 0.5)' }}
+        className="fixed inset-0 backdrop-blur-apple transition-all duration-300 bg-neutral-900/50"
         onClick={onClose}
       />
 
       {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={cn(
-            'card relative w-full transform transition-all duration-300 animate-slide-in-bottom',
-            isViewMode ? 'max-w-5xl' : 'max-w-2xl'
-          )}
-          style={{
-            borderRadius: 'var(--radius-2xl)',
-            boxShadow: 'var(--shadow-2xl)',
-          }}
+          className="bg-white border border-neutral-200 relative w-full transform transition-all duration-300 animate-slide-in-bottom rounded-2xl shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-muted px-8 py-6">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-8 py-6">
             <div>
-              <h3
-                className="text-xl font-semibold flex items-center"
-                style={{ color: 'hsl(var(--foreground))' }}
-              >
-                <div
-                  className="p-2 rounded-lg mr-3"
-                  style={{
-                    backgroundColor: 'hsl(var(--primary-50))',
-                    borderRadius: 'var(--radius-lg)',
-                  }}
-                >
-                  <Warehouse className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-semibold flex items-center text-neutral-900">
+                <div className="p-2 rounded-lg mr-3 bg-primary-50">
+                  <Warehouse className="h-5 w-5 text-primary-600" />
                 </div>
                 {getModalTitle()}
                 <span
@@ -199,7 +179,7 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                   {isViewMode ? 'Solo lectura' : isEditMode ? 'Editando' : 'Creando'}
                 </span>
               </h3>
-              <p className="mt-1 text-sm text-muted">{getModalDescription()}</p>
+              <p className="mt-1 text-sm text-neutral-500">{getModalDescription()}</p>
             </div>
             <Button
               variant="ghost"
@@ -218,18 +198,12 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                 {/* Input de Nombre */}
                 {isViewMode ? (
                   <div>
-                    <label
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: 'hsl(var(--neutral-700))' }}
-                    >
+                    <label className="block text-sm font-medium mb-2 text-neutral-700">
                       <Warehouse className="inline h-4 w-4 mr-2" />
                       Nombre del Almacén
                     </label>
-                    <div
-                      className="form-input flex items-center"
-                      style={{ backgroundColor: 'hsl(var(--neutral-50))' }}
-                    >
-                      <span style={{ color: 'hsl(var(--foreground))' }}>{currentName}</span>
+                    <div className="form-input flex items-center bg-neutral-50">
+                      <span className="text-neutral-900">{currentName}</span>
                     </div>
                   </div>
                 ) : (
@@ -247,18 +221,12 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                 {/* Input de Ubicación */}
                 {isViewMode ? (
                   <div>
-                    <label
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: 'hsl(var(--neutral-700))' }}
-                    >
+                    <label className="block text-sm font-medium mb-2 text-neutral-700">
                       <MapPin className="inline h-4 w-4 mr-2" />
                       Ubicación
                     </label>
-                    <div
-                      className="form-input flex items-center"
-                      style={{ backgroundColor: 'hsl(var(--neutral-50))' }}
-                    >
-                      <span style={{ color: 'hsl(var(--foreground))' }}>{currentLocation}</span>
+                    <div className="form-input flex items-center bg-neutral-50">
+                      <span className="text-neutral-900">{currentLocation}</span>
                     </div>
                   </div>
                 ) : (
@@ -322,42 +290,22 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
               </div>
 
               {isViewMode && warehouse && (
-                <div className="border-t border-muted pt-6">
-                  <h4
-                    className="text-lg font-semibold mb-6 flex items-center"
-                    style={{ color: 'hsl(var(--foreground))' }}
-                  >
-                    <Activity className="w-5 h-5 mr-2 text-primary" />
+                <div className="border-t border-neutral-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-6 flex items-center text-neutral-900">
+                    <Activity className="w-5 h-5 mr-2 text-primary-600" />
                     Estadísticas del Almacén
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     {/* Card de Movimientos */}
-                    <div
-                      className="p-6 border hover-lift"
-                      style={{
-                        background:
-                          'linear-gradient(135deg, hsl(var(--primary-50)), hsl(var(--primary-100)))',
-                        borderColor: 'hsl(var(--primary-200))',
-                        borderRadius: 'var(--radius-lg)',
-                      }}
-                    >
+                    <div className="p-6 border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg hover-lift">
                       <div className="flex items-center">
-                        <div
-                          className="p-3"
-                          style={{
-                            backgroundColor: 'hsl(var(--primary))',
-                            borderRadius: 'var(--radius-lg)',
-                          }}
-                        >
+                        <div className="p-3 bg-primary-500 rounded-lg">
                           <Package className="w-6 h-6 text-white" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium text-primary">Total Movimientos</p>
-                          <p
-                            className="text-2xl font-bold"
-                            style={{ color: 'hsl(var(--primary-900))' }}
-                          >
+                          <p className="text-sm font-medium text-primary-600">Total Movimientos</p>
+                          <p className="text-2xl font-bold text-primary-900">
                             {warehouse.stats?.totalMovements || 0}
                           </p>
                         </div>
@@ -365,31 +313,14 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                     </div>
 
                     {/* Card de Fecha */}
-                    <div
-                      className="p-6 border hover-lift"
-                      style={{
-                        background:
-                          'linear-gradient(135deg, hsl(var(--success-50)), hsl(var(--success-100)))',
-                        borderColor: 'hsl(var(--success-200))',
-                        borderRadius: 'var(--radius-lg)',
-                      }}
-                    >
+                    <div className="p-6 border border-success-200 bg-gradient-to-br from-success-50 to-success-100 rounded-lg hover-lift">
                       <div className="flex items-center">
-                        <div
-                          className="p-3"
-                          style={{
-                            backgroundColor: 'hsl(var(--success))',
-                            borderRadius: 'var(--radius-lg)',
-                          }}
-                        >
+                        <div className="p-3 bg-success-500 rounded-lg">
                           <Calendar className="w-6 h-6 text-white" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium text-success">Fecha Creación</p>
-                          <p
-                            className="text-sm font-bold"
-                            style={{ color: 'hsl(var(--success-900))' }}
-                          >
+                          <p className="text-sm font-medium text-success-600">Fecha Creación</p>
+                          <p className="text-sm font-bold text-success-900">
                             {warehouse.created_at
                               ? new Date(warehouse.created_at).toLocaleDateString('es-ES')
                               : 'N/A'}
@@ -399,29 +330,14 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                     </div>
 
                     {/* Card de Estado */}
-                    <div
-                      className="p-6 border hover-lift"
-                      style={{
-                        background: 'linear-gradient(135deg, hsl(220 70% 97%), hsl(220 70% 93%))',
-                        borderColor: 'hsl(220 70% 85%)',
-                        borderRadius: 'var(--radius-lg)',
-                      }}
-                    >
+                    <div className="p-6 border border-neutral-200 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-lg hover-lift">
                       <div className="flex items-center">
-                        <div
-                          className="p-3"
-                          style={{
-                            backgroundColor: 'hsl(220 70% 50%)',
-                            borderRadius: 'var(--radius-lg)',
-                          }}
-                        >
+                        <div className="p-3 bg-primary-500 rounded-lg">
                           <Activity className="w-6 h-6 text-white" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium" style={{ color: 'hsl(220 70% 40%)' }}>
-                            Estado
-                          </p>
-                          <p className="text-sm font-bold" style={{ color: 'hsl(220 70% 15%)' }}>
+                          <p className="text-sm font-medium text-neutral-600">Estado</p>
+                          <p className="text-sm font-bold text-neutral-900">
                             {currentIsActive ? 'Activo' : 'Inactivo'}
                           </p>
                         </div>
@@ -432,58 +348,35 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
                   {warehouse.stats?.recentMovements &&
                     warehouse.stats.recentMovements.length > 0 && (
                       <div>
-                        <h5
-                          className="text-md font-medium mb-4"
-                          style={{ color: 'hsl(var(--foreground))' }}
-                        >
+                        <h5 className="text-md font-medium mb-4 text-neutral-900">
                           Movimientos Recientes
                         </h5>
-                        <div
-                          className="p-4 border border-muted"
-                          style={{
-                            backgroundColor: 'hsl(var(--neutral-50))',
-                            borderRadius: 'var(--radius-lg)',
-                          }}
-                        >
+                        <div className="p-4 border border-neutral-200 bg-neutral-50 rounded-lg">
                           <div className="space-y-3">
                             {warehouse.stats.recentMovements.slice(0, 5).map(movement => (
                               <div
                                 key={movement.movement_id}
-                                className="card p-4 hover-lift"
-                                style={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  borderColor: 'hsl(var(--neutral-100))',
-                                  borderRadius: 'var(--radius)',
-                                }}
+                                className="bg-white border border-neutral-100 rounded-md p-4 hover-lift"
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center space-x-3">
-                                    <div
-                                      className="w-2 h-2 rounded-full"
-                                      style={{ backgroundColor: 'hsl(var(--primary))' }}
-                                    ></div>
+                                    <div className="w-2 h-2 rounded-full bg-primary-500"></div>
                                     <div>
-                                      <span
-                                        className="font-medium"
-                                        style={{ color: 'hsl(var(--foreground))' }}
-                                      >
+                                      <span className="font-medium text-neutral-900">
                                         {movement.movement_type}
                                       </span>
                                       {movement.products?.name && (
-                                        <span className="ml-2 text-muted">
+                                        <span className="ml-2 text-neutral-500">
                                           - {movement.products.name}
                                         </span>
                                       )}
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-sm text-muted">
+                                    <div className="text-sm text-neutral-500">
                                       {new Date(movement.movement_date).toLocaleDateString('es-ES')}
                                     </div>
-                                    <div
-                                      className="font-medium"
-                                      style={{ color: 'hsl(var(--foreground))' }}
-                                    >
+                                    <div className="font-medium text-neutral-900">
                                       {movement.quantity} unidades
                                     </div>
                                   </div>
@@ -500,14 +393,7 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div
-            className="flex justify-end space-x-3 border-t border-muted px-8 py-6"
-            style={{
-              backgroundColor: 'hsl(var(--neutral-50) / 0.5)',
-              borderBottomLeftRadius: 'var(--radius-2xl)',
-              borderBottomRightRadius: 'var(--radius-2xl)',
-            }}
-          >
+          <div className="flex justify-end space-x-3 border-t border-neutral-200 px-8 py-6 bg-neutral-50/50 rounded-b-2xl">
             <Button variant="outline" onClick={onClose} disabled={isPending}>
               {isViewMode ? 'Cerrar' : 'Cancelar'}
             </Button>
