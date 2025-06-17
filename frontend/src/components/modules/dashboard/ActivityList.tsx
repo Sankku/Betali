@@ -1,7 +1,7 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../../../lib/supabase";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../../lib/supabase';
+import { Link } from 'react-router-dom';
 
 interface ActivityItemProps {
   type: string;
@@ -18,14 +18,14 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   date,
   status,
 }) => {
-  let statusColor = "bg-gray-100 text-gray-800";
+  let statusColor = 'bg-gray-100 text-gray-800';
 
-  if (status === "completed") {
-    statusColor = "bg-green-100 text-green-800";
-  } else if (status === "pending") {
-    statusColor = "bg-yellow-100 text-yellow-800";
-  } else if (status === "error") {
-    statusColor = "bg-red-100 text-red-800";
+  if (status === 'completed') {
+    statusColor = 'bg-green-100 text-green-800';
+  } else if (status === 'pending') {
+    statusColor = 'bg-yellow-100 text-yellow-800';
+  } else if (status === 'error') {
+    statusColor = 'bg-red-100 text-red-800';
   }
 
   return (
@@ -57,10 +57,10 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
 
 export function ActivityList() {
   const { data: recentActivity, isLoading } = useQuery({
-    queryKey: ["recentActivity"],
+    queryKey: ['recentActivity'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("stock_movements")
+        .from('stock_movements')
         .select(
           `
           movement_id,
@@ -71,7 +71,7 @@ export function ActivityList() {
           warehouse:warehouse_id(name)
         `
         )
-        .order("movement_date", { ascending: false })
+        .order('movement_date', { ascending: false })
         .limit(5);
 
       if (error) throw error;
@@ -82,9 +82,7 @@ export function ActivityList() {
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <h3 className="text-lg font-medium leading-6 text-gray-900">
-          Actividad Reciente
-        </h3>
+        <h3 className="text-lg font-medium leading-6 text-gray-900">Actividad Reciente</h3>
       </div>
       <div className="px-4 py-3 sm:px-6">
         {isLoading ? (
