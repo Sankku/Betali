@@ -45,7 +45,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 htmlFor={checkboxId}
                 className={cn(
                   'text-sm font-medium cursor-pointer',
-                  error ? 'text-danger' : 'text-neutral-700',
+                  error ? 'text-danger-600' : 'text-neutral-700',
                   disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -76,7 +76,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 size === 'sm' && 'w-9 h-5 after:h-4 after:w-4 after:rounded-sm',
                 size === 'default' && 'w-11 h-6 after:h-5 after:w-5 after:rounded',
                 size === 'lg' && 'w-13 h-7 after:h-6 after:w-6 after:rounded-md',
-                checked ? 'bg-primary' : 'bg-neutral-200',
+                checked ? 'bg-primary-500' : 'bg-neutral-200',
                 error && 'ring-2 ring-danger/20',
                 className
               )}
@@ -84,7 +84,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           </label>
 
           {error && (
-            <p className="text-xs text-danger flex items-center gap-1 mt-1">
+            <p className="text-xs text-danger-600 flex items-center gap-1 mt-1">
               <AlertCircle className="h-3 w-3" />
               {error}
             </p>
@@ -93,7 +93,6 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       );
     }
 
-    // Variant default - checkbox tradicional
     return (
       <div className="flex items-start space-x-3">
         <div className="relative inline-flex items-center">
@@ -139,7 +138,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               htmlFor={checkboxId}
               className={cn(
                 'text-sm font-medium cursor-pointer block',
-                error ? 'text-danger' : 'text-neutral-700',
+                error ? 'text-danger-600' : 'text-neutral-700',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >

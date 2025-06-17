@@ -153,14 +153,14 @@ export function DataTable<TData>({
       )}
 
       {/* Tabla */}
-      <div className="card overflow-hidden">
+      <div className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
         <div className="relative">
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-apple">
-              <div className="card p-4 animate-fade-in">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+              <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="spinner w-5 h-5"></div>
-                  <span className="text-sm font-medium text-primary">Cargando...</span>
+                  <div className="w-5 h-5 border-2 border-neutral-200 border-t-primary-500 rounded-full animate-spin"></div>
+                  <span className="text-sm font-medium text-neutral-700">Cargando...</span>
                 </div>
               </div>
             </div>
@@ -168,21 +168,23 @@ export function DataTable<TData>({
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead style={{ backgroundColor: 'hsl(var(--neutral-50))' }}>
+              <thead className="bg-neutral-50">
                 {table.getHeaderGroups().map(headerGroup => (
-                  <tr key={headerGroup.id} className="border-b border-muted">
+                  <tr
+                    key={headerGroup.id}
+                    className="border-b border-neutral-100 hover:bg-neutral-50"
+                  >
                     {headerGroup.headers.map(header => (
                       <th
                         key={header.id}
-                        className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
-                        style={{ color: 'hsl(var(--neutral-700))' }}
+                        className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-700"
                       >
                         {header.isPlaceholder ? null : (
                           <div
                             className={cn(
                               'flex items-center space-x-1 transition-colors duration-200',
                               header.column.getCanSort() &&
-                                'cursor-pointer select-none hover:text-primary'
+                                'cursor-pointer select-none hover:text-primary-600'
                             )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
@@ -195,16 +197,16 @@ export function DataTable<TData>({
                                   className={cn(
                                     'h-3 w-3 transition-colors',
                                     header.column.getIsSorted() === 'asc'
-                                      ? 'text-primary'
-                                      : 'text-muted'
+                                      ? 'text-primary-600'
+                                      : 'text-neutral-500'
                                   )}
                                 />
                                 <ChevronDown
                                   className={cn(
                                     'h-3 w-3 -mt-1 transition-colors',
                                     header.column.getIsSorted() === 'desc'
-                                      ? 'text-primary'
-                                      : 'text-muted'
+                                      ? 'text-primary-600'
+                                      : 'text-neutral-500'
                                   )}
                                 />
                               </div>
@@ -228,15 +230,15 @@ export function DataTable<TData>({
               >
                 {table.getRowModel().rows.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-6 py-12 text-center">
+                    <td colSpan={columns.length} className="px-6 py-4 text-sm text-neutral-900">
                       <div className="flex flex-col items-center space-y-3">
                         <div
                           className="w-12 h-12 flex items-center justify-center rounded-lg"
                           style={{ backgroundColor: 'hsl(var(--neutral-100))' }}
                         >
-                          <Search className="h-6 w-6 text-muted" />
+                          <Search className="h-6 w-6 text-neutral-500" />
                         </div>
-                        <p className="font-medium text-muted">{emptyMessage}</p>
+                        <p className="font-medium text-neutral-500">{emptyMessage}</p>
                       </div>
                     </td>
                   </tr>
@@ -247,13 +249,13 @@ export function DataTable<TData>({
                       onClick={e => handleRowClick(row.original, e)}
                       className={cn(
                         'transition-all duration-200',
-                        onRowClick && 'hover:bg-muted cursor-pointer'
+                        onRowClick && 'hover:bg-neutral-50 cursor-pointer'
                       )}
                     >
                       {row.getVisibleCells().map(cell => (
                         <td
                           key={cell.id}
-                          className="px-6 py-4 text-sm"
+                          className="px-6 py-4 text-sm text-neutral-900"
                           style={{ color: 'hsl(var(--foreground))' }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -270,11 +272,11 @@ export function DataTable<TData>({
         {/* Paginación */}
         {enablePagination && !loading && table.getPageCount() > 1 && (
           <div
-            className="border-t border-muted px-6 py-4"
+            className="border-t border-neutral-200 px-6 py-4"
             style={{ backgroundColor: 'hsl(var(--neutral-50) / 0.3)' }}
           >
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted">
+              <div className="text-sm text-neutral-500">
                 Mostrando{' '}
                 <span className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
@@ -314,11 +316,11 @@ export function DataTable<TData>({
                 </Button>
 
                 <div className="flex items-center space-x-1">
-                  <span className="text-sm text-muted">Página</span>
+                  <span className="text-sm text-neutral-500">Página</span>
                   <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
                     {table.getState().pagination.pageIndex + 1}
                   </span>
-                  <span className="text-sm text-muted">de</span>
+                  <span className="text-sm text-neutral-500">de</span>
                   <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
                     {table.getPageCount()}
                   </span>
