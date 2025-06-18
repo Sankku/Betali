@@ -53,7 +53,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               </label>
             )}
             {description && (
-              <p className={cn('text-xs mt-1', error ? 'text-danger' : 'text-muted')}>
+              <p className={cn('text-xs mt-1', error ? 'text-danger' : 'text-neutral-500')}>
                 {description}
               </p>
             )}
@@ -146,7 +146,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             </label>
           )}
           {description && (
-            <p className={cn('text-xs mt-1', error ? 'text-danger' : 'text-muted')}>
+            <p className={cn('text-xs mt-1', error ? 'text-danger' : 'text-neutral-500')}>
               {description}
             </p>
           )}
