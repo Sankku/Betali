@@ -12,9 +12,9 @@ import {
 import { useWarehouseForm } from '../../../hooks/useWarehouseForm';
 import { Database } from '../../../types/database';
 import { useCreateWarehouse, useUpdateWarehouse } from '../../../hooks/useWarehouse';
-import { Input } from '../../ui/input';
+import { Input } from '../../ui/Form/input';
 import { Button } from '../../ui/button';
-import { Checkbox } from '../../ui/checkbox';
+import { Checkbox } from '../../ui/Form/checkbox';
 import { cn } from '../../../lib/utils';
 
 type WarehouseType = Database['public']['Tables']['warehouse']['Row'];

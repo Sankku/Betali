@@ -23,7 +23,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from './button';
-import { Input } from './input';
+import { Input } from './Form/input';
 import { cn } from '../../lib/utils';
 
 interface DataTableProps<TData> {

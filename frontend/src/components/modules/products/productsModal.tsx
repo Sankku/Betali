@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { X, Package, Calendar, Globe, FileText, Hash, AlertCircle } from 'lucide-react';
 import { Database } from '../../../types/database';
 import { useCreateProduct, useUpdateProduct } from '../../../hooks/useProducts';
-import { Input } from '../../ui/input';
+import { Input } from '../../ui/Form/input';
 import { Button } from '../../ui/button';
 import { cn } from '../../../lib/utils';
-import { Textarea } from '../../ui/form';
+import { Textarea } from '../../ui/Form/form';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
