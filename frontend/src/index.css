@@ -251,7 +251,39 @@
   .text-muted {
     color: oklch(0.45 0 0); 
   }
+
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   }
+    
+  .hover-lift:hover {
+    transform: translateY(-4px) scale(1.02);
+     box-shadow: 
+      0 20px 25px -5px oklch(0 0 0 / 0.1), 
+      0 10px 10px -5px oklch(0 0 0 / 0.04),
+      0 0 0 1px oklch(0 0 0 / 0.05);
+    }
+    
+  .card-gradient-primary {
+    background: linear-gradient(135deg, 
+      oklch(0.97 0.02 206) 0%, 
+      oklch(0.94 0.04 206) 50%, 
+      oklch(0.87 0.08 206) 100%);
+  }
   
+  .card-gradient-success {
+    background: linear-gradient(135deg, 
+      oklch(0.97 0.03 142) 0%, 
+      oklch(0.93 0.06 142) 50%, 
+      oklch(0.85 0.12 142) 100%);
+  }
+    
+  .card-gradient-warning {
+    background: linear-gradient(135deg, 
+      oklch(0.96 0.02 43) 0%, 
+      oklch(0.90 0.04 43) 50%, 
+      oklch(0.80 0.08 43) 100%);
+  }
 }
 
 @keyframes slide-in {
@@ -296,4 +328,116 @@
 
 [data-theme="light"] {
   --shadow-strength: 0.1;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-in-bottom {
+  animation: slide-in-bottom 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.2s ease-out;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.backdrop-blur-apple {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.form-input {
+  @apply w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm;
+  @apply placeholder:text-neutral-400;
+  @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+  @apply disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-neutral-50;
+  @apply transition-colors duration-200;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors;
+}
+
+.badge-default {
+  @apply bg-neutral-100 text-neutral-800 hover:bg-neutral-200;
+}
+
+.badge-primary {
+  @apply bg-primary-100 text-primary-800 hover:bg-primary-200;
+}
+
+.badge-success {
+  @apply bg-green-100 text-green-800 hover:bg-green-200;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 hover:bg-yellow-200;
+}
+
+.badge-danger {
+  @apply bg-red-100 text-red-800 hover:bg-red-200;
 }
