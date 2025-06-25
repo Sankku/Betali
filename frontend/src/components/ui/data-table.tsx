@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -21,9 +21,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   SlidersHorizontal,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from './button';
-import { Input } from './Form/input';
+import { Input } from './input';
+import { Loading } from './loading';
 import { cn } from '../../lib/utils';
 
 interface DataTableProps<TData> {
@@ -50,11 +52,11 @@ interface DataTableProps<TData> {
 
 export function DataTable<TData>({
   columns,
-  data,
+  data: rawData,
   loading = false,
   onRowClick,
   emptyMessage = 'No hay datos disponibles',
-  className = '',
+  className,
   searchable = true,
   searchPlaceholder = 'Buscar...',
   searchKey,
@@ -78,9 +80,29 @@ export function DataTable<TData>({
     pageSize,
   });
 
+  const data = useMemo(() => {
+    if (!rawData) {
+      console.warn('DataTable: prop "data" is undefined, using empty array');
+      return [];
+    }
+    if (!Array.isArray(rawData)) {
+      console.error('DataTable: prop "data" must be an array, received:', typeof rawData);
+      return [];
+    }
+    return rawData;
+  }, [rawData]);
+
+  const validatedColumns = useMemo(() => {
+    if (!columns || !Array.isArray(columns)) {
+      console.error('DataTable: prop "columns" must be an array');
+      return [];
+    }
+    return columns;
+  }, [columns]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: validatedColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: enablePagination ? getPaginationRowModel() : undefined,
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
@@ -102,7 +124,6 @@ export function DataTable<TData>({
   });
 
   const handleRowClick = (row: TData, event: React.MouseEvent) => {
-    // Solo ejecutar onRowClick si el click no viene de un botón o elemento interactivo
     const target = event.target as HTMLElement;
     const isButton = target.closest('button');
     const isLink = target.closest('a');
@@ -113,9 +134,22 @@ export function DataTable<TData>({
     }
   };
 
+  if (!validatedColumns.length) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 p-6">
+        <div className="flex items-center space-x-3 text-red-600">
+          <AlertCircle className="w-5 h-5" />
+          <div>
+            <h3 className="font-medium">Error de configuración</h3>
+            <p className="text-sm">Las columnas de la tabla no están configuradas correctamente.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Header con búsqueda y filtros */}
+    <div className={cn('space-y-4 border-0 bg-none', className)}>
       {(searchable || enableColumnVisibility) && (
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-1 items-center space-x-2">
@@ -152,14 +186,13 @@ export function DataTable<TData>({
         </div>
       )}
 
-      {/* Tabla */}
       <div className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
         <div className="relative">
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
               <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 border-2 border-neutral-200 border-t-primary-500 rounded-full animate-spin"></div>
+                  <Loading size="sm" />
                   <span className="text-sm font-medium text-neutral-700">Cargando...</span>
                 </div>
               </div>
@@ -170,10 +203,7 @@ export function DataTable<TData>({
             <table className="w-full">
               <thead className="bg-neutral-50">
                 {table.getHeaderGroups().map(headerGroup => (
-                  <tr
-                    key={headerGroup.id}
-                    className="border-b border-neutral-100 hover:bg-neutral-50"
-                  >
+                  <tr key={headerGroup.id} className="border-b border-neutral-100">
                     {headerGroup.headers.map(header => (
                       <th
                         key={header.id}
@@ -198,7 +228,7 @@ export function DataTable<TData>({
                                     'h-3 w-3 transition-colors',
                                     header.column.getIsSorted() === 'asc'
                                       ? 'text-primary-600'
-                                      : 'text-neutral-500'
+                                      : 'text-neutral-400'
                                   )}
                                 />
                                 <ChevronDown
@@ -206,7 +236,7 @@ export function DataTable<TData>({
                                     'h-3 w-3 -mt-1 transition-colors',
                                     header.column.getIsSorted() === 'desc'
                                       ? 'text-primary-600'
-                                      : 'text-neutral-500'
+                                      : 'text-neutral-400'
                                   )}
                                 />
                               </div>
@@ -219,26 +249,24 @@ export function DataTable<TData>({
                 ))}
               </thead>
 
-              <tbody
-                className="divide-y"
-                style={
-                  {
-                    '--tw-divide-opacity': '1',
-                    borderColor: 'hsl(var(--neutral-100))',
-                  } as React.CSSProperties
-                }
-              >
+              <tbody className="divide-y divide-neutral-100">
                 {table.getRowModel().rows.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-6 py-4 text-sm text-neutral-900">
+                    <td colSpan={validatedColumns.length} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center space-y-3">
-                        <div
-                          className="w-12 h-12 flex items-center justify-center rounded-lg"
-                          style={{ backgroundColor: 'hsl(var(--neutral-100))' }}
-                        >
-                          <Search className="h-6 w-6 text-neutral-500" />
+                        <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-neutral-100">
+                          <Search className="h-6 w-6 text-neutral-400" />
                         </div>
-                        <p className="font-medium text-neutral-500">{emptyMessage}</p>
+                        <div>
+                          <p className="font-medium text-neutral-900 mb-1">
+                            {loading ? 'Cargando datos...' : 'No hay datos'}
+                          </p>
+                          <p className="text-sm text-neutral-500">
+                            {loading
+                              ? 'Por favor espere mientras cargamos la información.'
+                              : emptyMessage}
+                          </p>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -248,16 +276,12 @@ export function DataTable<TData>({
                       key={row.id}
                       onClick={e => handleRowClick(row.original, e)}
                       className={cn(
-                        'transition-all duration-200',
-                        onRowClick && 'hover:bg-neutral-50 cursor-pointer'
+                        'transition-all duration-200 hover:bg-neutral-50',
+                        onRowClick && 'cursor-pointer'
                       )}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 text-sm text-neutral-900"
-                          style={{ color: 'hsl(var(--foreground))' }}
-                        >
+                        <td key={cell.id} className="px-6 py-4 text-sm text-neutral-900">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
@@ -269,20 +293,16 @@ export function DataTable<TData>({
           </div>
         </div>
 
-        {/* Paginación */}
-        {enablePagination && !loading && table.getPageCount() > 1 && (
-          <div
-            className="border-t border-neutral-200 px-6 py-4"
-            style={{ backgroundColor: 'hsl(var(--neutral-50) / 0.3)' }}
-          >
+        {enablePagination && !loading && data.length > 0 && table.getPageCount() > 1 && (
+          <div className="border-t border-neutral-200 px-6 py-4 bg-neutral-50/30">
             <div className="flex items-center justify-between">
               <div className="text-sm text-neutral-500">
                 Mostrando{' '}
-                <span className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                <span className="font-medium text-neutral-900">
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
                 </span>{' '}
                 a{' '}
-                <span className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                <span className="font-medium text-neutral-900">
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) *
                       table.getState().pagination.pageSize,
@@ -290,7 +310,7 @@ export function DataTable<TData>({
                   )}
                 </span>{' '}
                 de{' '}
-                <span className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                <span className="font-medium text-neutral-900">
                   {table.getFilteredRowModel().rows.length}
                 </span>{' '}
                 resultados
@@ -317,11 +337,11 @@ export function DataTable<TData>({
 
                 <div className="flex items-center space-x-1">
                   <span className="text-sm text-neutral-500">Página</span>
-                  <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                  <span className="text-sm font-medium text-neutral-900">
                     {table.getState().pagination.pageIndex + 1}
                   </span>
                   <span className="text-sm text-neutral-500">de</span>
-                  <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                  <span className="text-sm font-medium text-neutral-900">
                     {table.getPageCount()}
                   </span>
                 </div>

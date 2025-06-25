@@ -1,31 +1,31 @@
-// src/pages/Dashboard/Products.tsx
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ColumnDef } from '@tanstack/react-table';
+import { Package, Calendar, Globe, AlertTriangle, AlertCircle } from 'lucide-react';
+import { CRUDPage } from '../../components/templates/crud-page';
 import {
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Package,
-  Calendar,
-  Globe,
-  AlertTriangle,
-  Activity,
-} from 'lucide-react';
-import { DashboardLayout } from '../../components/layout/Dashboard';
-import { DataTable } from '../../components/ui/data-table';
+  createEntityTableColumns,
+  commonEntityActions,
+  EntityTableAction,
+} from '../../components/templates/entity-table';
+import { ProductModal, Product, ProductFormData } from '../../components/features/products';
+import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { ToastContainer } from '../../components/ui/toast';
-import { Database } from '../../types/database';
-import { ProductModal } from '../../components/modules/products/productsModal';
-import { useProductManagement, useDeleteProduct, useUpdateProduct } from '../../hooks/useProducts';
-
-type Product = Database['public']['Tables']['products']['Row'];
+import {
+  useProductManagement,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from '../../hooks/useProducts';
 
 interface ModalState {
   isOpen: boolean;
   mode: 'create' | 'edit' | 'view';
+  product?: Product;
+}
+
+interface DeleteConfirmState {
+  show: boolean;
   product?: Product;
 }
 
@@ -35,443 +35,213 @@ const ProductsPage: React.FC = () => {
     mode: 'create',
   });
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
-    show: boolean;
-    product?: Product;
-  }>({ show: false });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<DeleteConfirmState>({
+    show: false,
+  });
 
   const { products, isLoading, error, isAnyMutationLoading } = useProductManagement();
-
-  const deleteProduct = useDeleteProduct();
+  const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
 
   const openModal = (mode: ModalState['mode'], product?: Product) => {
-    setModal({
-      isOpen: true,
-      mode,
-      product,
-    });
+    setModal({ isOpen: true, mode, product });
   };
 
   const closeModal = () => {
-    setModal({
-      isOpen: false,
-      mode: 'create',
-      product: undefined,
-    });
+    setModal({ isOpen: false, mode: 'create', product: undefined });
   };
 
-  const handleActionClick = (e: React.MouseEvent, action: () => void) => {
-    e.preventDefault();
-    e.stopPropagation();
-    action();
-  };
+  const handleCreateClick = () => openModal('create');
 
-  const handleDelete = async (e: React.MouseEvent, product: Product) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDelete = async (product: Product) => {
     setShowDeleteConfirm({ show: true, product });
   };
 
   const confirmDelete = async () => {
     if (showDeleteConfirm.product) {
       try {
-        await deleteProduct.mutateAsync(showDeleteConfirm.product.product_id);
+        await deleteProduct.mutateAsync(showDeleteConfirm.product.id);
         setShowDeleteConfirm({ show: false });
       } catch (error) {
-        console.error('Error deleting product:', error);
+        console.error('Error al eliminar:', error);
       }
     }
   };
 
-  // Función para determinar el estado del producto basado en la fecha de vencimiento
-  const getProductStatus = (expirationDate: string) => {
-    const now = new Date();
-    const expDate = new Date(expirationDate);
-    const daysUntilExpiration = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
-
-    if (daysUntilExpiration < 0) {
-      return { status: 'expired', className: 'text-red-600', bgClassName: 'bg-red-100' };
-    } else if (daysUntilExpiration <= 30) {
-      return {
-        status: 'expiring_soon',
-        className: 'text-yellow-600',
-        bgClassName: 'bg-yellow-100',
-      };
-    } else if (daysUntilExpiration <= 90) {
-      return { status: 'warning', className: 'text-orange-600', bgClassName: 'bg-orange-100' };
-    } else {
-      return { status: 'good', className: 'text-green-600', bgClassName: 'bg-green-100' };
+  const handleSubmit = async (data: ProductFormData) => {
+    try {
+      if (modal.mode === 'create') {
+        await createProduct.mutateAsync(data);
+      } else if (modal.mode === 'edit' && modal.product) {
+        await updateProduct.mutateAsync({
+          id: modal.product.id,
+          ...data,
+        });
+      }
+      closeModal();
+    } catch (error) {
+      console.error('Error al guardar:', error);
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'expired':
-        return 'Vencido';
-      case 'expiring_soon':
-        return 'Por vencer';
-      case 'warning':
-        return 'Atención';
-      case 'good':
-        return 'Vigente';
-      default:
-        return 'Desconocido';
-    }
+  const isExpired = (expiryDate: string) => {
+    return new Date(expiryDate) < new Date();
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'expired':
-        return <AlertTriangle className="w-3 h-3" />;
-      case 'expiring_soon':
-        return <Calendar className="w-3 h-3" />;
-      case 'warning':
-        return <Calendar className="w-3 h-3" />;
-      case 'good':
-        return <Package className="w-3 h-3" />;
-      default:
-        return <Package className="w-3 h-3" />;
-    }
+  const isNearExpiry = (expiryDate: string) => {
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays > 0;
   };
 
-  const columns: ColumnDef<Product>[] = [
+  const tableColumns = [
     {
-      accessorKey: 'name',
-      header: 'Nombre',
-      cell: ({ row }) => {
-        const product = row.original;
+      accessorKey: 'name' as keyof Product,
+      header: 'Producto',
+      cell: (value: any, product: Product) => (
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-primary-50 rounded-lg">
+            <Package className="w-4 h-4 text-primary-600" />
+          </div>
+          <div>
+            <div className="font-medium text-neutral-900">{value}</div>
+            <div className="text-sm text-neutral-500">Lote: {product.batch_number}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'expiry_date' as keyof Product,
+      header: 'Vencimiento',
+      cell: (value: any) => {
+        const expired = isExpired(value);
+        const nearExpiry = isNearExpiry(value);
+
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                <Package className="w-4 h-4 text-green-600" />
-              </div>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-neutral-400" />
             <div>
-              <div className="font-medium text-gray-900">{product.name}</div>
-              {product.description && (
-                <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
+              <div
+                className={`text-sm font-medium ${
+                  expired ? 'text-red-600' : nearExpiry ? 'text-yellow-600' : 'text-neutral-900'
+                }`}
+              >
+                {new Date(value).toLocaleDateString('es-ES')}
+              </div>
+              {(expired || nearExpiry) && (
+                <Badge variant={expired ? 'danger' : 'warning'} size="sm">
+                  {expired ? 'Vencido' : 'Por vencer'}
+                </Badge>
               )}
             </div>
+            {(expired || nearExpiry) && (
+              <AlertCircle className={`w-4 h-4 ${expired ? 'text-red-500' : 'text-yellow-500'}`} />
+            )}
           </div>
         );
       },
     },
     {
-      accessorKey: 'batch_number',
-      header: 'Lote',
-      cell: ({ row }) => {
-        const batchNumber = row.getValue('batch_number') as string;
-        return (
-          <span className="font-mono text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-            {batchNumber}
-          </span>
-        );
-      },
+      accessorKey: 'country_of_origin' as keyof Product,
+      header: 'Origen',
+      cell: (value: any) => (
+        <div className="flex items-center text-neutral-600">
+          <Globe className="w-4 h-4 mr-2" />
+          {value}
+        </div>
+      ),
     },
     {
-      accessorKey: 'origin_country',
-      header: 'País de Origen',
-      cell: ({ row }) => {
-        const country = row.getValue('origin_country') as string;
-        return (
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">{country}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'expiration_date',
-      header: 'Vencimiento',
-      cell: ({ row }) => {
-        const expirationDate = row.getValue('expiration_date') as string;
-        const productStatus = getProductStatus(expirationDate);
-        const formattedDate = new Date(expirationDate).toLocaleDateString('es-ES');
-
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm text-gray-900">{formattedDate}</span>
-            <span
-              className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${productStatus.bgClassName} ${productStatus.className}`}
-            >
-              {getStatusIcon(productStatus.status)}
-              {getStatusLabel(productStatus.status)}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Fecha de Registro',
-      cell: ({ row }) => {
-        const createdAt = row.getValue('created_at') as string;
-        const date = new Date(createdAt);
-        return (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Calendar className="w-4 h-4" />
-            {date.toLocaleDateString('es-ES')}
-          </div>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Acciones',
-      cell: ({ row }) => {
-        const product = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={e => handleActionClick(e, () => openModal('view', product))}
-              className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition-colors"
-              title="Ver detalles"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-            <button
-              onClick={e => handleActionClick(e, () => openModal('edit', product))}
-              className="p-1 text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded transition-colors"
-              title="Editar"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-            <button
-              onClick={e => handleDelete(e, product)}
-              className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors"
-              title="Eliminar"
-              disabled={deleteProduct.isPending}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        );
-      },
+      accessorKey: 'created_at' as keyof Product,
+      header: 'Fecha Registro',
+      cell: (value: any) => (
+        <div className="text-sm text-neutral-600">
+          {new Date(value).toLocaleDateString('es-ES')}
+        </div>
+      ),
     },
   ];
 
-  // Estadísticas de productos
-  const productStats = React.useMemo(() => {
-    if (!products || !Array.isArray(products)) {
-      return { total: 0, expired: 0, expiring: 0, good: 0 };
-    }
+  const tableActions: EntityTableAction<Product>[] = [
+    commonEntityActions.view(product => openModal('view', product)),
+    commonEntityActions.edit(product => openModal('edit', product)),
+    commonEntityActions.delete(handleDelete),
+  ];
 
-    return products.reduce(
-      (acc, product) => {
-        const { status } = getProductStatus(product.expiration_date);
-        acc.total++;
-
-        switch (status) {
-          case 'expired':
-            acc.expired++;
-            break;
-          case 'expiring_soon':
-          case 'warning':
-            acc.expiring++;
-            break;
-          default:
-            acc.good++;
-        }
-
-        return acc;
-      },
-      { total: 0, expired: 0, expiring: 0, good: 0 }
-    );
-  }, [products]);
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <AlertTriangle className="h-5 w-5 text-red-400" />
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error al cargar productos</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>Hubo un problema al cargar los productos. Por favor, intenta nuevamente.</p>
-                </div>
-                <div className="mt-4">
-                  <Button onClick={() => window.location.reload()} variant="outline" size="sm">
-                    Reintentar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const columns = createEntityTableColumns(tableColumns, tableActions);
 
   return (
     <>
       <Helmet>
         <title>Productos - Dashboard</title>
-        <meta name="description" content="Gestión de productos" />
       </Helmet>
 
-      <DashboardLayout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="sm:flex sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
-                      <Package className="w-6 h-6 text-green-600" />
-                    </div>
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Gestiona tu inventario de productos
-                    </p>
-                  </div>
+      <CRUDPage
+        title="Gestión de Productos"
+        description="Administre el inventario de productos y su información"
+        data={products}
+        isLoading={isLoading}
+        error={error}
+        columns={columns}
+        onCreateClick={handleCreateClick}
+        onRowClick={product => openModal('view', product)}
+        isAnyMutationLoading={isAnyMutationLoading}
+      />
+
+      <ProductModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        mode={modal.mode}
+        product={modal.product}
+        onSubmit={handleSubmit}
+        isLoading={createProduct.isPending || updateProduct.isPending}
+      />
+
+      {showDeleteConfirm.show && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm" />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl border border-neutral-200 max-w-md w-full p-6">
+              <div className="flex items-center mb-4">
+                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
               </div>
-              <div className="mt-4 sm:mt-0">
-                <Button onClick={() => openModal('create')} disabled={isAnyMutationLoading}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Producto
-                </Button>
-              </div>
-            </div>
-          </div>
 
-          {/* Estadísticas rápidas */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Package className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Total Productos
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">{productStats.total}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <h3 className="text-lg font-medium text-center mb-2">¿Eliminar producto?</h3>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Activity className="h-6 w-6 text-green-400" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Vigentes</dt>
-                      <dd className="text-lg font-medium text-green-600">{productStats.good}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <p className="text-sm text-neutral-600 text-center mb-6">
+                Esta acción no se puede deshacer. El producto{' '}
+                <strong>{showDeleteConfirm.product?.name}</strong> será eliminado permanentemente.
+              </p>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-6 w-6 text-yellow-400" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Por Vencer</dt>
-                      <dd className="text-lg font-medium text-yellow-600">
-                        {productStats.expiring}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <AlertTriangle className="h-6 w-6 text-red-400" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Vencidos</dt>
-                      <dd className="text-lg font-medium text-red-600">{productStats.expired}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabla de productos */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <DataTable
-              data={Array.isArray(products) ? products : []}
-              columns={columns}
-              loading={isLoading}
-              searchable={true}
-              searchPlaceholder="Buscar productos..."
-              emptyMessage="No hay productos registrados"
-              pageSize={10}
-              enableSorting={true}
-              enablePagination={true}
-            />
-          </div>
-        </div>
-
-        {/* Modal de producto */}
-        {modal.isOpen && (
-          <ProductModal
-            isOpen={modal.isOpen}
-            onClose={closeModal}
-            mode={modal.mode}
-            product={modal.product}
-          />
-        )}
-
-        {/* Modal de confirmación de eliminación */}
-        {showDeleteConfirm.show && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <div className="flex items-center">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-                <h3 className="ml-2 text-lg font-medium text-gray-900">Confirmar eliminación</h3>
-              </div>
-              <div className="mt-3">
-                <p className="text-sm text-gray-500">
-                  ¿Estás seguro de que deseas eliminar el producto "
-                  {showDeleteConfirm.product?.name}"? Esta acción no se puede deshacer.
-                </p>
-              </div>
-              <div className="mt-5 flex justify-end space-x-3">
-                <Button variant="outline" onClick={() => setShowDeleteConfirm({ show: false })}>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm({ show: false })}
+                  className="flex-1"
+                  disabled={deleteProduct.isPending}
+                >
                   Cancelar
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={confirmDelete}
-                  disabled={deleteProduct.isPending}
+                  className="flex-1"
+                  loading={deleteProduct.isPending}
                 >
-                  {deleteProduct.isPending ? 'Eliminando...' : 'Eliminar'}
+                  Eliminar
                 </Button>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <ToastContainer />
-      </DashboardLayout>
+      <ToastContainer />
     </>
   );
 };
