@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Package, Calendar, Globe, AlertTriangle, AlertCircle } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
@@ -17,6 +17,14 @@ import {
   useUpdateProduct,
   useDeleteProduct,
 } from '../../hooks/useProducts';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+} from '../../components/ui';
 
 interface ModalState {
   isOpen: boolean;
@@ -68,6 +76,10 @@ const ProductsPage: React.FC = () => {
       }
     }
   };
+
+  const closeDeleteConfirm = useCallback(() => {
+    setShowDeleteConfirm({ show: false });
+  }, []);
 
   const handleSubmit = async (data: ProductFormData) => {
     try {
@@ -200,46 +212,42 @@ const ProductsPage: React.FC = () => {
         isLoading={createProduct.isPending || updateProduct.isPending}
       />
 
-      {showDeleteConfirm.show && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm" />
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl border border-neutral-200 max-w-md w-full p-6">
-              <div className="flex items-center mb-4">
-                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-
-              <h3 className="text-lg font-medium text-center mb-2">¿Eliminar producto?</h3>
-
-              <p className="text-sm text-neutral-600 text-center mb-6">
-                Esta acción no se puede deshacer. El producto{' '}
-                <strong>{showDeleteConfirm.product?.name}</strong> será eliminado permanentemente.
-              </p>
-
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteConfirm({ show: false })}
-                  className="flex-1"
-                  disabled={deleteProduct.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={confirmDelete}
-                  className="flex-1"
-                  loading={deleteProduct.isPending}
-                >
-                  Eliminar
-                </Button>
-              </div>
+      <Modal isOpen={showDeleteConfirm.show} onClose={closeDeleteConfirm} size="sm">
+        <ModalContent>
+          <ModalHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-          </div>
-        </div>
-      )}
+            <ModalTitle>¿Eliminar almacén?</ModalTitle>
+            <ModalDescription>
+              Esta acción no se puede deshacer. El almacén{' '}
+              <span className="font-medium text-neutral-900">
+                "{showDeleteConfirm.product?.name || 'seleccionado'}"
+              </span>{' '}
+              será eliminado permanentemente.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={closeDeleteConfirm}
+              disabled={deleteProduct.isPending}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              loading={deleteProduct.isPending}
+              className="w-full sm:w-auto"
+            >
+              Eliminar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ToastContainer />
     </>

@@ -60,29 +60,22 @@ export function CRUDPage<TEntity>({
           </div>
         </div>
         {beforeTable}
-        <Card variant="elevated" padding="none">
-          {error ? (
-            <div className="p-6 text-center">
-              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium text-neutral-900 mb-2">
-                Error al cargar los datos
-              </h3>
-              <p className="text-neutral-600">
-                {error.message || 'Ha ocurrido un error inesperado'}
-              </p>
+        {error ? (
+          <div className="p-6 text-center">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={data || []}
-              loading={isLoading}
-              onRowClick={onRowClick}
-            />
-          )}
-        </Card>
-
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">Error al cargar los datos</h3>
+            <p className="text-neutral-600">{error.message || 'Ha ocurrido un error inesperado'}</p>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={data || []}
+            loading={isLoading}
+            onRowClick={onRowClick}
+          />
+        )}
         {afterTable}
       </div>
     </DashboardLayout>

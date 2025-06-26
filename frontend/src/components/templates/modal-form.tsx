@@ -1,7 +1,7 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { LucideIcon } from 'lucide-react';
-import { Modal } from '../ui/modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 
@@ -84,7 +84,7 @@ export function ModalForm<TFormData = any>({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={size}>
-      <Modal.Header onClose={onClose}>
+      <ModalHeader>
         <div className="flex items-center space-x-3">
           {Icon && (
             <div className="p-2 rounded-lg bg-primary-50">
@@ -97,9 +97,9 @@ export function ModalForm<TFormData = any>({
           </div>
           <Badge variant={modeConfig.badge.variant}>{modeConfig.badge.label}</Badge>
         </div>
-      </Modal.Header>
+      </ModalHeader>
 
-      <Modal.Body>
+      <ModalBody>
         <form onSubmit={handleSubmit} className="space-y-6">
           {children}
 
@@ -107,10 +107,9 @@ export function ModalForm<TFormData = any>({
             <div className="border-t border-neutral-200 pt-6">{additionalSections}</div>
           )}
         </form>
-      </Modal.Body>
-
+      </ModalBody>
       {showFooter && (
-        <Modal.Footer>
+        <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
           {customFooter || (
             <>
               <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
@@ -128,7 +127,7 @@ export function ModalForm<TFormData = any>({
               )}
             </>
           )}
-        </Modal.Footer>
+        </ModalFooter>
       )}
     </Modal>
   );
