@@ -1,4 +1,3 @@
-// frontend/src/components/ui/modal.tsx - VERSIÓN FINAL CORREGIDA
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -8,18 +7,29 @@ import { Button } from './button';
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  description?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   closeOnOverlayClick?: boolean;
-  showCloseButton?: boolean;
   className?: string;
 }
+
+interface ModalContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 interface ModalHeaderProps {
   children: React.ReactNode;
-  onClose?: () => void;
-  showCloseButton?: boolean;
+  className?: string;
+}
+
+interface ModalTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface ModalDescriptionProps {
+  children: React.ReactNode;
   className?: string;
 }
 
@@ -32,21 +42,18 @@ interface ModalFooterProps {
   children: React.ReactNode;
   className?: string;
 }
-interface ModalComponent extends React.FC<ModalProps> {
-  Header: React.FC<ModalHeaderProps>;
-  Body: React.FC<ModalBodyProps>;
-  Footer: React.FC<ModalFooterProps>;
+
+interface ModalCloseButtonProps {
+  onClose: () => void;
+  className?: string;
 }
 
-const ModalBase: React.FC<ModalProps> = ({
+export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
-  //title,
-  //description,
   children,
   size = 'md',
   closeOnOverlayClick = true,
-  //showCloseButton = true,
   className,
 }) => {
   useEffect(() => {
@@ -89,10 +96,9 @@ const ModalBase: React.FC<ModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 overflow-y-auto animate-fade-in">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       <div
-        className="fixed inset-0 backdrop-blur-sm transition-all duration-300 bg-neutral-900/50"
+        className="fixed inset-0 backdrop-blur-sm transition-all duration-300 bg-neutral-900/50 animate-fade-in"
         onClick={handleOverlayClick}
       />
       <div className="flex min-h-full items-center justify-center p-4">
@@ -113,52 +119,68 @@ const ModalBase: React.FC<ModalProps> = ({
   );
 };
 
-const ModalHeader: React.FC<ModalHeaderProps> = ({
-  children,
-  onClose,
-  showCloseButton = true,
-  className,
-}) => (
-  <div
-    className={cn(
-      'flex items-center justify-between border-b border-neutral-200 px-6 py-4',
-      className
-    )}
-  >
-    <div className="flex-1">{children}</div>
-    {showCloseButton && onClose && (
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={onClose}
-        className="hover-lift text-neutral-500 hover:text-neutral-700"
-      >
-        <X className="h-4 w-4" />
-      </Button>
-    )}
-  </div>
+export const ModalContent: React.FC<ModalContentProps> = ({ children, className }) => (
+  <div className={cn('relative', className)}>{children}</div>
 );
 
-const ModalBody: React.FC<ModalBodyProps> = ({ children, className }) => (
+export const ModalHeader: React.FC<ModalHeaderProps> = ({ children, className }) => (
   <div className={cn('px-6 py-4', className)}>{children}</div>
 );
 
-const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => (
-  <div
-    className={cn(
-      'flex items-center justify-end space-x-3 border-t border-neutral-200 px-6 py-4',
-      className
-    )}
-  >
-    {children}
-  </div>
+export const ModalTitle: React.FC<ModalTitleProps> = ({ children, className }) => (
+  <h3 className={cn('text-lg font-semibold text-neutral-900', className)}>{children}</h3>
 );
 
-const Modal = ModalBase as ModalComponent;
-Modal.Header = ModalHeader;
-Modal.Body = ModalBody;
-Modal.Footer = ModalFooter;
+export const ModalDescription: React.FC<ModalDescriptionProps> = ({ children, className }) => (
+  <p className={cn('text-sm text-neutral-600 mt-2', className)}>{children}</p>
+);
 
-export { Modal };
+export const ModalBody: React.FC<ModalBodyProps> = ({ children, className }) => (
+  <div className={cn('px-6 py-4', className)}>{children}</div>
+);
 
-export type { ModalHeaderProps, ModalBodyProps, ModalFooterProps };
+export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => (
+  <div className={cn('px-6 py-4 border-t border-neutral-200', className)}>{children}</div>
+);
+
+export const ModalCloseButton: React.FC<ModalCloseButtonProps> = ({ onClose, className }) => (
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    onClick={onClose}
+    className={cn('absolute top-4 right-4 text-neutral-500 hover:text-neutral-700 z-10', className)}
+  >
+    <X className="h-4 w-4" />
+  </Button>
+);
+
+interface ModalComponent extends React.FC<ModalProps> {
+  Content: React.FC<ModalContentProps>;
+  Header: React.FC<ModalHeaderProps>;
+  Title: React.FC<ModalTitleProps>;
+  Description: React.FC<ModalDescriptionProps>;
+  Body: React.FC<ModalBodyProps>;
+  Footer: React.FC<ModalFooterProps>;
+  CloseButton: React.FC<ModalCloseButtonProps>;
+}
+
+const ComposedModal = Modal as ModalComponent;
+ComposedModal.Content = ModalContent;
+ComposedModal.Header = ModalHeader;
+ComposedModal.Title = ModalTitle;
+ComposedModal.Description = ModalDescription;
+ComposedModal.Body = ModalBody;
+ComposedModal.Footer = ModalFooter;
+ComposedModal.CloseButton = ModalCloseButton;
+
+export default ComposedModal;
+
+export type {
+  ModalContentProps,
+  ModalHeaderProps,
+  ModalTitleProps,
+  ModalDescriptionProps,
+  ModalBodyProps,
+  ModalFooterProps,
+  ModalCloseButtonProps,
+};

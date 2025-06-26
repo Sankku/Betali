@@ -14,6 +14,14 @@ import {
 } from '../../components/features/warehouse';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+} from '../../components/ui/modal';
 import { ToastContainer } from '../../components/ui/toast';
 import {
   useWarehouseManagement,
@@ -86,6 +94,10 @@ const WarehousesPage: React.FC = () => {
     }
   };
 
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm({ show: false });
+  };
+
   const handleSubmit = async (data: WarehouseFormData) => {
     try {
       if (modal.mode === 'create') {
@@ -145,7 +157,6 @@ const WarehousesPage: React.FC = () => {
       accessorKey: 'is_active' as keyof WarehouseWithStats,
       header: 'Estado',
       cell: (value: any, warehouse: WarehouseWithStats) => {
-        // Validar que warehouse existe
         if (!warehouse) {
           return (
             <div className="flex items-center space-x-2">
@@ -238,47 +249,42 @@ const WarehousesPage: React.FC = () => {
         isLoading={createWarehouse.isPending || updateWarehouse.isPending}
       />
 
-      {showDeleteConfirm.show && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm" />
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl border border-neutral-200 max-w-md w-full p-6">
-              <div className="flex items-center mb-4">
-                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-
-              <h3 className="text-lg font-medium text-center mb-2">¿Eliminar almacén?</h3>
-
-              <p className="text-sm text-neutral-600 text-center mb-6">
-                Esta acción no se puede deshacer. El almacén{' '}
-                <strong>{showDeleteConfirm.warehouse?.name || 'seleccionado'}</strong> será
-                eliminado permanentemente.
-              </p>
-
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteConfirm({ show: false })}
-                  className="flex-1"
-                  disabled={deleteWarehouse.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={confirmDelete}
-                  className="flex-1"
-                  loading={deleteWarehouse.isPending}
-                >
-                  Eliminar
-                </Button>
-              </div>
+      <Modal isOpen={showDeleteConfirm.show} onClose={closeDeleteConfirm} size="sm">
+        <ModalContent>
+          <ModalHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-          </div>
-        </div>
-      )}
+            <ModalTitle>¿Eliminar almacén?</ModalTitle>
+            <ModalDescription>
+              Esta acción no se puede deshacer. El almacén{' '}
+              <span className="font-medium text-neutral-900">
+                "{showDeleteConfirm.warehouse?.name || 'seleccionado'}"
+              </span>{' '}
+              será eliminado permanentemente.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={closeDeleteConfirm}
+              disabled={deleteWarehouse.isPending}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              loading={deleteWarehouse.isPending}
+              className="w-full sm:w-auto"
+            >
+              Eliminar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ToastContainer />
     </>
