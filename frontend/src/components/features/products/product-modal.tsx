@@ -6,21 +6,24 @@ import { Package } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
 
-// Schema de validación
 const productSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   batch_number: z.string().min(1, 'El número de lote es requerido'),
-  expiry_date: z.string().min(1, 'La fecha de vencimiento es requerida'),
-  country_of_origin: z.string().min(1, 'El país de origen es requerido'),
+  expiration_date: z.string().min(1, 'La fecha de vencimiento es requerida'),
+  origin_country: z.string().min(1, 'El país de origen es requerido'),
 });
 
 export interface Product {
-  id: string;
+  product_id: string;
   name: string;
   batch_number: string;
-  expiry_date: string;
-  country_of_origin: string;
+  expiration_date: string;
+  origin_country: string;
   created_at: string;
+  updated_at?: string;
+  owner_id?: string;
+  description?: string;
+  senasa_product_id?: string;
 }
 
 export interface ProductModalProps {
@@ -45,8 +48,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     defaultValues: {
       name: product?.name || '',
       batch_number: product?.batch_number || '',
-      expiry_date: product?.expiry_date || '',
-      country_of_origin: product?.country_of_origin || '',
+      expiration_date: product?.expiration_date || '', // ✅ CORREGIDO
+      origin_country: product?.origin_country || '', // ✅ CORREGIDO
     },
   });
 
@@ -89,15 +92,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         form.reset({
           name: '',
           batch_number: '',
-          country_of_origin: '',
-          expiry_date: '',
+          origin_country: '',
+          expiration_date: '',
         });
       } else if (product && (mode === 'edit' || mode === 'view')) {
         form.reset({
           name: product.name || '',
           batch_number: product.batch_number || '',
-          country_of_origin: product.country_of_origin ?? true,
-          expiry_date: product.expiry_date ?? '',
+          origin_country: product.origin_country || '',
+          expiration_date: product.expiration_date || '',
         });
       }
     }

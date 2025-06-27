@@ -7,60 +7,65 @@ type Product = Database["public"]["Tables"]["products"]["Row"];
  * Servicio para gestionar productos
  */
 export const productsService = {
-  /**
-   * Obtiene todos los productos del usuario autenticado
-   */
   async getAll(): Promise<Product[]> {
     try {
-      return await httpClient.get<Product[]>('/api/products');
+      const response = await httpClient.get<{ data: Product[] }>('/api/products');
+      return response.data || response;
     } catch (error) {
       console.error('Error al obtener productos:', error);
       throw error;
     }
   },
 
-  /**
-   * Obtiene un producto específico por su ID
-   */
   async getById(id: string): Promise<Product> {
     try {
-      return await httpClient.get<Product>(`/api/products/${id}`);
+      const response = await httpClient.get<{ data: Product }>(`/api/products/${id}`);
+      return response.data || response;
     } catch (error) {
       console.error(`Error al obtener producto ${id}:`, error);
       throw error;
     }
   },
 
-  /**
-   * Crea un nuevo producto
-   */
-  async create(productData: Partial<Product>): Promise<Product> {
+  async create(productData: {
+    name: string;
+    batch_number: string;
+    origin_country: string;
+    expiration_date: string;
+    description?: string;
+    senasa_product_id?: string;
+  }): Promise<Product> {
     try {
-      // El backend asignará automáticamente el owner_id
-      return await httpClient.post<Product>('/api/products', productData);
+      const response = await httpClient.post<{ data: Product }>('/api/products', productData);
+      return response.data || response; 
     } catch (error) {
       console.error('Error al crear producto:', error);
       throw error;
     }
   },
 
-  /**
-   * Actualiza un producto existente
-   */
-  async update(id: string, productData: Partial<Product>): Promise<Product> {
+  async update(id: string, productData: {
+    name: string;
+    batch_number: string;
+    origin_country: string;
+    expiration_date: string;
+    description?: string;
+    senasa_product_id?: string;
+  }): Promise<Product> {
     try {
-      return await httpClient.put<Product>(`/api/products/${id}`, productData);
+      const response = await httpClient.put<{ data: Product }>(`/api/products/${id}`, productData);
+      return response.data || response; 
     } catch (error) {
       console.error(`Error al actualizar producto ${id}:`, error);
       throw error;
     }
   },
 
-  /**
-   * Elimina un producto
-   */
   async delete(id: string): Promise<{ message: string }> {
     try {
+      if (!id || id === 'undefined' || id === 'null') {
+        throw new Error('ID de producto inválido o faltante');
+      }
       return await httpClient.delete<{ message: string }>(`/api/products/${id}`);
     } catch (error) {
       console.error(`Error al eliminar producto ${id}:`, error);

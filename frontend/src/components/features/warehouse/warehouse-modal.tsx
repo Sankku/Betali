@@ -14,7 +14,7 @@ const warehouseSchema = z.object({
 });
 
 export interface WarehouseWithStats {
-  id: string;
+  warehouse_id: string;
   name: string;
   location: string;
   is_active: boolean;

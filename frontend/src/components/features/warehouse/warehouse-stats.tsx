@@ -17,7 +17,7 @@ export interface WarehouseStatsData {
 
 export interface WarehouseStatsProps {
   warehouse: {
-    id: string;
+    warehouse_id: string;
     name: string;
     created_at: string;
     stats?: WarehouseStatsData;
