@@ -63,17 +63,23 @@ const ProductsPage: React.FC = () => {
   const handleCreateClick = () => openModal('create');
 
   const handleDelete = async (product: Product) => {
+    if (!product?.product_id) {
+      console.error('Product ID is missing:', product);
+      return;
+    }
     setShowDeleteConfirm({ show: true, product });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.product) {
+    if (showDeleteConfirm.product?.product_id) {
       try {
-        await deleteProduct.mutateAsync(showDeleteConfirm.product.id);
+        await deleteProduct.mutateAsync(showDeleteConfirm.product.product_id);
         setShowDeleteConfirm({ show: false });
       } catch (error) {
         console.error('Error al eliminar:', error);
       }
+    } else {
+      console.error('Cannot delete: Product ID is missing');
     }
   };
 
@@ -85,10 +91,10 @@ const ProductsPage: React.FC = () => {
     try {
       if (modal.mode === 'create') {
         await createProduct.mutateAsync(data);
-      } else if (modal.mode === 'edit' && modal.product) {
+      } else if (modal.mode === 'edit' && modal.product?.product_id) {
         await updateProduct.mutateAsync({
-          id: modal.product.id,
-          ...data,
+          id: modal.product.product_id,
+          data: data,
         });
       }
       closeModal();
@@ -126,7 +132,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'expiry_date' as keyof Product,
+      accessorKey: 'expiration_date' as keyof Product,
       header: 'Vencimiento',
       cell: (value: any) => {
         const expired = isExpired(value);
@@ -157,7 +163,7 @@ const ProductsPage: React.FC = () => {
       },
     },
     {
-      accessorKey: 'country_of_origin' as keyof Product,
+      accessorKey: 'origin_country' as keyof Product,
       header: 'Origen',
       cell: (value: any) => (
         <div className="flex items-center text-neutral-600">
@@ -178,9 +184,15 @@ const ProductsPage: React.FC = () => {
   ];
 
   const tableActions: EntityTableAction<Product>[] = [
-    commonEntityActions.view(product => openModal('view', product)),
-    commonEntityActions.edit(product => openModal('edit', product)),
-    commonEntityActions.delete(handleDelete),
+    commonEntityActions.view((product: Product) => {
+      openModal('view', product);
+    }),
+    commonEntityActions.edit((product: Product) => {
+      openModal('edit', product);
+    }),
+    commonEntityActions.delete((product: Product) => {
+      handleDelete(product);
+    }),
   ];
 
   const columns = createEntityTableColumns(tableColumns, tableActions);
@@ -248,7 +260,6 @@ const ProductsPage: React.FC = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
       <ToastContainer />
     </>
   );

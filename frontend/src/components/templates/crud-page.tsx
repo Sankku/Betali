@@ -4,7 +4,6 @@ import { Plus, AlertTriangle } from 'lucide-react';
 import { DashboardLayout } from '../layout/Dashboard';
 import { DataTable } from '../ui/data-table';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
 import { cn } from '../../lib/utils';
 
 export interface CRUDPageProps<TEntity> {

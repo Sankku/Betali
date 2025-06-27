@@ -71,7 +71,7 @@ const WarehousesPage: React.FC = () => {
   const handleToggleActive = async (warehouse: WarehouseWithStats) => {
     try {
       await deactivateWarehouse.mutateAsync({
-        id: warehouse.id,
+        id: warehouse.warehouse_id,
         is_active: !warehouse.is_active,
       });
     } catch (error) {
@@ -80,17 +80,23 @@ const WarehousesPage: React.FC = () => {
   };
 
   const handleDelete = async (warehouse: WarehouseWithStats) => {
+    if (!warehouse?.warehouse_id) {
+      console.error('Warehouse ID is missing:', warehouse);
+      return;
+    }
     setShowDeleteConfirm({ show: true, warehouse });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.warehouse) {
+    if (showDeleteConfirm.warehouse?.warehouse_id) {
       try {
-        await deleteWarehouse.mutateAsync(showDeleteConfirm.warehouse.id);
+        await deleteWarehouse.mutateAsync(showDeleteConfirm.warehouse.warehouse_id);
         setShowDeleteConfirm({ show: false });
       } catch (error) {
-        console.error('Error al eliminar:', error);
+        console.error('Error while deleting:', error);
       }
+    } else {
+      console.error('Cannot delete: Warehouse ID is missing');
     }
   };
 
@@ -102,10 +108,10 @@ const WarehousesPage: React.FC = () => {
     try {
       if (modal.mode === 'create') {
         await createWarehouse.mutateAsync(data);
-      } else if (modal.mode === 'edit' && modal.warehouse) {
+      } else if (modal.mode === 'edit' && modal.warehouse?.warehouse_id) {
         await updateWarehouse.mutateAsync({
-          id: modal.warehouse.id,
-          ...data,
+          id: modal.warehouse.warehouse_id,
+          data: data,
         });
       }
       closeModal();
@@ -115,8 +121,8 @@ const WarehousesPage: React.FC = () => {
   };
 
   const getSafeId = (warehouse: WarehouseWithStats): string => {
-    if (!warehouse?.id) return 'N/A';
-    const id = String(warehouse.id);
+    if (!warehouse?.warehouse_id) return 'N/A';
+    const id = String(warehouse.warehouse_id);
     return id.length > 8 ? id.slice(0, 8) : id;
   };
 
@@ -209,9 +215,15 @@ const WarehousesPage: React.FC = () => {
   ];
 
   const tableActions: EntityTableAction<WarehouseWithStats>[] = [
-    commonEntityActions.view(warehouse => openModal('view', warehouse)),
-    commonEntityActions.edit(warehouse => openModal('edit', warehouse)),
-    commonEntityActions.delete(handleDelete),
+    commonEntityActions.view((warehouse: WarehouseWithStats) => {
+      openModal('view', warehouse);
+    }),
+    commonEntityActions.edit((warehouse: WarehouseWithStats) => {
+      openModal('edit', warehouse);
+    }),
+    commonEntityActions.delete((warehouse: WarehouseWithStats) => {
+      handleDelete(warehouse);
+    }),
   ];
 
   const columns = createEntityTableColumns(tableColumns, tableActions);

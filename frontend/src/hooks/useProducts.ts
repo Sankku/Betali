@@ -1,18 +1,7 @@
-// src/hooks/useProducts.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsService } from "../services/api/productsService";
 import { toast } from "../lib/toast"; 
-
-
-export interface ProductFormData {
-  name: string;
-  batch_number: string;
-  origin_country: string;
-  expiration_date: string;
-  description?: string;
-  senasa_product_id?: string;
-}
-
+import { ProductFormData } from "../components/features";
 export interface UseProductsOptions {
   enabled?: boolean;
   refetchInterval?: number;
@@ -23,7 +12,7 @@ export function useProducts(options: UseProductsOptions = {}) {
     queryKey: ["products"],
     queryFn: async () => {
       const response = await productsService.getAll();
-      return response?.data || response;
+      return Array.isArray(response) ? response : (response?.data || []);
     },
     enabled: options.enabled !== false,
     refetchInterval: options.refetchInterval,
