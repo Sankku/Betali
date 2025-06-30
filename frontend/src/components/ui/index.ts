@@ -11,3 +11,6 @@ export * from './empty-state';
 export * from './alert';
 export * from './data-table';
 export * from './toast';
+export * from './select';
+export * from './textarea';
+export * from './label';

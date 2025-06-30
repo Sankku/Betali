@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Dashboard/Products";
 import Warehouses from "./pages/Dashboard/Warehouse";
+import StockMovements from "./pages/Dashboard/StockMovements";
 
 function App() {
   return (
@@ -41,6 +42,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Warehouses />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/stock-movements"
+                  element={
+                    <ProtectedRoute>
+                      <StockMovements />
                     </ProtectedRoute>
                   }
                 />

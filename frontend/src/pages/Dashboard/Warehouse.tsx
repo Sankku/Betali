@@ -70,9 +70,9 @@ const WarehousesPage: React.FC = () => {
 
   const handleToggleActive = async (warehouse: WarehouseWithStats) => {
     try {
-      await deactivateWarehouse.mutateAsync({
+      await updateWarehouse.mutateAsync({
         id: warehouse.warehouse_id,
-        is_active: !warehouse.is_active,
+        data: { is_active: !warehouse.is_active }
       });
     } catch (error) {
       console.error('Error al cambiar estado:', error);

@@ -8,10 +8,12 @@ const { StockMovementRepository } = require('../repositories/StockMovementReposi
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
 const { WarehouseService } = require('../services/WarehouseService');
+const { StockMovementService } = require('../services/StockMovementService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
 const { WarehouseController } = require('../controllers/WarehouseController');
+const { StockMovementController } = require('../controllers/StockMovementController');
 
 /**
  * Dependency injection container
@@ -119,6 +121,14 @@ function initializeContainer() {
     return new WarehouseService(warehouseRepository, stockMovementRepository, logger);
   }, true);
 
+  container.register('stockMovementService', () => {
+    const stockMovementRepository = container.get('stockMovementRepository');
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const logger = container.get('logger');
+    return new StockMovementService(stockMovementRepository, productRepository, warehouseRepository, logger);
+  }, true);
+
   container.register('dashboardService', () => {
     const productRepository = container.get('productRepository');
     const warehouseRepository = container.get('warehouseRepository');
@@ -142,6 +152,11 @@ function initializeContainer() {
     return new WarehouseController(warehouseService);
   }, true);
 
+  container.register('stockMovementController', () => {
+    const stockMovementService = container.get('stockMovementService');
+    return new StockMovementController(stockMovementService);
+  }, true);
+
   container.register('dashboardController', () => {
     const dashboardService = container.get('dashboardService');
     return new DashboardController(dashboardService);
@@ -163,6 +178,10 @@ const ServiceFactory = {
     return container.get('warehouseController');
   },
 
+  createStockMovementController() {
+    return container.get('stockMovementController');
+  },
+
   createDashboardController() {
     return container.get('dashboardController');
   },
@@ -175,8 +194,16 @@ const ServiceFactory = {
     return container.get('warehouseService');
   },
 
+  createStockMovementService() {
+    return container.get('stockMovementService');
+  },
+
   createDashboardService() {
     return container.get('dashboardService');
+  },
+
+  getInstance() {
+    return this;
   },
 
   createLogger(context = 'Default') {
