@@ -11,6 +11,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const productRoutes = require('./routes/products');
 const dashboardRoutes = require('./routes/dashboard');
 const warehouseRoutes = require('./routes/warehouse'); 
+const createStockMovementRoutes = require('./routes/stockMovements');
 const healthRoutes = require('./routes/health');
 
 /**
@@ -109,6 +110,7 @@ class Application {
 
     this.app.use('/api/products', productRoutes);
     this.app.use('/api/warehouse', warehouseRoutes); 
+    this.app.use('/api/stock-movements', createStockMovementRoutes());
     this.app.use('/api/dashboard', dashboardRoutes);
 
     this.app.get('/', (req, res) => {
@@ -120,7 +122,8 @@ class Application {
         endpoints: {
           health: '/health',
           products: '/api/products',
-          warehouses: '/api/warehouse', 
+          warehouses: '/api/warehouse',
+          stockMovements: '/api/stock-movements',
           dashboard: '/api/dashboard'
         }
       });

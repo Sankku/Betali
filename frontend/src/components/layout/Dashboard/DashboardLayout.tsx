@@ -40,7 +40,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       label: "Depósitos",
     },
     {
-      path: "/dashboard/movimientos",
+      path: "/dashboard/stock-movements",
       icon: <RefreshCw className="w-5 h-5" />,
       label: "Movimientos",
     },

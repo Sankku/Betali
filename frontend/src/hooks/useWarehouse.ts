@@ -17,8 +17,7 @@ export function useWarehouses(options: UseWarehousesOptions = {}) {
   return useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
-      const response = await warehouseService.getAll();
-      return response?.data || response;
+      return await warehouseService.getAll();
     },
     enabled: options.enabled !== false,
     refetchInterval: options.refetchInterval,
@@ -30,8 +29,7 @@ export function useWarehouse(id: string, enabled = true) {
   return useQuery({
     queryKey: ["warehouse", id],
     queryFn: async () => {
-      const response = await warehouseService.getById(id);
-      return response?.data || response;
+      return await warehouseService.getById(id);
     },
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000,
@@ -59,8 +57,8 @@ export function useUpdateWarehouse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: WarehouseFormData }) =>
-      warehouseService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<WarehouseFormData> & { name?: string; location?: string } }) =>
+      warehouseService.update(id, data as any),
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["warehouse", variables.id] });
@@ -113,8 +111,7 @@ export function useWarehouseMovements(
   return useQuery({
     queryKey: ["warehouse-movements", warehouseId, options],
     queryFn: async () => {
-      const response = await warehouseService.getMovements(warehouseId, options);
-      return response?.data || response;
+      return await warehouseService.getMovements(warehouseId, options);
     },
     enabled: !!warehouseId,
     staleTime: 2 * 60 * 1000, 
