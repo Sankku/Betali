@@ -16,9 +16,9 @@ const warehouseSchema = z.object({
 export interface WarehouseWithStats {
   warehouse_id: string;
   name: string;
-  location: string;
-  is_active: boolean;
-  created_at: string;
+  location: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
   stats?: {
     totalMovements: number;
     recentMovements: Array<{

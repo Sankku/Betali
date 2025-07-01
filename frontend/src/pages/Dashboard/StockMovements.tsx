@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowUpDown, Package, Warehouse, Calendar, FileText } from 'lucide-react';
+import { Package, Warehouse, Calendar, FileText } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
 import {
   createEntityTableColumns,
@@ -38,7 +38,7 @@ interface ModalState {
 
 const MOVEMENT_TYPE_COLORS = {
   entrada: 'success' as const,
-  salida: 'destructive' as const,
+  salida: 'danger' as const,
   ajuste: 'warning' as const,
   transferencia: 'default' as const,
 };
@@ -127,104 +127,6 @@ export default function StockMovementsPage() {
     }
   };
 
-  // Table columns
-  const columns = createEntityTableColumns<StockMovementWithDetails>([
-    {
-      id: 'movement_type',
-      header: 'Tipo',
-      accessorKey: 'movement_type',
-      cell: ({ row }) => {
-        const type = row.original.movement_type;
-        return (
-          <Badge
-            variant={MOVEMENT_TYPE_COLORS[type as keyof typeof MOVEMENT_TYPE_COLORS] || 'default'}
-          >
-            {MOVEMENT_TYPE_LABELS[type as keyof typeof MOVEMENT_TYPE_LABELS] || type}
-          </Badge>
-        );
-      },
-    },
-    {
-      id: 'product',
-      header: 'Producto',
-      cell: ({ row }) => {
-        const product = row.original.product;
-        return product?.name ? (
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span className="max-w-48 truncate">{product.name}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin producto</span>
-        );
-      },
-    },
-    {
-      id: 'warehouse',
-      header: 'Almacén',
-      cell: ({ row }) => {
-        const warehouse = row.original.warehouse;
-        return warehouse?.name ? (
-          <div className="flex items-center gap-2">
-            <Warehouse className="h-4 w-4 text-muted-foreground" />
-            <span className="max-w-32 truncate">{warehouse.name}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin almacén</span>
-        );
-      },
-    },
-    {
-      id: 'quantity',
-      header: 'Cantidad',
-      accessorKey: 'quantity',
-      cell: ({ row }) => {
-        const quantity = row.original.quantity;
-        const type = row.original.movement_type;
-        const isPositive = type === 'entrada' || type === 'ajuste';
-
-        return (
-          <div className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {isPositive ? '+' : '-'}
-            {Math.abs(quantity || 0)}
-          </div>
-        );
-      },
-    },
-    {
-      id: 'reference',
-      header: 'Referencia',
-      accessorKey: 'reference',
-      cell: ({ row }) => {
-        const reference = row.original.reference;
-        return reference ? (
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="max-w-32 truncate">{reference}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin referencia</span>
-        );
-      },
-    },
-    {
-      id: 'movement_date',
-      header: 'Fecha',
-      accessorKey: 'movement_date',
-      cell: ({ row }) => {
-        const date = row.original.movement_date;
-        return date ? (
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(date).toLocaleDateString()}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin fecha</span>
-        );
-      },
-    },
-  ]);
-
   // *** CORRECCIÓN FINAL: Usar el patrón correcto para commonEntityActions ***
   const actions: EntityTableAction<StockMovementWithDetails>[] = [
     commonEntityActions.view((movement: StockMovementWithDetails) => {
@@ -237,6 +139,100 @@ export default function StockMovementsPage() {
       handleDelete(movement);
     }),
   ];
+
+  // Table columns
+  const columns = createEntityTableColumns<StockMovementWithDetails>([
+    {
+      header: 'Tipo',
+      accessorKey: 'movement_type',
+      cell: (_, row) => {
+        const type = row.movement_type;
+        return (
+          <Badge
+            variant={MOVEMENT_TYPE_COLORS[type as keyof typeof MOVEMENT_TYPE_COLORS] || 'default'}
+          >
+            {MOVEMENT_TYPE_LABELS[type as keyof typeof MOVEMENT_TYPE_LABELS] || type}
+          </Badge>
+        );
+      },
+    },
+    {
+      header: 'Producto',
+      accessorKey: 'product',
+      cell: (_, row) => {
+        const product = row.product;
+        return product?.name ? (
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <span className="max-w-48 truncate">{product.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin producto</span>
+        );
+      },
+    },
+    {
+      header: 'Almacén',
+      accessorKey: 'warehouse',
+      cell: (_, row) => {
+        const warehouse = row.warehouse;
+        return warehouse?.name ? (
+          <div className="flex items-center gap-2">
+            <Warehouse className="h-4 w-4 text-muted-foreground" />
+            <span className="max-w-32 truncate">{warehouse.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin almacén</span>
+        );
+      },
+    },
+    {
+      header: 'Cantidad',
+      accessorKey: 'quantity',
+      cell: (_, row) => {
+        const quantity = row.quantity;
+        const type = row.movement_type;
+        const isPositive = type === 'entrada' || type === 'ajuste';
+
+        return (
+          <div className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? '+' : '-'}
+            {Math.abs(quantity || 0)}
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Referencia',
+      accessorKey: 'reference',
+      cell: (_, row) => {
+        const reference = row.reference;
+        return reference ? (
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="max-w-32 truncate">{reference}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin referencia</span>
+        );
+      },
+    },
+    {
+      header: 'Fecha',
+      accessorKey: 'movement_date',
+      cell: (_, row) => {
+        const date = row.movement_date;
+        return date ? (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{new Date(date).toLocaleDateString()}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin fecha</span>
+        );
+      },
+    },
+  ], actions);
 
   const isLoaderVisible =
     createMovement.isPending || updateMovement.isPending || deleteMovement.isPending;
@@ -254,20 +250,11 @@ export default function StockMovementsPage() {
       <CRUDPage
         title="Movimientos de Stock"
         description="Gestiona entradas, salidas y ajustes de inventario"
-        icon={ArrowUpDown}
         data={movements}
         columns={columns}
-        actions={actions}
         isLoading={isLoading || isLoaderVisible}
         error={error}
         onCreateClick={handleCreateClick}
-        createButtonText="Nuevo Movimiento"
-        emptyStateTitle="No hay movimientos registrados"
-        emptyStateDescription="Comienza registrando tu primer movimiento de stock"
-        searchPlaceholder="Buscar movimientos..."
-        getSearchableText={movement =>
-          `${movement.movement_type} ${movement.product?.name || ''} ${movement.warehouse?.name || ''} ${movement.reference || ''}`
-        }
       />
 
       {/* Create/Edit Modal */}
