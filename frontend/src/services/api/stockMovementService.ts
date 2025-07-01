@@ -1,9 +1,9 @@
 import { httpClient } from "../http/httpClient";
 import { Database } from "../../types/database";
 
-type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row"];
-type StockMovementInsert = Database["public"]["Tables"]["stock_movements"]["Insert"];
-type StockMovementUpdate = Database["public"]["Tables"]["stock_movements"]["Update"];
+export type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row"];
+export type StockMovementInsert = Database["public"]["Tables"]["stock_movements"]["Insert"];
+export type StockMovementUpdate = Database["public"]["Tables"]["stock_movements"]["Update"];
 
 export interface StockMovementWithDetails extends StockMovement {
   product?: Database["public"]["Tables"]["products"]["Row"];
@@ -20,11 +20,11 @@ export interface StockMovementFormData {
 }
 
 /**
- * Servicio para gestionar movimientos de stock
+ * Service to handle stock movements
  */
 export const stockMovementService = {
   /**
-   * Obtener todos los movimientos de stock
+   * Get all the movements
    */
   async getAll(): Promise<StockMovementWithDetails[]> {
     try {
@@ -37,7 +37,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Obtener movimiento por ID
+   * Get movement by id
    */
   async getById(id: string): Promise<StockMovementWithDetails> {
     try {
@@ -50,7 +50,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Crear nuevo movimiento
+   * Create a new movement
    */
   async create(movementData: StockMovementFormData): Promise<{
     message: string;
@@ -68,7 +68,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Actualizar movimiento existente
+   * Update movements
    */
   async update(
     id: string, 
@@ -89,7 +89,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Eliminar movimiento
+   * Delete movement
    */
   async delete(id: string): Promise<{
     message: string;
@@ -105,7 +105,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Obtener movimientos por producto
+   * Get movements by products
    */
   async getByProduct(productId: string): Promise<StockMovementWithDetails[]> {
     try {
@@ -118,7 +118,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Obtener movimientos por almacén
+   * get movements by warehouse
    */
   async getByWarehouse(warehouseId: string): Promise<StockMovementWithDetails[]> {
     try {
@@ -131,7 +131,7 @@ export const stockMovementService = {
   },
 
   /**
-   * Obtener movimientos por rango de fechas
+   * Get movements by a range of dates
    */
   async getByDateRange(startDate: string, endDate: string): Promise<StockMovementWithDetails[]> {
     try {

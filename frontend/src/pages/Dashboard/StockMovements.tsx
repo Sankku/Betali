@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ArrowUpDown, Package, Warehouse, Calendar, FileText } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
@@ -32,7 +32,7 @@ import {
 
 interface ModalState {
   isOpen: boolean;
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'view';
   movement?: StockMovementWithDetails;
 }
 
@@ -68,21 +68,30 @@ export default function StockMovementsPage() {
   const deleteMovement = useDeleteStockMovement();
 
   // Modal handlers
-  const openModal = useCallback((mode: 'create' | 'edit', movement?: StockMovementWithDetails) => {
-    setModal({ isOpen: true, mode, movement });
-  }, []);
+  const openModal = useCallback(
+    (mode: 'create' | 'edit' | 'view', movement?: StockMovementWithDetails) => {
+      console.log('openModal called with:', { mode, movement }); // Debug
+      setModal({ isOpen: true, mode, movement });
+    },
+    []
+  );
 
   const closeModal = () => {
+    console.log('closeModal called'); // Debug
     setModal({ isOpen: false, mode: 'create', movement: undefined });
   };
 
-  const handleCreateClick = () => openModal('create');
+  const handleCreateClick = () => {
+    console.log('handleCreateClick called'); // Debug
+    openModal('create');
+  };
 
-  const handleEdit = async (movement: StockMovementWithDetails) => {
+  const handleEdit = (movement: StockMovementWithDetails) => {
+    console.log('handleEdit called with:', movement); // Debug
     openModal('edit', movement);
   };
 
-  const handleDelete = async (movement: StockMovementWithDetails) => {
+  const handleDelete = (movement: StockMovementWithDetails) => {
     if (!movement?.movement_id) {
       console.error('Movement ID is missing:', movement);
       return;
@@ -103,6 +112,7 @@ export default function StockMovementsPage() {
 
   const handleSubmit = async (data: StockMovementFormData) => {
     try {
+      console.log('handleSubmit called with:', { mode: modal.mode, data }); // Debug
       if (modal.mode === 'create') {
         await createMovement.mutateAsync(data);
       } else if (modal.movement?.movement_id) {
@@ -139,11 +149,13 @@ export default function StockMovementsPage() {
       header: 'Producto',
       cell: ({ row }) => {
         const product = row.original.product;
-        return (
+        return product?.name ? (
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-muted-foreground" />
-            <span>{product?.name || 'Sin producto'}</span>
+            <span className="max-w-48 truncate">{product.name}</span>
           </div>
+        ) : (
+          <span className="text-muted-foreground">Sin producto</span>
         );
       },
     },
@@ -152,11 +164,13 @@ export default function StockMovementsPage() {
       header: 'Almacén',
       cell: ({ row }) => {
         const warehouse = row.original.warehouse;
-        return (
+        return warehouse?.name ? (
           <div className="flex items-center gap-2">
             <Warehouse className="h-4 w-4 text-muted-foreground" />
-            <span>{warehouse?.name || 'Sin almacén'}</span>
+            <span className="max-w-32 truncate">{warehouse.name}</span>
           </div>
+        ) : (
+          <span className="text-muted-foreground">Sin almacén</span>
         );
       },
     },
@@ -164,9 +178,18 @@ export default function StockMovementsPage() {
       id: 'quantity',
       header: 'Cantidad',
       accessorKey: 'quantity',
-      cell: ({ row }) => (
-        <div className="text-right font-medium">{row.original.quantity.toLocaleString()}</div>
-      ),
+      cell: ({ row }) => {
+        const quantity = row.original.quantity;
+        const type = row.original.movement_type;
+        const isPositive = type === 'entrada' || type === 'ajuste';
+
+        return (
+          <div className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? '+' : '-'}
+            {Math.abs(quantity || 0)}
+          </div>
+        );
+      },
     },
     {
       id: 'reference',
@@ -202,19 +225,24 @@ export default function StockMovementsPage() {
     },
   ]);
 
-  // Table actions
+  // *** CORRECCIÓN FINAL: Usar el patrón correcto para commonEntityActions ***
   const actions: EntityTableAction<StockMovementWithDetails>[] = [
-    ...commonEntityActions<StockMovementWithDetails>({
-      onEdit: handleEdit,
-      onDelete: handleDelete,
-      getEntityId: movement => movement.movement_id,
-      getEntityName: movement =>
-        `${MOVEMENT_TYPE_LABELS[movement.movement_type as keyof typeof MOVEMENT_TYPE_LABELS] || movement.movement_type} - ${movement.product?.name || 'Sin producto'}`,
+    commonEntityActions.view((movement: StockMovementWithDetails) => {
+      openModal('view', movement);
+    }),
+    commonEntityActions.edit((movement: StockMovementWithDetails) => {
+      handleEdit(movement);
+    }),
+    commonEntityActions.delete((movement: StockMovementWithDetails) => {
+      handleDelete(movement);
     }),
   ];
 
   const isLoaderVisible =
     createMovement.isPending || updateMovement.isPending || deleteMovement.isPending;
+
+  // Debug del estado del modal
+  console.log('Modal state:', modal);
 
   return (
     <>
@@ -254,8 +282,8 @@ export default function StockMovementsPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        open={deleteModal.isOpen}
-        onOpenChange={open => !open && setDeleteModal({ isOpen: false, movement: undefined })}
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, movement: undefined })}
       >
         <ModalContent>
           <ModalHeader>
