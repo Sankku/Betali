@@ -133,9 +133,9 @@ const WarehousesPage: React.FC = () => {
     return String(value);
   };
 
-  const tableColumns = [
+  const tableColumns: any[] = [
     {
-      accessorKey: 'name' as keyof WarehouseWithStats,
+      accessorKey: 'name',
       header: 'Nombre',
       cell: (value: any, warehouse: WarehouseWithStats) => (
         <div className="flex items-center space-x-3">
@@ -150,7 +150,7 @@ const WarehousesPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'location' as keyof WarehouseWithStats,
+      accessorKey: 'location',
       header: 'Ubicación',
       cell: (value: any) => (
         <div className="flex items-center text-neutral-600">
@@ -160,7 +160,7 @@ const WarehousesPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'is_active' as keyof WarehouseWithStats,
+      accessorKey: 'is_active',
       header: 'Estado',
       cell: (value: any, warehouse: WarehouseWithStats) => {
         if (!warehouse) {
@@ -199,7 +199,7 @@ const WarehousesPage: React.FC = () => {
       },
     },
     {
-      accessorKey: 'stats' as keyof WarehouseWithStats,
+      accessorKey: 'stats',
       header: 'Movimientos',
       cell: (value: any) => {
         const totalMovements = value?.totalMovements ?? 0;
@@ -248,7 +248,7 @@ const WarehousesPage: React.FC = () => {
         error={error}
         columns={columns}
         onCreateClick={handleCreateClick}
-        onRowClick={warehouse => openModal('view', warehouse)}
+        onRowClick={(warehouse: WarehouseWithStats) => openModal('view', warehouse)}
         isAnyMutationLoading={isAnyMutationLoading}
       />
 

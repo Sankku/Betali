@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }

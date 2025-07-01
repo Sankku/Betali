@@ -19,13 +19,14 @@ export interface WarehouseStatsProps {
   warehouse: {
     warehouse_id: string;
     name: string;
-    created_at: string;
+    created_at: string | null;
     stats?: WarehouseStatsData;
   };
 }
 
 export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => {
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Sin fecha';
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',

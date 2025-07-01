@@ -1,16 +1,12 @@
-// src/components/features/stock-movements/stock-movement-form.tsx
-
 import React from 'react';
 import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar } from 'lucide-react';
 import { useStockMovementForm } from '../../../hooks/useStockMovementForm';
 import { StockMovementFormData } from '../../../services/api/stockMovementService';
 import { useProducts } from '../../../hooks/useProducts';
 import { useWarehouses } from '../../../hooks/useWarehouse';
-import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Textarea } from '../../ui/textarea';
-import { Label } from '../../ui/label';
 
 interface StockMovementFormProps {
   onSubmit: (data: StockMovementFormData) => void | Promise<void>;
@@ -46,48 +42,41 @@ export function StockMovementForm({
   const products = Array.isArray(productsData) ? productsData : [];
   const warehouses = Array.isArray(warehousesData)
     ? warehousesData
-    : warehousesData?.data
-      ? warehousesData.data
+    : (warehousesData as any)?.data
+      ? (warehousesData as any).data
       : [];
 
   const validProducts = products.filter(p => p && p.product_id && p.name);
-  const validWarehouses = warehouses.filter(w => w && w.warehouse_id && w.name);
+  const validWarehouses = warehouses.filter((w: any) => w && w.warehouse_id && w.name);
 
-  console.log('Valid data:', { validProducts, warehouses });
-
-  console.log('Products hook response:', {
-    data: productsData,
-    isLoading: productsLoading,
-    error: productsError,
+  const { form, handleSubmit, getFieldError } = useStockMovementForm({
+    initialData,
+    mode: mode === 'view' ? 'edit' : mode,
+    onSubmit,
   });
-  console.log('Warehouses hook response:', {
-    data: warehousesData,
-    isLoading: warehousesLoading,
-    error: warehousesError,
-  });
-  console.log('Processed arrays:', { products, warehouses });
-
-  const { form, handleSubmit, getFieldError, isValid, isDirty, isSubmitting } =
-    useStockMovementForm({
-      initialData,
-      mode,
-      onSubmit,
-    });
 
   const { register, watch, setValue } = form;
   const watchedValues = watch();
 
   // Determinar si el formulario es de solo lectura
-  const isReadOnly = mode === 'view';
+  const isViewMode = mode === 'view';
 
-  // Función para mostrar valores de solo lectura
-  const renderReadOnlyField = (label: string, value: string | number, icon: React.ReactNode) => (
+  // Componente para campos de solo lectura
+  const ViewField: React.FC<{
+    label: string;
+    value: string | number;
+    icon: React.ReactNode;
+    description?: string;
+  }> = ({ label, value, icon, description }) => (
     <div className="space-y-2">
-      <Label className="flex items-center gap-2">
+      <label className="text-sm font-medium text-neutral-700 flex items-center">
         {icon}
         {label}
-      </Label>
-      <div className="px-3 py-2 bg-gray-50 rounded-md border">{value || 'No especificado'}</div>
+      </label>
+      {description && <p className="text-xs text-neutral-500">{description}</p>}
+      <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
+        <span className="text-neutral-800">{value || 'No especificado'}</span>
+      </div>
     </div>
   );
 
@@ -99,7 +88,7 @@ export function StockMovementForm({
 
   // Función para obtener el nombre del almacén
   const getWarehouseName = (warehouseId: string) => {
-    const warehouse = validWarehouses.find(w => w.warehouse_id === warehouseId);
+    const warehouse = validWarehouses.find((w: any) => w.warehouse_id === warehouseId);
     return warehouse?.name || 'Almacén no encontrado';
   };
 
@@ -131,70 +120,88 @@ export function StockMovementForm({
     );
   }
 
-  if (isReadOnly) {
+  // Formulario de solo lectura
+  if (isViewMode) {
     return (
       <div className="space-y-6">
-        {renderReadOnlyField(
-          'Tipo de Movimiento',
-          getMovementTypeLabel(watchedValues.movement_type),
-          <ArrowUpDown className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Tipo de Movimiento"
+          value={getMovementTypeLabel(watchedValues.movement_type)}
+          icon={<ArrowUpDown className="inline h-4 w-4 mr-2" />}
+          description="Tipo de operación de stock"
+        />
 
-        {renderReadOnlyField(
-          'Cantidad',
-          watchedValues.quantity?.toString() || '0',
-          <Hash className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Cantidad"
+          value={watchedValues.quantity?.toString() || '0'}
+          icon={<Hash className="inline h-4 w-4 mr-2" />}
+          description="Cantidad de unidades"
+        />
 
-        {renderReadOnlyField(
-          'Producto',
-          getProductName(watchedValues?.product_id),
-          <Package className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Producto"
+          value={getProductName(watchedValues?.product_id || '')}
+          icon={<Package className="inline h-4 w-4 mr-2" />}
+          description="Producto afectado"
+        />
 
-        {renderReadOnlyField(
-          'Almacén',
-          getWarehouseName(watchedValues?.warehouse_id),
-          <Warehouse className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Almacén"
+          value={getWarehouseName(watchedValues?.warehouse_id || '')}
+          icon={<Warehouse className="inline h-4 w-4 mr-2" />}
+          description="Almacén de origen/destino"
+        />
 
-        {renderReadOnlyField(
-          'Referencia',
-          watchedValues.reference || 'Sin referencia',
-          <FileText className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Referencia"
+          value={watchedValues.reference || 'Sin referencia'}
+          icon={<FileText className="inline h-4 w-4 mr-2" />}
+          description="Notas o referencias adicionales"
+        />
 
-        {renderReadOnlyField(
-          'Fecha del Movimiento',
-          watchedValues.movement_date
-            ? new Date(watchedValues.movement_date).toLocaleDateString()
-            : 'Sin fecha',
-          <Calendar className="h-4 w-4" />
-        )}
+        <ViewField
+          label="Fecha del Movimiento"
+          value={
+            watchedValues.movement_date
+              ? new Date(watchedValues.movement_date).toLocaleDateString('es-ES', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : 'Sin fecha'
+          }
+          icon={<Calendar className="inline h-4 w-4 mr-2" />}
+          description="Fecha de la operación"
+        />
       </div>
     );
   }
 
+  // Formulario editable
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Tipo de Movimiento */}
       <div className="space-y-2">
-        <Label htmlFor="movement_type" className="flex items-center gap-2">
-          <ArrowUpDown className="h-4 w-4" />
-          Tipo de Movimiento <span className="text-red-500">*</span>
-        </Label>
+        <label className="text-sm font-medium text-neutral-700 flex items-center">
+          <ArrowUpDown className="inline h-4 w-4 mr-2" />
+          Tipo de Movimiento <span className="text-red-500 ml-1">*</span>
+        </label>
+        <p className="text-xs text-neutral-500">Selecciona el tipo de operación de stock</p>
         <Select
           value={watchedValues.movement_type}
           onValueChange={value => setValue('movement_type', value)}
           disabled={isLoading}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecciona el tipo de movimiento" />
           </SelectTrigger>
           <SelectContent>
             {MOVEMENT_TYPES.map(type => (
               <SelectItem key={type.value} value={type.value}>
-                {type.label}
+                <div>
+                  <div className="font-medium">{type.label}</div>
+                  <div className="text-xs text-neutral-500">{type.description}</div>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -205,37 +212,33 @@ export function StockMovementForm({
       </div>
 
       {/* Cantidad */}
-      <div className="space-y-2">
-        <Label htmlFor="quantity" className="flex items-center gap-2">
-          <Hash className="h-4 w-4" />
-          Cantidad <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="quantity"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="Ingresa la cantidad"
-          {...register('quantity', { valueAsNumber: true })}
-          disabled={isLoading}
-        />
-        {getFieldError('quantity') && (
-          <p className="text-sm text-red-500">{getFieldError('quantity')}</p>
-        )}
-      </div>
+      <Input
+        {...register('quantity', { valueAsNumber: true })}
+        label="Cantidad"
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="0"
+        icon={<Hash className="h-4 w-4" />}
+        disabled={isLoading}
+        error={getFieldError('quantity')}
+        description="Cantidad de unidades del movimiento"
+        required
+      />
 
       {/* Producto */}
       <div className="space-y-2">
-        <Label htmlFor="product_id" className="flex items-center gap-2">
-          <Package className="h-4 w-4" />
-          Producto <span className="text-red-500">*</span>
-        </Label>
+        <label className="text-sm font-medium text-neutral-700 flex items-center">
+          <Package className="inline h-4 w-4 mr-2" />
+          Producto <span className="text-red-500 ml-1">*</span>
+        </label>
+        <p className="text-xs text-neutral-500">Selecciona el producto para el movimiento</p>
         <Select
           value={watchedValues.product_id}
           onValueChange={value => setValue('product_id', value)}
           disabled={isLoading}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecciona un producto" />
           </SelectTrigger>
           <SelectContent>
@@ -248,7 +251,12 @@ export function StockMovementForm({
                 .filter(product => product?.product_id && product?.name)
                 .map(product => (
                   <SelectItem key={product.product_id} value={product.product_id}>
-                    {product.name}
+                    <div>
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs text-neutral-500">
+                        Lote: {product.batch_number} | País: {product.origin_country}
+                      </div>
+                    </div>
                   </SelectItem>
                 ))
             )}
@@ -261,16 +269,17 @@ export function StockMovementForm({
 
       {/* Almacén */}
       <div className="space-y-2">
-        <Label htmlFor="warehouse_id" className="flex items-center gap-2">
-          <Warehouse className="h-4 w-4" />
-          Almacén <span className="text-red-500">*</span>
-        </Label>
+        <label className="text-sm font-medium text-neutral-700 flex items-center">
+          <Warehouse className="inline h-4 w-4 mr-2" />
+          Almacén <span className="text-red-500 ml-1">*</span>
+        </label>
+        <p className="text-xs text-neutral-500">Selecciona el almacén de origen o destino</p>
         <Select
           value={watchedValues.warehouse_id}
           onValueChange={value => setValue('warehouse_id', value)}
           disabled={isLoading}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecciona un almacén" />
           </SelectTrigger>
           <SelectContent>
@@ -280,10 +289,13 @@ export function StockMovementForm({
               </div>
             ) : (
               validWarehouses
-                .filter(warehouse => warehouse?.warehouse_id && warehouse?.name)
-                .map(warehouse => (
+                .filter((warehouse: any) => warehouse?.warehouse_id && warehouse?.name)
+                .map((warehouse: any) => (
                   <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
-                    {warehouse.name} - {warehouse.location}
+                    <div>
+                      <div className="font-medium">{warehouse.name}</div>
+                      <div className="text-xs text-neutral-500">{warehouse.location}</div>
+                    </div>
                   </SelectItem>
                 ))
             )}
@@ -296,16 +308,17 @@ export function StockMovementForm({
 
       {/* Referencia */}
       <div className="space-y-2">
-        <Label htmlFor="reference" className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
+        <label className="text-sm font-medium text-neutral-700 flex items-center">
+          <FileText className="inline h-4 w-4 mr-2" />
           Referencia
-        </Label>
+        </label>
+        <p className="text-xs text-neutral-500">Notas o referencias adicionales (opcional)</p>
         <Textarea
-          id="reference"
-          placeholder="Referencia o notas adicionales (opcional)"
           {...register('reference')}
+          placeholder="Ingresa referencias, notas o observaciones..."
           disabled={isLoading}
           rows={3}
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm placeholder:text-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
         />
         {getFieldError('reference') && (
           <p className="text-sm text-red-500">{getFieldError('reference')}</p>
@@ -313,32 +326,16 @@ export function StockMovementForm({
       </div>
 
       {/* Fecha del Movimiento */}
-      <div className="space-y-2">
-        <Label htmlFor="movement_date" className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Fecha del Movimiento <span className="text-red-500">*</span>
-        </Label>
-        <Input id="movement_date" type="date" {...register('movement_date')} disabled={isLoading} />
-        {getFieldError('movement_date') && (
-          <p className="text-sm text-red-500">{getFieldError('movement_date')}</p>
-        )}
-      </div>
-
-      {/* Botones de acción */}
-      <div className="flex justify-end gap-4 pt-4">
-        <Button type="submit" disabled={isLoading || isSubmitting || !isValid} className="min-w-32">
-          {isLoading || isSubmitting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              {mode === 'create' ? 'Creando...' : 'Guardando...'}
-            </>
-          ) : mode === 'create' ? (
-            'Crear Movimiento'
-          ) : (
-            'Guardar Cambios'
-          )}
-        </Button>
-      </div>
+      <Input
+        {...register('movement_date')}
+        label="Fecha del Movimiento"
+        type="date"
+        icon={<Calendar className="h-4 w-4" />}
+        disabled={isLoading}
+        error={getFieldError('movement_date')}
+        description="Fecha cuando se realizó la operación"
+        required
+      />
     </form>
   );
 }
