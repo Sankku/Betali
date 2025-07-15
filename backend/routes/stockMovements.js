@@ -12,7 +12,7 @@ const createMovementSchema = {
     if (!data.movement_type || typeof data.movement_type !== 'string') {
       errors.push({ message: 'Movement type is required and must be a string' });
     } else {
-      const validTypes = ['entrada', 'salida', 'ajuste', 'transferencia'];
+      const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
       if (!validTypes.includes(data.movement_type)) {
         errors.push({ message: `Movement type must be one of: ${validTypes.join(', ')}` });
       }
@@ -53,7 +53,7 @@ const updateMovementSchema = {
       if (typeof data.movement_type !== 'string') {
         errors.push({ message: 'Movement type must be a string' });
       } else {
-        const validTypes = ['entrada', 'salida', 'ajuste', 'transferencia'];
+        const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
         if (!validTypes.includes(data.movement_type)) {
           errors.push({ message: `Movement type must be one of: ${validTypes.join(', ')}` });
         }

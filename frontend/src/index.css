@@ -102,6 +102,8 @@
     --muted-foreground: light-dark(oklch(0.45 0 0), oklch(0.64 0 0));
     --accent: light-dark(oklch(0.96 0 0), oklch(0.09 0 0));
     --accent-foreground: light-dark(oklch(0.09 0 0), oklch(0.98 0 0));
+    --popover: light-dark(oklch(1 0 0), oklch(0.09 0 0));
+    --popover-foreground: light-dark(oklch(0.09 0 0), oklch(0.98 0 0));
     --border: light-dark(oklch(0.90 0 0), oklch(0.15 0 0));
     --input: light-dark(oklch(0.90 0 0), oklch(0.15 0 0));
     --ring: oklch(0.50 0.20 206);

@@ -31,42 +31,41 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = props.id || props.name;
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700">
+          <label
+            htmlFor={inputId}
+            className="text-sm font-semibold text-neutral-800 flex items-center"
+          >
+            {icon && <span className="text-neutral-600 mr-2">{icon}</span>}
             {label}
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
 
-        {description && <p className="text-xs text-neutral-500">{description}</p>}
+        {description && <p className="text-xs text-neutral-600">{description}</p>}
 
         <div className="relative">
-          {icon && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400">
-              {icon}
-            </div>
-          )}
-
           <input
             type={type}
             className={cn(
-              'w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm text-neutral-900',
+              'w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900',
               'placeholder:text-neutral-500',
-              'focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-neutral-50 disabled:text-neutral-600',
-              'transition-colors duration-200',
-              'selection:bg-primary-200 selection:text-primary-900',
+              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              'hover:border-neutral-400 hover:bg-neutral-50',
+              'disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100',
+              'shadow-sm',
+              'transition-all duration-200',
+              'selection:bg-blue-200 selection:text-blue-900',
               'autofill:bg-white autofill:text-neutral-900',
               'autofill:shadow-[inset_0_0_0px_1000px_white]',
               'autofill:[-webkit-text-fill-color:theme(colors.neutral.900)]',
-              'autofill:selection:bg-primary-200 autofill:selection:text-primary-900',
+              'autofill:selection:bg-blue-200 autofill:selection:text-blue-900',
               variant === 'filled' && 'bg-neutral-50 border-neutral-200',
               variant === 'filled' &&
                 'autofill:shadow-[inset_0_0_0px_1000px_theme(colors.neutral.50)]',
-              icon && 'pl-10',
               rightIcon && 'pr-10',
-              error && 'border-danger-500 focus:border-danger-600 focus:ring-danger-500/20',
+              error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
               className
             )}
             ref={ref}
@@ -82,18 +81,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {error && (
-          <p className="text-sm text-red-600 flex items-center gap-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
         {helpText && !error && <p className="text-xs text-neutral-500">{helpText}</p>}
       </div>
