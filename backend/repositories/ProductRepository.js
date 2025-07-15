@@ -9,6 +9,15 @@ class ProductRepository extends BaseRepository {
   }
 
   /**
+   * Find product by ID
+   * @param {string} id - Product ID
+   * @returns {Promise<Object|null>}
+   */
+  async findById(id) {
+    return super.findById(id, 'product_id');
+  }
+
+  /**
    * Find products by user ID
    * @param {string} userId - User ID
    * @param {Object} options - Query options

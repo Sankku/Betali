@@ -9,6 +9,15 @@ class WarehouseRepository extends BaseRepository {
   }
 
   /**
+   * Find warehouse by ID
+   * @param {string} id - Warehouse ID
+   * @returns {Promise<Object|null>}
+   */
+  async findById(id) {
+    return super.findById(id, 'warehouse_id');
+  }
+
+  /**
    * Find warehouses by user ID (owner or assigned user)
    * @param {string} userId - User ID
    * @param {Object} options - Query options

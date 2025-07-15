@@ -9,7 +9,7 @@ const stockMovementSchema = z.object({
     .string()
     .min(1, "El tipo de movimiento es requerido")
     .refine(
-      (val) => ["entrada", "salida", "ajuste", "transferencia"].includes(val),
+      (val) => ["entry", "exit", "adjustment", "senasa"].includes(val),
       "Tipo de movimiento inválido"
     ),
   quantity: z
@@ -17,12 +17,10 @@ const stockMovementSchema = z.object({
     .positive("La cantidad debe ser mayor a 0"),
   product_id: z
     .string()
-    .min(1, "El producto es requerido")
-    .optional(),
+    .min(1, "El producto es requerido"),
   warehouse_id: z
     .string()
-    .min(1, "El almacén es requerido")
-    .optional(),
+    .min(1, "El almacén es requerido"),
   reference: z
     .string()
     .max(500, "La referencia no puede exceder 500 caracteres")

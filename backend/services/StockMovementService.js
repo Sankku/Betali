@@ -48,15 +48,15 @@ class StockMovementService {
     try {
       this.logger.info(`Fetching movement: ${movementId}`);
       
-      const movement = await this.stockMovementRepository.findById(movementId);
+      const movement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!movement) {
         return null;
       }
       
       // Enrich with product and warehouse information
       const [product, warehouse] = await Promise.all([
-        movement.product_id ? this.productRepository.findById(movement.product_id) : null,
-        movement.warehouse_id ? this.warehouseRepository.findById(movement.warehouse_id) : null
+        movement.product_id ? this.productRepository.findById(movement.product_id, 'product_id') : null,
+        movement.warehouse_id ? this.warehouseRepository.findById(movement.warehouse_id, 'warehouse_id') : null
       ]);
       
       return {
@@ -112,7 +112,7 @@ class StockMovementService {
       this.logger.info(`Updating movement: ${movementId}`, { updateData });
       
       // Check if movement exists
-      const existingMovement = await this.stockMovementRepository.findById(movementId);
+      const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
         throw new Error('Movimiento no encontrado');
       }
@@ -145,12 +145,12 @@ class StockMovementService {
       this.logger.info(`Deleting movement: ${movementId}`);
       
       // Check if movement exists
-      const existingMovement = await this.stockMovementRepository.findById(movementId);
+      const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
         throw new Error('Movimiento no encontrado');
       }
       
-      await this.stockMovementRepository.delete(movementId);
+      await this.stockMovementRepository.delete(movementId, 'movement_id');
       
       this.logger.info(`Movement deleted: ${movementId}`);
       return true;
@@ -224,7 +224,7 @@ class StockMovementService {
    * @throws {Error} If validation fails
    */
   validateMovementData(movementData) {
-    const required = ['movement_type', 'quantity'];
+    const required = ['movement_type', 'quantity', 'product_id', 'warehouse_id'];
     
     for (const field of required) {
       if (!movementData[field]) {
@@ -236,7 +236,7 @@ class StockMovementService {
       throw new Error('La cantidad debe ser un número mayor a 0');
     }
     
-    const validTypes = ['entrada', 'salida', 'ajuste', 'transferencia'];
+    const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
     if (!validTypes.includes(movementData.movement_type)) {
       throw new Error(`Tipo de movimiento inválido. Debe ser uno de: ${validTypes.join(', ')}`);
     }
@@ -249,14 +249,14 @@ class StockMovementService {
    */
   async validateReferences(movementData) {
     if (movementData.product_id) {
-      const product = await this.productRepository.findById(movementData.product_id);
+      const product = await this.productRepository.findById(movementData.product_id, 'product_id');
       if (!product) {
         throw new Error('Producto no encontrado');
       }
     }
     
     if (movementData.warehouse_id) {
-      const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id);
+      const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id, 'warehouse_id');
       if (!warehouse) {
         throw new Error('Almacén no encontrado');
       }

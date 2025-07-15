@@ -46,7 +46,8 @@ export const warehouseService = {
    * Obtener todos los almacenes del usuario autenticado
    */
   async getAll(): Promise<WarehouseWithStats[]> {
-    return await httpClient.get<WarehouseWithStats[]>('/api/warehouse');
+    const response = await httpClient.get<{ data: WarehouseWithStats[]; meta: { total: number } }>('/api/warehouse');
+    return response.data;
   },
 
   /**

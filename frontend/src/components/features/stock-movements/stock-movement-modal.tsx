@@ -85,6 +85,7 @@ export function StockMovementModal({
             initialData={formInitialData}
             mode={mode}
             isLoading={isLoading}
+            onCancel={onClose}
           />
         </div>
       </ModalContent>
