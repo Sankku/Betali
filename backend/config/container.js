@@ -4,16 +4,19 @@ const { DatabaseConfig } = require('./database');
 const { ProductRepository } = require('../repositories/ProductRepository');
 const { WarehouseRepository } = require('../repositories/WarehouseRepository');
 const { StockMovementRepository } = require('../repositories/StockMovementRepository');
+const { TableConfigRepository } = require('../repositories/TableConfigRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
 const { WarehouseService } = require('../services/WarehouseService');
 const { StockMovementService } = require('../services/StockMovementService');
+const { TableConfigService } = require('../services/TableConfigService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
 const { WarehouseController } = require('../controllers/WarehouseController');
 const { StockMovementController } = require('../controllers/StockMovementController');
+const { TableConfigController } = require('../controllers/TableConfigController');
 
 /**
  * Dependency injection container
@@ -108,6 +111,11 @@ function initializeContainer() {
     return new StockMovementRepository(dbConfig.getClient());
   }, true);
 
+  container.register('tableConfigRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new TableConfigRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const logger = container.get('logger');
@@ -142,6 +150,11 @@ function initializeContainer() {
     );
   }, true);
 
+  container.register('tableConfigService', () => {
+    const tableConfigRepository = container.get('tableConfigRepository');
+    return new TableConfigService(tableConfigRepository);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -160,6 +173,11 @@ function initializeContainer() {
   container.register('dashboardController', () => {
     const dashboardService = container.get('dashboardService');
     return new DashboardController(dashboardService);
+  }, true);
+
+  container.register('tableConfigController', () => {
+    const tableConfigService = container.get('tableConfigService');
+    return new TableConfigController(tableConfigService);
   }, true);
 }
 
@@ -200,6 +218,14 @@ const ServiceFactory = {
 
   createDashboardService() {
     return container.get('dashboardService');
+  },
+
+  getTableConfigService() {
+    return container.get('tableConfigService');
+  },
+
+  createTableConfigController() {
+    return container.get('tableConfigController');
   },
 
   getInstance() {

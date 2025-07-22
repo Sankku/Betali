@@ -206,7 +206,7 @@ export function DataTable<TData>({
           )}
           <div className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-auto">
                 <thead>
                   {table.getHeaderGroups().map((headerGroup, index) => (
                     <tr
@@ -219,7 +219,7 @@ export function DataTable<TData>({
                       {headerGroup.headers.map(header => (
                         <th
                           key={header.id}
-                          className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-700"
+                          className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-700"
                         >
                           {header.isPlaceholder ? null : (
                             <div
@@ -296,7 +296,7 @@ export function DataTable<TData>({
                         {row.getVisibleCells().map(cell => (
                           <td
                             key={cell.id}
-                            className="px-6 py-4 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200"
+                            className="px-4 py-3 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200"
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>

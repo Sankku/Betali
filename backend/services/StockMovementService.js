@@ -17,20 +17,24 @@ class StockMovementService {
    */
   async getAllMovements(options = {}) {
     try {
-      this.logger.info('Fetching all stock movements');
+      this.logger.info('Fetching all stock movements with relations');
       
-      const movements = await this.stockMovementRepository.findAll({}, {
-        // Temporarily remove orderBy to debug
+      // Use the new method that includes relations
+      const movements = await this.stockMovementRepository.findAllWithRelations({}, {
+        orderBy: { column: 'created_at', ascending: false },
         ...options
       });
       
-      this.logger.info(`Found ${movements.length} stock movements`);
+      this.logger.info(`Found ${movements.length} stock movements with relations`);
       
-      // Return simple movements first (without enrichment) to debug
+      // Process the movements to ensure proper structure
       return movements.map(movement => ({
         ...movement,
-        product: null,
-        warehouse: null
+        // Ensure product and warehouse are properly structured from the nested objects
+        product_name: movement.product_id?.name || 'Unknown Product',
+        product_category: movement.product_id?.category || 'Unknown Category',
+        warehouse_name: movement.warehouse_id?.name || 'Unknown Warehouse',
+        warehouse_location: movement.warehouse_id?.location || 'Unknown Location'
       }));
       
     } catch (error) {
@@ -125,7 +129,7 @@ class StockMovementService {
         });
       }
       
-      const updatedMovement = await this.stockMovementRepository.update(movementId, updateData);
+      const updatedMovement = await this.stockMovementRepository.update(movementId, updateData, 'movement_id');
       
       this.logger.info(`Movement updated: ${movementId}`);
       return updatedMovement;

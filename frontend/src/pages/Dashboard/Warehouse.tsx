@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Warehouse, MapPin, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
-import {
-  createEntityTableColumns,
-  commonEntityActions,
-  EntityTableAction,
-} from '../../components/templates/entity-table';
+import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
+import { useTableConfig } from '../../hooks/useTableConfig';
 import {
   WarehouseModal,
   WarehouseWithStats,
   WarehouseFormData,
 } from '../../components/features/warehouse';
-import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
   Modal,
@@ -52,7 +48,13 @@ const WarehousesPage: React.FC = () => {
     show: false,
   });
 
-  const { warehouses, isLoading, error, isAnyMutationLoading } = useWarehouseManagement();
+  // Use the new table configuration system
+  const {
+    data: tableConfig,
+    isLoading: configLoading,
+    error: configError,
+  } = useTableConfig('warehouse');
+  const { warehouses, isLoading, error } = useWarehouseManagement();
   const createWarehouse = useCreateWarehouse();
   const updateWarehouse = useUpdateWarehouse();
   const deactivateWarehouse = useDeactivateWarehouse();
@@ -72,7 +74,7 @@ const WarehousesPage: React.FC = () => {
     try {
       await updateWarehouse.mutateAsync({
         id: warehouse.warehouse_id,
-        data: { is_active: !warehouse.is_active }
+        data: { is_active: !warehouse.is_active },
       });
     } catch (error) {
       console.error('Error al cambiar estado:', error);
@@ -120,113 +122,31 @@ const WarehousesPage: React.FC = () => {
     }
   };
 
-  const getSafeId = (warehouse: WarehouseWithStats): string => {
-    if (!warehouse?.warehouse_id) return 'N/A';
-    const id = String(warehouse.warehouse_id);
-    return id.length > 8 ? id.slice(0, 8) : id;
-  };
-
-  const getSafeValue = (value: any, fallback: string = 'N/A'): string => {
-    if (value === null || value === undefined || value === '') {
-      return fallback;
+  // Handle table actions from the configurable table
+  const handleTableAction = useCallback((action: string, row: WarehouseWithStats) => {
+    switch (action) {
+      case 'view':
+        openModal('view', row);
+        break;
+      case 'edit':
+        openModal('edit', row);
+        break;
+      case 'delete':
+        handleDelete(row);
+        break;
+      case 'toggle':
+        handleToggleActive(row);
+        break;
+      case 'create':
+        openModal('create');
+        break;
+      default:
+        console.warn('Unknown action:', action);
     }
-    return String(value);
-  };
+  }, []);
 
-  const tableColumns: any[] = [
-    {
-      accessorKey: 'name',
-      header: 'Nombre',
-      cell: (value: any, warehouse: WarehouseWithStats) => (
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary-50 rounded-lg">
-            <Warehouse className="w-4 h-4 text-primary-600" />
-          </div>
-          <div>
-            <div className="font-medium text-neutral-900">{getSafeValue(value, 'Sin nombre')}</div>
-            <div className="text-sm text-neutral-500">ID: {getSafeId(warehouse)}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'location',
-      header: 'Ubicación',
-      cell: (value: any) => (
-        <div className="flex items-center text-neutral-600">
-          <MapPin className="w-4 h-4 mr-2" />
-          {getSafeValue(value, 'Sin ubicación')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'is_active',
-      header: 'Estado',
-      cell: (value: any, warehouse: WarehouseWithStats) => {
-        if (!warehouse) {
-          return (
-            <div className="flex items-center space-x-2">
-              <Badge variant="danger">Error</Badge>
-            </div>
-          );
-        }
-
-        const isActive = Boolean(value);
-
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge variant={isActive ? 'success' : 'danger'}>
-              {isActive ? 'Activo' : 'Inactivo'}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={e => {
-                e.stopPropagation();
-                handleToggleActive(warehouse);
-              }}
-              disabled={deactivateWarehouse.isPending}
-              className="hover:bg-neutral-100"
-            >
-              {isActive ? (
-                <ToggleRight className="w-4 h-4 text-green-600" />
-              ) : (
-                <ToggleLeft className="w-4 h-4 text-neutral-400" />
-              )}
-            </Button>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'stats',
-      header: 'Movimientos',
-      cell: (value: any) => {
-        const totalMovements = value?.totalMovements ?? 0;
-
-        return (
-          <div className="text-center">
-            <div className="text-lg font-semibold text-neutral-900">{totalMovements}</div>
-            <div className="text-xs text-neutral-500">Total</div>
-          </div>
-        );
-      },
-    },
-  ];
-
-  const tableActions: EntityTableAction<WarehouseWithStats>[] = [
-    commonEntityActions.view((warehouse: WarehouseWithStats) => {
-      openModal('view', warehouse);
-    }),
-    commonEntityActions.edit((warehouse: WarehouseWithStats) => {
-      openModal('edit', warehouse);
-    }),
-    commonEntityActions.delete((warehouse: WarehouseWithStats) => {
-      handleDelete(warehouse);
-    }),
-  ];
-
-  const columns = createEntityTableColumns(tableColumns, tableActions);
+  const isLoaderVisible =
+    createWarehouse.isPending || updateWarehouse.isPending || deleteWarehouse.isPending || deactivateWarehouse.isPending;
 
   React.useEffect(() => {
     if (warehouses && warehouses.length > 0) {
@@ -241,15 +161,26 @@ const WarehousesPage: React.FC = () => {
       </Helmet>
 
       <CRUDPage
-        title="Gestión de Almacenes"
-        description="Administre los almacenes y su configuración"
+        title={(tableConfig as any)?.name || 'Gestión de Almacenes'}
+        description={
+          configLoading
+            ? 'Cargando configuración de tabla...'
+            : 'Administre los almacenes y su configuración'
+        }
         data={warehouses || []}
-        isLoading={isLoading}
-        error={error}
-        columns={columns}
+        isLoading={isLoading || isLoaderVisible || configLoading}
+        error={error || configError}
         onCreateClick={handleCreateClick}
-        onRowClick={(warehouse: WarehouseWithStats) => openModal('view', warehouse)}
-        isAnyMutationLoading={isAnyMutationLoading}
+        customTable={
+          tableConfig ? (
+            <BackendConfiguredTable
+              config={tableConfig as any}
+              data={warehouses || []}
+              onAction={handleTableAction}
+              isLoading={isLoading || isLoaderVisible}
+            />
+          ) : null
+        }
       />
 
       <WarehouseModal

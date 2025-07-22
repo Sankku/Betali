@@ -1,14 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Package, Calendar, Globe, AlertTriangle, AlertCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
-import {
-  createEntityTableColumns,
-  commonEntityActions,
-  EntityTableAction,
-} from '../../components/templates/entity-table';
+import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
+import { useTableConfig } from '../../hooks/useTableConfig';
 import { ProductModal, Product, ProductFormData } from '../../components/features/products';
-import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { ToastContainer } from '../../components/ui/toast';
 import {
@@ -47,7 +43,13 @@ const ProductsPage: React.FC = () => {
     show: false,
   });
 
-  const { products, isLoading, error, isAnyMutationLoading } = useProductManagement();
+  // Use the new table configuration system
+  const {
+    data: tableConfig,
+    isLoading: configLoading,
+    error: configError,
+  } = useTableConfig('products');
+  const { products, isLoading, error } = useProductManagement();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -103,99 +105,28 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const isExpired = (expiryDate: string) => {
-    return new Date(expiryDate) < new Date();
-  };
+  // Handle table actions from the configurable table
+  const handleTableAction = useCallback((action: string, row: Product) => {
+    switch (action) {
+      case 'view':
+        openModal('view', row);
+        break;
+      case 'edit':
+        openModal('edit', row);
+        break;
+      case 'delete':
+        handleDelete(row);
+        break;
+      case 'create':
+        openModal('create');
+        break;
+      default:
+        console.warn('Unknown action:', action);
+    }
+  }, []);
 
-  const isNearExpiry = (expiryDate: string) => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays > 0;
-  };
-
-  const tableColumns = [
-    {
-      accessorKey: 'name' as keyof Product,
-      header: 'Producto',
-      cell: (value: any, product: Product) => (
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary-50 rounded-lg">
-            <Package className="w-4 h-4 text-primary-600" />
-          </div>
-          <div>
-            <div className="font-medium text-neutral-900">{value}</div>
-            <div className="text-sm text-neutral-500">Lote: {product.batch_number}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'expiration_date' as keyof Product,
-      header: 'Vencimiento',
-      cell: (value: any) => {
-        const expired = isExpired(value);
-        const nearExpiry = isNearExpiry(value);
-
-        return (
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-neutral-400" />
-            <div>
-              <div
-                className={`text-sm font-medium ${
-                  expired ? 'text-red-600' : nearExpiry ? 'text-yellow-600' : 'text-neutral-900'
-                }`}
-              >
-                {new Date(value).toLocaleDateString('es-ES')}
-              </div>
-              {(expired || nearExpiry) && (
-                <Badge variant={expired ? 'danger' : 'warning'} size="sm">
-                  {expired ? 'Vencido' : 'Por vencer'}
-                </Badge>
-              )}
-            </div>
-            {(expired || nearExpiry) && (
-              <AlertCircle className={`w-4 h-4 ${expired ? 'text-red-500' : 'text-yellow-500'}`} />
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'origin_country' as keyof Product,
-      header: 'Origen',
-      cell: (value: any) => (
-        <div className="flex items-center text-neutral-600">
-          <Globe className="w-4 h-4 mr-2" />
-          {value}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'created_at' as keyof Product,
-      header: 'Fecha Registro',
-      cell: (value: any) => (
-        <div className="text-sm text-neutral-600">
-          {new Date(value).toLocaleDateString('es-ES')}
-        </div>
-      ),
-    },
-  ];
-
-  const tableActions: EntityTableAction<Product>[] = [
-    commonEntityActions.view((product: Product) => {
-      openModal('view', product);
-    }),
-    commonEntityActions.edit((product: Product) => {
-      openModal('edit', product);
-    }),
-    commonEntityActions.delete((product: Product) => {
-      handleDelete(product);
-    }),
-  ];
-
-  const columns = createEntityTableColumns(tableColumns, tableActions);
+  const isLoaderVisible =
+    createProduct.isPending || updateProduct.isPending || deleteProduct.isPending;
 
   return (
     <>
@@ -204,15 +135,26 @@ const ProductsPage: React.FC = () => {
       </Helmet>
 
       <CRUDPage
-        title="Gestión de Productos"
-        description="Administre el inventario de productos y su información"
+        title={(tableConfig as any)?.name || 'Gestión de Productos'}
+        description={
+          configLoading
+            ? 'Cargando configuración de tabla...'
+            : 'Administre el inventario de productos y su información'
+        }
         data={products}
-        isLoading={isLoading}
-        error={error}
-        columns={columns}
+        isLoading={isLoading || isLoaderVisible || configLoading}
+        error={error || configError}
         onCreateClick={handleCreateClick}
-        onRowClick={product => openModal('view', product)}
-        isAnyMutationLoading={isAnyMutationLoading}
+        customTable={
+          tableConfig ? (
+            <BackendConfiguredTable
+              config={tableConfig as any}
+              data={products}
+              onAction={handleTableAction}
+              isLoading={isLoading || isLoaderVisible}
+            />
+          ) : null
+        }
       />
 
       <ProductModal
@@ -230,9 +172,9 @@ const ProductsPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>¿Eliminar almacén?</ModalTitle>
+            <ModalTitle>¿Eliminar producto?</ModalTitle>
             <ModalDescription>
-              Esta acción no se puede deshacer. El almacén{' '}
+              Esta acción no se puede deshacer. El producto{' '}
               <span className="font-medium text-neutral-900">
                 "{showDeleteConfirm.product?.name || 'seleccionado'}"
               </span>{' '}
