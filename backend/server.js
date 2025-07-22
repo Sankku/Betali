@@ -12,6 +12,7 @@ const productRoutes = require('./routes/products');
 const dashboardRoutes = require('./routes/dashboard');
 const warehouseRoutes = require('./routes/warehouse'); 
 const createStockMovementRoutes = require('./routes/stockMovements');
+const tableConfigRoutes = require('./routes/tableConfig');
 const healthRoutes = require('./routes/health');
 
 /**
@@ -112,6 +113,7 @@ class Application {
     this.app.use('/api/warehouse', warehouseRoutes); 
     this.app.use('/api/stock-movements', createStockMovementRoutes());
     this.app.use('/api/dashboard', dashboardRoutes);
+    this.app.use('/api/tables', tableConfigRoutes);
 
     this.app.get('/', (req, res) => {
       res.json({
@@ -124,7 +126,8 @@ class Application {
           products: '/api/products',
           warehouses: '/api/warehouse',
           stockMovements: '/api/stock-movements',
-          dashboard: '/api/dashboard'
+          dashboard: '/api/dashboard',
+          tableConfigs: '/api/tables'
         }
       });
     });

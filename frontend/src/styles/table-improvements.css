@@ -1,0 +1,73 @@
+/* Mejoras de estilado para tablas con la nueva arquitectura */
+
+/* Animaciones suaves para badges */
+.badge-transition {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Mejoras para celdas de estado */
+.status-cell-container {
+  @apply flex items-center gap-2;
+}
+
+/* Indicadores de hover mejorados para celdas de acciones */
+.actions-cell:hover .action-button {
+  @apply transform scale-105;
+}
+
+/* Estilos para números con colores semánticos */
+.number-positive {
+  @apply text-success-700 font-medium;
+}
+
+.number-negative {
+  @apply text-danger-700 font-medium;
+}
+
+.number-neutral {
+  @apply text-neutral-900 font-medium;
+}
+
+/* Mejoras de spacing para compound cells */
+.compound-cell-vertical {
+  @apply space-y-1;
+}
+
+.compound-cell-horizontal {
+  @apply flex items-center gap-3;
+}
+
+/* Iconos con mejor alineación */
+.icon-text-cell {
+  @apply flex items-center gap-2;
+}
+
+/* Mejoras para tooltips en celdas truncadas */
+.cell-tooltip:hover {
+  @apply relative z-10;
+}
+
+/* Estados de hover mejorados para filas */
+.table-row-hover:hover {
+  @apply bg-primary-50/30 transition-colors duration-150;
+}
+
+/* Badges con indicadores de interactividad */
+.badge-interactive:hover {
+  @apply shadow-sm transform translate-y-[-1px] transition-all duration-150;
+}
+
+/* Mejoras para dark mode (si lo implementas más adelante) */
+@media (prefers-color-scheme: dark) {
+  .number-positive {
+    @apply text-success-400;
+  }
+  
+  .number-negative {
+    @apply text-danger-400;
+  }
+  
+  .number-neutral {
+    @apply text-neutral-100;
+  }
+}

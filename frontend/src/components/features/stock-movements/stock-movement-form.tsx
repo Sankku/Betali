@@ -352,7 +352,7 @@ export function StockMovementForm({
         <p className="text-xs text-neutral-600">Notas o referencias adicionales (opcional)</p>
         <Textarea
           {...register('reference')}
-          placeholder="Ingresa referencias, notas o observaciones..."
+          placeholder="Ingresa referencias, notas u observaciones..."
           disabled={isLoading}
           rows={3}
           className="resize-none"

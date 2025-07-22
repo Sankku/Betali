@@ -12,12 +12,13 @@ export interface CRUDPageProps<TEntity> {
   data: TEntity[];
   isLoading: boolean;
   error?: Error | null;
-  columns: ColumnDef<TEntity>[];
+  columns?: ColumnDef<TEntity>[];
   onCreateClick: () => void;
   onRowClick?: (entity: TEntity) => void;
   headerActions?: React.ReactNode;
   beforeTable?: React.ReactNode;
   afterTable?: React.ReactNode;
+  customTable?: React.ReactNode; // New prop for custom table component
   isAnyMutationLoading?: boolean;
   className?: string;
 }
@@ -34,6 +35,7 @@ export function CRUDPage<TEntity>({
   headerActions,
   beforeTable,
   afterTable,
+  customTable,
   isAnyMutationLoading = false,
   className,
 }: CRUDPageProps<TEntity>) {
@@ -64,12 +66,14 @@ export function CRUDPage<TEntity>({
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">Error al cargar los datos</h3>
-            <p className="text-neutral-600">{error.message || 'Ha ocurrido un error inesperado'}</p>
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">Error loading data</h3>
+            <p className="text-neutral-600">{error.message || 'An unexpected error occurred'}</p>
           </div>
+        ) : customTable ? (
+          customTable
         ) : (
           <DataTable
-            columns={columns}
+            columns={columns || []}
             data={data || []}
             loading={isLoading}
             onRowClick={onRowClick}
