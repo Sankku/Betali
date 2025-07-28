@@ -1,23 +1,23 @@
-// Tipos genéricos para el sistema de tablas escalable
+// Generic types for scalable table system
 
 export type CellDataType = 
-  | 'text'           // Texto simple
-  | 'number'         // Números
-  | 'date'           // Fechas
-  | 'datetime'       // Fecha y hora
-  | 'currency'       // Moneda
-  | 'percentage'     // Porcentajes
-  | 'boolean'        // Verdadero/Falso
-  | 'badge'          // Badges con variantes
-  | 'image'          // Imágenes
-  | 'avatar'         // Avatares
-  | 'link'           // Enlaces
-  | 'actions'        // Botones de acción
-  | 'icon-text'      // Ícono + texto
-  | 'compound'       // Múltiples campos combinados
-  | 'status'         // Estados con toggle
-  | 'progress'       // Barras de progreso
-  | 'tag-list';      // Lista de tags
+  | 'text'           // Simple text
+  | 'number'         // Numbers
+  | 'date'           // Dates
+  | 'datetime'       // Date and time
+  | 'currency'       // Currency
+  | 'percentage'     // Percentages
+  | 'boolean'        // True/False
+  | 'badge'          // Badges with variants
+  | 'image'          // Images
+  | 'avatar'         // Avatars
+  | 'link'           // Links
+  | 'actions'        // Action buttons
+  | 'icon-text'      // Icon + text
+  | 'compound'       // Multiple combined fields
+  | 'status'         // Status with toggle
+  | 'progress'       // Progress bars
+  | 'tag-list';      // Tag list
 
 export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'outline';
 
@@ -26,7 +26,7 @@ export type IconPosition = 'left' | 'right' | 'top' | 'bottom';
 export interface CellConfig {
   dataType: CellDataType;
   
-  // Configuración de texto
+  // Text configuration
   textConfig?: {
     truncate?: number;
     transform?: 'uppercase' | 'lowercase' | 'capitalize';

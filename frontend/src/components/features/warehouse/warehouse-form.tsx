@@ -43,7 +43,7 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'No especificado'}</span>
+        <span className="text-neutral-800">{value || 'Not specified'}</span>
       </div>
     </div>
   );
@@ -53,51 +53,51 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {isViewMode ? (
           <ViewField
-            label="Nombre del Almacén"
+            label="Warehouse Name"
             value={currentName}
             icon={<Warehouse className="inline h-4 w-4 mr-2" />}
-            description="Nombre identificativo del almacén"
+            description="Warehouse identification name"
           />
         ) : (
           <Input
             {...register('name')}
-            label="Nombre del Almacén"
-            placeholder="Ej: Almacén Central"
+            label="Warehouse Name"
+            placeholder="E.g.: Central Warehouse"
             icon={<Warehouse className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.name?.message}
-            description="Nombre identificativo del almacén"
+            description="Warehouse identification name"
             required
           />
         )}
         {isViewMode ? (
           <ViewField
-            label="Ubicación"
+            label="Location"
             value={currentLocation}
             icon={<MapPin className="inline h-4 w-4 mr-2" />}
-            description="Dirección o ubicación física"
+            description="Address or physical location"
           />
         ) : (
           <Input
             {...register('location')}
-            label="Ubicación"
-            placeholder="Ej: Córdoba, Argentina"
+            label="Location"
+            placeholder="E.g.: Córdoba, Argentina"
             icon={<MapPin className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.location?.message}
-            description="Dirección o ubicación física"
+            description="Address or physical location"
             required
           />
         )}
       </div>
-      <FormSection title="Configuración" variant="highlighted">
+      <FormSection title="Configuration" variant="highlighted">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h5 className="text-sm font-medium text-neutral-900 mb-1">Estado del Almacén</h5>
+            <h5 className="text-sm font-medium text-neutral-900 mb-1">Warehouse Status</h5>
             <p className="text-xs text-neutral-600">
               {currentIsActive
-                ? 'El almacén está activo y puede recibir movimientos de stock.'
-                : 'El almacén está inactivo y no puede recibir nuevos movimientos.'}
+                ? 'The warehouse is active and can receive stock movements.'
+                : 'The warehouse is inactive and cannot receive new movements.'}
             </p>
           </div>
           {isViewMode ? (
@@ -107,7 +107,7 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
                   currentIsActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}
               >
-                {currentIsActive ? 'Activo' : 'Inactivo'}
+                {currentIsActive ? 'Active' : 'Inactive'}
               </span>
             </div>
           ) : (

@@ -41,7 +41,7 @@ export function ModalForm<TFormData = any>({
   mode,
   children,
   submitLabel,
-  cancelLabel = 'Cancelar',
+  cancelLabel = 'Cancel',
   showFooter = true,
   customFooter,
   isLoading = false,
@@ -59,23 +59,23 @@ export function ModalForm<TFormData = any>({
     switch (mode) {
       case 'view':
         return {
-          badge: { variant: 'primary' as const, label: 'Solo lectura' },
+          badge: { variant: 'primary' as const, label: 'Read only' },
           submitLabel: undefined,
         };
       case 'edit':
         return {
-          badge: { variant: 'warning' as const, label: 'Editando' },
-          submitLabel: submitLabel || 'Actualizar',
+          badge: { variant: 'warning' as const, label: 'Editing' },
+          submitLabel: submitLabel || 'Update',
         };
       case 'create':
         return {
-          badge: { variant: 'success' as const, label: 'Creando' },
-          submitLabel: submitLabel || 'Crear',
+          badge: { variant: 'success' as const, label: 'Creating' },
+          submitLabel: submitLabel || 'Create',
         };
       default:
         return {
-          badge: { variant: 'default' as const, label: 'Desconocido' },
-          submitLabel: submitLabel || 'Guardar',
+          badge: { variant: 'default' as const, label: 'Unknown' },
+          submitLabel: submitLabel || 'Save',
         };
     }
   };

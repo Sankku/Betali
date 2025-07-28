@@ -23,28 +23,28 @@ export function StockMovementModal({
   initialData,
   isLoading = false,
 }: StockMovementModalProps) {
-  // Títulos según el modo
+  // Titles based on mode
   const getTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Nuevo Movimiento de Stock';
+        return 'New Stock Movement';
       case 'edit':
-        return 'Editar Movimiento';
+        return 'Edit Movement';
       case 'view':
-        return 'Detalle del Movimiento';
+        return 'Movement Details';
       default:
-        return 'Movimiento de Stock';
+        return 'Stock Movement';
     }
   };
 
   const getDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Registra un nuevo movimiento en el inventario';
+        return 'Register a new inventory movement';
       case 'edit':
-        return 'Modifica los datos del movimiento seleccionado';
+        return 'Modify the selected movement data';
       case 'view':
-        return 'Visualiza los detalles del movimiento';
+        return 'View movement details';
       default:
         return '';
     }

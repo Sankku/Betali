@@ -44,15 +44,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'No especificado'}</span>
+        <span className="text-neutral-800">{value || 'Not specified'}</span>
       </div>
     </div>
   );
 
   const formatDateForDisplay = (dateString: string): string => {
-    if (!dateString) return 'No especificado';
+    if (!dateString) return 'Not specified';
     try {
-      return new Date(dateString).toLocaleDateString('es-ES', {
+      return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -67,20 +67,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
       <div className="space-y-6">
         {isViewMode ? (
           <ViewField
-            label="Nombre del Producto"
+            label="Product Name"
             value={currentName}
             icon={<Package className="inline h-4 w-4 mr-2" />}
-            description="Nombre identificativo del producto"
+            description="Product identification name"
           />
         ) : (
           <Input
             {...register('name')}
-            label="Nombre del Producto"
-            placeholder="Ej: Fertilizante NPK"
+            label="Product Name"
+            placeholder="E.g.: NPK Fertilizer"
             icon={<Package className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.name?.message}
-            description="Nombre identificativo del producto"
+            description="Product identification name"
             required
           />
         )}
@@ -88,15 +88,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isViewMode ? (
             <ViewField
-              label="Número de Lote"
+              label="Batch Number"
               value={currentBatchNumber}
               icon={<Package className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('batch_number')}
-              label="Número de Lote"
-              placeholder="Ej: LT-2024-001"
+              label="Batch Number"
+              placeholder="E.g.: LT-2024-001"
               icon={<Package className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.batch_number?.message}
@@ -105,15 +105,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           )}
           {isViewMode ? (
             <ViewField
-              label="País de Origen"
+              label="Country of Origin"
               value={currentOriginCountry}
               icon={<Globe className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('origin_country')}
-              label="País de Origen"
-              placeholder="Ej: Argentina"
+              label="Country of Origin"
+              placeholder="E.g.: Argentina"
               icon={<Globe className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.origin_country?.message}
@@ -123,7 +123,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         </div>
         {isViewMode ? (
           <ViewField
-            label="Fecha de Vencimiento"
+            label="Expiration Date"
             value={formatDateForDisplay(currentExpirationDate)}
             icon={<Calendar className="inline h-4 w-4 mr-2" />}
           />
@@ -131,7 +131,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           <Input
             {...register('expiration_date')}
             type="date"
-            label="Fecha de Vencimiento"
+            label="Expiration Date"
             icon={<Calendar className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.expiration_date?.message}

@@ -32,27 +32,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       path: "/dashboard/products",
       icon: <Package className="w-5 h-5" />,
-      label: "Productos",
+      label: "Products",
     },
     {
       path: "/dashboard/warehouse",
       icon: <Warehouse className="w-5 h-5" />,
-      label: "Depósitos",
+      label: "Warehouses",
     },
     {
       path: "/dashboard/stock-movements",
       icon: <RefreshCw className="w-5 h-5" />,
-      label: "Movimientos",
+      label: "Movements",
     },
     {
       path: "/dashboard/trazabilidad",
       icon: <FileSpreadsheet className="w-5 h-5" />,
-      label: "Trazabilidad",
+      label: "Traceability",
     },
     {
       path: "/dashboard/control-stock",
       icon: <BarChart3 className="w-5 h-5" />,
-      label: "Control de Stock",
+      label: "Stock Control",
     },
   ];
 
@@ -102,7 +102,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               onClick={handleSignOut}
               className="p-1 rounded-full text-gray-400 hover:text-gray-600"
-              aria-label="Cerrar sesión"
+              aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />
             </button>
@@ -110,9 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Contenido principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 z-10 h-16">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -120,7 +118,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-                  aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 >
                   {isMobileMenuOpen ? (
                     <X className="h-6 w-6" />
@@ -141,7 +139,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   onClick={handleSignOut}
                   className="ml-4 p-1 rounded-full text-gray-400 hover:text-gray-600"
-                  aria-label="Cerrar sesión"
+                  aria-label="Sign out"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
@@ -171,7 +169,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-                    aria-label="Cerrar menú"
+                    aria-label="Close menu"
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -206,7 +204,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         )}
 
-        {/* Contenido de la página */}
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
           {children}
         </main>

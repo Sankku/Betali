@@ -31,7 +31,7 @@ export const stockMovementService = {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>('/api/stock-movements');
       return response.data || response;
     } catch (error) {
-      console.error('Error al obtener movimientos:', error);
+      console.error('Error fetching movements:', error);
       throw error;
     }
   },
@@ -44,7 +44,7 @@ export const stockMovementService = {
       const response = await httpClient.get<{ data: StockMovementWithDetails }>(`/api/stock-movements/${id}`);
       return response.data || response;
     } catch (error) {
-      console.error(`Error al obtener movimiento ${id}:`, error);
+      console.error(`Error fetching movement ${id}:`, error);
       throw error;
     }
   },
@@ -62,7 +62,7 @@ export const stockMovementService = {
         data: StockMovement;
       }>('/api/stock-movements', movementData);
     } catch (error) {
-      console.error('Error al crear movimiento:', error);
+      console.error('Error creating movement:', error);
       throw error;
     }
   },
@@ -83,7 +83,7 @@ export const stockMovementService = {
         data: StockMovement;
       }>(`/api/stock-movements/${id}`, movementData);
     } catch (error) {
-      console.error(`Error al actualizar movimiento ${id}:`, error);
+      console.error(`Error updating movement ${id}:`, error);
       throw error;
     }
   },
@@ -99,7 +99,7 @@ export const stockMovementService = {
         message: string;
       }>(`/api/stock-movements/${id}`);
     } catch (error) {
-      console.error(`Error al eliminar movimiento ${id}:`, error);
+      console.error(`Error deleting movement ${id}:`, error);
       throw error;
     }
   },
@@ -112,7 +112,7 @@ export const stockMovementService = {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/product/${productId}`);
       return response.data || response;
     } catch (error) {
-      console.error(`Error al obtener movimientos del producto ${productId}:`, error);
+      console.error(`Error fetching product movements ${productId}:`, error);
       throw error;
     }
   },
@@ -125,7 +125,7 @@ export const stockMovementService = {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/warehouse/${warehouseId}`);
       return response.data || response;
     } catch (error) {
-      console.error(`Error al obtener movimientos del almacén ${warehouseId}:`, error);
+      console.error(`Error fetching warehouse movements ${warehouseId}:`, error);
       throw error;
     }
   },
@@ -138,7 +138,7 @@ export const stockMovementService = {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/date-range?start=${startDate}&end=${endDate}`);
       return response.data || response;
     } catch (error) {
-      console.error(`Error al obtener movimientos por fecha:`, error);
+      console.error(`Error fetching movements by date:`, error);
       throw error;
     }
   }

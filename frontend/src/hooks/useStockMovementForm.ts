@@ -7,23 +7,23 @@ import { StockMovementFormData } from "../services/api/stockMovementService";
 const stockMovementSchema = z.object({
   movement_type: z
     .string()
-    .min(1, "El tipo de movimiento es requerido")
+    .min(1, "Movement type is required")
     .refine(
       (val) => ["entry", "exit", "adjustment", "senasa"].includes(val),
-      "Tipo de movimiento inválido"
+      "Invalid movement type"
     ),
   quantity: z
-    .number({ required_error: "La cantidad es requerida" })
-    .positive("La cantidad debe ser mayor a 0"),
+    .number({ required_error: "Quantity is required" })
+    .positive("Quantity must be greater than 0"),
   product_id: z
     .string()
-    .min(1, "El producto es requerido"),
+    .min(1, "Product is required"),
   warehouse_id: z
     .string()
-    .min(1, "El almacén es requerido"),
+    .min(1, "Warehouse is required"),
   reference: z
     .string()
-    .max(500, "La referencia no puede exceder 500 caracteres")
+    .max(500, "Reference cannot exceed 500 characters")
     .optional(),
   movement_date: z
     .string()
@@ -138,7 +138,7 @@ export function useStockMovementForm({
             resetForm();
           }
         } catch (error) {
-          console.error("Error en submit del formulario:", error);
+          console.error("Error in form submit:", error);
         }
       })(event);
     },
@@ -185,7 +185,7 @@ export function useStockMovementValidation() {
           }, {} as Record<string, string>),
         };
       }
-      return { isValid: false, errors: { general: "Error de validación" } };
+      return { isValid: false, errors: { general: "Validation error" } };
     }
   }, []);
 
@@ -198,10 +198,10 @@ export function useStockMovementValidation() {
       if (error instanceof z.ZodError) {
         return {
           isValid: false,
-          error: error.errors[0]?.message || "Error de validación",
+          error: error.errors[0]?.message || "Validation error",
         };
       }
-      return { isValid: false, error: "Error de validación" };
+      return { isValid: false, error: "Validation error" };
     }
   }, []);
 

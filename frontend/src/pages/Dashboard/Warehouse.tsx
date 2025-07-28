@@ -77,7 +77,7 @@ const WarehousesPage: React.FC = () => {
         data: { is_active: !warehouse.is_active },
       });
     } catch (error) {
-      console.error('Error al cambiar estado:', error);
+      console.error('Error changing status:', error);
     }
   };
 
@@ -118,7 +118,7 @@ const WarehousesPage: React.FC = () => {
       }
       closeModal();
     } catch (error) {
-      console.error('Error al guardar:', error);
+      console.error('Error saving:', error);
     }
   };
 
@@ -157,15 +157,15 @@ const WarehousesPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Almacenes - Dashboard</title>
+        <title>Warehouses - Dashboard</title>
       </Helmet>
 
       <CRUDPage
-        title={(tableConfig as any)?.name || 'Gestión de Almacenes'}
+        title={(tableConfig as any)?.name || 'Warehouse Management'}
         description={
           configLoading
-            ? 'Cargando configuración de tabla...'
-            : 'Administre los almacenes y su configuración'
+            ? 'Loading table configuration...'
+            : 'Manage warehouses and their configuration'
         }
         data={warehouses || []}
         isLoading={isLoading || isLoaderVisible || configLoading}
@@ -198,13 +198,13 @@ const WarehousesPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>¿Eliminar almacén?</ModalTitle>
+            <ModalTitle>Delete warehouse?</ModalTitle>
             <ModalDescription>
-              Esta acción no se puede deshacer. El almacén{' '}
+              This action cannot be undone. The warehouse{' '}
               <span className="font-medium text-neutral-900">
-                "{showDeleteConfirm.warehouse?.name || 'seleccionado'}"
+                "{showDeleteConfirm.warehouse?.name || 'selected'}"
               </span>{' '}
-              será eliminado permanentemente.
+              will be permanently deleted.
             </ModalDescription>
           </ModalHeader>
 
@@ -215,7 +215,7 @@ const WarehousesPage: React.FC = () => {
               disabled={deleteWarehouse.isPending}
               className="w-full sm:w-auto"
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -223,7 +223,7 @@ const WarehousesPage: React.FC = () => {
               loading={deleteWarehouse.isPending}
               className="w-full sm:w-auto"
             >
-              Eliminar
+              Delete
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -43,11 +43,11 @@ export function useCreateWarehouse() {
     mutationFn: (data: WarehouseFormData) => warehouseService.create(data),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
-      toast.success("Almacén creado exitosamente");
+      toast.success("Warehouse created successfully");
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al crear almacén: ${error.message}`);
+      toast.error(`Error creating warehouse: ${error.message}`);
       throw error;
     },
   });
@@ -62,11 +62,11 @@ export function useUpdateWarehouse() {
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["warehouse", variables.id] });
-      toast.success("Almacén actualizado exitosamente");
+      toast.success("Warehouse updated successfully");
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar almacén: ${error.message}`);
+      toast.error(`Error updating warehouse: ${error.message}`);
       throw error;
     },
   });
@@ -79,10 +79,10 @@ export function useDeactivateWarehouse() {
     mutationFn: (id: string) => warehouseService.deactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
-      toast.success("Almacén desactivado exitosamente");
+      toast.success("Warehouse deactivated successfully");
     },
     onError: (error: Error) => {
-      toast.error(`Error al desactivar almacén: ${error.message}`);
+      toast.error(`Error deactivating warehouse: ${error.message}`);
       throw error;
     },
   });
@@ -95,10 +95,10 @@ export function useDeleteWarehouse() {
     mutationFn: (id: string) => warehouseService.deletePermanently(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
-      toast.success("Almacén eliminado permanentemente");
+      toast.success("Warehouse permanently deleted");
     },
     onError: (error: Error) => {
-      toast.error(`Error al eliminar almacén: ${error.message}`);
+      toast.error(`Error deleting warehouse: ${error.message}`);
       throw error;
     },
   });
