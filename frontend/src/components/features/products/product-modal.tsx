@@ -7,10 +7,10 @@ import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
 
 const productSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  batch_number: z.string().min(1, 'El número de lote es requerido'),
-  expiration_date: z.string().min(1, 'La fecha de vencimiento es requerida'),
-  origin_country: z.string().min(1, 'El país de origen es requerido'),
+  name: z.string().min(1, 'Name is required'),
+  batch_number: z.string().min(1, 'Batch number is required'),
+  expiration_date: z.string().min(1, 'Expiration date is required'),
+  origin_country: z.string().min(1, 'Country of origin is required'),
 });
 
 export interface Product {
@@ -56,24 +56,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Crear Nuevo Producto';
+        return 'Create New Product';
       case 'edit':
-        return `Editar ${product?.name}`;
+        return `Edit ${product?.name}`;
       case 'view':
-        return `Detalles de ${product?.name}`;
+        return `${product?.name} Details`;
       default:
-        return 'Producto';
+        return 'Product';
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Complete la información para registrar un nuevo producto.';
+        return 'Complete the information to register a new product.';
       case 'edit':
-        return `Modifique los campos que desee actualizar para "${product?.name}".`;
+        return `Modify the fields you want to update for "${product?.name}".`;
       case 'view':
-        return `Información detallada del producto "${product?.name}".`;
+        return `Detailed information for product "${product?.name}".`;
       default:
         return '';
     }

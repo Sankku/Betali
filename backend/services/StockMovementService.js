@@ -118,7 +118,7 @@ class StockMovementService {
       // Check if movement exists
       const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
-        throw new Error('Movimiento no encontrado');
+        throw new Error('Movement not found');
       }
       
       // Validate references if they are being updated
@@ -151,7 +151,7 @@ class StockMovementService {
       // Check if movement exists
       const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
-        throw new Error('Movimiento no encontrado');
+        throw new Error('Movement not found');
       }
       
       await this.stockMovementRepository.delete(movementId, 'movement_id');
@@ -232,17 +232,17 @@ class StockMovementService {
     
     for (const field of required) {
       if (!movementData[field]) {
-        throw new Error(`Campo requerido: ${field}`);
+        throw new Error(`Required field: ${field}`);
       }
     }
     
     if (typeof movementData.quantity !== 'number' || movementData.quantity <= 0) {
-      throw new Error('La cantidad debe ser un número mayor a 0');
+      throw new Error('Quantity must be a number greater than 0');
     }
     
     const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
     if (!validTypes.includes(movementData.movement_type)) {
-      throw new Error(`Tipo de movimiento inválido. Debe ser uno de: ${validTypes.join(', ')}`);
+      throw new Error(`Invalid movement type. Must be one of: ${validTypes.join(', ')}`);
     }
   }
 
@@ -255,14 +255,14 @@ class StockMovementService {
     if (movementData.product_id) {
       const product = await this.productRepository.findById(movementData.product_id, 'product_id');
       if (!product) {
-        throw new Error('Producto no encontrado');
+        throw new Error('Product not found');
       }
     }
     
     if (movementData.warehouse_id) {
       const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id, 'warehouse_id');
       if (!warehouse) {
-        throw new Error('Almacén no encontrado');
+        throw new Error('Warehouse not found');
       }
     }
   }

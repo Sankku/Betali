@@ -56,7 +56,7 @@ export function CRUDPage<TEntity>({
               className="bg-primary-600 hover:bg-primary-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Crear
+              Create
             </Button>
           </div>
         </div>

@@ -1,17 +1,16 @@
 const { DatabaseConfig } = require('../config/database');
 const { TableConfigRepository } = require('../repositories/TableConfigRepository');
 
-// Initial table configurations
 const tableConfigurations = [
   {
     id: 'products',
-    name: 'Gestión de Productos',
+    name: 'Product Management',
     entity: 'products',
     config: {
       columns: [
         {
           key: 'name',
-          header: 'Producto',
+          header: 'Product',
           dataType: 'compound',
           sortable: true,
           filterable: true,
@@ -34,7 +33,7 @@ const tableConfigurations = [
                   textConfig: { 
                     size: 'sm', 
                     color: 'text-neutral-500',
-                    prefix: 'Lote: '
+                    prefix: 'Batch: '
                   }
                 }
               }
@@ -45,7 +44,7 @@ const tableConfigurations = [
         },
         {
           key: 'expiration_date',
-          header: 'Vencimiento',
+          header: 'Expiration',
           dataType: 'compound',
           sortable: true,
           filterable: true,
@@ -67,7 +66,7 @@ const tableConfigurations = [
         },
         {
           key: 'origin_country',
-          header: 'País de Origen',
+          header: 'Country of Origin',
           dataType: 'icon-text',
           sortable: true,
           filterable: true,
@@ -82,13 +81,13 @@ const tableConfigurations = [
         },
         {
           key: 'created_at',
-          header: 'Fecha Registro',
+          header: 'Registration Date',
           dataType: 'date',
           sortable: true,
           filterable: true,
           dateConfig: {
             format: 'short',
-            locale: 'es-ES'
+            locale: 'en-US'
           }
         },
         {
@@ -99,9 +98,9 @@ const tableConfigurations = [
           filterable: false,
           actionsConfig: {
             actions: [
-              { key: 'view', label: 'Ver', icon: 'eye', variant: 'ghost' },
-              { key: 'edit', label: 'Editar', icon: 'edit', variant: 'ghost' },
-              { key: 'delete', label: 'Eliminar', icon: 'trash', variant: 'destructive' }
+              { key: 'view', label: 'View', icon: 'eye', variant: 'ghost' },
+              { key: 'edit', label: 'Edit', icon: 'edit', variant: 'ghost' },
+              { key: 'delete', label: 'Delete', icon: 'trash', variant: 'destructive' }
             ]
           }
         }
@@ -113,20 +112,20 @@ const tableConfigurations = [
       },
       search: {
         enabled: true,
-        placeholder: 'Buscar productos...',
+        placeholder: 'Search products...',
         searchableColumns: ['name', 'batch_number', 'origin_country']
       }
     }
   },
   {
     id: 'warehouse',
-    name: 'Gestión de Almacenes',
+    name: 'Warehouse Management',
     entity: 'warehouse',
     config: {
       columns: [
         {
           key: 'name',
-          header: 'Nombre',
+          header: 'Name',
           dataType: 'compound',
           sortable: true,
           filterable: true,
@@ -161,7 +160,7 @@ const tableConfigurations = [
         },
         {
           key: 'location',
-          header: 'Ubicación',
+          header: 'Location',
           dataType: 'icon-text',
           sortable: true,
           filterable: true,
@@ -176,13 +175,13 @@ const tableConfigurations = [
         },
         {
           key: 'is_active',
-          header: 'Estado',
+          header: 'Status',
           dataType: 'status',
           sortable: true,
           filterable: true,
           statusConfig: {
-            activeLabel: 'Activo',
-            inactiveLabel: 'Inactivo',
+            activeLabel: 'Active',
+            inactiveLabel: 'Inactive',
             activeVariant: 'success',
             inactiveVariant: 'danger',
             showToggle: true,
@@ -191,13 +190,13 @@ const tableConfigurations = [
         },
         {
           key: 'created_at',
-          header: 'Fecha Creación',
+          header: 'Creation Date',
           dataType: 'date',
           sortable: true,
           filterable: true,
           dateConfig: {
             format: 'short',
-            locale: 'es-ES'
+            locale: 'en-US'
           }
         },
         {
@@ -208,9 +207,9 @@ const tableConfigurations = [
           filterable: false,
           actionsConfig: {
             actions: [
-              { key: 'view', label: 'Ver', icon: 'eye', variant: 'ghost' },
-              { key: 'edit', label: 'Editar', icon: 'edit', variant: 'ghost' },
-              { key: 'delete', label: 'Eliminar', icon: 'trash', variant: 'destructive' }
+              { key: 'view', label: 'View', icon: 'eye', variant: 'ghost' },
+              { key: 'edit', label: 'Edit', icon: 'edit', variant: 'ghost' },
+              { key: 'delete', label: 'Delete', icon: 'trash', variant: 'destructive' }
             ]
           }
         }
@@ -222,7 +221,7 @@ const tableConfigurations = [
       },
       search: {
         enabled: true,
-        placeholder: 'Buscar almacenes...',
+        placeholder: 'Search warehouses...',
         searchableColumns: ['name', 'location']
       }
     }
@@ -235,7 +234,7 @@ const tableConfigurations = [
       columns: [
         {
           key: 'movement_type',
-          header: 'Tipo',
+          header: 'Type',
           dataType: 'badge',
           sortable: true,
           filterable: true,
@@ -247,17 +246,17 @@ const tableConfigurations = [
               'transfer': 'primary'
             },
             labelMap: {
-              'in': 'Entrada',
-              'out': 'Salida',
-              'adjustment': 'Ajuste',
-              'transfer': 'Transferencia'
+              'in': 'In',
+              'out': 'Out',
+              'adjustment': 'Adjustment',
+              'transfer': 'Transfer'
             },
             size: 'md'
           }
         },
         {
           key: 'product_name',
-          header: 'Producto',
+          header: 'Product',
           dataType: 'icon-text',
           sortable: true,
           filterable: true,
@@ -273,21 +272,21 @@ const tableConfigurations = [
         },
         {
           key: 'quantity',
-          header: 'Cantidad',
+          header: 'Quantity',
           dataType: 'number',
           sortable: true,
           filterable: true,
           numberConfig: {
             format: 'decimal',
             decimals: 0,
-            suffix: ' unidades',
+            suffix: ' units',
             showPositiveColor: true,
             showNegativeColor: true
           }
         },
         {
           key: 'warehouse_name',
-          header: 'Almacén',
+          header: 'Warehouse',
           dataType: 'icon-text',
           sortable: true,
           filterable: true,
@@ -303,7 +302,7 @@ const tableConfigurations = [
         },
         {
           key: 'movement_date',
-          header: 'Fecha',
+          header: 'Date',
           dataType: 'icon-text',
           sortable: true,
           filterable: true,
@@ -318,7 +317,7 @@ const tableConfigurations = [
         },
         {
           key: 'reference',
-          header: 'Referencia',
+          header: 'Reference',
           dataType: 'icon-text',
           sortable: false,
           filterable: true,
@@ -355,7 +354,7 @@ const tableConfigurations = [
       },
       search: {
         enabled: true,
-        placeholder: 'Buscar movimientos...',
+        placeholder: 'Search movements...',
         searchableColumns: ['product_name', 'reference', 'warehouse_name']
       }
     }

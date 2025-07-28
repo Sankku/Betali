@@ -12,7 +12,7 @@ interface RecentMovementsProps {
 
 const RecentMovements: React.FC<RecentMovementsProps> = ({ movements }) => (
   <div>
-    <h5 className="text-md font-medium text-gray-900 mb-3">Movimientos Recientes</h5>
+    <h5 className="text-md font-medium text-gray-900 mb-3">Recent Movements</h5>
     <div className="bg-gray-50 rounded-lg p-4">
       <div className="space-y-3">
         {movements.slice(0, 5).map(movement => (
@@ -33,7 +33,7 @@ const RecentMovements: React.FC<RecentMovementsProps> = ({ movements }) => (
               <div className="text-sm text-gray-500">
                 {new Date(movement.movement_date).toLocaleDateString()}
               </div>
-              <div className="font-medium text-gray-900">{movement.quantity} unidades</div>
+              <div className="font-medium text-gray-900">{movement.quantity} units</div>
             </div>
           </div>
         ))}

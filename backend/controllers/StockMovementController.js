@@ -44,7 +44,7 @@ class StockMovementController {
       
       if (!movement) {
         return res.status(404).json({
-          error: 'Movimiento no encontrado'
+          error: 'Movement not found'
         });
       }
       
@@ -66,7 +66,7 @@ class StockMovementController {
       const createdMovement = await this.stockMovementService.createMovement(movementData);
       
       res.status(201).json({
-        message: 'Movimiento creado exitosamente',
+        message: 'Movement created successfully',
         data: createdMovement
       });
     } catch (error) {
@@ -75,9 +75,10 @@ class StockMovementController {
         body: req.body 
       });
       
-      if (error.message.includes('requerido') || 
-          error.message.includes('inválido') ||
-          error.message.includes('encontrado')) {
+      if (error.message.includes('required') || 
+          error.message.includes('Required') ||
+          error.message.includes('Invalid') ||
+          error.message.includes('found')) {
         return res.status(400).json({
           error: error.message
         });
@@ -99,7 +100,7 @@ class StockMovementController {
       const updatedMovement = await this.stockMovementService.updateMovement(id, updateData);
       
       res.json({
-        message: 'Movimiento actualizado exitosamente',
+        message: 'Movement updated successfully',
         data: updatedMovement
       });
     } catch (error) {
@@ -108,14 +109,15 @@ class StockMovementController {
         body: req.body 
       });
       
-      if (error.message.includes('no encontrado')) {
+      if (error.message.includes('not found')) {
         return res.status(404).json({
           error: error.message
         });
       }
       
-      if (error.message.includes('requerido') || 
-          error.message.includes('inválido')) {
+      if (error.message.includes('required') || 
+          error.message.includes('Required') ||
+          error.message.includes('Invalid')) {
         return res.status(400).json({
           error: error.message
         });
@@ -136,12 +138,12 @@ class StockMovementController {
       await this.stockMovementService.deleteMovement(id);
       
       res.json({
-        message: 'Movimiento eliminado exitosamente'
+        message: 'Movement deleted successfully'
       });
     } catch (error) {
       this.logger.error(`Error deleting movement ${req.params.id}`, { error: error.message });
       
-      if (error.message.includes('no encontrado')) {
+      if (error.message.includes('not found')) {
         return res.status(404).json({
           error: error.message
         });
@@ -215,7 +217,7 @@ class StockMovementController {
       
       if (!start || !end) {
         return res.status(400).json({
-          error: 'Parámetros start y end son requeridos'
+          error: 'Start and end parameters are required'
         });
       }
       
@@ -224,7 +226,7 @@ class StockMovementController {
       
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         return res.status(400).json({
-          error: 'Fechas inválidas'
+          error: 'Invalid dates'
         });
       }
       

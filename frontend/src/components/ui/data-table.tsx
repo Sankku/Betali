@@ -55,10 +55,10 @@ export function DataTable<TData>({
   data: rawData,
   loading = false,
   onRowClick,
-  emptyMessage = 'No hay datos disponibles',
+  emptyMessage = 'No data available',
   className,
   searchable = true,
-  searchPlaceholder = 'Buscar...',
+  searchPlaceholder = 'Search...',
   searchKey,
   pageSize = 10,
   enableSorting = true,
@@ -140,8 +140,8 @@ export function DataTable<TData>({
         <div className="flex items-center space-x-3 text-red-600">
           <AlertCircle className="w-5 h-5" />
           <div>
-            <h3 className="font-medium">Error de configuración</h3>
-            <p className="text-sm">Las columnas de la tabla no están configuradas correctamente.</p>
+            <h3 className="font-medium">Configuration Error</h3>
+            <p className="text-sm">Table columns are not configured correctly.</p>
           </div>
         </div>
       </div>
@@ -185,7 +185,7 @@ export function DataTable<TData>({
                   className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 text-neutral-700 hover:text-neutral-900 transition-all duration-200"
                 >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Columnas
+                  Columns
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               )}
@@ -199,7 +199,7 @@ export function DataTable<TData>({
               <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-neutral-200/60 shadow-xl px-6 py-4">
                 <div className="flex items-center space-x-3">
                   <Loading size="sm" className="text-primary-600" />
-                  <span className="text-sm font-medium text-neutral-800">Cargando datos...</span>
+                  <span className="text-sm font-medium text-neutral-800">Loading data...</span>
                 </div>
               </div>
             </div>
@@ -271,11 +271,11 @@ export function DataTable<TData>({
                           </div>
                           <div className="space-y-2">
                             <p className="text-lg font-semibold text-neutral-800">
-                              {loading ? 'Cargando datos...' : 'No hay datos disponibles'}
+                              {loading ? 'Loading data...' : 'No data available'}
                             </p>
                             <p className="text-sm text-neutral-600 max-w-md">
                               {loading
-                                ? 'Por favor espere mientras cargamos la información.'
+                                ? 'Please wait while we load the information.'
                                 : emptyMessage}
                             </p>
                           </div>
@@ -313,11 +313,11 @@ export function DataTable<TData>({
           <div className="border-t border-neutral-200/60 bg-gradient-to-r from-neutral-100/50 to-white/60 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-neutral-700">
-                Mostrando{' '}
+                Showing{' '}
                 <span className="font-semibold text-neutral-900">
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
                 </span>
-                {' a '}
+                {' to '}
                 <span className="font-semibold text-neutral-900">
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) *
@@ -325,11 +325,11 @@ export function DataTable<TData>({
                     table.getFilteredRowModel().rows.length
                   )}
                 </span>
-                {' de '}
+                {' of '}
                 <span className="font-semibold text-neutral-900">
                   {table.getFilteredRowModel().rows.length}
                 </span>
-                {' resultados'}
+                {' results'}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -354,11 +354,11 @@ export function DataTable<TData>({
                 </Button>
 
                 <div className="flex items-center space-x-2 px-3 py-1.5 bg-white/70 backdrop-blur-sm rounded-lg border border-neutral-300/60">
-                  <span className="text-sm text-neutral-700">Página</span>
+                  <span className="text-sm text-neutral-700">Page</span>
                   <span className="text-sm font-semibold text-neutral-900">
                     {table.getState().pagination.pageIndex + 1}
                   </span>
-                  <span className="text-sm text-neutral-700">de</span>
+                  <span className="text-sm text-neutral-700">of</span>
                   <span className="text-sm font-semibold text-neutral-900">
                     {table.getPageCount()}
                   </span>

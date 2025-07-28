@@ -78,7 +78,7 @@ const ProductsPage: React.FC = () => {
         await deleteProduct.mutateAsync(showDeleteConfirm.product.product_id);
         setShowDeleteConfirm({ show: false });
       } catch (error) {
-        console.error('Error al eliminar:', error);
+        console.error('Error deleting:', error);
       }
     } else {
       console.error('Cannot delete: Product ID is missing');
@@ -101,7 +101,7 @@ const ProductsPage: React.FC = () => {
       }
       closeModal();
     } catch (error) {
-      console.error('Error al guardar:', error);
+      console.error('Error saving:', error);
     }
   };
 
@@ -131,15 +131,15 @@ const ProductsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Productos - Dashboard</title>
+        <title>Products - Dashboard</title>
       </Helmet>
 
       <CRUDPage
-        title={(tableConfig as any)?.name || 'Gestión de Productos'}
+        title={(tableConfig as any)?.name || 'Product Management'}
         description={
           configLoading
-            ? 'Cargando configuración de tabla...'
-            : 'Administre el inventario de productos y su información'
+            ? 'Loading table configuration...'
+            : 'Manage product inventory and information'
         }
         data={products}
         isLoading={isLoading || isLoaderVisible || configLoading}
@@ -172,13 +172,13 @@ const ProductsPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>¿Eliminar producto?</ModalTitle>
+            <ModalTitle>Delete product?</ModalTitle>
             <ModalDescription>
-              Esta acción no se puede deshacer. El producto{' '}
+              This action cannot be undone. The product{' '}
               <span className="font-medium text-neutral-900">
-                "{showDeleteConfirm.product?.name || 'seleccionado'}"
+                "{showDeleteConfirm.product?.name || 'selected'}"
               </span>{' '}
-              será eliminado permanentemente.
+              will be permanently deleted.
             </ModalDescription>
           </ModalHeader>
 
@@ -189,7 +189,7 @@ const ProductsPage: React.FC = () => {
               disabled={deleteProduct.isPending}
               className="w-full sm:w-auto"
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -197,7 +197,7 @@ const ProductsPage: React.FC = () => {
               loading={deleteProduct.isPending}
               className="w-full sm:w-auto"
             >
-              Eliminar
+              Delete
             </Button>
           </ModalFooter>
         </ModalContent>

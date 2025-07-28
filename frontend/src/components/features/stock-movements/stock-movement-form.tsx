@@ -19,26 +19,26 @@ interface StockMovementFormProps {
 const MOVEMENT_TYPES = [
   {
     value: 'entry',
-    label: 'Entrada',
-    description: 'Ingreso de mercancía al inventario',
+    label: 'Entry',
+    description: 'Goods entry to inventory',
     color: 'text-green-700',
   },
   {
     value: 'exit',
-    label: 'Salida',
-    description: 'Salida de mercancía del inventario',
+    label: 'Exit',
+    description: 'Goods exit from inventory',
     color: 'text-red-700',
   },
   {
     value: 'adjustment',
-    label: 'Ajuste',
-    description: 'Corrección de inventario',
+    label: 'Adjustment',
+    description: 'Inventory correction',
     color: 'text-blue-700',
   },
   {
     value: 'senasa',
     label: 'SENASA',
-    description: 'Movimiento relacionado con SENASA',
+    description: 'SENASA related movement',
     color: 'text-purple-700',
   },
 ];
@@ -91,19 +91,19 @@ export function StockMovementForm({
       </label>
       {description && <p className="text-xs text-neutral-600">{description}</p>}
       <div className="w-full rounded-lg border-2 border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
-        <span className="text-neutral-900 font-medium">{value || 'No especificado'}</span>
+        <span className="text-neutral-900 font-medium">{value || 'Not specified'}</span>
       </div>
     </div>
   );
 
   const getProductName = (productId: string) => {
     const product = validProducts.find(p => p.product_id === productId);
-    return product?.name || 'Producto no encontrado';
+    return product?.name || 'Product not found';
   };
 
   const getWarehouseName = (warehouseId: string) => {
     const warehouse = validWarehouses.find((w: any) => w.warehouse_id === warehouseId);
-    return warehouse?.name || 'Almacén no encontrado';
+    return warehouse?.name || 'Warehouse not found';
   };
 
   const getMovementTypeLabel = (type: string) => {
@@ -116,7 +116,7 @@ export function StockMovementForm({
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center space-y-3">
           <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm font-medium text-neutral-600">Cargando datos...</span>
+          <span className="text-sm font-medium text-neutral-600">Loading data...</span>
         </div>
       </div>
     );
@@ -136,9 +136,9 @@ export function StockMovementForm({
             </svg>
           </div>
           <div>
-            <h3 className="text-red-800 font-semibold">Error al cargar datos</h3>
+            <h3 className="text-red-800 font-semibold">Error loading data</h3>
             <p className="text-red-700 text-sm mt-1">
-              {productsError?.message || warehousesError?.message || 'Error desconocido'}
+              {productsError?.message || warehousesError?.message || 'Unknown error'}
             </p>
           </div>
         </div>
@@ -150,53 +150,53 @@ export function StockMovementForm({
     return (
       <div className="space-y-6">
         <ViewField
-          label="Tipo de Movimiento"
+          label="Movement Type"
           value={getMovementTypeLabel(watchedValues.movement_type)}
           icon={<ArrowUpDown className="h-4 w-4" />}
-          description="Tipo de operación de stock"
+          description="Type of stock operation"
         />
 
         <ViewField
-          label="Cantidad"
+          label="Quantity"
           value={watchedValues.quantity?.toString() || '0'}
           icon={<Hash className="h-4 w-4" />}
-          description="Cantidad de unidades"
+          description="Number of units"
         />
 
         <ViewField
-          label="Producto"
+          label="Product"
           value={getProductName(watchedValues?.product_id || '')}
           icon={<Package className="h-4 w-4" />}
-          description="Producto afectado"
+          description="Affected product"
         />
 
         <ViewField
-          label="Almacén"
+          label="Warehouse"
           value={getWarehouseName(watchedValues?.warehouse_id || '')}
           icon={<Warehouse className="h-4 w-4" />}
-          description="Almacén de origen/destino"
+          description="Source/destination warehouse"
         />
 
         <ViewField
-          label="Referencia"
-          value={watchedValues.reference || 'Sin referencia'}
+          label="Reference"
+          value={watchedValues.reference || 'No reference'}
           icon={<FileText className="h-4 w-4" />}
-          description="Notas o referencias adicionales"
+          description="Additional notes or references"
         />
 
         <ViewField
-          label="Fecha del Movimiento"
+          label="Movement Date"
           value={
             watchedValues.movement_date
-              ? new Date(watchedValues.movement_date).toLocaleDateString('es-ES', {
+              ? new Date(watchedValues.movement_date).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
                 })
-              : 'Sin fecha'
+              : 'No date'
           }
           icon={<Calendar className="h-4 w-4" />}
-          description="Fecha de la operación"
+          description="Date of operation"
         />
       </div>
     );
@@ -207,16 +207,16 @@ export function StockMovementForm({
       <div className="space-y-3">
         <label className="text-sm font-semibold text-neutral-800 flex items-center">
           <ArrowUpDown className="h-4 w-4 mr-2 text-neutral-600" />
-          Tipo de Movimiento <span className="text-red-500 ml-1">*</span>
+          Movement Type <span className="text-red-500 ml-1">*</span>
         </label>
-        <p className="text-xs text-neutral-600">Selecciona el tipo de operación de stock</p>
+        <p className="text-xs text-neutral-600">Select the type of stock operation</p>
         <Select
           value={watchedValues.movement_type}
           onValueChange={value => setValue('movement_type', value)}
           disabled={isLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Selecciona el tipo de movimiento" />
+            <SelectValue placeholder="Select movement type" />
           </SelectTrigger>
           <SelectContent>
             {MOVEMENT_TYPES.map(type => (
@@ -237,7 +237,7 @@ export function StockMovementForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           {...register('quantity', { valueAsNumber: true })}
-          label="Cantidad"
+          label="Quantity"
           type="number"
           min="0"
           step="0.01"
@@ -245,18 +245,18 @@ export function StockMovementForm({
           icon={<Hash className="h-4 w-4" />}
           disabled={isLoading}
           error={getFieldError('quantity')}
-          description="Cantidad de unidades del movimiento"
+          description="Number of units in the movement"
           required
         />
 
         <Input
           {...register('movement_date')}
-          label="Fecha del Movimiento"
+          label="Movement Date"
           type="date"
           icon={<Calendar className="h-4 w-4" />}
           disabled={isLoading}
           error={getFieldError('movement_date')}
-          description="Fecha cuando se realizó la operación"
+          description="Date when the operation was performed"
           required
         />
       </div>
@@ -265,21 +265,21 @@ export function StockMovementForm({
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-800 flex items-center">
             <Package className="h-4 w-4 mr-2 text-neutral-600" />
-            Producto <span className="text-red-500 ml-1">*</span>
+            Product <span className="text-red-500 ml-1">*</span>
           </label>
-          <p className="text-xs text-neutral-600">Selecciona el producto para el movimiento</p>
+          <p className="text-xs text-neutral-600">Select the product for the movement</p>
           <Select
             value={watchedValues.product_id}
             onValueChange={value => setValue('product_id', value)}
             disabled={isLoading}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona un producto" />
+              <SelectValue placeholder="Select a product" />
             </SelectTrigger>
             <SelectContent>
               {validProducts.length === 0 ? (
                 <div className="px-3 py-4 text-sm text-neutral-500 text-center">
-                  No hay productos disponibles
+                  No products available
                 </div>
               ) : (
                 validProducts
@@ -289,7 +289,7 @@ export function StockMovementForm({
                       <div className="flex flex-col space-y-1">
                         <div className="font-semibold text-neutral-900">{product.name}</div>
                         <div className="text-xs text-neutral-600">
-                          Lote: <span className="font-medium">{product.batch_number}</span> | País:{' '}
+                          Batch: <span className="font-medium">{product.batch_number}</span> | Country:{' '}
                           <span className="font-medium">{product.origin_country}</span>
                         </div>
                       </div>
@@ -306,21 +306,21 @@ export function StockMovementForm({
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-800 flex items-center">
             <Warehouse className="h-4 w-4 mr-2 text-neutral-600" />
-            Almacén <span className="text-red-500 ml-1">*</span>
+            Warehouse <span className="text-red-500 ml-1">*</span>
           </label>
-          <p className="text-xs text-neutral-600">Selecciona el almacén de origen o destino</p>
+          <p className="text-xs text-neutral-600">Select the source or destination warehouse</p>
           <Select
             value={watchedValues.warehouse_id}
             onValueChange={value => setValue('warehouse_id', value)}
             disabled={isLoading}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona un almacén" />
+              <SelectValue placeholder="Select a warehouse" />
             </SelectTrigger>
             <SelectContent>
               {validWarehouses.length === 0 ? (
                 <div className="px-3 py-4 text-sm text-neutral-500 text-center">
-                  No hay almacenes disponibles
+                  No warehouses available
                 </div>
               ) : (
                 validWarehouses
@@ -347,12 +347,12 @@ export function StockMovementForm({
       <div className="space-y-3">
         <label className="text-sm font-semibold text-neutral-800 flex items-center">
           <FileText className="h-4 w-4 mr-2 text-neutral-600" />
-          Referencia
+          Reference
         </label>
-        <p className="text-xs text-neutral-600">Notas o referencias adicionales (opcional)</p>
+        <p className="text-xs text-neutral-600">Additional notes or references (optional)</p>
         <Textarea
           {...register('reference')}
-          placeholder="Ingresa referencias, notas u observaciones..."
+          placeholder="Enter references, notes or observations..."
           disabled={isLoading}
           rows={3}
           className="resize-none"
@@ -370,7 +370,7 @@ export function StockMovementForm({
             className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             disabled={isLoading}
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="submit"
@@ -380,7 +380,7 @@ export function StockMovementForm({
             {isLoading && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             )}
-            {mode === 'create' ? 'Crear Movimiento' : 'Guardar Cambios'}
+            {mode === 'create' ? 'Create Movement' : 'Save Changes'}
           </button>
         </div>
       )}

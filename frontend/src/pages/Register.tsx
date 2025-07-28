@@ -41,13 +41,13 @@ export default function Register() {
     setError(null);
 
     if (!agreeTerms) {
-      setError('Debes aceptar los términos y condiciones para continuar');
+      setError('You must accept the terms and conditions to continue');
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -57,9 +57,9 @@ export default function Register() {
 
       if (error) throw error;
 
-      navigate('/login?message=Registro exitoso. Por favor, verifica tu correo electrónico.');
+      navigate('/login?message=Registration successful. Please check your email.');
     } catch (err: any) {
-      setError(err.message || 'Error al registrarse');
+      setError(err.message || 'Registration error');
     } finally {
       setLoading(false);
     }
@@ -80,16 +80,16 @@ export default function Register() {
             </div>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">AgroPanel</h1>
-          <p className="text-gray-500 mt-1">Gestión de productos agrícolas</p>
+          <p className="text-gray-500 mt-1">Agricultural product management</p>
         </div>
 
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-              Crear Cuenta
+              Create Account
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Regístrate para acceder a la plataforma
+              Register to access the platform
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -107,7 +107,7 @@ export default function Register() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-neutral-700">
-                  Correo electrónico
+                  Email
                 </Label>
                 <Input
                   id="email"
@@ -122,7 +122,7 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-neutral-700">
-                  Contraseña
+                  Password
                 </Label>
                 <div className="relative">
                   <Input
@@ -146,7 +146,7 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-neutral-700">
-                  Confirmar contraseña
+                  Confirm password
                 </Label>
                 <div className="relative">
                   <Input
@@ -184,9 +184,9 @@ export default function Register() {
                   className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   onClick={() => setAgreeTerms(!agreeTerms)}
                 >
-                  Acepto los{' '}
+                  I accept the{' '}
                   <Link to="/terms" className="text-primary-600 hover:text-primary-700 underline">
-                    términos y condiciones
+                    terms and conditions
                   </Link>
                 </label>
               </div>
@@ -196,26 +196,26 @@ export default function Register() {
                 disabled={loading}
                 className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
               >
-                {loading ? 'Cargando...' : 'Crear cuenta'}
+                {loading ? 'Loading...' : 'Create account'}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 border-t border-neutral-100 bg-neutral-50/50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
-              ¿Ya tienes una cuenta?{' '}
+              Already have an account?{' '}
               <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
-                Iniciar sesión
+                Sign in
               </Link>
             </div>
             <div className="text-center text-xs text-neutral-500">
-              Al registrarte, aceptas nuestros{' '}
+              By registering, you accept our{' '}
               <Link to="/terms" className="underline hover:text-neutral-700">
-                Términos de servicio
+                Terms of service
               </Link>{' '}
-              y{' '}
+              and{' '}
               <Link to="/privacy" className="underline hover:text-neutral-700">
-                Política de privacidad
+                Privacy policy
               </Link>
             </div>
           </CardFooter>

@@ -18,8 +18,8 @@ export const useConfirmDialog = () => {
     setState({
       ...config,
       isOpen: true,
-      confirmLabel: config.confirmLabel || 'Confirmar',
-      cancelLabel: config.cancelLabel || 'Cancelar',
+      confirmLabel: config.confirmLabel || 'Confirm',
+      cancelLabel: config.cancelLabel || 'Cancel',
       variant: config.variant || 'default',
     });
   }, []);

@@ -4,7 +4,7 @@ import { Database } from "../../types/database";
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
 /**
- * Servicio para gestionar productos
+ * Service for managing products
  */
 export const productsService = {
   async getAll(): Promise<Product[]> {
@@ -12,7 +12,7 @@ export const productsService = {
       const response = await httpClient.get<{ data: Product[] }>('/api/products');
       return response.data || response;
     } catch (error) {
-      console.error('Error al obtener productos:', error);
+      console.error('Error fetching products:', error);
       throw error;
     }
   },
@@ -22,7 +22,7 @@ export const productsService = {
       const response = await httpClient.get<{ data: Product }>(`/api/products/${id}`);
       return response.data || response;
     } catch (error) {
-      console.error(`Error al obtener producto ${id}:`, error);
+      console.error(`Error fetching product ${id}:`, error);
       throw error;
     }
   },
@@ -39,7 +39,7 @@ export const productsService = {
       const response = await httpClient.post<{ data: Product }>('/api/products', productData);
       return response.data || response; 
     } catch (error) {
-      console.error('Error al crear producto:', error);
+      console.error('Error creating product:', error);
       throw error;
     }
   },
@@ -56,7 +56,7 @@ export const productsService = {
       const response = await httpClient.put<{ data: Product }>(`/api/products/${id}`, productData);
       return response.data || response; 
     } catch (error) {
-      console.error(`Error al actualizar producto ${id}:`, error);
+      console.error(`Error updating product ${id}:`, error);
       throw error;
     }
   },
@@ -64,11 +64,11 @@ export const productsService = {
   async delete(id: string): Promise<{ message: string }> {
     try {
       if (!id || id === 'undefined' || id === 'null') {
-        throw new Error('ID de producto inválido o faltante');
+        throw new Error('Invalid or missing product ID');
       }
       return await httpClient.delete<{ message: string }>(`/api/products/${id}`);
     } catch (error) {
-      console.error(`Error al eliminar producto ${id}:`, error);
+      console.error(`Error deleting product ${id}:`, error);
       throw error;
     }
   }

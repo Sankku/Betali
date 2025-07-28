@@ -7,15 +7,15 @@ import { WarehouseFormData } from "./useWarehouse";
 const warehouseSchema = z.object({
   name: z
     .string()
-    .min(1, "El nombre es requerido")
-    .min(3, "El nombre debe tener al menos 3 caracteres")
-    .max(100, "El nombre no puede exceder 100 caracteres")
+    .min(1, "Name is required")
+    .min(3, "Name must be at least 3 characters")
+    .max(100, "Name cannot exceed 100 characters")
     .trim(),
   location: z
     .string()
-    .min(1, "La ubicación es requerida")
-    .min(3, "La ubicación debe tener al menos 3 caracteres")
-    .max(200, "La ubicación no puede exceder 200 caracteres")
+    .min(1, "Location is required")
+    .min(3, "Location must be at least 3 characters")
+    .max(200, "Location cannot exceed 200 characters")
     .trim(),
   is_active: z.boolean().optional(),
 });
@@ -100,7 +100,7 @@ export function useWarehouseForm({
             resetForm();
           }
         } catch (error) {
-          console.error("Error en submit del formulario:", error);
+          console.error("Error in form submit:", error);
         }
       })(event);
     },
@@ -147,7 +147,7 @@ export function useWarehouseValidation() {
           }, {} as Record<string, string>),
         };
       }
-      return { isValid: false, errors: { general: "Error de validación" } };
+      return { isValid: false, errors: { general: "Validation error" } };
     }
   }, []);
 
@@ -160,10 +160,10 @@ export function useWarehouseValidation() {
       if (error instanceof z.ZodError) {
         return {
           isValid: false,
-          error: error.errors[0]?.message || "Error de validación",
+          error: error.errors[0]?.message || "Validation error",
         };
       }
-      return { isValid: false, error: "Error de validación" };
+      return { isValid: false, error: "Validation error" };
     }
   }, []);
 

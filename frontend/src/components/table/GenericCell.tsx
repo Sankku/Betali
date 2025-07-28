@@ -49,7 +49,7 @@ export const GenericCell: React.FC<GenericCellProps> = ({ value, row, config, on
           config={{
             ...config.badgeConfig,
             variantMap: { true: 'success', false: 'danger' },
-            labelMap: { true: 'Sí', false: 'No' },
+            labelMap: { true: 'Yes', false: 'No' },
           }}
         />
       );

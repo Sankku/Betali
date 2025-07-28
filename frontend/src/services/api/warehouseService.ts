@@ -43,7 +43,7 @@ interface WarehouseMovementsResponse {
 
 export const warehouseService = {
   /**
-   * Obtener todos los almacenes del usuario autenticado
+   * Get all warehouses for authenticated user
    */
   async getAll(): Promise<WarehouseWithStats[]> {
     const response = await httpClient.get<{ data: WarehouseWithStats[]; meta: { total: number } }>('/api/warehouse');
@@ -51,14 +51,14 @@ export const warehouseService = {
   },
 
   /**
-   * Obtener un almacén específico por ID
+   * Get specific warehouse by ID
    */
   async getById(id: string): Promise<WarehouseWithStats> {
     return await httpClient.get<WarehouseWithStats>(`/api/warehouse/${id}`);
   },
 
   /**
-   * Crear un nuevo almacén
+   * Create a new warehouse
    */
   async create(warehouseData: {
     name: string;
@@ -74,7 +74,7 @@ export const warehouseService = {
   },
 
   /**
-   * Actualizar un almacén existente
+   * Update an existing warehouse
    */
   async update(
     id: string, 
@@ -94,7 +94,7 @@ export const warehouseService = {
   },
 
   /**
-   * Desactivar un almacén (soft delete)
+   * Deactivate a warehouse (soft delete)
    */
   async deactivate(id: string): Promise<{
     message: string;
@@ -107,7 +107,7 @@ export const warehouseService = {
   },
 
   /**
-   * Eliminar permanentemente un almacén
+   * Permanently delete a warehouse
    */
   async deletePermanently(id: string): Promise<{
     message: string;
@@ -120,7 +120,7 @@ export const warehouseService = {
   },
 
   /**
-   * Obtener movimientos de stock de un almacén
+   * Get stock movements for a warehouse
    */
   async getMovements(
     id: string, 
@@ -146,7 +146,7 @@ export const warehouseService = {
   },
 
   /**
-   * Validar nombre único de almacén
+   * Validate unique warehouse name
    */
   async validateUniqueName(name: string, excludeId?: string): Promise<boolean> {
     try {
@@ -157,7 +157,7 @@ export const warehouseService = {
              w.warehouse_id !== excludeId
       );
     } catch (error) {
-      console.error('Error al validar nombre único:', error);
+      console.error('Error validating unique name:', error);
       return false;
     }
   }

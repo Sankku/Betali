@@ -8,8 +8,8 @@ import { WarehouseForm, WarehouseFormData } from './warehouse-form';
 import { WarehouseStats } from './warehouse-stats';
 
 const warehouseSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  location: z.string().min(1, 'La ubicación es requerida'),
+  name: z.string().min(1, 'Name is required'),
+  location: z.string().min(1, 'Location is required'),
   is_active: z.boolean(),
 });
 
@@ -62,24 +62,24 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Crear Nuevo Almacén';
+        return 'Create New Warehouse';
       case 'edit':
-        return `Editar ${warehouse?.name}`;
+        return `Edit ${warehouse?.name}`;
       case 'view':
-        return `Detalles de ${warehouse?.name}`;
+        return `${warehouse?.name} Details`;
       default:
-        return 'Almacén';
+        return 'Warehouse';
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Complete la información para crear un nuevo almacén en el sistema.';
+        return 'Complete the information to create a new warehouse in the system.';
       case 'edit':
-        return `Modifique los campos que desee actualizar para "${warehouse?.name}".`;
+        return `Modify the fields you want to update for "${warehouse?.name}".`;
       case 'view':
-        return `Información detallada del almacén "${warehouse?.name}" y sus estadísticas.`;
+        return `Detailed information for warehouse "${warehouse?.name}" and its statistics.`;
       default:
         return '';
     }

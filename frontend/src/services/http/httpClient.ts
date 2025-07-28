@@ -62,7 +62,7 @@ class HttpClient {
 
       return await response.json();
     } catch (error) {
-      console.error(`Error en POST ${endpoint}:`, error);
+      console.error(`Error in POST ${endpoint}:`, error);
       throw error;
     }
   }
@@ -84,13 +84,13 @@ class HttpClient {
 
       return await response.json();
     } catch (error) {
-      console.error(`Error en PUT ${endpoint}:`, error);
+      console.error(`Error in PUT ${endpoint}:`, error);
       throw error;
     }
   }
 
   /**
-   * Realiza una petición DELETE
+   * Performs a DELETE request
    */
   async delete<T>(endpoint: string): Promise<T> {
     const headers = await this.getHeaders();
@@ -108,7 +108,7 @@ class HttpClient {
 
       return await response.json();
     } catch (error) {
-      console.error(`Error en DELETE ${endpoint}:`, error);
+      console.error(`Error in DELETE ${endpoint}:`, error);
       throw error;
     }
   }
@@ -120,7 +120,7 @@ class HttpClient {
       if (error) {
         await supabase.auth.signOut();
         window.location.href = '/login?error=session_expired';
-        throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+        throw new Error('Session expired. Please sign in again.');
       }
     }
 

@@ -86,7 +86,7 @@ export default function StockMovementsPage() {
         await deleteMovement.mutateAsync(deleteModal.movement.movement_id);
         setDeleteModal({ isOpen: false, movement: undefined });
       } catch (error) {
-        console.error('Error al eliminar movimiento:', error);
+        console.error('Error deleting movement:', error);
       }
     }
   };
@@ -103,7 +103,7 @@ export default function StockMovementsPage() {
       }
       closeModal();
     } catch (error) {
-      console.error('Error al guardar movimiento:', error);
+      console.error('Error saving movement:', error);
     }
   };
 
@@ -178,10 +178,10 @@ export default function StockMovementsPage() {
       >
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Eliminar Movimiento</ModalTitle>
+            <ModalTitle>Delete Movement</ModalTitle>
             <ModalDescription>
-              ¿Estás seguro de que deseas eliminar este movimiento de stock? Esta acción no se puede
-              deshacer.
+              Are you sure you want to delete this stock movement? This action cannot be
+              undone.
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
@@ -190,14 +190,14 @@ export default function StockMovementsPage() {
               onClick={() => setDeleteModal({ isOpen: false, movement: undefined })}
               disabled={deleteMovement.isPending}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteMovement.isPending}
             >
-              {deleteMovement.isPending ? 'Eliminando...' : 'Eliminar'}
+              {deleteMovement.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </ModalFooter>
         </ModalContent>

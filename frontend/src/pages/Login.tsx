@@ -55,7 +55,7 @@ export default function Login() {
 
       if (error) throw error;
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      setError(err.message || 'Login error');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">AgroPanel</h1>
-          <p className="text-gray-500 mt-1">Gestión de productos agrícolas</p>
+          <p className="text-gray-500 mt-1">Agricultural product management</p>
         </div>
 
         {message && (
@@ -92,10 +92,10 @@ export default function Login() {
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-              Iniciar Sesión
+              Sign In
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Ingresa tus credenciales para acceder al panel
+              Enter your credentials to access the panel
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -113,7 +113,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-neutral-700">
-                  Correo electrónico
+                  Email
                 </Label>
                 <Input
                   id="email"
@@ -128,13 +128,13 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-neutral-700">
-                    Contraseña
+                    Password
                   </Label>
                   <Link
                     to="/forgot-password"
                     className="text-xs text-neutral-500 hover:text-primary-600 transition-colors"
                   >
-                    ¿Olvidaste tu contraseña?
+                    Forgot your password?
                   </Link>
                 </div>
                 <div className="relative">
@@ -169,7 +169,7 @@ export default function Login() {
                   className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   onClick={() => setRememberMe(!rememberMe)}
                 >
-                  Recordarme
+                  Remember me
                 </label>
               </div>
 
@@ -178,25 +178,25 @@ export default function Login() {
                 disabled={loading}
                 className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
               >
-                {loading ? 'Cargando...' : 'Iniciar Sesión'}{' '}
+                {loading ? 'Loading...' : 'Sign In'}{' '}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
-              ¿No tienes una cuenta?
+              Don't have an account?
               <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
-                Crear cuenta
+                Create account
               </Link>
             </div>
             <div className="text-center text-xs text-gray-500">
-              Al iniciar sesión, aceptas nuestros
+              By signing in, you accept our
               <Link to="/terms" className="underline hover:text-gray-700">
-                Términos de servicio
+                Terms of service
               </Link>
               <Link to="/privacy" className="underline hover:text-gray-700">
-                Política de privacidad
+                Privacy policy
               </Link>
             </div>
           </CardFooter>

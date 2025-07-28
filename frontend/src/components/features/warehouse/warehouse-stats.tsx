@@ -26,8 +26,8 @@ export interface WarehouseStatsProps {
 
 export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => {
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Sin fecha';
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    if (!dateString) return 'No date';
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -36,23 +36,23 @@ export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => 
 
   const stats: StatItem[] = [
     {
-      title: 'Total Movimientos',
+      title: 'Total Movements',
       value: warehouse.stats?.totalMovements || 0,
-      description: 'Movimientos registrados',
+      description: 'Registered movements',
       icon: Package,
       variant: 'primary',
     },
     {
-      title: 'Fecha Creación',
+      title: 'Creation Date',
       value: formatDate(warehouse.created_at),
-      description: 'Almacén creado',
+      description: 'Warehouse created',
       icon: Calendar,
       variant: 'success',
     },
     {
-      title: 'Últimos Movimientos',
+      title: 'Recent Movements',
       value: warehouse.stats?.recentMovements?.length || 0,
-      description: 'Movimientos recientes',
+      description: 'Recent movements',
       icon: Activity,
       variant: 'warning',
     },
@@ -60,8 +60,8 @@ export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => 
 
   return (
     <StatsSection
-      title="Estadísticas del Almacén"
-      description="Información de actividad y métricas del almacén"
+      title="Warehouse Statistics"
+      description="Activity information and warehouse metrics"
       stats={stats}
       columns={3}
     />
