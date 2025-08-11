@@ -1,17 +1,10 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { Package } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
-
-const productSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  batch_number: z.string().min(1, 'Batch number is required'),
-  expiration_date: z.string().min(1, 'Expiration date is required'),
-  origin_country: z.string().min(1, 'Country of origin is required'),
-});
+import { productFormSchema } from '../../../validations/productValidation';
 
 export interface Product {
   product_id: string;
@@ -44,12 +37,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   isLoading = false,
 }) => {
   const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: yupResolver(productFormSchema),
     defaultValues: {
       name: product?.name || '',
       batch_number: product?.batch_number || '',
-      expiration_date: product?.expiration_date || '', // ✅ CORREGIDO
-      origin_country: product?.origin_country || '', // ✅ CORREGIDO
+      expiration_date: product?.expiration_date || '',
+      origin_country: product?.origin_country || '',
+      description: product?.description || '',
+      senasa_product_id: product?.senasa_product_id || ''
     },
   });
 
@@ -94,6 +89,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           batch_number: '',
           origin_country: '',
           expiration_date: '',
+          description: '',
+          senasa_product_id: ''
         });
       } else if (product && (mode === 'edit' || mode === 'view')) {
         form.reset({
@@ -101,6 +98,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           batch_number: product.batch_number || '',
           origin_country: product.origin_country || '',
           expiration_date: product.expiration_date || '',
+          description: product.description || '',
+          senasa_product_id: product.senasa_product_id || ''
         });
       }
     }

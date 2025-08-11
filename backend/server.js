@@ -4,15 +4,22 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const helmet = require('helmet');
 const { Logger } = require('./utils/Logger');
 const { DatabaseConfig } = require('./config/database');
+const { container } = require('./config/container');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { generalLimiter, speedLimiter } = require('./middleware/rateLimiting');
+const { sanitizeMiddleware, SANITIZATION_RULES } = require('./middleware/sanitization');
+const { i18n } = require('./utils/i18n');
 
 const productRoutes = require('./routes/products');
 const dashboardRoutes = require('./routes/dashboard');
 const warehouseRoutes = require('./routes/warehouse'); 
 const createStockMovementRoutes = require('./routes/stockMovements');
 const tableConfigRoutes = require('./routes/tableConfig');
+const userRoutes = require('./routes/users');
+const { createOrganizationRoutes } = require('./routes/organizations');
 const healthRoutes = require('./routes/health');
 
 /**
@@ -33,6 +40,8 @@ class Application {
   async initialize() {
     try {
       this.validateEnvironment();
+      
+      await this.initializeI18n();
       
       this.setupMiddleware();
       
@@ -68,9 +77,50 @@ class Application {
   }
 
   /**
+   * Initialize internationalization
+   */
+  async initializeI18n() {
+    try {
+      await i18n.init();
+      this.logger.info('Internationalization initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize i18n', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
    * Setup Express middleware
    */
   setupMiddleware() {
+    // Security headers with Helmet
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"]
+        }
+      },
+      crossOriginEmbedderPolicy: false // Allow for API usage
+    }));
+
+    // Apply rate limiting early in the middleware stack
+    // Skip rate limiting in development if DISABLE_RATE_LIMIT is set
+    if (process.env.NODE_ENV !== 'development' || !process.env.DISABLE_RATE_LIMIT) {
+      this.app.use(generalLimiter);
+      this.app.use(speedLimiter);
+      this.logger.info('Rate limiting enabled');
+    } else {
+      this.logger.warn('Rate limiting disabled for development');
+    }
+
     this.app.use(cors({
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
       credentials: true,
@@ -80,6 +130,12 @@ class Application {
 
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // Apply global input sanitization
+    this.app.use(sanitizeMiddleware(SANITIZATION_RULES.search));
+
+    // Apply internationalization middleware
+    this.app.use(i18n.middleware());
 
     this.app.use((req, res, next) => {
       this.logger.info('Incoming request', {
@@ -114,6 +170,8 @@ class Application {
     this.app.use('/api/stock-movements', createStockMovementRoutes());
     this.app.use('/api/dashboard', dashboardRoutes);
     this.app.use('/api/tables', tableConfigRoutes);
+    this.app.use('/api/users', userRoutes);
+    this.app.use('/api/organizations', createOrganizationRoutes(container));
 
     this.app.get('/', (req, res) => {
       res.json({
@@ -127,7 +185,8 @@ class Application {
           warehouses: '/api/warehouse',
           stockMovements: '/api/stock-movements',
           dashboard: '/api/dashboard',
-          tableConfigs: '/api/tables'
+          tableConfigs: '/api/tables',
+          users: '/api/users'
         }
       });
     });
@@ -180,7 +239,7 @@ class Application {
       return server;
     } catch (error) {
       this.logger.error('Failed to start server', { error: error.message });
-      Logger.exit(1);
+      process.exit(1);
     }
   }
 
@@ -196,12 +255,12 @@ class Application {
 
         
         this.logger.info('Graceful shutdown completed');
-        Logger.exit(0);
+        process.exit(0);
       });
 
       setTimeout(() => {
         this.logger.error('Forced shutdown due to timeout');
-        Logger.exit(1);
+        process.exit(1);
       }, 30000);
     };
 
@@ -213,7 +272,9 @@ class Application {
 if (require.main === module) {
   const app = new Application();
   app.start().catch(error => {
-    Logger.error('Application startup failed:', error);
+    const logger = new Logger('ApplicationStartup');
+    logger.error('Application startup failed:', { error: error.message, stack: error.stack });
+    process.exit(1);
   });
 }
 

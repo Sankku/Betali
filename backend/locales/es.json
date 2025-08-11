@@ -1,0 +1,88 @@
+{
+  "errors": {
+    "validation": {
+      "required": "{{field}} es requerido",
+      "invalid": "{{field}} es inválido",
+      "too_long": "{{field}} debe tener menos de {{max}} caracteres",
+      "too_short": "{{field}} debe tener al menos {{min}} caracteres",
+      "invalid_format": "{{field}} tiene formato inválido",
+      "invalid_date": "{{field}} debe ser una fecha válida",
+      "date_in_past": "{{field}} no puede estar en el pasado",
+      "invalid_email": "{{field}} debe ser una dirección de email válida",
+      "invalid_url": "{{field}} debe ser una URL válida",
+      "invalid_number": "{{field}} debe ser un número válido",
+      "number_too_small": "{{field}} debe ser al menos {{min}}",
+      "number_too_large": "{{field}} no puede exceder {{max}}",
+      "duplicate": "{{field}} ya existe",
+      "not_found": "{{resource}} no encontrado",
+      "invalid_choice": "{{field}} debe ser uno de: {{choices}}"
+    },
+    "auth": {
+      "required": "Autenticación requerida",
+      "invalid_token": "Token inválido o expirado",
+      "token_expired": "El token ha expirado",
+      "access_denied": "Acceso denegado",
+      "insufficient_permissions": "No tienes permisos para acceder a este recurso",
+      "account_inactive": "Tu cuenta ha sido desactivada. Por favor contacta a un administrador.",
+      "missing_token": "Token Bearer requerido"
+    },
+    "rate_limit": {
+      "general": "Demasiadas solicitudes desde esta IP",
+      "auth": "Demasiados intentos de autenticación",
+      "create": "Demasiadas solicitudes de creación/actualización",
+      "search": "Demasiadas solicitudes de búsqueda",
+      "user_limit": "Has excedido tu cuota de solicitudes",
+      "slow_down": "Por favor reduce la frecuencia de tus solicitudes"
+    },
+    "file_upload": {
+      "too_large": "Archivo demasiado grande. Tamaño máximo es {{maxSize}}MB",
+      "too_many": "Demasiados archivos. Máximo {{maxFiles}} archivos permitidos",
+      "invalid_type": "Tipo de archivo inválido. Permitidos: {{allowedTypes}}",
+      "invalid_content": "El contenido del archivo no coincide con el tipo declarado",
+      "upload_failed": "Falló la carga del archivo",
+      "validation_error": "Error de validación del archivo",
+      "auth_required": "Autenticación requerida para cargar archivos"
+    },
+    "generic": {
+      "internal_error": "Error interno del servidor",
+      "bad_request": "Solicitud incorrecta",
+      "not_found": "Recurso no encontrado",
+      "conflict": "Conflicto de recurso",
+      "unprocessable": "Entidad no procesable"
+    }
+  },
+  "success": {
+    "created": "{{resource}} creado exitosamente",
+    "updated": "{{resource}} actualizado exitosamente",
+    "deleted": "{{resource}} eliminado exitosamente",
+    "operation_completed": "Operación completada exitosamente"
+  },
+  "fields": {
+    "name": "Nombre",
+    "email": "Email",
+    "password": "Contraseña",
+    "batch_number": "Número de Lote",
+    "origin_country": "País de Origen",
+    "expiration_date": "Fecha de Expiración",
+    "description": "Descripción",
+    "location": "Ubicación",
+    "quantity": "Cantidad",
+    "movement_type": "Tipo de Movimiento",
+    "movement_date": "Fecha de Movimiento",
+    "reference": "Referencia",
+    "notes": "Notas",
+    "warehouse": "Almacén",
+    "product": "Producto",
+    "user": "Usuario"
+  },
+  "resources": {
+    "product": "Producto",
+    "products": "Productos",
+    "warehouse": "Almacén",
+    "warehouses": "Almacenes",
+    "stock_movement": "Movimiento de Stock",
+    "stock_movements": "Movimientos de Stock",
+    "user": "Usuario",
+    "users": "Usuarios"
+  }
+}

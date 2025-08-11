@@ -358,6 +358,290 @@ const tableConfigurations = [
         searchableColumns: ['product_name', 'reference', 'warehouse_name']
       }
     }
+  },
+  {
+    id: 'organizations',
+    name: 'Organization Management',
+    entity: 'organizations',
+    config: {
+      columns: [
+        {
+          key: 'name',
+          header: 'Organization',
+          dataType: 'compound',
+          sortable: true,
+          filterable: true,
+          compoundConfig: {
+            fields: [
+              {
+                key: 'name',
+                type: 'icon-text',
+                config: {
+                  dataType: 'icon-text',
+                  iconConfig: { name: 'building', position: 'left', size: 16 },
+                  textConfig: { weight: 'medium' }
+                }
+              },
+              {
+                key: 'slug',
+                type: 'text',
+                config: {
+                  dataType: 'text',
+                  textConfig: { 
+                    size: 'sm', 
+                    color: 'text-neutral-500',
+                    prefix: '@'
+                  }
+                }
+              }
+            ],
+            layout: 'vertical',
+            spacing: 'tight'
+          }
+        },
+        {
+          key: 'plan_type',
+          header: 'Plan',
+          dataType: 'badge',
+          sortable: true,
+          filterable: true,
+          badgeConfig: {
+            variantMap: {
+              'basic': 'secondary',
+              'premium': 'warning',
+              'enterprise': 'success'
+            },
+            labelMap: {
+              'basic': 'Basic',
+              'premium': 'Premium',
+              'enterprise': 'Enterprise'
+            },
+            size: 'md'
+          }
+        },
+        {
+          key: 'is_active',
+          header: 'Status',
+          dataType: 'status',
+          sortable: true,
+          filterable: true,
+          statusConfig: {
+            activeLabel: 'Active',
+            inactiveLabel: 'Inactive',
+            activeVariant: 'success',
+            inactiveVariant: 'danger',
+            showToggle: true,
+            toggleDisabled: false
+          }
+        },
+        {
+          key: 'max_users',
+          header: 'Max Users',
+          dataType: 'number',
+          sortable: true,
+          filterable: true,
+          numberConfig: {
+            format: 'integer',
+            decimals: 0,
+            suffix: ' users'
+          }
+        },
+        {
+          key: 'email',
+          header: 'Contact',
+          dataType: 'icon-text',
+          sortable: true,
+          filterable: true,
+          iconConfig: {
+            name: 'mail',
+            position: 'left',
+            size: 16
+          },
+          textConfig: {
+            color: 'text-neutral-600'
+          }
+        },
+        {
+          key: 'created_at',
+          header: 'Created',
+          dataType: 'date',
+          sortable: true,
+          filterable: true,
+          dateConfig: {
+            format: 'short',
+            locale: 'en-US'
+          }
+        },
+        {
+          key: 'actions',
+          header: 'Actions',
+          dataType: 'actions',
+          sortable: false,
+          filterable: false,
+          actionsConfig: {
+            actions: [
+              { key: 'view', label: 'View', icon: 'eye', variant: 'ghost' },
+              { key: 'edit', label: 'Edit', icon: 'edit', variant: 'ghost' },
+              { key: 'delete', label: 'Delete', icon: 'trash', variant: 'destructive' }
+            ]
+          }
+        }
+      ],
+      pagination: {
+        enabled: true,
+        defaultPageSize: 10,
+        pageSizeOptions: [5, 10, 20, 50]
+      },
+      search: {
+        enabled: true,
+        placeholder: 'Search organizations...',
+        searchableColumns: ['name', 'slug', 'email']
+      }
+    }
+  },
+  {
+    id: 'users',
+    name: 'User Management',
+    entity: 'users',
+    config: {
+      columns: [
+        {
+          key: 'user_info',
+          header: 'User',
+          dataType: 'compound',
+          sortable: true,
+          filterable: true,
+          compoundConfig: {
+            fields: [
+              {
+                key: 'name',
+                type: 'icon-text',
+                config: {
+                  dataType: 'icon-text',
+                  iconConfig: { name: 'user', position: 'left', size: 16 },
+                  textConfig: { weight: 'medium' }
+                }
+              },
+              {
+                key: 'email',
+                type: 'text',
+                config: {
+                  dataType: 'text',
+                  textConfig: { 
+                    size: 'sm', 
+                    color: 'text-neutral-500'
+                  }
+                }
+              }
+            ],
+            layout: 'vertical',
+            spacing: 'tight'
+          }
+        },
+        {
+          key: 'role',
+          header: 'Role',
+          dataType: 'badge',
+          sortable: true,
+          filterable: true,
+          badgeConfig: {
+            variantMap: {
+              'super_admin': 'danger',
+              'admin': 'warning',
+              'manager': 'primary',
+              'employee': 'secondary',
+              'viewer': 'outline'
+            },
+            labelMap: {
+              'super_admin': 'Super Admin',
+              'admin': 'Admin',
+              'manager': 'Manager',
+              'employee': 'Employee',
+              'viewer': 'Viewer'
+            },
+            size: 'md'
+          }
+        },
+        {
+          key: 'is_active',
+          header: 'Status',
+          dataType: 'status',
+          sortable: true,
+          filterable: true,
+          statusConfig: {
+            activeLabel: 'Active',
+            inactiveLabel: 'Inactive',
+            activeVariant: 'success',
+            inactiveVariant: 'danger',
+            showToggle: true,
+            toggleDisabled: false
+          }
+        },
+        {
+          key: 'organization_name',
+          header: 'Organization',
+          dataType: 'icon-text',
+          sortable: true,
+          filterable: true,
+          iconConfig: {
+            name: 'building',
+            position: 'left',
+            size: 16
+          },
+          textConfig: {
+            color: 'text-neutral-600',
+            truncate: 25
+          }
+        },
+        {
+          key: 'last_login',
+          header: 'Last Login',
+          dataType: 'date',
+          sortable: true,
+          filterable: true,
+          dateConfig: {
+            format: 'relative',
+            locale: 'en-US'
+          }
+        },
+        {
+          key: 'created_at',
+          header: 'Created',
+          dataType: 'date',
+          sortable: true,
+          filterable: true,
+          dateConfig: {
+            format: 'short',
+            locale: 'en-US'
+          }
+        },
+        {
+          key: 'actions',
+          header: 'Actions',
+          dataType: 'actions',
+          sortable: false,
+          filterable: false,
+          actionsConfig: {
+            actions: [
+              { key: 'view', label: 'View', icon: 'eye', variant: 'ghost' },
+              { key: 'edit', label: 'Edit', icon: 'edit', variant: 'ghost' },
+              { key: 'toggle-status', label: 'Toggle Status', icon: 'toggle-left', variant: 'outline' },
+              { key: 'delete', label: 'Delete', icon: 'trash', variant: 'destructive' }
+            ]
+          }
+        }
+      ],
+      pagination: {
+        enabled: true,
+        defaultPageSize: 15,
+        pageSizeOptions: [10, 15, 25, 50]
+      },
+      search: {
+        enabled: true,
+        placeholder: 'Search users...',
+        searchableColumns: ['name', 'email', 'organization_name', 'role']
+      }
+    }
   }
 ];
 

@@ -4,8 +4,12 @@
       "Bash(curl:*)",
       "mcp__ide__getDiagnostics",
       "Bash(bun run:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(bun add:*)",
+      "Bash(node:*)",
+      "Bash(find:*)"
     ],
     "deny": []
-  }
+  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
 }

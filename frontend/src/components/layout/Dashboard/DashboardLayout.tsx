@@ -5,13 +5,21 @@ import {
   RefreshCw,
   FileSpreadsheet,
   BarChart3,
+  Users,
+  Building2,
   Menu,
   X,
   LogOut,
+  ChevronUp,
+  Info,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
+import { useOrganization } from "../../../context/OrganizationContext";
+import { useUserContextSwitcher } from "../../../context/UserContextSwitcher";
 import { SidebarItem } from "../Sidebar/SidebarItem";
+import { OrganizationSwitcherModal } from "../../features/organizations/organization-switcher-modal";
+import { RoleInfoModal } from "../../features/organizations/role-info-modal";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -21,7 +29,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { currentOrganization, currentUserRole, canAccessUsersSection } = useOrganization();
+  const { currentUserContext, canAccessUsersSection: userCanAccessUsers, loading: userLoading } = useUserContextSwitcher();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isOrgSwitcherOpen, setIsOrgSwitcherOpen] = useState(false);
+  const [isRoleInfoOpen, setIsRoleInfoOpen] = useState(false);
+
+  // Check if user can access users section from multiple sources
+  // For super_admin, always allow access
+  const hasUsersAccess = canAccessUsersSection || 
+                        userCanAccessUsers || 
+                        currentUserContext?.role === 'super_admin' ||
+                        currentUserContext?.role === 'admin' ||
+                        currentUserContext?.role === 'manager' ||
+                        // If we have user data with super_admin from response, show users
+                        (user && currentUserContext && !userLoading && currentUserContext.role === 'super_admin');
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -33,26 +56,43 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       path: "/dashboard/products",
       icon: <Package className="w-5 h-5" />,
       label: "Products",
+      requiresRole: ["super_admin", "admin", "manager", "employee"],
     },
     {
       path: "/dashboard/warehouse",
       icon: <Warehouse className="w-5 h-5" />,
       label: "Warehouses",
+      requiresRole: ["super_admin", "admin", "manager", "employee"],
     },
     {
       path: "/dashboard/stock-movements",
       icon: <RefreshCw className="w-5 h-5" />,
       label: "Movements",
+      requiresRole: ["super_admin", "admin", "manager", "employee"],
+    },
+    {
+      path: "/dashboard/users",
+      icon: <Users className="w-5 h-5" />,
+      label: "Users",
+      requiresRole: ["super_admin", "admin", "manager"],
+    },
+    {
+      path: "/dashboard/organizations",
+      icon: <Building2 className="w-5 h-5" />,
+      label: "Organizations",
+      requiresRole: ["super_admin", "admin", "manager"],
     },
     {
       path: "/dashboard/trazabilidad",
       icon: <FileSpreadsheet className="w-5 h-5" />,
       label: "Traceability",
+      requiresRole: ["super_admin", "admin", "manager", "employee"],
     },
     {
       path: "/dashboard/control-stock",
       icon: <BarChart3 className="w-5 h-5" />,
       label: "Stock Control",
+      requiresRole: ["super_admin", "admin", "manager", "employee"],
     },
   ];
 
@@ -75,36 +115,79 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {routes.map((route) => (
-            <SidebarItem
-              key={route.path}
-              to={route.path}
-              icon={route.icon}
-              label={route.label}
-              isActive={location.pathname === route.path}
-            />
-          ))}
+          {routes
+            .filter((route) => {
+              // Filter routes based on current user context role
+              if (route.path === "/dashboard/users") {
+                return hasUsersAccess;
+              }
+              
+              // For other routes, check role from either context
+              const role = currentUserRole || currentUserContext?.role;
+              if (role) {
+                return route.requiresRole.includes(role);
+              }
+              return true; // Show all routes if context is not loaded yet
+            })
+            .map((route) => (
+              <SidebarItem
+                key={route.path}
+                to={route.path}
+                icon={route.icon}
+                label={route.label}
+                isActive={location.pathname === route.path}
+              />
+            ))}
         </nav>
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          {/* Organization Switcher */}
+          <button
+            onClick={() => setIsOrgSwitcherOpen(true)}
+            className="flex items-center w-full p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+            aria-label="Switch organization"
+          >
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+              <Building2 className="h-4 w-4 text-blue-600" />
+            </div>
+            <div className="ml-3 flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-700 truncate">
+                {currentOrganization?.name || 'Loading...'}
+              </p>
+              <p className="text-xs text-gray-500">
+                Switch organization
+              </p>
+            </div>
+            <ChevronUp className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+          </button>
+
+          {/* Role Information */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">
+            <button
+              onClick={() => setIsRoleInfoOpen(true)}
+              className="flex items-center flex-1 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+              aria-label="View role information"
+            >
+              <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="text-sm font-medium text-green-700">
                   {user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-700 truncate">
                   {user?.email}
                 </p>
+                <p className="text-xs text-gray-500">
+                  {currentUserRole ? currentUserRole.replace('_', ' ') : 'Loading role...'}
+                </p>
               </div>
-            </div>
+              <Info className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+            </button>
             <button
               onClick={handleSignOut}
-              className="p-1 rounded-full text-gray-400 hover:text-gray-600"
+              className="ml-2 p-2 rounded-full text-gray-400 hover:text-gray-600"
               aria-label="Sign out"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -176,29 +259,72 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
               </div>
               <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {routes.map((route) => (
-                  <SidebarItem
-                    key={route.path}
-                    to={route.path}
-                    icon={route.icon}
-                    label={route.label}
-                    isActive={location.pathname === route.path}
-                  />
-                ))}
+                {routes
+                  .filter((route) => {
+                    // Filter routes based on current user context role
+                    if (route.path === "/dashboard/users") {
+                      return hasUsersAccess;
+                    }
+                    
+                    // For other routes, check role from either context
+                    const role = currentUserRole || currentUserContext?.role;
+                    if (role) {
+                      return route.requiresRole.includes(role);
+                    }
+                    return true; // Show all routes if context is not loaded yet
+                  })
+                  .map((route) => (
+                    <SidebarItem
+                      key={route.path}
+                      to={route.path}
+                      icon={route.icon}
+                      label={route.label}
+                      isActive={location.pathname === route.path}
+                    />
+                  ))}
               </nav>
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-700">
+              <div className="p-4 border-t border-gray-200 space-y-2">
+                {/* Organization Switcher */}
+                <button
+                  onClick={() => setIsOrgSwitcherOpen(true)}
+                  className="flex items-center w-full p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                  aria-label="Switch organization"
+                >
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="ml-3 flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-700 truncate">
+                      {currentOrganization?.name || 'Loading...'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Switch organization
+                    </p>
+                  </div>
+                  <ChevronUp className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+
+                {/* Role Information */}
+                <button
+                  onClick={() => setIsRoleInfoOpen(true)}
+                  className="flex items-center w-full p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                  aria-label="View role information"
+                >
+                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-green-700">
                       {user?.email?.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-700 truncate max-w-[180px]">
+                  <div className="ml-3 flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-700 truncate">
                       {user?.email}
                     </p>
+                    <p className="text-xs text-gray-500">
+                      {currentUserRole ? currentUserRole.replace('_', ' ') : 'Loading role...'}
+                    </p>
                   </div>
-                </div>
+                  <Info className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
               </div>
             </div>
           </div>
@@ -208,6 +334,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      <OrganizationSwitcherModal
+        isOpen={isOrgSwitcherOpen}
+        onClose={() => setIsOrgSwitcherOpen(false)}
+      />
+
+      <RoleInfoModal
+        isOpen={isRoleInfoOpen}
+        onClose={() => setIsRoleInfoOpen(false)}
+      />
     </div>
   );
 }

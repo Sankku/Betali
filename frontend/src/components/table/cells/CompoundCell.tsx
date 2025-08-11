@@ -14,6 +14,7 @@ export const CompoundCell: React.FC<CompoundCellProps> = ({ row, config }) => {
 
   const { fields, layout = 'vertical', spacing = 'normal' } = config;
 
+
   const spacingClass = {
     tight: 'gap-1',
     normal: 'gap-2', 

@@ -305,6 +305,178 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          organization_id: string
+          name: string
+          slug: string
+          domain: string | null
+          logo_url: string | null
+          address: string | null
+          phone: string | null
+          email: string | null
+          tax_id: string | null
+          plan_type: string | null
+          max_users: number | null
+          max_warehouses: number | null
+          features: Json | null
+          settings: Json | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          organization_id?: string
+          name: string
+          slug: string
+          domain?: string | null
+          logo_url?: string | null
+          address?: string | null
+          phone?: string | null
+          email?: string | null
+          tax_id?: string | null
+          plan_type?: string | null
+          max_users?: number | null
+          max_warehouses?: number | null
+          features?: Json | null
+          settings?: Json | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          organization_id?: string
+          name?: string
+          slug?: string
+          domain?: string | null
+          logo_url?: string | null
+          address?: string | null
+          phone?: string | null
+          email?: string | null
+          tax_id?: string | null
+          plan_type?: string | null
+          max_users?: number | null
+          max_warehouses?: number | null
+          features?: Json | null
+          settings?: Json | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      branches: {
+        Row: {
+          branch_id: string
+          organization_id: string | null
+          name: string
+          address: string | null
+          phone: string | null
+          manager_user_id: string | null
+          is_main_branch: boolean | null
+          is_active: boolean | null
+          settings: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string
+          organization_id?: string | null
+          name: string
+          address?: string | null
+          phone?: string | null
+          manager_user_id?: string | null
+          is_main_branch?: boolean | null
+          is_active?: boolean | null
+          settings?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          organization_id?: string | null
+          name?: string
+          address?: string | null
+          phone?: string | null
+          manager_user_id?: string | null
+          is_main_branch?: boolean | null
+          is_active?: boolean | null
+          settings?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "fk_branches_manager"
+            columns: ["manager_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      user_organizations: {
+        Row: {
+          user_organization_id: string
+          user_id: string
+          organization_id: string
+          branch_id: string | null
+          role: string
+          permissions: Json
+          is_active: boolean
+          joined_at: string
+        }
+        Insert: {
+          user_organization_id?: string
+          user_id: string
+          organization_id: string
+          branch_id?: string | null
+          role?: string
+          permissions?: Json
+          is_active?: boolean
+          joined_at?: string
+        }
+        Update: {
+          user_organization_id?: string
+          user_id?: string
+          organization_id?: string
+          branch_id?: string | null
+          role?: string
+          permissions?: Json
+          is_active?: boolean
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_organizations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "user_organizations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["branch_id"]
+          }
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
@@ -340,34 +512,40 @@ export type Database = {
       }
       warehouse: {
         Row: {
-          created_at: string | null
-          is_active: boolean | null
-          location: string | null
+          warehouse_id: string
           name: string
-          owner_id: string | null
+          location: string | null
+          is_active: boolean | null
+          created_at: string | null
           updated_at: string | null
           user_id: string | null
-          warehouse_id: string
+          owner_id: string | null
+          organization_id: string | null
+          branch_id: string | null
         }
         Insert: {
-          created_at?: string | null
-          is_active?: boolean | null
-          location?: string | null
+          warehouse_id?: string
           name: string
-          owner_id?: string | null
+          location?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
           updated_at?: string | null
           user_id?: string | null
-          warehouse_id?: string
+          owner_id?: string | null
+          organization_id?: string | null
+          branch_id?: string | null
         }
         Update: {
-          created_at?: string | null
-          is_active?: boolean | null
-          location?: string | null
+          warehouse_id?: string
           name?: string
-          owner_id?: string | null
+          location?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
           updated_at?: string | null
           user_id?: string | null
-          warehouse_id?: string
+          owner_id?: string | null
+          organization_id?: string | null
+          branch_id?: string | null
         }
         Relationships: [
           {
@@ -384,6 +562,20 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "warehouse_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "warehouse_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["branch_id"]
+          }
         ]
       }
     }

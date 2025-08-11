@@ -3,61 +3,11 @@ const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { validateRequest, validateQuery } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
-
-const createWarehouseSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
-      errors.push({ message: 'Warehouse name is required and must be a string' });
-    }
-    
-    if (!data.location || typeof data.location !== 'string' || data.location.trim() === '') {
-      errors.push({ message: 'Warehouse location is required and must be a string' });
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
-
-const updateWarehouseSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim() === '')) {
-      errors.push({ message: 'Warehouse name must be a non-empty string' });
-    }
-    
-    if (data.location !== undefined && (typeof data.location !== 'string' || data.location.trim() === '')) {
-      errors.push({ message: 'Warehouse location must be a non-empty string' });
-    }
-    
-    if (data.is_active !== undefined && typeof data.is_active !== 'boolean') {
-      errors.push({ message: 'is_active must be a boolean' });
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
-
-const queryParamsSchema = {
-  validate: (query) => ({
-    error: null,
-    value: {
-      limit: query.limit ? parseInt(query.limit) : undefined,
-      offset: query.offset ? parseInt(query.offset) : undefined,
-      sortBy: query.sortBy || undefined,
-      sortOrder: query.sortOrder || undefined,
-      active: query.active || undefined
-    }
-  })
-};
+const { 
+  createWarehouseSchema, 
+  updateWarehouseSchema, 
+  queryParamsSchema 
+} = require('../validations/warehouseValidation');
 
 const router = express.Router();
 
