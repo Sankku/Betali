@@ -260,3 +260,13 @@ export class TableConfigService {
     return null;
   }
 }
+
+// Export an instance for convenience
+export const tableConfigService = {
+  getTableConfig: TableConfigService.getTableConfig,
+  getTableConfigs: TableConfigService.getTableConfigs,
+  getAvailableTableConfigs: TableConfigService.getAvailableTableConfigs,
+  saveTableConfig: TableConfigService.saveTableConfig,
+  deleteTableConfig: TableConfigService.deleteTableConfig,
+  checkApiHealth: TableConfigService.checkApiHealth,
+};

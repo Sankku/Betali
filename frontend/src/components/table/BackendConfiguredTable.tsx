@@ -50,26 +50,47 @@ export function BackendConfiguredTable<T extends Record<string, any>>({
   const [globalFilter, setGlobalFilter] = useState('');
 
   const columns: ColumnDef<T>[] = React.useMemo(() => {
-    return config.config.columns.map((columnConfig: any) => ({
-      accessorKey: columnConfig.key as keyof T,
-      header: columnConfig.header,
-      enableSorting: columnConfig.sortable ?? true,
-      size: getColumnWidth(columnConfig),
-      cell: ({ row, getValue }: { row: any; getValue: any }) => {
-        const value = columnConfig.dataType === 'actions' ? null : getValue();
+    return config.config.columns.map((columnConfig: any) => {
+      // For compound columns, we need a custom accessor that gets the primary field
+      let accessorKey: keyof T | undefined;
+      let sortingField: string | undefined;
+      
+      if (columnConfig.dataType === 'compound' && columnConfig.compoundConfig?.fields?.length > 0) {
+        // Use the first field for sorting purposes
+        sortingField = columnConfig.compoundConfig.fields[0].key;
+        accessorKey = sortingField as keyof T;
+      } else if (columnConfig.dataType === 'actions') {
+        // Actions don't need an accessor
+        accessorKey = undefined;
+      } else {
+        accessorKey = columnConfig.key as keyof T;
+      }
 
-        return (
-          <GenericCell
-            value={value}
-            row={row.original}
-            config={columnConfig}
-            onAction={(action: string, actionRow: any) =>
-              onAction?.(action, actionRow, columnConfig.key)
-            }
-          />
-        );
-      },
-    }));
+      return {
+        id: columnConfig.key, // Use key as unique identifier
+        accessorKey,
+        header: columnConfig.header,
+        enableSorting: columnConfig.sortable ?? true,
+        size: getColumnWidth(columnConfig),
+        cell: ({ row }: { row: any; getValue?: any }) => {
+          // For compound and actions, pass null as value since we access row data directly
+          const value = (columnConfig.dataType === 'actions' || columnConfig.dataType === 'compound') 
+            ? null 
+            : row.original[columnConfig.key];
+
+          return (
+            <GenericCell
+              value={value}
+              row={row.original}
+              config={columnConfig}
+              onAction={(action: string, actionRow: any) =>
+                onAction?.(action, actionRow, columnConfig.key)
+              }
+            />
+          );
+        },
+      };
+    });
   }, [config.config.columns, onAction]);
 
   const searchConfig = config.config?.search;

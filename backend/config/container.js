@@ -5,18 +5,25 @@ const { ProductRepository } = require('../repositories/ProductRepository');
 const { WarehouseRepository } = require('../repositories/WarehouseRepository');
 const { StockMovementRepository } = require('../repositories/StockMovementRepository');
 const { TableConfigRepository } = require('../repositories/TableConfigRepository');
+const UserRepository = require('../repositories/UserRepository');
+const OrganizationRepository = require('../repositories/OrganizationRepository');
+const UserOrganizationRepository = require('../repositories/UserOrganizationRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
 const { WarehouseService } = require('../services/WarehouseService');
 const { StockMovementService } = require('../services/StockMovementService');
 const { TableConfigService } = require('../services/TableConfigService');
+const UserService = require('../services/UserService');
+const OrganizationService = require('../services/OrganizationService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
 const { WarehouseController } = require('../controllers/WarehouseController');
 const { StockMovementController } = require('../controllers/StockMovementController');
 const { TableConfigController } = require('../controllers/TableConfigController');
+const UserController = require('../controllers/UserController');
+const OrganizationController = require('../controllers/OrganizationController');
 
 /**
  * Dependency injection container
@@ -116,6 +123,21 @@ function initializeContainer() {
     return new TableConfigRepository(dbConfig.getClient());
   }, true);
 
+  container.register('userRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new UserRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('organizationRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new OrganizationRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('userOrganizationRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new UserOrganizationRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const logger = container.get('logger');
@@ -155,6 +177,19 @@ function initializeContainer() {
     return new TableConfigService(tableConfigRepository);
   }, true);
 
+  container.register('userService', () => {
+    const userRepository = container.get('userRepository');
+    const logger = container.get('logger');
+    return new UserService(userRepository, logger);
+  }, true);
+
+  container.register('organizationService', () => {
+    const organizationRepository = container.get('organizationRepository');
+    const userOrganizationRepository = container.get('userOrganizationRepository');
+    const userRepository = container.get('userRepository');
+    return new OrganizationService(organizationRepository, userOrganizationRepository, userRepository);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -178,6 +213,16 @@ function initializeContainer() {
   container.register('tableConfigController', () => {
     const tableConfigService = container.get('tableConfigService');
     return new TableConfigController(tableConfigService);
+  }, true);
+
+  container.register('userController', () => {
+    const userService = container.get('userService');
+    return new UserController(userService);
+  }, true);
+
+  container.register('organizationController', () => {
+    const organizationService = container.get('organizationService');
+    return new OrganizationController(organizationService);
   }, true);
 }
 
@@ -226,6 +271,14 @@ const ServiceFactory = {
 
   createTableConfigController() {
     return container.get('tableConfigController');
+  },
+
+  createUserController() {
+    return container.get('userController');
+  },
+
+  createOrganizationController() {
+    return container.get('organizationController');
   },
 
   getInstance() {

@@ -3,14 +3,9 @@ import { UseFormReturn } from 'react-hook-form';
 import { Package, Calendar, Globe } from 'lucide-react';
 import { Input } from '../../ui/input';
 
-export interface ProductFormData {
-  name: string;
-  batch_number: string;
-  origin_country: string;
-  expiration_date: string;
-  description?: string;
-  senasa_product_id?: string;
-}
+import { ProductFormSchemaData } from '../../../validations/productValidation';
+
+export type ProductFormData = ProductFormSchemaData;
 
 export interface ProductFormProps {
   form: UseFormReturn<ProductFormData>;

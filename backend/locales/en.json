@@ -1,0 +1,88 @@
+{
+  "errors": {
+    "validation": {
+      "required": "{{field}} is required",
+      "invalid": "{{field}} is invalid",
+      "too_long": "{{field}} must be less than {{max}} characters",
+      "too_short": "{{field}} must be at least {{min}} characters",
+      "invalid_format": "{{field}} has invalid format",
+      "invalid_date": "{{field}} must be a valid date",
+      "date_in_past": "{{field}} cannot be in the past",
+      "invalid_email": "{{field}} must be a valid email address",
+      "invalid_url": "{{field}} must be a valid URL",
+      "invalid_number": "{{field}} must be a valid number",
+      "number_too_small": "{{field}} must be at least {{min}}",
+      "number_too_large": "{{field}} cannot exceed {{max}}",
+      "duplicate": "{{field}} already exists",
+      "not_found": "{{resource}} not found",
+      "invalid_choice": "{{field}} must be one of: {{choices}}"
+    },
+    "auth": {
+      "required": "Authentication required",
+      "invalid_token": "Invalid or expired token",
+      "token_expired": "Token has expired",
+      "access_denied": "Access denied",
+      "insufficient_permissions": "You do not have permission to access this resource",
+      "account_inactive": "Your account has been deactivated. Please contact an administrator.",
+      "missing_token": "Bearer token required"
+    },
+    "rate_limit": {
+      "general": "Too many requests from this IP",
+      "auth": "Too many authentication attempts",
+      "create": "Too many create/update requests",
+      "search": "Too many search requests",
+      "user_limit": "You have exceeded your request quota",
+      "slow_down": "Please slow down your requests"
+    },
+    "file_upload": {
+      "too_large": "File too large. Maximum size is {{maxSize}}MB",
+      "too_many": "Too many files. Maximum {{maxFiles}} files allowed",
+      "invalid_type": "Invalid file type. Allowed: {{allowedTypes}}",
+      "invalid_content": "File content does not match declared type",
+      "upload_failed": "File upload failed",
+      "validation_error": "File validation error",
+      "auth_required": "Authentication required for file uploads"
+    },
+    "generic": {
+      "internal_error": "Internal server error",
+      "bad_request": "Bad request",
+      "not_found": "Resource not found",
+      "conflict": "Resource conflict",
+      "unprocessable": "Unprocessable entity"
+    }
+  },
+  "success": {
+    "created": "{{resource}} created successfully",
+    "updated": "{{resource}} updated successfully",
+    "deleted": "{{resource}} deleted successfully",
+    "operation_completed": "Operation completed successfully"
+  },
+  "fields": {
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "batch_number": "Batch Number",
+    "origin_country": "Country of Origin",
+    "expiration_date": "Expiration Date",
+    "description": "Description",
+    "location": "Location",
+    "quantity": "Quantity",
+    "movement_type": "Movement Type",
+    "movement_date": "Movement Date",
+    "reference": "Reference",
+    "notes": "Notes",
+    "warehouse": "Warehouse",
+    "product": "Product",
+    "user": "User"
+  },
+  "resources": {
+    "product": "Product",
+    "products": "Products",
+    "warehouse": "Warehouse",
+    "warehouses": "Warehouses",
+    "stock_movement": "Stock Movement",
+    "stock_movements": "Stock Movements",
+    "user": "User",
+    "users": "Users"
+  }
+}

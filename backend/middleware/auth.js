@@ -57,25 +57,50 @@ const authenticateUser = async (req, res, next) => {
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*')
+        .select('*, role, is_active')
         .eq('user_id', user.id)
         .single();
       
       if (!userError && userData) {
         user.profile = userData;
+        user.role = userData.role || 'VIEWER'; // Default role
+        user.isActive = userData.is_active !== false; // Default to active
+        
+        // Check if user is active
+        if (!user.isActive) {
+          logger.warn('Inactive user attempted to authenticate', {
+            userId: user.id,
+            email: user.email
+          });
+          
+          return res.status(403).json({
+            error: 'Account is inactive',
+            message: 'Your account has been deactivated. Please contact an administrator.',
+            code: 'ACCOUNT_INACTIVE'
+          });
+        }
+      } else {
+        // If no profile found, assign default role
+        user.role = 'VIEWER';
+        user.isActive = true;
       }
     } catch (dbError) {
       logger.warn('Could not fetch user profile data', {
         userId: user.id,
         error: dbError.message
       });
+      // Assign default values if database query fails
+      user.role = 'VIEWER';
+      user.isActive = true;
     }
     
     req.user = user;
     
     logger.info('User authenticated successfully', {
       userId: user.id,
-      email: user.email
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive
     });
     
     next();

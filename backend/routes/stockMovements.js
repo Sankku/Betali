@@ -1,91 +1,13 @@
 const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
-const { validateRequest } = require('../middleware/validation');
+const { validateRequest, validateQuery } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
-
-// Validation schemas
-const createMovementSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (!data.movement_type || typeof data.movement_type !== 'string') {
-      errors.push({ message: 'Movement type is required and must be a string' });
-    } else {
-      const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
-      if (!validTypes.includes(data.movement_type)) {
-        errors.push({ message: `Movement type must be one of: ${validTypes.join(', ')}` });
-      }
-    }
-    
-    if (!data.quantity || typeof data.quantity !== 'number' || data.quantity <= 0) {
-      errors.push({ message: 'Quantity is required and must be a positive number' });
-    }
-    
-    if (data.product_id && typeof data.product_id !== 'string') {
-      errors.push({ message: 'Product ID must be a string' });
-    }
-    
-    if (data.warehouse_id && typeof data.warehouse_id !== 'string') {
-      errors.push({ message: 'Warehouse ID must be a string' });
-    }
-    
-    if (data.reference && typeof data.reference !== 'string') {
-      errors.push({ message: 'Reference must be a string' });
-    }
-    
-    if (data.movement_date && typeof data.movement_date !== 'string') {
-      errors.push({ message: 'Movement date must be a valid ISO string' });
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
-
-const updateMovementSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (data.movement_type !== undefined) {
-      if (typeof data.movement_type !== 'string') {
-        errors.push({ message: 'Movement type must be a string' });
-      } else {
-        const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
-        if (!validTypes.includes(data.movement_type)) {
-          errors.push({ message: `Movement type must be one of: ${validTypes.join(', ')}` });
-        }
-      }
-    }
-    
-    if (data.quantity !== undefined && (typeof data.quantity !== 'number' || data.quantity <= 0)) {
-      errors.push({ message: 'Quantity must be a positive number' });
-    }
-    
-    if (data.product_id !== undefined && typeof data.product_id !== 'string') {
-      errors.push({ message: 'Product ID must be a string' });
-    }
-    
-    if (data.warehouse_id !== undefined && typeof data.warehouse_id !== 'string') {
-      errors.push({ message: 'Warehouse ID must be a string' });
-    }
-    
-    if (data.reference !== undefined && typeof data.reference !== 'string') {
-      errors.push({ message: 'Reference must be a string' });
-    }
-    
-    if (data.movement_date !== undefined && typeof data.movement_date !== 'string') {
-      errors.push({ message: 'Movement date must be a valid ISO string' });
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
+const { 
+  createStockMovementSchema, 
+  updateStockMovementSchema, 
+  queryParamsSchema 
+} = require('../validations/stockMovementValidation');
 
 /**
  * Initialize stock movement routes
@@ -172,7 +94,7 @@ function createStockMovementRoutes(dependencies = {}) {
   
   // POST /api/stock-movements - Create movement
   router.post('/', 
-    validateRequest(createMovementSchema),
+    validateRequest(createStockMovementSchema),
     async (req, res, next) => {
       try {
         logger.info('POST /api/stock-movements', { body: req.body });
@@ -189,7 +111,7 @@ function createStockMovementRoutes(dependencies = {}) {
   
   // PUT /api/stock-movements/:id - Update movement
   router.put('/:id',
-    validateRequest(updateMovementSchema),
+    validateRequest(updateStockMovementSchema),
     async (req, res, next) => {
       try {
         logger.info(`PUT /api/stock-movements/${req.params.id}`, { body: req.body });

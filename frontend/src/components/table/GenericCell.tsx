@@ -21,11 +21,14 @@ interface GenericCellProps {
 }
 
 export const GenericCell: React.FC<GenericCellProps> = ({ value, row, config, onAction }) => {
+
   if (config.dataType === 'actions') {
     return <ActionsCell row={row} config={config.actionsConfig} onAction={onAction} />;
   }
 
-  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+  // For compound fields, value can be null since we access row data directly
+  if (config.dataType !== 'compound' && 
+      (value === null || value === undefined || (typeof value === 'string' && value.trim() === ''))) {
     return <span className="text-neutral-400">—</span>;
   }
 

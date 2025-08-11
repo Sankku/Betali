@@ -2,83 +2,14 @@ const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { validateRequest, validateQuery } = require('../middleware/validation');
-
-// TODO: Validation schemas (using a simple validation approach for now)
-const createProductSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
-      errors.push({ message: 'Name is required and must be a string' });
-    }
-    
-    if (!data.batch_number || typeof data.batch_number !== 'string' || data.batch_number.trim() === '') {
-      errors.push({ message: 'Batch number is required and must be a string' });
-    }
-    
-    if (!data.origin_country || typeof data.origin_country !== 'string' || data.origin_country.trim() === '') {
-      errors.push({ message: 'Origin country is required and must be a string' });
-    }
-    
-    if (!data.expiration_date) {
-      errors.push({ message: 'Expiration date is required' });
-    } else {
-      const date = new Date(data.expiration_date);
-      if (isNaN(date.getTime())) {
-        errors.push({ message: 'Expiration date must be a valid date' });
-      }
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
-
-const updateProductSchema = {
-  validate: (data) => {
-    const errors = [];
-    
-    if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim() === '')) {
-      errors.push({ message: 'Name must be a non-empty string' });
-    }
-    
-    if (data.batch_number !== undefined && (typeof data.batch_number !== 'string' || data.batch_number.trim() === '')) {
-      errors.push({ message: 'Batch number must be a non-empty string' });
-    }
-    
-    if (data.origin_country !== undefined && (typeof data.origin_country !== 'string' || data.origin_country.trim() === '')) {
-      errors.push({ message: 'Origin country must be a non-empty string' });
-    }
-    
-    if (data.expiration_date !== undefined) {
-      const date = new Date(data.expiration_date);
-      if (isNaN(date.getTime())) {
-        errors.push({ message: 'Expiration date must be a valid date' });
-      }
-    }
-    
-    return {
-      error: errors.length > 0 ? { details: errors } : null,
-      value: data
-    };
-  }
-};
-
-const queryParamsSchema = {
-  validate: (query) => ({
-    error: null,
-    value: {
-      limit: query.limit ? Math.min(parseInt(query.limit), 100) : undefined,
-      offset: query.offset ? parseInt(query.offset) : undefined,
-      sortBy: query.sortBy || undefined,
-      sortOrder: query.sortOrder || undefined,
-      days: query.days ? parseInt(query.days) : undefined,
-      q: query.q || undefined
-    }
-  })
-};
+const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
+const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
+const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/sanitization');
+const { 
+  createProductSchema, 
+  updateProductSchema, 
+  queryParamsSchema 
+} = require('../validations/productValidation');
 
 const router = express.Router();
 
@@ -88,6 +19,7 @@ router.use(authenticateUser);
 
 router.get(
   '/',
+  requirePermission(PERMISSIONS.PRODUCTS_READ),
   validateQuery(queryParamsSchema),
   async (req, res, next) => {
     try {
@@ -100,6 +32,8 @@ router.get(
 
 router.get(
   '/search',
+  requirePermission(PERMISSIONS.PRODUCTS_SEARCH),
+  searchLimiter, // Apply search-specific rate limiting
   validateQuery(queryParamsSchema),
   async (req, res, next) => {
     try {
@@ -112,6 +46,7 @@ router.get(
 
 router.get(
   '/expiring',
+  requirePermission(PERMISSIONS.PRODUCTS_READ),
   validateQuery(queryParamsSchema),
   async (req, res, next) => {
     try {
@@ -124,6 +59,7 @@ router.get(
 
 router.get(
   '/:id',
+  requirePermission(PERMISSIONS.PRODUCTS_READ),
   async (req, res, next) => {
     try {
       await productController.getProductById(req, res, next);
@@ -135,6 +71,9 @@ router.get(
 
 router.post(
   '/',
+  requirePermission(PERMISSIONS.PRODUCTS_CREATE),
+  createLimiter, // Apply create-specific rate limiting
+  sanitizeMiddleware(SANITIZATION_RULES.product), // Sanitize product inputs
   validateRequest(createProductSchema),
   async (req, res, next) => {
     try {
@@ -147,6 +86,9 @@ router.post(
 
 router.put(
   '/:id',
+  requirePermission(PERMISSIONS.PRODUCTS_UPDATE),
+  createLimiter, // Apply update-specific rate limiting
+  sanitizeMiddleware(SANITIZATION_RULES.product), // Sanitize product inputs
   validateRequest(updateProductSchema),
   async (req, res, next) => {
     try {
@@ -159,6 +101,7 @@ router.put(
 
 router.delete(
   '/:id',
+  requirePermission(PERMISSIONS.PRODUCTS_DELETE),
   async (req, res, next) => {
     try {
       await productController.deleteProduct(req, res, next);
