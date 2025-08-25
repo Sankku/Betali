@@ -21,6 +21,17 @@ class HttpClient {
       headers['Authorization'] = `Bearer ${session.access_token}`;
     }
 
+    // Add organization context from localStorage
+    try {
+      const currentOrganizationId = localStorage.getItem('currentOrganizationId');
+      if (currentOrganizationId) {
+        headers['x-organization-id'] = currentOrganizationId;
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+      console.warn('Could not read organization context from localStorage:', e);
+    }
+
     return headers;
   }
 

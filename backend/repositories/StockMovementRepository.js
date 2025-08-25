@@ -107,6 +107,63 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
+   * Find movements by product ID and organization
+   * @param {string} productId - Product ID
+   * @param {string} organizationId - Organization ID
+   * @param {Object} options - Query options
+   * @returns {Promise<Array>}
+   */
+  async findByProductIdAndOrganization(productId, organizationId, options = {}) {
+    return this.findAll({ product_id: productId, organization_id: organizationId }, options);
+  }
+
+  /**
+   * Find movements by warehouse ID and organization
+   * @param {string} warehouseId - Warehouse ID
+   * @param {string} organizationId - Organization ID
+   * @param {Object} options - Query options
+   * @returns {Promise<Array>}
+   */
+  async findByWarehouseIdAndOrganization(warehouseId, organizationId, options = {}) {
+    return this.findAll({ warehouse_id: warehouseId, organization_id: organizationId }, options);
+  }
+
+  /**
+   * Find movements by date range and organization
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @param {string} organizationId - Organization ID
+   * @param {Object} options - Query options
+   * @returns {Promise<Array>}
+   */
+  async findByDateRangeAndOrganization(startDate, endDate, organizationId, options = {}) {
+    try {
+      let query = this.client
+        .from(this.table)
+        .select('*')
+        .eq('organization_id', organizationId)
+        .gte('movement_date', startDate.toISOString())
+        .lte('movement_date', endDate.toISOString());
+
+      if (options.orderBy) {
+        const { column, ascending = true } = options.orderBy;
+        query = query.order(column, { ascending });
+      }
+
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Error finding movements by date range and organization: ${error.message}`);
+    }
+  }
+
+  /**
    * Update movement by ID (override to not add updated_at)
    * @param {string} id - Movement ID
    * @param {Object} updates - Update data

@@ -10,26 +10,33 @@ class WarehouseController {
   }
 
   /**
-   * Get all warehouses for authenticated user
+   * Get all warehouses for authenticated user's organization
    * GET /api/warehouses
    */
   async getWarehouses(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
       const options = this.buildQueryOptions(req.query);
       
-      const warehouses = await this.warehouseService.getUserWarehouses(userId, options);
+      const warehouses = await this.warehouseService.getOrganizationWarehouses(organizationId, options);
       
       res.json({
         data: warehouses,
         meta: {
           total: warehouses.length,
+          organizationId,
           ...options
         }
       });
     } catch (error) {
       this.logger.error(`Error fetching warehouses: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -43,15 +50,21 @@ class WarehouseController {
   async getWarehouseById(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      const warehouse = await this.warehouseService.getWarehouseById(id, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const warehouse = await this.warehouseService.getWarehouseById(id, organizationId);
       
       res.json({ data: warehouse });
     } catch (error) {
       this.logger.error(`Error fetching warehouse by ID: ${error.message}`, {
         warehouseId: req.params.id,
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -65,9 +78,16 @@ class WarehouseController {
   async createWarehouse(req, res, next) {
     try {
       const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const warehouseData = req.body;
       
-      const createdWarehouse = await this.warehouseService.createWarehouse(warehouseData, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const createdWarehouse = await this.warehouseService.createWarehouse(warehouseData, userId, organizationId);
       
       res.status(201).json({
         data: createdWarehouse,
@@ -75,7 +95,7 @@ class WarehouseController {
       });
     } catch (error) {
       this.logger.error(`Error creating warehouse: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -89,10 +109,16 @@ class WarehouseController {
   async updateWarehouse(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const updateData = req.body;
       
-      const updatedWarehouse = await this.warehouseService.updateWarehouse(id, updateData, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const updatedWarehouse = await this.warehouseService.updateWarehouse(id, updateData, organizationId);
       
       res.json({
         data: updatedWarehouse,
@@ -101,7 +127,7 @@ class WarehouseController {
     } catch (error) {
       this.logger.error(`Error updating warehouse: ${error.message}`, {
         warehouseId: req.params.id,
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -115,9 +141,15 @@ class WarehouseController {
   async deactivateWarehouse(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      const deactivatedWarehouse = await this.warehouseService.deactivateWarehouse(id, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const deactivatedWarehouse = await this.warehouseService.deactivateWarehouse(id, organizationId);
       
       res.json({
         data: deactivatedWarehouse,
@@ -126,7 +158,7 @@ class WarehouseController {
     } catch (error) {
       this.logger.error(`Error deactivating warehouse: ${error.message}`, {
         warehouseId: req.params.id,
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -140,9 +172,15 @@ class WarehouseController {
   async deleteWarehouse(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      await this.warehouseService.deleteWarehouse(id, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      await this.warehouseService.deleteWarehouse(id, organizationId);
       
       res.json({
         message: 'Warehouse deleted permanently'
@@ -150,7 +188,7 @@ class WarehouseController {
     } catch (error) {
       this.logger.error(`Error deleting warehouse: ${error.message}`, {
         warehouseId: req.params.id,
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -164,26 +202,33 @@ class WarehouseController {
   async getWarehouseMovements(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const options = {
         limit: parseInt(req.query.limit) || 20,
         offset: parseInt(req.query.offset) || 0
       };
       
-      const movementsData = await this.warehouseService.getWarehouseMovements(id, userId, options);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const movementsData = await this.warehouseService.getWarehouseMovements(id, organizationId, options);
       
       res.json({
         data: movementsData.movements,
         meta: {
           warehouse_id: movementsData.warehouse_id,
           warehouse_name: movementsData.warehouse_name,
+          organizationId,
           ...movementsData.meta
         }
       });
     } catch (error) {
       this.logger.error(`Error fetching warehouse movements: ${error.message}`, {
         warehouseId: req.params.id,
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);

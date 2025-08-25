@@ -19,9 +19,11 @@ import { Input } from '../components/ui/input';
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,13 @@ export default function Register() {
     setLoading(true);
     setError(null);
 
+    // Validation
+    if (!name.trim()) {
+      setError('Name is required');
+      setLoading(false);
+      return;
+    }
+
     if (!agreeTerms) {
       setError('You must accept the terms and conditions to continue');
       setLoading(false);
@@ -53,11 +62,38 @@ export default function Register() {
     }
 
     try {
-      const { error } = await signUp(email, password);
+      // Step 1: Sign up with Supabase Auth
+      const { data: authData, error: authError } = await signUp(email, password);
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      navigate('/login?message=Registration successful. Please check your email.');
+      if (!authData.user) {
+        throw new Error('Signup failed - no user returned');
+      }
+
+      // Step 2: Complete SaaS signup by creating organization
+      const response = await fetch('http://localhost:4000/api/auth/complete-signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: authData.user.id,
+          email: authData.user.email,
+          name: name.trim(),
+          organization_name: organizationName.trim() || `${name.trim()}'s Organization`
+        }),
+      });
+
+      const signupResult = await response.json();
+
+      if (!response.ok) {
+        throw new Error(signupResult.error || 'Failed to complete signup');
+      }
+
+      // Success! Redirect to dashboard
+      navigate('/dashboard?welcome=true');
+      
     } catch (err: any) {
       setError(err.message || 'Registration error');
     } finally {
@@ -79,8 +115,8 @@ export default function Register() {
               <Package className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">AgroPanel</h1>
-          <p className="text-gray-500 mt-1">Agricultural product management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
+          <p className="text-gray-500 mt-1">Business inventory management</p>
         </div>
 
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
@@ -89,7 +125,7 @@ export default function Register() {
               Create Account
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Register to access the platform
+              Create your account and start your organization
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -106,6 +142,21 @@ export default function Register() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="name" className="text-neutral-700">
+                  Full Name
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="email" className="text-neutral-700">
                   Email
                 </Label>
@@ -118,6 +169,24 @@ export default function Register() {
                   className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="organizationName" className="text-neutral-700">
+                  Organization Name
+                  <span className="text-xs text-neutral-500 ml-1">(optional)</span>
+                </Label>
+                <Input
+                  id="organizationName"
+                  type="text"
+                  placeholder="My Company"
+                  value={organizationName}
+                  onChange={e => setOrganizationName(e.target.value)}
+                  className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
+                />
+                <p className="text-xs text-neutral-500">
+                  Leave empty to use "{name ? `${name}'s Organization` : 'Your Organization'}"
+                </p>
               </div>
 
               <div className="space-y-2">

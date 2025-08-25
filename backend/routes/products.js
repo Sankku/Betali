@@ -1,6 +1,7 @@
 const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
+const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { validateRequest, validateQuery } = require('../middleware/validation');
 const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
@@ -16,6 +17,7 @@ const router = express.Router();
 const productController = ServiceFactory.createProductController();
 
 router.use(authenticateUser);
+router.use(requireOrganizationContext);
 
 router.get(
   '/',

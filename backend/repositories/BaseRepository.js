@@ -154,6 +154,30 @@ class BaseRepository {
         throw new Error(`Error counting ${this.table}: ${error.message}`);
       }
     }
+
+    /**
+     * Delete entities by filter conditions
+     * @param {Object} filters - Filter conditions for deletion
+     * @returns {Promise<number>} Number of deleted entities
+     */
+    async deleteByFilter(filters = {}) {
+      try {
+        let query = this.client.from(this.table).delete();
+
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
+        });
+
+        const { data, error, count } = await query.select('*');
+        if (error) throw error;
+
+        return count || (data ? data.length : 0);
+      } catch (error) {
+        throw new Error(`Error deleting ${this.table} by filter: ${error.message}`);
+      }
+    }
   }
   
-  module.exports = { BaseRepository };
+module.exports = { BaseRepository };

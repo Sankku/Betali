@@ -1,236 +1,201 @@
-import { Form, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { Users, Mail, Shield } from 'lucide-react';
 import { Input } from '../../ui/input';
-import { Button } from '../../ui/button';
 import { Switch } from '../../ui/switch';
+import { UserFormData } from './user-modal';
 import { RoleSelector } from './role-selector';
-import { OrganizationSelector } from './organization-selector';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  FormDescription,
-} from '../../ui/form';
+import { useUserContext } from '@/hooks/useUsers';
+import { UserRole } from '@/utils/roleUtils';
 
-const userSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name cannot exceed 100 characters'),
-  email: z
-    .string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email cannot exceed 100 characters'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one lowercase letter, one uppercase letter, and one number'
-    )
-    .optional()
-    .or(z.literal('')),
-  role: z.enum(['super_admin', 'admin', 'manager', 'employee', 'viewer'], {
-    required_error: 'Please select a role',
-  }),
-  organization_id: z.string().uuid().optional().nullable(),
-  branch_id: z.string().uuid().optional().nullable(),
-  is_active: z.boolean().default(true),
-});
-
-type UserFormData = z.infer<typeof userSchema>;
-
-interface UserFormProps {
-  onSubmit: (data: UserFormData) => void;
+export interface UserFormProps {
+  form: UseFormReturn<UserFormData>;
+  mode: 'create' | 'edit' | 'view';
   isLoading?: boolean;
-  initialData?: Partial<UserFormData>;
-  isEditing?: boolean;
 }
 
-export function UserForm({
-  onSubmit,
-  isLoading = false,
-  initialData,
-  isEditing = false,
-}: UserFormProps) {
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      name: initialData?.name || '',
-      email: initialData?.email || '',
-      password: '',
-      role: initialData?.role || 'employee',
-      organization_id: initialData?.organization_id || null,
-      branch_id: initialData?.branch_id || null,
-      is_active: initialData?.is_active ?? true,
-    },
-  });
+export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = false }) => {
+  const isViewMode = mode === 'view';
+  const isEditing = mode === 'edit';
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
 
-  const handleSubmit = (data: UserFormData) => {
-    // If editing and password is empty, don't include it
-    if (isEditing && !data.password) {
-      const { password, ...dataWithoutPassword } = data;
-      onSubmit(dataWithoutPassword);
-    } else {
-      onSubmit(data);
-    }
-  };
+  // Get current user context to determine role restrictions
+  const { data: userContext } = useUserContext();
+  // Normalize role from backend (SUPER_ADMIN) to frontend format (super_admin)
+  const rawRole = userContext?.permissions?.role;
+  const currentUserRole = rawRole ? rawRole.toLowerCase() as UserRole : undefined;
+  
 
-  const selectedRole = form.watch('role');
+  const currentName = watch('name') || '';
+  const currentEmail = watch('email') || '';
+  const currentRole = watch('role') || '';
+  const currentIsActive = watch('is_active') ?? true;
+
+  const ViewField: React.FC<{
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+    description?: string;
+  }> = ({ label, value, icon, description }) => (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+        {icon}
+        {label}
+      </label>
+      {description && <p className="text-xs text-neutral-500">{description}</p>}
+      <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
+        <span className="text-neutral-800">{value || 'Not specified'}</span>
+      </div>
+    </div>
+  );
+
+  if (isViewMode) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ViewField
+            label="Full Name"
+            value={currentName}
+            icon={<Users className="w-4 h-4" />}
+          />
+          <ViewField
+            label="Email Address"
+            value={currentEmail}
+            icon={<Mail className="w-4 h-4" />}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ViewField
+            label="Role"
+            value={currentRole || 'Not assigned'}
+            icon={<Shield className="w-4 h-4" />}
+          />
+          <ViewField
+            label="Status"
+            value={currentIsActive ? 'Active' : 'Inactive'}
+            icon={<Shield className="w-4 h-4" />}
+          />
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>Note:</strong> Organization roles, permissions, and assignments are managed separately in the team management section.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter full name" {...field} disabled={isLoading} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Full Name
+          </label>
+          <Input
+            id="name"
+            placeholder="Enter full name"
+            {...register('name')}
+            disabled={isLoading}
+            className={errors.name ? 'border-red-500' : ''}
           />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="Enter email address"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {errors.name && (
+            <p className="text-xs text-red-500">{errors.name.message}</p>
+          )}
         </div>
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Password {isEditing && '(leave empty to keep current password)'}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  placeholder={isEditing ? 'Enter new password (optional)' : 'Enter password'}
-                  {...field}
-                  disabled={isLoading}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Email Address
+          </label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Enter email address"
+            {...register('email')}
+            disabled={isLoading}
+            className={errors.email ? 'border-red-500' : ''}
+          />
+          {errors.email && (
+            <p className="text-xs text-red-500">{errors.email.message}</p>
           )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+          <Shield className="w-4 h-4" />
+          Global Role
+        </label>
+        <RoleSelector
+          value={currentRole}
+          onValueChange={(value) => setValue('role', value)}
+          disabled={isLoading}
+          placeholder="Select a role..."
+          excludeRoles={[]}
+          showDescription={true}
+          currentUserRole={currentUserRole}
+          showRestrictions={true}
         />
-
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <FormControl>
-                <RoleSelector
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isLoading}
-                  excludeRoles={selectedRole === 'super_admin' ? [] : ['super_admin']}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {selectedRole !== 'super_admin' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="organization_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organization</FormLabel>
-                  <FormControl>
-                    <OrganizationSelector
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={isLoading}
-                      placeholder="Select organization..."
-                    />
-                  </FormControl>
-                  <FormDescription>Required for non-super admin users</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="branch_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Branch ID (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter branch UUID"
-                      {...field}
-                      value={field.value || ''}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormDescription>Leave empty if not using branches</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+        {errors.role && (
+          <p className="text-xs text-red-500">{errors.role.message}</p>
         )}
+      </div>
 
-        <FormField
-          control={form.control}
-          name="is_active"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Active User</FormLabel>
-                <FormDescription>
-                  Active users can access the system and perform their assigned tasks
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={isLoading}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+      <div className="space-y-2">
+        <label htmlFor="password" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+          <Shield className="w-4 h-4" />
+          Password {isEditing && '(leave empty to keep current password)'}
+        </label>
+        <Input
+          id="password"
+          type="password"
+          placeholder={isEditing ? 'Enter new password (optional)' : 'Enter password'}
+          {...register('password')}
+          disabled={isLoading}
+          className={errors.password ? 'border-red-500' : ''}
         />
+        {errors.password && (
+          <p className="text-xs text-red-500">{errors.password.message}</p>
+        )}
+      </div>
 
-        <div className="flex justify-end space-x-4 pt-6">
-          <Button type="submit" disabled={isLoading} className="min-w-[120px]">
-            {isLoading ? 'Saving...' : isEditing ? 'Update User' : 'Create User'}
-          </Button>
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Shield className="w-5 h-5 text-amber-600 mt-0.5" />
+          <div>
+            <h4 className="font-medium text-amber-800 mb-1">Organization Roles & Permissions</h4>
+            <p className="text-sm text-amber-700">
+              User roles and permissions are now managed per organization. After creating this user, 
+              invite them to organizations through the team management section to assign specific roles and permissions.
+            </p>
+          </div>
         </div>
-      </form>
-    </Form>
+      </div>
+
+      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+        <div className="space-y-0.5">
+          <label className="text-base font-medium text-neutral-700 flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Active User
+          </label>
+          <p className="text-sm text-neutral-500">
+            Active users can access the system and perform their assigned tasks
+          </p>
+        </div>
+        <Switch
+          checked={currentIsActive}
+          onCheckedChange={(checked) => form.setValue('is_active', checked)}
+          disabled={isLoading}
+        />
+      </div>
+    </div>
   );
-}
+};

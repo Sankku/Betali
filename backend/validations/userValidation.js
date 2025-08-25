@@ -50,11 +50,10 @@ const createUserSchema = Joi.object({
     .when('role', {
       is: 'super_admin',
       then: Joi.forbidden(),
-      otherwise: Joi.required()
+      otherwise: Joi.optional() // Changed from required to optional (auto-assigned in controller)
     })
     .messages({
       'string.uuid': 'Organization ID must be a valid UUID',
-      'any.required': 'Organization ID is required for non-super admin users',
       'any.unknown': 'Super admin users cannot have an organization'
     }),
 
@@ -66,12 +65,6 @@ const createUserSchema = Joi.object({
       'string.uuid': 'Branch ID must be a valid UUID'
     }),
 
-  permissions: Joi.array()
-    .items(Joi.string())
-    .default([])
-    .messages({
-      'array.base': 'Permissions must be an array of strings'
-    }),
 
   is_active: Joi.boolean()
     .default(true)
@@ -123,11 +116,6 @@ const updateUserSchema = Joi.object({
       'string.uuid': 'Branch ID must be a valid UUID'
     }),
 
-  permissions: Joi.array()
-    .items(Joi.string())
-    .messages({
-      'array.base': 'Permissions must be an array of strings'
-    }),
 
   is_active: Joi.boolean()
 });

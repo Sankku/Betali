@@ -39,6 +39,30 @@ class UserRepository extends BaseRepository {
   }
 
   /**
+   * Create user from authentication (for SaaS signup)
+   * @param {Object} userData - User data from Supabase Auth
+   * @returns {Promise<Object>}
+   */
+  async createFromAuth(userData) {
+    try {
+      const { data, error } = await this.client
+        .from(this.table)
+        .insert(userData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      // Handle duplicate user gracefully
+      if (error.code === '23505') {
+        throw new Error('User already exists');
+      }
+      throw new Error(`Error creating user from auth: ${error.message}`);
+    }
+  }
+
+  /**
    * Find all users with filtering and pagination
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
@@ -47,12 +71,7 @@ class UserRepository extends BaseRepository {
     try {
       let query = this.client
         .from(this.table)
-        .select(`
-          *,
-          organizations:organization_id (
-            name
-          )
-        `);
+        .select('*');
 
       // Apply filters
       if (options.role) {

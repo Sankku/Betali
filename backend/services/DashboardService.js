@@ -8,12 +8,12 @@ class DashboardService {
 
   /**
    * Get comprehensive dashboard overview
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Dashboard data
    */
-  async getDashboardOverview(userId) {
+  async getDashboardOverview(organizationId) {
     try {
-      this.logger.info(`Generating dashboard overview for user: ${userId}`);
+      this.logger.info(`Generating dashboard overview for organization: ${organizationId}`);
 
       const [
         productsCount,
@@ -22,11 +22,11 @@ class DashboardService {
         expiringProducts,
         lowStockAlerts
       ] = await Promise.all([
-        this.productRepository.count({ owner_id: userId }),
-        this.warehouseRepository.count({ owner_id: userId }),
-        this.getRecentMovements(userId, 5),
-        this.productRepository.findExpiringSoon(30, userId),
-        this.getLowStockAlerts(userId)
+        this.productRepository.count({ organization_id: organizationId }),
+        this.warehouseRepository.count({ organization_id: organizationId }),
+        this.getRecentMovements(organizationId, 5),
+        this.productRepository.findExpiringSoon(30, organizationId),
+        this.getLowStockAlerts(organizationId)
       ]);
 
       return {
@@ -49,11 +49,11 @@ class DashboardService {
   }
 
   /**
-   * Get user statistics
-   * @param {string} userId - User ID
-   * @returns {Promise<Object>} User statistics
+   * Get organization statistics
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object>} Organization statistics
    */
-  async getUserStats(userId) {
+  async getOrganizationStats(organizationId) {
     try {
       const [
         totalProducts,
@@ -63,12 +63,12 @@ class DashboardService {
         productsThisMonth,
         movementsThisMonth
       ] = await Promise.all([
-        this.productRepository.count({ owner_id: userId }),
-        this.warehouseRepository.count({ owner_id: userId }),
-        this.stockMovementRepository.count(),
-        this.warehouseRepository.count({ owner_id: userId, is_active: true }),
-        this.getProductsCreatedInPeriod(userId, 'month'),
-        this.getMovementsInPeriod(userId, 'month')
+        this.productRepository.count({ organization_id: organizationId }),
+        this.warehouseRepository.count({ organization_id: organizationId }),
+        this.stockMovementRepository.count({ organization_id: organizationId }),
+        this.warehouseRepository.count({ organization_id: organizationId, is_active: true }),
+        this.getProductsCreatedInPeriod(organizationId, 'month'),
+        this.getMovementsInPeriod(organizationId, 'month')
       ]);
 
       return {
@@ -92,15 +92,15 @@ class DashboardService {
   }
 
   /**
-   * Get recent activity for user
-   * @param {string} userId - User ID
+   * Get recent activity for organization
+   * @param {string} organizationId - Organization ID
    * @param {number} limit - Number of activities to return
    * @returns {Promise<Array>} Recent activities
    */
-  async getRecentActivity(userId, limit = 10) {
+  async getRecentActivity(organizationId, limit = 10) {
     try {
       const movements = await this.stockMovementRepository.findAll(
-        {},
+        { organization_id: organizationId },
         {
           limit,
           orderBy: { column: 'movement_date', ascending: false }
@@ -145,13 +145,13 @@ class DashboardService {
 
   /**
    * Get products expiring soon
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {number} days - Days ahead to check
    * @returns {Promise<Array>} Expiring products
    */
-  async getExpiringProducts(userId, days = 30) {
+  async getExpiringProducts(organizationId, days = 30) {
     try {
-      return await this.productRepository.findExpiringSoon(days, userId);
+      return await this.productRepository.findExpiringSoon(days, organizationId);
     } catch (error) {
       this.logger.error(`Error fetching expiring products: ${error.message}`);
       throw error;
@@ -160,23 +160,23 @@ class DashboardService {
 
   /**
    * Get analytics data for charts and reports
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {string} period - Time period (7d, 30d, 90d, 1y)
    * @param {string} type - Analytics type (overview, products, movements)
    * @returns {Promise<Object>} Analytics data
    */
-  async getAnalytics(userId, period = '30d', type = 'overview') {
+  async getAnalytics(organizationId, period = '30d', type = 'overview') {
     try {
       const { startDate, endDate } = this.calculateDateRange(period);
 
       switch (type) {
         case 'products':
-          return await this.getProductAnalytics(userId, startDate, endDate);
+          return await this.getProductAnalytics(organizationId, startDate, endDate);
         case 'movements':
-          return await this.getMovementAnalytics(userId, startDate, endDate);
+          return await this.getMovementAnalytics(organizationId, startDate, endDate);
         case 'overview':
         default:
-          return await this.getOverviewAnalytics(userId, startDate, endDate);
+          return await this.getOverviewAnalytics(organizationId, startDate, endDate);
       }
     } catch (error) {
       this.logger.error(`Error generating analytics: ${error.message}`);
@@ -186,31 +186,22 @@ class DashboardService {
 
   /**
    * Get recent stock movements
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {number} limit - Number of movements to return
    * @returns {Promise<Array>} Recent movements
    */
-  async getRecentMovements(userId, limit = 5) {
+  async getRecentMovements(organizationId, limit = 5) {
     try {
-      // This would need to be filtered by user's products/warehouses
-      // For now, we'll get all movements and filter them
+      // Get movements filtered by organization
       const movements = await this.stockMovementRepository.findAll(
-        {},
+        { organization_id: organizationId },
         {
-          limit: limit * 2, // Get more to account for filtering
+          limit,
           orderBy: { column: 'movement_date', ascending: false }
         }
       );
 
-      // Filter movements that belong to user's products
-      const userProducts = await this.productRepository.findByUserId(userId);
-      const userProductIds = userProducts.map(p => p.product_id);
-
-      const userMovements = movements.filter(movement => 
-        userProductIds.includes(movement.product_id)
-      ).slice(0, limit);
-
-      return userMovements;
+      return movements;
     } catch (error) {
       this.logger.error(`Error fetching recent movements: ${error.message}`);
       throw error;
@@ -218,27 +209,32 @@ class DashboardService {
   }
 
   /**
-   * Get low stock alerts (placeholder implementation)
-   * @param {string} userId - User ID
+   * Get low stock alerts
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Array>} Low stock alerts
    */
-  async getLowStockAlerts() {
-    return []
-}
+  async getLowStockAlerts(organizationId) {
+    try {
+      // This is a placeholder - should implement actual low stock logic
+      this.logger.info(`Fetching low stock alerts for organization: ${organizationId}`);
+      return [];
+    } catch (error) {
+      this.logger.error(`Error fetching low stock alerts: ${error.message}`);
+      return [];
+    }
+  }
 
   /**
    * Get products created in a specific period
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {string} period - Period (day, week, month, year)
    * @returns {Promise<number>} Count of products created
    */
-  async getProductsCreatedInPeriod(userId, period) {
+  async getProductsCreatedInPeriod(organizationId, period) {
     try {
       const { startDate } = this.calculateDateRange(period);
       
-      const products = await this.productRepository.findAll({
-        owner_id: userId
-      });
+      const products = await this.productRepository.findByOrganizationId(organizationId);
 
       return products.filter(product => 
         new Date(product.created_at) >= startDate
@@ -251,25 +247,22 @@ class DashboardService {
 
   /**
    * Get movements in a specific period
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {string} period - Period (day, week, month, year)
    * @returns {Promise<number>} Count of movements
    */
-  async getMovementsInPeriod(userId, period) {
+  async getMovementsInPeriod(organizationId, period) {
     try {
       const { startDate } = this.calculateDateRange(period);
       
-      const userProducts = await this.productRepository.findByUserId(userId);
-      const userProductIds = userProducts.map(p => p.product_id);
-
-      const movements = await this.stockMovementRepository.findByDateRange(
-        startDate,
-        new Date()
+      const movements = await this.stockMovementRepository.findAll(
+        { 
+          organization_id: organizationId,
+          movement_date: { gte: startDate, lte: new Date() }
+        }
       );
 
-      return movements.filter(movement => 
-        userProductIds.includes(movement.product_id)
-      ).length;
+      return movements.length;
     } catch (error) {
       this.logger.error(`Error fetching movements for period: ${error.message}`);
       return 0;
@@ -278,21 +271,21 @@ class DashboardService {
 
   /**
    * Get overview analytics
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
    * @returns {Promise<Object>} Overview analytics
    */
-  async getOverviewAnalytics(userId, startDate, endDate) {
+  async getOverviewAnalytics(organizationId, startDate, endDate) {
     try {
       const [
         productsCreated,
         movementsCount,
         warehousesCreated
       ] = await Promise.all([
-        this.getProductsCreatedInDateRange(userId, startDate, endDate),
-        this.getMovementsInDateRange(userId, startDate, endDate),
-        this.getWarehousesCreatedInDateRange(userId, startDate, endDate)
+        this.getProductsCreatedInDateRange(organizationId, startDate, endDate),
+        this.getMovementsInDateRange(organizationId, startDate, endDate),
+        this.getWarehousesCreatedInDateRange(organizationId, startDate, endDate)
       ]);
 
       return {
@@ -319,14 +312,14 @@ class DashboardService {
 
   /**
    * Get product analytics
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
    * @returns {Promise<Object>} Product analytics
    */
-  async getProductAnalytics(userId, startDate, endDate) {
+  async getProductAnalytics(organizationId, startDate, endDate) {
     try {
-      const products = await this.productRepository.findByUserId(userId);
+      const products = await this.productRepository.findByOrganizationId(organizationId);
       
       const analytics = {
         period: {
@@ -350,14 +343,14 @@ class DashboardService {
 
   /**
    * Get movement analytics
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
    * @returns {Promise<Object>} Movement analytics
    */
-  async getMovementAnalytics(userId, startDate, endDate) {
+  async getMovementAnalytics(organizationId, startDate, endDate) {
     try {
-      const movements = await this.getMovementsInDateRange(userId, startDate, endDate);
+      const movements = await this.getMovementsInDateRange(organizationId, startDate, endDate);
       
       const analytics = {
         period: {
@@ -417,24 +410,21 @@ class DashboardService {
    * Helper methods for analytics calculations
    */
   
-  async getProductsCreatedInDateRange(userId, startDate, endDate) {
-    const products = await this.productRepository.findByUserId(userId);
+  async getProductsCreatedInDateRange(organizationId, startDate, endDate) {
+    const products = await this.productRepository.findByOrganizationId(organizationId);
     return products.filter(p => {
       const createdDate = new Date(p.created_at);
       return createdDate >= startDate && createdDate <= endDate;
     }).length;
   }
 
-  async getMovementsInDateRange(userId, startDate, endDate) {
-    const userProducts = await this.productRepository.findByUserId(userId);
-    const userProductIds = userProducts.map(p => p.product_id);
-    
-    const movements = await this.stockMovementRepository.findByDateRange(startDate, endDate);
-    return movements.filter(m => userProductIds.includes(m.product_id));
+  async getMovementsInDateRange(organizationId, startDate, endDate) {
+    const movements = await this.stockMovementRepository.findByDateRangeAndOrganization(startDate, endDate, organizationId);
+    return movements;
   }
 
-  async getWarehousesCreatedInDateRange(userId, startDate, endDate) {
-    const warehouses = await this.warehouseRepository.findByUserId(userId);
+  async getWarehousesCreatedInDateRange(organizationId, startDate, endDate) {
+    const warehouses = await this.warehouseRepository.findByOrganizationId(organizationId);
     return warehouses.filter(w => {
       const createdDate = new Date(w.created_at);
       return createdDate >= startDate && createdDate <= endDate;

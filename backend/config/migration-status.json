@@ -1,0 +1,24 @@
+{
+  "roleMapping": {
+    "super_admin": {
+      "permissions": [
+        "*"
+      ]
+    }
+  },
+  "organizationOwnership": {
+    "cb4f0529-a879-47da-a54e-cdc80a90c7c4": {
+      "userId": "4ef37216-5711-403a-96e9-5a2fdd286d85",
+      "isOwner": true,
+      "currentRole": "super_admin"
+    }
+  },
+  "migrationStatus": {
+    "roleSystemMigrated": true,
+    "organizationOwnershipSet": false,
+    "tablesNeedingMigration": [
+      "clients",
+      "orders"
+    ]
+  }
+}

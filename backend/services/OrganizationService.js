@@ -5,10 +5,13 @@ const { Logger } = require('../utils/Logger');
  * Orchestrates operations between repositories
  */
 class OrganizationService {
-  constructor(organizationRepository, userOrganizationRepository, userRepository) {
+  constructor(organizationRepository, userOrganizationRepository, userRepository, productRepository, warehouseRepository, stockMovementRepository) {
     this.organizationRepository = organizationRepository;
     this.userOrganizationRepository = userOrganizationRepository;
     this.userRepository = userRepository;
+    this.productRepository = productRepository;
+    this.warehouseRepository = warehouseRepository;
+    this.stockMovementRepository = stockMovementRepository;
     this.logger = new Logger('OrganizationService');
   }
 
@@ -35,6 +38,78 @@ class OrganizationService {
   }
 
   /**
+   * Create organization for user (SaaS signup)
+   * @param {Object} organizationData - Organization data  
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Created organization with relationship
+   */
+  async createOrganizationForUser(organizationData, userId) {
+    try {
+      this.logger.info('Creating organization for user', {
+        organizationName: organizationData.name,
+        userId
+      });
+
+      const organization = await this.organizationRepository.create(organizationData);
+      
+      // Add user as owner of the organization
+      const ownerRelationship = await this.userOrganizationRepository.create({
+        user_id: userId,
+        organization_id: organization.organization_id,
+        role: 'super_admin', // Use super_admin as owner role
+        permissions: ['*'] // Owner has all permissions
+      });
+      
+      this.logger.info('Organization created for user with owner relationship', {
+        organizationId: organization.organization_id,
+        name: organization.name,
+        relationshipId: ownerRelationship.user_organization_id
+      });
+
+      return {
+        organization,
+        ownerRelationship
+      };
+    } catch (error) {
+      this.logger.error('Error creating organization for user', {
+        error: error.message,
+        organizationData,
+        userId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Add user to organization (SaaS signup)
+   * @param {Object} userOrgData - User organization relationship data
+   * @returns {Promise<Object>} Created relationship
+   */
+  async addUserToOrganization(userOrgData) {
+    try {
+      this.logger.info('Adding user to organization', {
+        userId: userOrgData.user_id,
+        organizationId: userOrgData.organization_id,
+        role: userOrgData.role
+      });
+
+      const relationship = await this.userOrganizationRepository.create(userOrgData);
+      
+      this.logger.info('User added to organization', {
+        relationshipId: relationship.user_organization_id
+      });
+
+      return relationship;
+    } catch (error) {
+      this.logger.error('Error adding user to organization', {
+        error: error.message,
+        userOrgData
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create organization with owner
    * @param {Object} organizationData - Organization data
    * @param {string} ownerId - Owner user ID
@@ -54,7 +129,7 @@ class OrganizationService {
       const ownerRelationship = await this.userOrganizationRepository.create({
         user_id: ownerId,
         organization_id: organization.organization_id,
-        role: 'owner',
+        role: 'super_admin', // Use super_admin as owner role
         permissions: ['*'] // Owner has all permissions
       });
 
@@ -82,10 +157,18 @@ class OrganizationService {
       const userOrganizations = await this.userOrganizationRepository.getUserOrganizations(userId);
       
       return userOrganizations.map(userOrg => ({
-        ...userOrg.organization,
+        user_organization_id: userOrg.user_organization_id,
+        user_id: userOrg.user_id,
+        organization_id: userOrg.organization_id,
+        branch_id: userOrg.branch_id,
+        role: userOrg.role,
+        permissions: userOrg.permissions,
+        is_active: userOrg.is_active,
+        joined_at: userOrg.joined_at,
+        organization: userOrg.organization,
+        branch: userOrg.branch,
         userRole: userOrg.role,
         userPermissions: userOrg.permissions,
-        branch: userOrg.branch,
         joinedAt: userOrg.joined_at,
         userOrganizationId: userOrg.user_organization_id
       }));
@@ -117,7 +200,7 @@ class OrganizationService {
 
       // Check if inviter has permission to invite
       const inviterRole = await this.userOrganizationRepository.getUserRole(inviterId, organization_id);
-      if (!inviterRole || !['owner', 'super_admin', 'admin'].includes(inviterRole.role)) {
+      if (!inviterRole || !['super_admin', 'admin'].includes(inviterRole.role)) {
         throw new Error('Insufficient permissions to invite users');
       }
 
@@ -215,7 +298,7 @@ class OrganizationService {
 
       // Check if updater has permission
       const updaterRole = await this.userOrganizationRepository.getUserRole(updaterId, relationship.organization_id);
-      if (!updaterRole || !['owner', 'super_admin', 'admin'].includes(updaterRole.role)) {
+      if (!updaterRole || !['super_admin', 'admin'].includes(updaterRole.role)) {
         throw new Error('Insufficient permissions to update member roles');
       }
 
@@ -247,13 +330,17 @@ class OrganizationService {
 
       // Check if remover has permission
       const removerRole = await this.userOrganizationRepository.getUserRole(removerId, relationship.organization_id);
-      if (!removerRole || !['owner', 'super_admin', 'admin'].includes(removerRole.role)) {
+      if (!removerRole || !['super_admin', 'admin'].includes(removerRole.role)) {
         throw new Error('Insufficient permissions to remove members');
       }
 
-      // Don't allow removing the owner
-      if (relationship.role === 'owner') {
-        throw new Error('Cannot remove organization owner');
+      // Don't allow removing the organization owner (super_admin who is also the owner_user_id)
+      if (relationship.role === 'super_admin') {
+        // Check if this user is the organization owner
+        const org = await this.organizationRepository.getById(relationship.organization_id);
+        if (org && org.owner_user_id === relationship.user_id) {
+          throw new Error('Cannot remove organization owner');
+        }
       }
 
       return await this.userOrganizationRepository.remove(userOrganizationId);
@@ -295,7 +382,7 @@ class OrganizationService {
     try {
       // Check if updater has permission
       const updaterRole = await this.userOrganizationRepository.getUserRole(updaterId, organizationId);
-      if (!updaterRole || !['owner', 'super_admin'].includes(updaterRole.role)) {
+      if (!updaterRole || !['super_admin'].includes(updaterRole.role)) {
         throw new Error('Insufficient permissions to update organization');
       }
 
@@ -312,43 +399,103 @@ class OrganizationService {
   }
 
   /**
-   * Delete organization
+   * Delete organization with cascade deletion of all related data
    * @param {string} organizationId - Organization ID
    * @param {string} deleterId - ID of user performing deletion
    * @returns {Promise<boolean>} Success status
    */
   async deleteOrganization(organizationId, deleterId) {
     try {
-      this.logger.info('Deleting organization', {
+      this.logger.info('Starting cascade deletion of organization', {
         organizationId,
         deleterId
       });
 
-      // Check if deleter has permission (only super_admin can delete organizations)
+      // Check if deleter has permission (only super_admin users can delete organizations)
       const deleterRole = await this.userOrganizationRepository.getUserRole(deleterId, organizationId);
-      if (!deleterRole || deleterRole.role !== 'owner') {
-        // Also check if user is super_admin globally
-        const deleter = await this.userRepository.getById(deleterId);
-        if (!deleter || deleter.role !== 'super_admin') {
-          throw new Error('Insufficient permissions to delete organization');
-        }
+      
+      this.logger.info('Checking deletion permissions', {
+        organizationId,
+        deleterId,
+        deleterRole: deleterRole ? deleterRole.role : 'NO_ROLE_FOUND',
+        hasRole: !!deleterRole
+      });
+      
+      if (!deleterRole || deleterRole.role !== 'super_admin') {
+        throw new Error('Insufficient permissions to delete organization');
+      }
+      
+      // Verify the organization exists
+      const org = await this.organizationRepository.getById(organizationId);
+      if (!org) {
+        throw new Error('Organization not found');
       }
 
-      // Soft delete - set is_active to false instead of hard delete
-      await this.organizationRepository.update(organizationId, { 
-        is_active: false,
-        deleted_at: new Date().toISOString()
-      });
+      // CASCADE DELETION - Delete all related data in correct order
+      // 1. Delete stock movements (they reference warehouses)
+      const warehouses = await this.warehouseRepository.findAll({ organization_id: organizationId });
+      const warehouseIds = warehouses.map(w => w.warehouse_id);
+      
+      let deletedMovements = 0;
+      for (const warehouseId of warehouseIds) {
+        const movements = await this.stockMovementRepository.deleteByFilter({ warehouse_id: warehouseId });
+        deletedMovements += movements;
+      }
 
-      this.logger.info('Organization deleted successfully', {
+      // 2. Delete order details (they reference orders, but we need the orders first)
+      // Note: We would need OrderRepository for this, but it's not in the current schema with organization_id
+      // For now, we'll handle this when we have proper order management
+
+      // 3. Delete orders (they reference warehouses)
+      // Note: Orders table exists but doesn't have organization_id, so we skip for now
+
+      // 4. Delete products (they are linked via owner_id to users in this organization)
+      const orgUsers = await this.userOrganizationRepository.findAll({ organization_id: organizationId });
+      const userIds = orgUsers.map(u => u.user_id);
+      
+      let deletedProducts = 0;
+      for (const userId of userIds) {
+        const products = await this.productRepository.deleteByFilter({ owner_id: userId });
+        deletedProducts += products;
+      }
+
+      // 5. Delete warehouses (they reference organization)
+      const deletedWarehouses = await this.warehouseRepository.deleteByFilter({ organization_id: organizationId });
+
+      // 6. Delete user-organization relationships
+      const deletedUserOrgs = await this.userOrganizationRepository.deleteByFilter({ organization_id: organizationId });
+
+      // 7. Delete branches (they reference organization)
+      // Note: We would need BranchRepository for this, but we can use direct delete for now
+      try {
+        const { error: branchError } = await this.organizationRepository.client
+          .from('branches')
+          .delete()
+          .eq('organization_id', organizationId);
+        if (branchError) this.logger.warn('Error deleting branches:', branchError);
+      } catch (err) {
+        this.logger.warn('Could not delete branches:', err.message);
+      }
+
+      // 8. Finally, delete the organization itself
+      await this.organizationRepository.delete(organizationId, 'organization_id');
+
+      this.logger.info('Organization cascade deletion completed successfully', {
         organizationId,
-        deleterId
+        deleterId,
+        summary: {
+          stockMovements: deletedMovements,
+          products: deletedProducts,
+          warehouses: deletedWarehouses,
+          userOrganizations: deletedUserOrgs
+        }
       });
 
       return true;
     } catch (error) {
-      this.logger.error('Error deleting organization', {
+      this.logger.error('Error during cascade deletion of organization', {
         error: error.message,
+        stack: error.stack,
         organizationId,
         deleterId
       });

@@ -16,22 +16,22 @@ export const createProductSchema = yup.object({
   batch_number: yup
     .string()
     .trim()
-    .required('Batch number is required')
-    .max(100, 'Batch number must be less than 100 characters')
-    .min(1, 'Batch number cannot be empty'),
+    .required('SKU/Batch number is required')
+    .max(100, 'SKU/Batch number must be less than 100 characters')
+    .min(1, 'SKU/Batch number cannot be empty'),
   
   origin_country: yup
     .string()
     .trim()
-    .required('Country of origin is required')
-    .max(100, 'Country of origin must be less than 100 characters')
-    .min(1, 'Country of origin cannot be empty'),
+    .required('Origin/Source is required')
+    .max(100, 'Origin/Source must be less than 100 characters')
+    .min(1, 'Origin/Source cannot be empty'),
   
   expiration_date: yup
     .date()
-    .required('Expiration date is required')
-    .min(new Date(), 'Expiration date cannot be in the past')
-    .typeError('Expiration date must be a valid date'),
+    .required('Expiry/Best before date is required')
+    .min(new Date(), 'Expiry/Best before date cannot be in the past')
+    .typeError('Expiry/Best before date must be a valid date'),
   
   description: yup
     .string()
@@ -39,10 +39,10 @@ export const createProductSchema = yup.object({
     .max(1000, 'Description must be less than 1000 characters')
     .optional(),
   
-  senasa_product_id: yup
+  external_product_id: yup
     .string()
     .trim()
-    .max(100, 'SENASA product ID must be less than 100 characters')
+    .max(100, 'External product ID must be less than 100 characters')
     .optional()
 });
 
@@ -80,10 +80,10 @@ export const updateProductSchema = yup.object({
     .max(1000, 'Description must be less than 1000 characters')
     .optional(),
   
-  senasa_product_id: yup
+  external_product_id: yup
     .string()
     .trim()
-    .max(100, 'SENASA product ID must be less than 100 characters')
+    .max(100, 'External product ID must be less than 100 characters')
     .optional()
 });
 

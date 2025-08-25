@@ -10,24 +10,35 @@ class StockMovementController {
   }
 
   /**
-   * Get all stock movements
+   * Get all stock movements for organization
    * GET /api/stock-movements
    */
   async getMovements(req, res, next) {
     try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
       const options = this.buildQueryOptions(req.query);
       
-      const movements = await this.stockMovementService.getAllMovements(options);
+      const movements = await this.stockMovementService.getOrganizationMovements(organizationId, options);
       
       res.json({
         data: movements,
         meta: {
           total: movements.length,
+          organizationId,
           ...options
         }
       });
     } catch (error) {
-      this.logger.error('Error fetching movements', { error: error.message });
+      this.logger.error('Error fetching movements', { 
+        error: error.message,
+        organizationId: req.user?.currentOrganizationId
+      });
       next(error);
     }
   }
@@ -39,8 +50,15 @@ class StockMovementController {
   async getMovement(req, res, next) {
     try {
       const { id } = req.params;
+      const organizationId = req.user.currentOrganizationId;
       
-      const movement = await this.stockMovementService.getMovementById(id);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const movement = await this.stockMovementService.getMovementById(id, organizationId);
       
       if (!movement) {
         return res.status(404).json({
@@ -50,7 +68,10 @@ class StockMovementController {
       
       res.json({ data: movement });
     } catch (error) {
-      this.logger.error(`Error fetching movement ${req.params.id}`, { error: error.message });
+      this.logger.error(`Error fetching movement ${req.params.id}`, { 
+        error: error.message,
+        organizationId: req.user?.currentOrganizationId
+      });
       next(error);
     }
   }
@@ -62,8 +83,15 @@ class StockMovementController {
   async createMovement(req, res, next) {
     try {
       const movementData = req.body;
+      const organizationId = req.user.currentOrganizationId;
       
-      const createdMovement = await this.stockMovementService.createMovement(movementData);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const createdMovement = await this.stockMovementService.createMovement(movementData, organizationId);
       
       res.status(201).json({
         message: 'Movement created successfully',
@@ -72,13 +100,15 @@ class StockMovementController {
     } catch (error) {
       this.logger.error('Error creating movement', { 
         error: error.message,
-        body: req.body 
+        body: req.body,
+        organizationId: req.user?.currentOrganizationId
       });
       
       if (error.message.includes('required') || 
           error.message.includes('Required') ||
           error.message.includes('Invalid') ||
-          error.message.includes('found')) {
+          error.message.includes('found') ||
+          error.message.includes('does not belong')) {
         return res.status(400).json({
           error: error.message
         });
@@ -96,8 +126,15 @@ class StockMovementController {
     try {
       const { id } = req.params;
       const updateData = req.body;
+      const organizationId = req.user.currentOrganizationId;
       
-      const updatedMovement = await this.stockMovementService.updateMovement(id, updateData);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const updatedMovement = await this.stockMovementService.updateMovement(id, updateData, organizationId);
       
       res.json({
         message: 'Movement updated successfully',
@@ -106,10 +143,11 @@ class StockMovementController {
     } catch (error) {
       this.logger.error(`Error updating movement ${req.params.id}`, { 
         error: error.message,
-        body: req.body 
+        body: req.body,
+        organizationId: req.user?.currentOrganizationId
       });
       
-      if (error.message.includes('not found')) {
+      if (error.message.includes('not found') || error.message.includes('Access denied')) {
         return res.status(404).json({
           error: error.message
         });
@@ -117,7 +155,8 @@ class StockMovementController {
       
       if (error.message.includes('required') || 
           error.message.includes('Required') ||
-          error.message.includes('Invalid')) {
+          error.message.includes('Invalid') ||
+          error.message.includes('does not belong')) {
         return res.status(400).json({
           error: error.message
         });
@@ -134,16 +173,26 @@ class StockMovementController {
   async deleteMovement(req, res, next) {
     try {
       const { id } = req.params;
+      const organizationId = req.user.currentOrganizationId;
       
-      await this.stockMovementService.deleteMovement(id);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      await this.stockMovementService.deleteMovement(id, organizationId);
       
       res.json({
         message: 'Movement deleted successfully'
       });
     } catch (error) {
-      this.logger.error(`Error deleting movement ${req.params.id}`, { error: error.message });
+      this.logger.error(`Error deleting movement ${req.params.id}`, { 
+        error: error.message,
+        organizationId: req.user?.currentOrganizationId
+      });
       
-      if (error.message.includes('not found')) {
+      if (error.message.includes('not found') || error.message.includes('Access denied')) {
         return res.status(404).json({
           error: error.message
         });
@@ -160,21 +209,30 @@ class StockMovementController {
   async getMovementsByProduct(req, res, next) {
     try {
       const { productId } = req.params;
+      const organizationId = req.user.currentOrganizationId;
       const options = this.buildQueryOptions(req.query);
       
-      const movements = await this.stockMovementService.getMovementsByProduct(productId, options);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const movements = await this.stockMovementService.getMovementsByProduct(productId, organizationId, options);
       
       res.json({
         data: movements,
         meta: {
           total: movements.length,
           productId,
+          organizationId,
           ...options
         }
       });
     } catch (error) {
       this.logger.error(`Error fetching movements for product ${req.params.productId}`, { 
-        error: error.message 
+        error: error.message,
+        organizationId: req.user?.currentOrganizationId
       });
       next(error);
     }
@@ -187,21 +245,30 @@ class StockMovementController {
   async getMovementsByWarehouse(req, res, next) {
     try {
       const { warehouseId } = req.params;
+      const organizationId = req.user.currentOrganizationId;
       const options = this.buildQueryOptions(req.query);
       
-      const movements = await this.stockMovementService.getMovementsByWarehouse(warehouseId, options);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const movements = await this.stockMovementService.getMovementsByWarehouse(warehouseId, organizationId, options);
       
       res.json({
         data: movements,
         meta: {
           total: movements.length,
           warehouseId,
+          organizationId,
           ...options
         }
       });
     } catch (error) {
       this.logger.error(`Error fetching movements for warehouse ${req.params.warehouseId}`, { 
-        error: error.message 
+        error: error.message,
+        organizationId: req.user?.currentOrganizationId
       });
       next(error);
     }
@@ -230,14 +297,23 @@ class StockMovementController {
         });
       }
       
+      const organizationId = req.user.currentOrganizationId;
+      
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
       const options = this.buildQueryOptions(req.query);
-      const movements = await this.stockMovementService.getMovementsByDateRange(startDate, endDate, options);
+      const movements = await this.stockMovementService.getMovementsByDateRange(startDate, endDate, organizationId, options);
       
       res.json({
         data: movements,
         meta: {
           total: movements.length,
           dateRange: { start, end },
+          organizationId,
           ...options
         }
       });

@@ -1,12 +1,13 @@
 const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
-const { validateRequest, validateQuery } = require('../middleware/validation');
+const { requireOrganizationContext } = require('../middleware/organizationContext');
+const { validateRequest } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
 const { 
   createStockMovementSchema, 
-  updateStockMovementSchema, 
-  queryParamsSchema 
+  updateStockMovementSchema
+  // queryParamsSchema // TODO: Re-enable when implementing query validation
 } = require('../validations/stockMovementValidation');
 
 /**
@@ -27,8 +28,9 @@ function createStockMovementRoutes(dependencies = {}) {
   const serviceFactory = dependencies.serviceFactory || ServiceFactory.getInstance();
   const stockMovementController = serviceFactory.createStockMovementController();
   
-  // Middleware: All routes require authentication
+  // Middleware: All routes require authentication and organization context
   router.use(authenticateUser);
+  router.use(requireOrganizationContext);
   
   // GET /api/stock-movements - Get all movements
   router.get('/', async (req, res, next) => {

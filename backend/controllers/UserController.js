@@ -1,4 +1,6 @@
 const { Logger } = require('../utils/Logger');
+const { getUserPermissions } = require('../middleware/permissions');
+const { validateRoleAssignment } = require('../utils/roleValidation');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -12,21 +14,28 @@ class UserController {
   }
 
   /**
-   * Get all users (admin only)
+   * Get all users for organization (admin only)
    * GET /api/users
    */
   async getUsers(req, res, next) {
     try {
+      const organizationId = req.user.currentOrganizationId;
+      
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
       const options = this.buildQueryOptions(req.query);
       
-      const users = await this.userService.getAllUsers(options);
+      const users = await this.userService.getOrganizationUsers(organizationId, options);
       
-      // Transform users data to include organization_name and format data
+      // Transform users data to remove sensitive information
       const transformedUsers = users.map(user => {
-        const { organizations, password_hash, ...userWithoutSensitive } = user;
+        const { password_hash, ...userWithoutSensitive } = user;
         return {
           ...userWithoutSensitive,
-          organization_name: organizations?.name || 'No Organization',
           // Add last_login field if it doesn't exist
           last_login: user.last_login || null
         };
@@ -36,11 +45,26 @@ class UserController {
         data: transformedUsers,
         meta: {
           total: transformedUsers.length,
+          organizationId,
           ...options
         }
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  /**
+   * Create user from authentication (for SaaS signup)
+   * Used when user signs up via Supabase Auth
+   */
+  async createUserFromAuth(userData) {
+    try {
+      const user = await this.userService.createUserFromAuth(userData);
+      return user;
+    } catch (error) {
+      this.logger.error('Error creating user from auth', { error: error.message });
+      throw error;
     }
   }
 
@@ -90,19 +114,127 @@ class UserController {
     try {
       const userData = req.body;
       const currentUserId = req.user.id;
+      const currentUserRole = req.user.role;
+      const currentUserOrganizationId = req.user.currentOrganizationId;
       
-      // Hash password before creating user
+      // Validate role assignment permissions
+      if (userData.role) {
+        const roleValidation = validateRoleAssignment(currentUserRole, userData.role);
+        
+        if (!roleValidation.success) {
+          this.logger.warn('Role assignment blocked', {
+            currentUser: currentUserId,
+            currentUserRole,
+            attemptedRole: userData.role,
+            reason: roleValidation.error,
+            details: roleValidation.details
+          });
+          
+          return res.status(403).json({
+            error: 'Role Assignment Not Allowed',
+            message: roleValidation.error,
+            code: roleValidation.code,
+            details: {
+              yourRole: currentUserRole,
+              attemptedRole: userData.role,
+              allowedRoles: roleValidation.details?.assignableRoles || []
+            }
+          });
+        }
+        
+        this.logger.info('Role assignment validated', {
+          currentUserRole,
+          assignedRole: userData.role,
+          assignedBy: currentUserId
+        });
+      }
+      
+      // Auto-assign current organization if user is not super_admin
+      if (userData.role !== 'super_admin' && !userData.organization_id && currentUserOrganizationId) {
+        userData.organization_id = currentUserOrganizationId;
+        this.logger.info('Auto-assigned organization to new user', {
+          organizationId: currentUserOrganizationId,
+          userRole: userData.role
+        });
+      }
+      
+      // Store original password for Supabase Auth creation
+      const plainPassword = userData.password;
+      
+      // Hash password before creating user in database
       if (userData.password) {
         userData.password_hash = await bcrypt.hash(userData.password, 12);
         delete userData.password;
       }
 
-      // Add creation metadata
-      userData.created_by = currentUserId;
-      userData.created_at = new Date().toISOString();
-      userData.updated_at = new Date().toISOString();
-
-      const newUser = await this.userService.createUser(userData);
+      // Create user in database first to validate business rules
+      let newUser;
+      let supabaseUser = null;
+      
+      try {
+        // First, validate user can be created (checks email uniqueness, etc.)
+        newUser = await this.userService.createUser(userData);
+        
+        // If user has organization_id, create the user-organization relationship
+        if (newUser.organization_id) {
+          await this.userService.createUserOrganizationRelationship(newUser.user_id, newUser.organization_id);
+          this.logger.info('Created user-organization relationship', {
+            userId: newUser.user_id,
+            organizationId: newUser.organization_id
+          });
+        }
+        
+        // Then create in Supabase Auth if password is provided
+        if (plainPassword) {
+          try {
+            const { data: authData, error: authError } = await this.userService.createSupabaseAuthUser({
+              email: userData.email,
+              password: plainPassword,
+              user_metadata: {
+                name: userData.name,
+                role: userData.role
+              }
+            });
+            
+            if (authError) {
+              // If Supabase Auth fails, we need to rollback the database user
+              await this.userService.hardDeleteUser(newUser.user_id);
+              throw new Error(`Authentication setup failed: ${authError.message}`);
+            }
+            
+            supabaseUser = authData.user;
+            
+            // Update the user with the Supabase Auth ID
+            if (supabaseUser && supabaseUser.id !== newUser.user_id) {
+              newUser = await this.userService.updateUser(newUser.user_id, {
+                user_id: supabaseUser.id
+              });
+            }
+            
+            this.logger.info('User created in both database and Supabase Auth', {
+              userId: supabaseUser.id,
+              email: userData.email
+            });
+          } catch (authError) {
+            // If Supabase Auth fails, delete the database user and propagate the error
+            this.logger.error('Supabase Auth creation failed, rolling back database user', {
+              error: authError.message,
+              email: userData.email,
+              dbUserId: newUser.user_id
+            });
+            
+            await this.userService.hardDeleteUser(newUser.user_id);
+            throw authError;
+          }
+        }
+      } catch (dbError) {
+        // Database creation failed, just propagate the error
+        this.logger.error('Database user creation failed', {
+          error: dbError.message,
+          email: userData.email
+        });
+        throw dbError;
+      }
       
       // Remove sensitive information from response
       const { password_hash, ...userResponse } = newUser;
@@ -129,6 +261,41 @@ class UserController {
       const { id } = req.params;
       const userData = req.body;
       const currentUserId = req.user.id;
+      const currentUserRole = req.user.role;
+
+      // Validate role assignment permissions if role is being changed
+      if (userData.role) {
+        const roleValidation = validateRoleAssignment(currentUserRole, userData.role);
+        
+        if (!roleValidation.success) {
+          this.logger.warn('Role update blocked', {
+            currentUser: currentUserId,
+            currentUserRole,
+            targetUserId: id,
+            attemptedRole: userData.role,
+            reason: roleValidation.error,
+            details: roleValidation.details
+          });
+          
+          return res.status(403).json({
+            error: 'Role Update Not Allowed',
+            message: roleValidation.error,
+            code: roleValidation.code,
+            details: {
+              yourRole: currentUserRole,
+              attemptedRole: userData.role,
+              allowedRoles: roleValidation.details?.assignableRoles || []
+            }
+          });
+        }
+        
+        this.logger.info('Role update validated', {
+          currentUserRole,
+          targetUserId: id,
+          updatedRole: userData.role,
+          updatedBy: currentUserId
+        });
+      }
 
       // Hash password if provided
       if (userData.password) {
@@ -278,6 +445,44 @@ class UserController {
   }
 
   /**
+   * Hard delete user (permanent removal)
+   * DELETE /api/users/:id/hard-delete
+   */
+  async hardDeleteUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      const currentUserId = req.user.id;
+
+      // Prevent self-deletion
+      if (id === currentUserId) {
+        return res.status(400).json({
+          error: 'Cannot delete own account',
+          message: 'You cannot delete your own account',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Get user before deletion for logging
+      const user = await this.userService.getUserById(id);
+
+      await this.userService.hardDeleteUser(id);
+
+      this.logger.info('User permanently deleted', {
+        userId: id,
+        deletedUserEmail: user.email,
+        deletedBy: currentUserId
+      });
+
+      res.json({
+        message: 'User permanently deleted',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Build query options from request query parameters
    * @private
    */
@@ -295,6 +500,80 @@ class UserController {
     options.offset = (options.page - 1) * options.limit;
 
     return options;
+  }
+
+  /**
+   * Get current user context with permissions and organization details
+   * GET /api/users/me/context
+   */
+  async getUserContext(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const user = req.user;
+      
+      // Get user permissions based on role
+      const userPermissions = getUserPermissions(user.role);
+      
+      // Get current organization details if set
+      let currentOrganization = null;
+      if (user.currentOrganizationId) {
+        try {
+          // Use the organization service if available
+          const OrganizationService = require('../services/OrganizationService');
+          const { OrganizationRepository } = require('../repositories/OrganizationRepository');
+          const { UserOrganizationRepository } = require('../repositories/UserOrganizationRepository');
+          const { UserRepository } = require('../repositories/UserRepository');
+          const { ProductRepository } = require('../repositories/ProductRepository');
+          const { WarehouseRepository } = require('../repositories/WarehouseRepository');
+          const { StockMovementRepository } = require('../repositories/StockMovementRepository');
+          
+          const organizationService = new OrganizationService(
+            new OrganizationRepository(this.client),
+            new UserOrganizationRepository(this.client),
+            new UserRepository(this.client),
+            new ProductRepository(this.client),
+            new WarehouseRepository(this.client),
+            new StockMovementRepository(this.client)
+          );
+          currentOrganization = await organizationService.getById(user.currentOrganizationId);
+        } catch (error) {
+          this.logger.warn('Error fetching current organization', {
+            organizationId: user.currentOrganizationId,
+            error: error.message
+          });
+        }
+      }
+      
+      const userContext = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar_url: user.avatar_url,
+          is_active: user.is_active,
+          created_at: user.created_at
+        },
+        permissions: userPermissions,
+        currentOrganization,
+        hasOrganizationContext: !!user.currentOrganizationId
+      };
+      
+      this.logger.info('User context retrieved', {
+        userId,
+        role: user.role,
+        hasOrganization: !!currentOrganization,
+        organizationId: user.currentOrganizationId
+      });
+      
+      res.json({ data: userContext });
+    } catch (error) {
+      this.logger.error('Error getting user context', {
+        error: error.message,
+        userId: req.user?.id
+      });
+      next(error);
+    }
   }
 }
 

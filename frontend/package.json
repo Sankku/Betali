@@ -1,5 +1,6 @@
 {
-  "name": "frontend",
+  "name": "betali-frontend",
+  "description": "Betali Frontend - React application for business inventory management SaaS platform",
   "private": true,
   "version": "0.1.0",
   "type": "module",

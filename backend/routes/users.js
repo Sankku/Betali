@@ -2,7 +2,7 @@ const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { validateRequest, validateQuery } = require('../middleware/validation');
-const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
+const { createLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/sanitization');
 const { 
@@ -118,6 +118,18 @@ router.put(
   }
 );
 
+// Get current user context (permissions, role, organization)
+router.get(
+  '/me/context',
+  async (req, res, next) => {
+    try {
+      await userController.getUserContext(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // Deactivate user (soft delete)
 router.delete(
   '/:id',
@@ -125,6 +137,19 @@ router.delete(
   async (req, res, next) => {
     try {
       await userController.deactivateUser(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Hard delete user (permanent removal)
+router.delete(
+  '/:id/hard-delete',
+  requirePermission(PERMISSIONS.USERS_DELETE),
+  async (req, res, next) => {
+    try {
+      await userController.hardDeleteUser(req, res, next);
     } catch (error) {
       next(error);
     }

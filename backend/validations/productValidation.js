@@ -24,10 +24,10 @@ const createProductSchema = Joi.object({
     .max(100)
     .required()
     .messages({
-      'string.empty': 'Batch number is required',
-      'string.min': 'Batch number cannot be empty',
-      'string.max': 'Batch number must be less than 100 characters',
-      'any.required': 'Batch number is required'
+      'string.empty': 'SKU/Batch number is required',
+      'string.min': 'SKU/Batch number cannot be empty',
+      'string.max': 'SKU/Batch number must be less than 100 characters',
+      'any.required': 'SKU/Batch number is required'
     }),
   
   origin_country: Joi.string()
@@ -36,10 +36,10 @@ const createProductSchema = Joi.object({
     .max(100)
     .required()
     .messages({
-      'string.empty': 'Country of origin is required',
-      'string.min': 'Country of origin cannot be empty',
-      'string.max': 'Country of origin must be less than 100 characters',
-      'any.required': 'Country of origin is required'
+      'string.empty': 'Origin/Source is required',
+      'string.min': 'Origin/Source cannot be empty',
+      'string.max': 'Origin/Source must be less than 100 characters',
+      'any.required': 'Origin/Source is required'
     }),
   
   expiration_date: Joi.date()
@@ -47,10 +47,10 @@ const createProductSchema = Joi.object({
     .min('now')
     .required()
     .messages({
-      'date.base': 'Expiration date must be a valid date',
-      'date.format': 'Expiration date must be in ISO format',
-      'date.min': 'Expiration date cannot be in the past',
-      'any.required': 'Expiration date is required'
+      'date.base': 'Expiry/Best before date must be a valid date',
+      'date.format': 'Expiry/Best before date must be in ISO format',
+      'date.min': 'Expiry/Best before date cannot be in the past',
+      'any.required': 'Expiry/Best before date is required'
     }),
   
   description: Joi.string()
@@ -62,13 +62,13 @@ const createProductSchema = Joi.object({
       'string.max': 'Description must be less than 1000 characters'
     }),
   
-  senasa_product_id: Joi.string()
+  external_product_id: Joi.string()
     .trim()
     .max(100)
     .optional()
     .allow('')
     .messages({
-      'string.max': 'SENASA product ID must be less than 100 characters'
+      'string.max': 'External product ID must be less than 100 characters'
     })
 });
 
@@ -125,13 +125,13 @@ const updateProductSchema = Joi.object({
       'string.max': 'Description must be less than 1000 characters'
     }),
   
-  senasa_product_id: Joi.string()
+  external_product_id: Joi.string()
     .trim()
     .max(100)
     .optional()
     .allow('')
     .messages({
-      'string.max': 'SENASA product ID must be less than 100 characters'
+      'string.max': 'External product ID must be less than 100 characters'
     })
 });
 

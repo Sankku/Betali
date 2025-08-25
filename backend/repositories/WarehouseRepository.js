@@ -18,7 +18,52 @@ class WarehouseRepository extends BaseRepository {
   }
 
   /**
-   * Find warehouses by user ID (owner or assigned user)
+   * Find warehouses by organization ID
+   * @param {string} organizationId - Organization ID
+   * @param {Object} options - Query options
+   * @returns {Promise<Array>}
+   */
+  async findByOrganizationId(organizationId, options = {}) {
+    try {
+      let query = this.client
+        .from(this.table)
+        .select('*')
+        .eq('organization_id', organizationId);
+
+      if (options.orderBy) {
+        const { column, ascending = true } = options.orderBy;
+        query = query.order(column, { ascending });
+      }
+
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+      if (options.offset) {
+        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Error finding warehouses by organization ID: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find active warehouses by organization ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Array>}
+   */
+  async findActiveByOrganizationId(organizationId) {
+    return this.findByOrganizationId(organizationId).then(warehouses => 
+      warehouses.filter(w => w.is_active !== false)
+    );
+  }
+
+  /**
+   * Find warehouses by user ID (legacy method for backward compatibility)
    * @param {string} userId - User ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
@@ -49,17 +94,6 @@ class WarehouseRepository extends BaseRepository {
     } catch (error) {
       throw new Error(`Error finding warehouses by user ID: ${error.message}`);
     }
-  }
-
-  /**
-   * Find active warehouses by user ID
-   * @param {string} userId - User ID
-   * @returns {Promise<Array>}
-   */
-  async findActiveByUserId(userId) {
-    return this.findByUserId(userId).then(warehouses => 
-      warehouses.filter(w => w.is_active !== false)
-    );
   }
 }
 

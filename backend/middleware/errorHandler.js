@@ -5,7 +5,7 @@ const logger = new Logger('errorHandler');
 /**
  * Global error handling middleware
  */
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   logger.error('Unhandled error occurred', {
     error: err.message,
     stack: err.stack,

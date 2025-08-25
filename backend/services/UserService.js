@@ -9,16 +9,17 @@ class UserService {
   }
 
   /**
-   * Get all users with filtering and pagination
+   * Get all users for an organization with filtering and pagination
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
    */
-  async getAllUsers(options = {}) {
+  async getOrganizationUsers(organizationId, options = {}) {
     try {
-      this.logger.info('Fetching all users', { options });
-      return await this.repository.findAll(options);
+      this.logger.info('Fetching organization users', { organizationId, options });
+      return await this.repository.findByOrganization(organizationId, options);
     } catch (error) {
-      this.logger.error(`Error fetching users: ${error.message}`);
+      this.logger.error(`Error fetching organization users: ${error.message}`);
       throw error;
     }
   }
@@ -62,6 +63,74 @@ class UserService {
   }
 
   /**
+   * Create user in Supabase Auth
+   * @param {Object} authData - Authentication data
+   * @returns {Promise<Object>}
+   */
+  async createSupabaseAuthUser(authData) {
+    try {
+      this.logger.info('Creating user in Supabase Auth', { 
+        email: authData.email 
+      });
+      
+      // Use admin client to create user
+      const { DatabaseConfig } = require('../config/database');
+      const dbConfig = new DatabaseConfig();
+      const supabase = dbConfig.getClient();
+      
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: authData.email,
+        password: authData.password,
+        email_confirm: true, // Auto-confirm email for admin-created users
+        user_metadata: authData.user_metadata || {}
+      });
+      
+      return { data, error };
+    } catch (error) {
+      this.logger.error(`Error creating user in Supabase Auth: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Create user from authentication (for SaaS signup)
+   * @param {Object} userData - User data from Supabase Auth
+   * @returns {Promise<Object>}
+   */
+  async createUserFromAuth(userData) {
+    try {
+      this.logger.info('Creating user from authentication', { 
+        user_id: userData.user_id,
+        email: userData.email 
+      });
+      
+      // For SaaS, we don't need password validation since it's handled by Supabase
+      const userToCreate = {
+        user_id: userData.user_id,
+        email: userData.email,
+        name: userData.name,
+        is_active: true,
+        // Set placeholder for password_hash since Supabase handles authentication
+        password_hash: 'SUPABASE_AUTH', // Placeholder for SaaS users
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      
+      const newUser = await this.repository.createFromAuth(userToCreate);
+      
+      this.logger.info('User created from auth successfully', { 
+        userId: newUser.user_id,
+        email: newUser.email 
+      });
+      
+      return newUser;
+    } catch (error) {
+      this.logger.error(`Error creating user from auth: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Create new user
    * @param {Object} userData - User data
    * @returns {Promise<Object>}
@@ -86,6 +155,54 @@ class UserService {
       return newUser;
     } catch (error) {
       this.logger.error(`Error creating user: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Create user-organization relationship
+   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<void>}
+   */
+  async createUserOrganizationRelationship(userId, organizationId) {
+    try {
+      this.logger.info('Creating user-organization relationship', { 
+        userId, 
+        organizationId 
+      });
+      
+      // Use the database client to insert into user_organizations table
+      const { DatabaseConfig } = require('../config/database');
+      const dbConfig = new DatabaseConfig();
+      const supabase = dbConfig.getClient();
+      
+      const { data, error } = await supabase
+        .from('user_organizations')
+        .insert({
+          user_id: userId,
+          organization_id: organizationId
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        this.logger.error('Error creating user-organization relationship', {
+          userId,
+          organizationId,
+          error: error.message
+        });
+        throw error;
+      }
+      
+      this.logger.info('User-organization relationship created successfully', { 
+        userId, 
+        organizationId 
+      });
+      
+      return data;
+    } catch (error) {
+      this.logger.error(`Error creating user-organization relationship: ${error.message}`);
       throw error;
     }
   }
@@ -139,6 +256,70 @@ class UserService {
       this.logger.info('User deactivated successfully', { userId });
     } catch (error) {
       this.logger.error(`Error deactivating user ${userId}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete user from Supabase Auth
+   * @param {string} userId - User ID
+   * @returns {Promise<void>}
+   */
+  async deleteSupabaseAuthUser(userId) {
+    try {
+      this.logger.info('Deleting user from Supabase Auth', { 
+        userId 
+      });
+      
+      // Use admin client to delete user
+      const { DatabaseConfig } = require('../config/database');
+      const dbConfig = new DatabaseConfig();
+      const supabase = dbConfig.getClient();
+      
+      const { data, error } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (error) {
+        this.logger.warn('Failed to delete user from Supabase Auth', {
+          userId,
+          error: error.message
+        });
+        // Don't throw error here as the user might not exist in Auth
+        // or might have been created without Auth (old users)
+      } else {
+        this.logger.info('User deleted from Supabase Auth successfully', { 
+          userId 
+        });
+      }
+      
+      return { data, error };
+    } catch (error) {
+      this.logger.error(`Error deleting user from Supabase Auth: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Hard delete user (for rollback scenarios and permanent deletion)
+   * @param {string} userId - User ID
+   * @returns {Promise<void>}
+   */
+  async hardDeleteUser(userId) {
+    try {
+      this.logger.info(`Hard deleting user: ${userId}`);
+      
+      // First delete from Supabase Auth
+      this.logger.info('Starting Supabase Auth deletion process', { userId });
+      await this.deleteSupabaseAuthUser(userId);
+      this.logger.info('Supabase Auth deletion process completed', { userId });
+      
+      // Then delete from our database
+      this.logger.info('Starting database deletion process', { userId });
+      await this.repository.delete(userId);
+      this.logger.info('Database deletion process completed', { userId });
+      
+      this.logger.info('User hard deleted successfully', { userId });
+    } catch (error) {
+      this.logger.error(`Error hard deleting user ${userId}: ${error.message}`);
       throw error;
     }
   }

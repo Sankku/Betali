@@ -1,7 +1,7 @@
 {
-  "name": "agropanel-backend",
+  "name": "betali-backend",
   "version": "1.0.0",
-  "description": "AgroPanel Backend API - Stock management system with SENASA integration",
+  "description": "Betali Backend API - Business inventory management SaaS platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -25,15 +25,15 @@
     "clean": "rm -rf node_modules package-lock.json && npm install"
   },
   "keywords": [
-    "agriculture",
-    "stock-management",
-    "senasa",
-    "inventory",
+    "business",
+    "inventory-management",
+    "saas",
+    "multi-tenant",
     "nodejs",
     "express",
     "supabase"
   ],
-  "author": "AgroPanel Team",
+  "author": "Betali Team",
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
@@ -78,10 +78,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/agropanel.git"
+    "url": "https://github.com/your-org/betali.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/agropanel/issues"
+    "url": "https://github.com/your-org/betali/issues"
   },
-  "homepage": "https://github.com/your-org/agropanel#readme"
+  "homepage": "https://github.com/your-org/betali#readme"
 }

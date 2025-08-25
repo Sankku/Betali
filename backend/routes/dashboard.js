@@ -1,6 +1,7 @@
 const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
+const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { validateQuery } = require('../middleware/validation');
 
 const dashboardQuerySchema = {
@@ -49,6 +50,7 @@ const router = express.Router();
 const dashboardController = ServiceFactory.createDashboardController();
 
 router.use(authenticateUser);
+router.use(requireOrganizationContext);
 
 router.get(
   '/',

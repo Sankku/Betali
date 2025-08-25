@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { apiService } from '../services/api';
-
-type UserRole = 'super_admin' | 'admin' | 'manager' | 'employee' | 'viewer';
+import { UserRole } from '../utils/roleUtils';
 
 interface UserProfile {
   user_id: string;

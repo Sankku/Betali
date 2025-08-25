@@ -1,6 +1,7 @@
 {
-    "name": "saas-restaurant",
+    "name": "betali",
     "version": "1.0.0",
+    "description": "Betali - A comprehensive business inventory management SaaS platform for all types of businesses",
     "private": true,
     "workspaces": ["frontend", "backend"],
     "scripts": {

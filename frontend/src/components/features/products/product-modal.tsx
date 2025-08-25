@@ -16,7 +16,7 @@ export interface Product {
   updated_at?: string;
   owner_id?: string;
   description?: string;
-  senasa_product_id?: string;
+  external_product_id?: string;
 }
 
 export interface ProductModalProps {
@@ -44,7 +44,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       expiration_date: product?.expiration_date || '',
       origin_country: product?.origin_country || '',
       description: product?.description || '',
-      senasa_product_id: product?.senasa_product_id || ''
+      external_product_id: product?.external_product_id || ''
     },
   });
 
