@@ -11,11 +11,25 @@ class OrganizationController {
   }
 
   /**
-   * Get all organizations (admin only)
+   * Get all organizations (system super admin only)
    * GET /api/organizations
    */
   async getAllOrganizations(req, res, next) {
     try {
+      // This endpoint is for system-level super admins only
+      // In a proper SaaS system, this should be restricted to platform administrators
+      // For now, we'll add a warning and potentially restrict based on user ID or special flag
+      
+      const user = req.user;
+      
+      // TODO: Add proper system admin check - for now logging access
+      this.logger.warn('System-level organization access requested', {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        timestamp: new Date().toISOString()
+      });
+      
       const options = this.buildQueryOptions(req.query);
       
       const organizations = await this.organizationService.getAllOrganizations(options);
@@ -40,7 +54,18 @@ class OrganizationController {
     try {
       const userId = req.user.id;
       
+      this.logger.info('Getting user organizations', { 
+        userId, 
+        email: req.user.email 
+      });
+      
       const organizations = await this.organizationService.getUserOrganizations(userId);
+      
+      this.logger.info('User organizations retrieved', { 
+        userId, 
+        count: organizations.length,
+        organizations: organizations.map(org => ({ id: org.organization_id, name: org.name }))
+      });
       
       res.json({
         data: organizations,
@@ -49,7 +74,105 @@ class OrganizationController {
         }
       });
     } catch (error) {
+      this.logger.error('Error getting user organizations', {
+        error: error.message,
+        userId: req.user?.id
+      });
       next(error);
+    }
+  }
+
+  /**
+   * Switch organization context
+   * POST /api/organizations/:id/switch
+   */
+  async switchOrganizationContext(req, res, next) {
+    try {
+      const { id: organizationId } = req.params;
+      const userId = req.user.id;
+      
+      this.logger.info('Switching organization context', {
+        userId,
+        organizationId,
+        userEmail: req.user.email
+      });
+      
+      // Verify user has access to this organization
+      const userOrganization = await this.organizationService.userOrganizationRepository.getUserRole(userId, organizationId);
+      if (!userOrganization) {
+        return res.status(403).json({
+          error: 'Access denied',
+          message: 'You do not have access to this organization'
+        });
+      }
+      
+      // Get full organization details
+      const organization = await this.organizationService.getById(organizationId);
+      if (!organization) {
+        return res.status(404).json({
+          error: 'Organization not found',
+          message: 'The requested organization does not exist'
+        });
+      }
+      
+      // Prepare organization context
+      const context = {
+        organization,
+        userRole: userOrganization.role,
+        permissions: userOrganization.permissions || ['*'], // Default to all permissions for super_admin
+        branch: userOrganization.branch || null,
+        joinedAt: userOrganization.joined_at
+      };
+      
+      this.logger.info('Organization context switch successful', {
+        userId,
+        organizationId,
+        organizationName: organization.name,
+        userRole: userOrganization.role
+      });
+      
+      res.json({
+        data: context,
+        meta: {
+          switched: true,
+          previousContext: null // Could store previous context if needed
+        }
+      });
+    } catch (error) {
+      this.logger.error('Error switching organization context', {
+        error: error.message,
+        organizationId: req.params.id,
+        userId: req.user?.id
+      });
+      next(error);
+    }
+  }
+
+  /**
+   * Create organization for user (for SaaS signup)
+   * Used during signup process
+   */
+  async createOrganizationForUser(organizationData, userId) {
+    try {
+      const organization = await this.organizationService.createOrganizationForUser(organizationData, userId);
+      return organization;
+    } catch (error) {
+      this.logger.error('Error creating organization for user', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Add user to organization (for SaaS signup)
+   * Used during signup process
+   */
+  async addUserToOrganization(userOrgData) {
+    try {
+      const relationship = await this.organizationService.addUserToOrganization(userOrgData);
+      return relationship;
+    } catch (error) {
+      this.logger.error('Error adding user to organization', { error: error.message });
+      throw error;
     }
   }
 
@@ -332,7 +455,7 @@ class OrganizationController {
    * Get branch by ID (helper method)
    * @private
    */
-  async getBranchById(branchId) {
+  async getBranchById(_branchId) {
     // This would be implemented when we create the BranchService
     // For now, return null
     return null;

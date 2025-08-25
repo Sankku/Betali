@@ -8,6 +8,8 @@ const { TableConfigRepository } = require('../repositories/TableConfigRepository
 const UserRepository = require('../repositories/UserRepository');
 const OrganizationRepository = require('../repositories/OrganizationRepository');
 const UserOrganizationRepository = require('../repositories/UserOrganizationRepository');
+const ClientRepository = require('../repositories/ClientRepository');
+const SupplierRepository = require('../repositories/SupplierRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
@@ -16,6 +18,8 @@ const { StockMovementService } = require('../services/StockMovementService');
 const { TableConfigService } = require('../services/TableConfigService');
 const UserService = require('../services/UserService');
 const OrganizationService = require('../services/OrganizationService');
+const ClientService = require('../services/ClientService');
+const SupplierService = require('../services/SupplierService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
@@ -24,6 +28,8 @@ const { StockMovementController } = require('../controllers/StockMovementControl
 const { TableConfigController } = require('../controllers/TableConfigController');
 const UserController = require('../controllers/UserController');
 const OrganizationController = require('../controllers/OrganizationController');
+const ClientController = require('../controllers/ClientController');
+const SupplierController = require('../controllers/SupplierController');
 
 /**
  * Dependency injection container
@@ -138,6 +144,16 @@ function initializeContainer() {
     return new UserOrganizationRepository(dbConfig.getClient());
   }, true);
 
+  container.register('clientRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ClientRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('supplierRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new SupplierRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const logger = container.get('logger');
@@ -187,7 +203,29 @@ function initializeContainer() {
     const organizationRepository = container.get('organizationRepository');
     const userOrganizationRepository = container.get('userOrganizationRepository');
     const userRepository = container.get('userRepository');
-    return new OrganizationService(organizationRepository, userOrganizationRepository, userRepository);
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const stockMovementRepository = container.get('stockMovementRepository');
+    return new OrganizationService(
+      organizationRepository, 
+      userOrganizationRepository, 
+      userRepository,
+      productRepository,
+      warehouseRepository,
+      stockMovementRepository
+    );
+  }, true);
+
+  container.register('clientService', () => {
+    const clientRepository = container.get('clientRepository');
+    const logger = container.get('logger');
+    return new ClientService(clientRepository, logger);
+  }, true);
+
+  container.register('supplierService', () => {
+    const supplierRepository = container.get('supplierRepository');
+    const logger = container.get('logger');
+    return new SupplierService(supplierRepository, logger);
   }, true);
 
   container.register('productController', () => {
@@ -223,6 +261,16 @@ function initializeContainer() {
   container.register('organizationController', () => {
     const organizationService = container.get('organizationService');
     return new OrganizationController(organizationService);
+  }, true);
+
+  container.register('clientController', () => {
+    const clientService = container.get('clientService');
+    return new ClientController(clientService);
+  }, true);
+
+  container.register('supplierController', () => {
+    const supplierService = container.get('supplierService');
+    return new SupplierController(supplierService);
   }, true);
 }
 
@@ -279,6 +327,14 @@ const ServiceFactory = {
 
   createOrganizationController() {
     return container.get('organizationController');
+  },
+
+  createOrganizationService() {
+    return container.get('organizationService');
+  },
+
+  createUserService() {
+    return container.get('userService');
   },
 
   getInstance() {

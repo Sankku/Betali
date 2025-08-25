@@ -11,21 +11,25 @@ class StockMovementService {
   }
 
   /**
-   * Get all stock movements with related data
+   * Get all stock movements for an organization with related data
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Stock movements with product and warehouse info
    */
-  async getAllMovements(options = {}) {
+  async getOrganizationMovements(organizationId, options = {}) {
     try {
-      this.logger.info('Fetching all stock movements with relations');
+      this.logger.info(`Fetching stock movements for organization: ${organizationId}`);
       
-      // Use the new method that includes relations
-      const movements = await this.stockMovementRepository.findAllWithRelations({}, {
-        orderBy: { column: 'created_at', ascending: false },
-        ...options
-      });
+      // Use the new method that includes relations with organization filter
+      const movements = await this.stockMovementRepository.findAllWithRelations(
+        { organization_id: organizationId }, 
+        {
+          orderBy: { column: 'created_at', ascending: false },
+          ...options
+        }
+      );
       
-      this.logger.info(`Found ${movements.length} stock movements with relations`);
+      this.logger.info(`Found ${movements.length} stock movements for organization ${organizationId}`);
       
       // Process the movements to ensure proper structure
       return movements.map(movement => ({
@@ -44,17 +48,23 @@ class StockMovementService {
   }
 
   /**
-   * Get movement by ID with related data
+   * Get movement by ID with organization validation and related data
    * @param {string} movementId - Movement ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object|null>} Movement with product and warehouse info
    */
-  async getMovementById(movementId) {
+  async getMovementById(movementId, organizationId) {
     try {
-      this.logger.info(`Fetching movement: ${movementId}`);
+      this.logger.info(`Fetching movement: ${movementId} for organization: ${organizationId}`);
       
       const movement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!movement) {
         return null;
+      }
+      
+      // Validate organization access
+      if (movement.organization_id !== organizationId) {
+        throw new Error('Access denied: Movement does not belong to your organization');
       }
       
       // Enrich with product and warehouse information
@@ -77,20 +87,22 @@ class StockMovementService {
   /**
    * Create a new stock movement
    * @param {Object} movementData - Movement data
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Created movement
    */
-  async createMovement(movementData) {
+  async createMovement(movementData, organizationId) {
     try {
-      this.logger.info('Creating new stock movement', { movementData });
+      this.logger.info(`Creating new stock movement for organization: ${organizationId}`, { movementData });
       
       // Validate required fields
       this.validateMovementData(movementData);
       
-      // Validate that product and warehouse exist
-      await this.validateReferences(movementData);
+      // Validate that product and warehouse exist within organization
+      await this.validateReferences(movementData, organizationId);
       
       const movementToCreate = {
         ...movementData,
+        organization_id: organizationId,
         movement_date: movementData.movement_date || new Date().toISOString(),
         created_at: new Date().toISOString()
       };
@@ -109,16 +121,22 @@ class StockMovementService {
    * Update an existing stock movement
    * @param {string} movementId - Movement ID
    * @param {Object} updateData - Update data
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Updated movement
    */
-  async updateMovement(movementId, updateData) {
+  async updateMovement(movementId, updateData, organizationId) {
     try {
-      this.logger.info(`Updating movement: ${movementId}`, { updateData });
+      this.logger.info(`Updating movement: ${movementId} for organization: ${organizationId}`, { updateData });
       
-      // Check if movement exists
+      // Check if movement exists and belongs to organization
       const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
         throw new Error('Movement not found');
+      }
+      
+      // Validate organization access
+      if (existingMovement.organization_id !== organizationId) {
+        throw new Error('Access denied: Movement does not belong to your organization');
       }
       
       // Validate references if they are being updated
@@ -126,7 +144,7 @@ class StockMovementService {
         await this.validateReferences({
           product_id: updateData.product_id || existingMovement.product_id,
           warehouse_id: updateData.warehouse_id || existingMovement.warehouse_id
-        });
+        }, organizationId);
       }
       
       const updatedMovement = await this.stockMovementRepository.update(movementId, updateData, 'movement_id');
@@ -142,16 +160,22 @@ class StockMovementService {
   /**
    * Delete a stock movement
    * @param {string} movementId - Movement ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<boolean>} Success status
    */
-  async deleteMovement(movementId) {
+  async deleteMovement(movementId, organizationId) {
     try {
-      this.logger.info(`Deleting movement: ${movementId}`);
+      this.logger.info(`Deleting movement: ${movementId} for organization: ${organizationId}`);
       
-      // Check if movement exists
+      // Check if movement exists and belongs to organization
       const existingMovement = await this.stockMovementRepository.findById(movementId, 'movement_id');
       if (!existingMovement) {
         throw new Error('Movement not found');
+      }
+      
+      // Validate organization access
+      if (existingMovement.organization_id !== organizationId) {
+        throw new Error('Access denied: Movement does not belong to your organization');
       }
       
       await this.stockMovementRepository.delete(movementId, 'movement_id');
@@ -165,59 +189,67 @@ class StockMovementService {
   }
 
   /**
-   * Get movements by product ID
+   * Get movements by product ID within organization
    * @param {string} productId - Product ID
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Product movements
    */
-  async getMovementsByProduct(productId, options = {}) {
+  async getMovementsByProduct(productId, organizationId, options = {}) {
     try {
-      this.logger.info(`Fetching movements for product: ${productId}`);
+      this.logger.info(`Fetching movements for product: ${productId} in organization: ${organizationId}`);
       
-      return await this.stockMovementRepository.findByProductId(productId, {
+      return await this.stockMovementRepository.findByProductIdAndOrganization(productId, organizationId, {
         orderBy: { column: 'movement_date', ascending: false },
         ...options
       });
     } catch (error) {
-      this.logger.error(`Error fetching movements for product ${productId}: ${error.message}`);
+      this.logger.error(`Error fetching movements for product ${productId} in organization ${organizationId}: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Get movements by warehouse ID
+   * Get movements by warehouse ID within organization
    * @param {string} warehouseId - Warehouse ID
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Warehouse movements
    */
-  async getMovementsByWarehouse(warehouseId, options = {}) {
+  async getMovementsByWarehouse(warehouseId, organizationId, options = {}) {
     try {
-      this.logger.info(`Fetching movements for warehouse: ${warehouseId}`);
+      this.logger.info(`Fetching movements for warehouse: ${warehouseId} in organization: ${organizationId}`);
       
-      return await this.stockMovementRepository.findByWarehouseId(warehouseId, {
+      return await this.stockMovementRepository.findByWarehouseIdAndOrganization(warehouseId, organizationId, {
         orderBy: { column: 'movement_date', ascending: false },
         ...options
       });
     } catch (error) {
-      this.logger.error(`Error fetching movements for warehouse ${warehouseId}: ${error.message}`);
+      this.logger.error(`Error fetching movements for warehouse ${warehouseId} in organization ${organizationId}: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Get movements by date range
+   * Get movements by date range within organization
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Movements in date range
    */
-  async getMovementsByDateRange(startDate, endDate, options = {}) {
+  async getMovementsByDateRange(startDate, endDate, organizationId, options = {}) {
     try {
-      this.logger.info(`Fetching movements from ${startDate} to ${endDate}`);
+      this.logger.info(`Fetching movements from ${startDate} to ${endDate} for organization: ${organizationId}`);
       
-      return await this.stockMovementRepository.findByDateRange(startDate, endDate, options);
+      return await this.stockMovementRepository.findByDateRangeAndOrganization(
+        startDate, 
+        endDate, 
+        organizationId, 
+        options
+      );
     } catch (error) {
-      this.logger.error(`Error fetching movements by date range: ${error.message}`);
+      this.logger.error(`Error fetching movements by date range for organization ${organizationId}: ${error.message}`);
       throw error;
     }
   }
@@ -247,15 +279,19 @@ class StockMovementService {
   }
 
   /**
-   * Validate that referenced entities exist
+   * Validate that referenced entities exist within organization
    * @param {Object} movementData - Movement data
-   * @throws {Error} If references don't exist
+   * @param {string} organizationId - Organization ID
+   * @throws {Error} If references don't exist or don't belong to organization
    */
-  async validateReferences(movementData) {
+  async validateReferences(movementData, organizationId) {
     if (movementData.product_id) {
       const product = await this.productRepository.findById(movementData.product_id, 'product_id');
       if (!product) {
         throw new Error('Product not found');
+      }
+      if (product.organization_id !== organizationId) {
+        throw new Error('Product does not belong to your organization');
       }
     }
     
@@ -263,6 +299,9 @@ class StockMovementService {
       const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id, 'warehouse_id');
       if (!warehouse) {
         throw new Error('Warehouse not found');
+      }
+      if (warehouse.organization_id !== organizationId) {
+        throw new Error('Warehouse does not belong to your organization');
       }
     }
   }

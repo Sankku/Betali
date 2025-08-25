@@ -1,6 +1,6 @@
 # 📋 Backend Configured Pages - Guía de Desarrollo
 
-Esta documentación explica cómo funciona la nueva arquitectura de páginas con tablas configurables desde el backend en AgroPanel.
+Esta documentación explica cómo funciona la nueva arquitectura de páginas con tablas configurables desde el backend en Betali.
 
 ## 🏗️ Arquitectura General
 

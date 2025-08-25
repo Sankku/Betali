@@ -15,11 +15,17 @@ class DashboardController {
    */
   async getDashboardData(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      this.logger.info(`Fetching dashboard data for user: ${userId}`);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const dashboardData = await this.dashboardService.getDashboardOverview(userId);
+      this.logger.info(`Fetching dashboard data for organization: ${organizationId}`);
+      
+      const dashboardData = await this.dashboardService.getDashboardOverview(organizationId);
       
       res.json({
         data: dashboardData,
@@ -27,7 +33,7 @@ class DashboardController {
       });
     } catch (error) {
       this.logger.error(`Error fetching dashboard data: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -40,12 +46,18 @@ class DashboardController {
    */
   async getRecentActivity(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const { limit = 10 } = req.query;
       
-      this.logger.info(`Fetching recent activity for user: ${userId}`, { limit });
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const activities = await this.dashboardService.getRecentActivity(userId, parseInt(limit));
+      this.logger.info(`Fetching recent activity for organization: ${organizationId}`, { limit });
+      
+      const activities = await this.dashboardService.getRecentActivity(organizationId, parseInt(limit));
       
       res.json({
         data: activities,
@@ -56,7 +68,7 @@ class DashboardController {
       });
     } catch (error) {
       this.logger.error(`Error fetching recent activity: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -69,19 +81,25 @@ class DashboardController {
    */
   async getStats(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      this.logger.info(`Fetching stats for user: ${userId}`);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const stats = await this.dashboardService.getUserStats(userId);
+      this.logger.info(`Fetching stats for organization: ${organizationId}`);
+      
+      const stats = await this.dashboardService.getOrganizationStats(organizationId);
       
       res.json({
         data: stats,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      this.logger.error(`Error fetching user stats: ${error.message}`, {
-        userId: req.user?.id,
+      this.logger.error(`Error fetching organization stats: ${error.message}`, {
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -94,12 +112,18 @@ class DashboardController {
    */
   async getExpiringProducts(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const { days = 30 } = req.query;
       
-      this.logger.info(`Fetching expiring products for user: ${userId}`, { days });
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const expiringProducts = await this.dashboardService.getExpiringProducts(userId, parseInt(days));
+      this.logger.info(`Fetching expiring products for organization: ${organizationId}`, { days });
+      
+      const expiringProducts = await this.dashboardService.getExpiringProducts(organizationId, parseInt(days));
       
       res.json({
         data: expiringProducts,
@@ -110,7 +134,7 @@ class DashboardController {
       });
     } catch (error) {
       this.logger.error(`Error fetching expiring products: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -123,11 +147,17 @@ class DashboardController {
    */
   async getLowStockAlerts(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      this.logger.info(`Fetching low stock alerts for user: ${userId}`);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const lowStockAlerts = await this.dashboardService.getLowStockAlerts(userId);
+      this.logger.info(`Fetching low stock alerts for organization: ${organizationId}`);
+      
+      const lowStockAlerts = await this.dashboardService.getLowStockAlerts(organizationId);
       
       res.json({
         data: lowStockAlerts,
@@ -137,7 +167,7 @@ class DashboardController {
       });
     } catch (error) {
       this.logger.error(`Error fetching low stock alerts: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);
@@ -150,12 +180,18 @@ class DashboardController {
    */
   async getAnalytics(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const { period = '30d', type = 'overview' } = req.query;
       
-      this.logger.info(`Fetching analytics for user: ${userId}`, { period, type });
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
-      const analytics = await this.dashboardService.getAnalytics(userId, period, type);
+      this.logger.info(`Fetching analytics for organization: ${organizationId}`, { period, type });
+      
+      const analytics = await this.dashboardService.getAnalytics(organizationId, period, type);
       
       res.json({
         data: analytics,
@@ -167,7 +203,7 @@ class DashboardController {
       });
     } catch (error) {
       this.logger.error(`Error fetching analytics: ${error.message}`, {
-        userId: req.user?.id,
+        organizationId: req.user?.currentOrganizationId,
         error: error.message
       });
       next(error);

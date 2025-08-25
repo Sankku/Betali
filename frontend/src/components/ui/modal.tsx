@@ -104,7 +104,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'bg-white relative w-full transform transition-all duration-300',
+            'bg-white relative transform transition-all duration-300 w-full',
             'animate-slide-in-bottom rounded-2xl shadow-2xl border border-neutral-200',
             sizeClasses[size],
             className

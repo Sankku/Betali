@@ -36,9 +36,9 @@ const MOVEMENT_TYPES = [
     color: 'text-blue-700',
   },
   {
-    value: 'senasa',
-    label: 'SENASA',
-    description: 'SENASA related movement',
+    value: 'compliance',
+    label: 'Compliance',
+    description: 'Regulatory compliance movement',
     color: 'text-purple-700',
   },
 ];

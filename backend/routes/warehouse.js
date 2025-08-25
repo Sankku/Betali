@@ -1,6 +1,7 @@
 const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
+const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { validateRequest, validateQuery } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
 const { 
@@ -42,6 +43,7 @@ try {
 }
 
 router.use(authenticateUser);
+router.use(requireOrganizationContext);
 
 router.get(
   '/',

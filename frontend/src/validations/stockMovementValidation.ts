@@ -5,7 +5,7 @@ import * as yup from 'yup';
  * Centralized validation rules matching backend Joi schemas
  */
 
-export const VALID_MOVEMENT_TYPES = ['entry', 'exit', 'adjustment', 'senasa'] as const;
+export const VALID_MOVEMENT_TYPES = ['entry', 'exit', 'adjustment', 'compliance'] as const;
 
 export const createStockMovementSchema = yup.object({
   movement_type: yup
@@ -132,9 +132,9 @@ export const MOVEMENT_TYPE_OPTIONS = [
     color: 'text-blue-700',
   },
   {
-    value: 'senasa' as const,
-    label: 'SENASA',
-    description: 'SENASA related movement',
+    value: 'compliance' as const,
+    label: 'Compliance',
+    description: 'Regulatory compliance movement',
     color: 'text-purple-700',
   },
 ] as const;

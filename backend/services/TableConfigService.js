@@ -172,7 +172,7 @@ class TableConfigService {
    * @param {string} userId - User ID
    * @returns {boolean} Access status
    */
-  userHasAccessToTable(config, userId) {
+  userHasAccessToTable(_config, _userId) {
     // In a real implementation, check user permissions here
     // For now, allow access to all configurations
     return true;

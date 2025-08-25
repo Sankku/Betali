@@ -2,14 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsService } from "../services/api/productsService";
 import { toast } from "../lib/toast"; 
 import { ProductFormData } from "../components/features";
+import { useOrganization } from "../context/OrganizationContext";
 export interface UseProductsOptions {
   enabled?: boolean;
   refetchInterval?: number;
 }
 
 export function useProducts(options: UseProductsOptions = {}) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", currentOrganization?.organization_id],
     queryFn: async () => {
       const response = await productsService.getAll();
       return Array.isArray(response) ? response : (response?.data || []);
@@ -21,8 +24,10 @@ export function useProducts(options: UseProductsOptions = {}) {
 }
 
 export function useProduct(id: string, enabled = true) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["product", id],
+    queryKey: ["product", id, currentOrganization?.organization_id],
     queryFn: async () => {
       const response = await productsService.getById(id);
       return response?.data || response;

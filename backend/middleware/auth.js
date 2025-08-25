@@ -55,20 +55,20 @@ const authenticateUser = async (req, res, next) => {
     }
     
     try {
+      // Get user basic info (no role field since it's now per-organization)
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*, role, is_active')
+        .select('*, is_active')
         .eq('user_id', user.id)
         .single();
       
       if (!userError && userData) {
         user.profile = userData;
-        user.role = userData.role || 'VIEWER'; // Default role
         user.isActive = userData.is_active !== false; // Default to active
         
         // Check if user is active
         if (!user.isActive) {
-          logger.warn('Inactive user attempted to authenticate', {
+          logger.warn('Inactive user attempted to authentication', {
             userId: user.id,
             email: user.email
           });
@@ -79,10 +79,65 @@ const authenticateUser = async (req, res, next) => {
             code: 'ACCOUNT_INACTIVE'
           });
         }
+
+        // For multi-tenant: Get organization context and roles
+        try {
+          const { data: userOrgs, error: orgError } = await supabase
+            .from('user_organizations')
+            .select('organization_id, role, permissions, organization:organizations(*)')
+            .eq('user_id', user.id)
+            .eq('is_active', true);
+
+          if (!orgError && userOrgs && userOrgs.length > 0) {
+            // Assign highest role (for global permissions)
+            const roleHierarchy = ['viewer', 'employee', 'manager', 'admin', 'super_admin', 'owner'];
+            const highestRole = userOrgs.reduce((highest, org) => {
+              const currentRoleIndex = roleHierarchy.indexOf(org.role.toLowerCase());
+              const highestRoleIndex = roleHierarchy.indexOf(highest.toLowerCase());
+              return currentRoleIndex > highestRoleIndex ? org.role : highest;
+            }, 'viewer');
+            
+            user.role = highestRole.toUpperCase(); // Keep uppercase for backward compatibility
+            user.organizationRoles = userOrgs; // Store all org roles for context switching
+            
+            // Set current organization context from request header or first organization
+            const requestedOrgId = req.headers['x-organization-id'];
+            let currentOrg = null;
+            
+            if (requestedOrgId) {
+              currentOrg = userOrgs.find(org => org.organization_id === requestedOrgId);
+            }
+            
+            // Fallback to first organization if none specified or not found
+            if (!currentOrg && userOrgs.length > 0) {
+              currentOrg = userOrgs[0];
+            }
+            
+            if (currentOrg) {
+              user.currentOrganizationId = currentOrg.organization_id;
+              user.currentOrganization = currentOrg.organization;
+              user.currentOrganizationRole = currentOrg.role.toUpperCase();
+              user.currentOrganizationPermissions = currentOrg.permissions || [];
+            }
+          } else {
+            user.role = 'VIEWER'; // Default if no organizations
+            user.organizationRoles = [];
+            user.currentOrganizationId = null;
+          }
+        } catch (orgError) {
+          logger.warn('Could not fetch user organization roles', {
+            userId: user.id,
+            error: orgError.message
+          });
+          user.role = 'VIEWER';
+          user.organizationRoles = [];
+          user.currentOrganizationId = null;
+        }
       } else {
         // If no profile found, assign default role
         user.role = 'VIEWER';
         user.isActive = true;
+        user.organizationRoles = [];
       }
     } catch (dbError) {
       logger.warn('Could not fetch user profile data', {
@@ -92,6 +147,7 @@ const authenticateUser = async (req, res, next) => {
       // Assign default values if database query fails
       user.role = 'VIEWER';
       user.isActive = true;
+      user.organizationRoles = [];
     }
     
     req.user = user;

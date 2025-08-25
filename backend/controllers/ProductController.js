@@ -11,20 +11,27 @@ class ProductController {
   }
 
   /**
-   * Get all products for authenticated user
+   * Get all products for authenticated user's organization
    * GET /api/products
    */
   async getProducts(req, res, next) {
     try {
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
       const options = this.buildQueryOptions(req.query);
       
-      const products = await this.productService.getUserProducts(userId, options);
+      const products = await this.productService.getOrganizationProducts(organizationId, options);
       
       res.json({
         data: products,
         meta: {
           total: products.length,
+          organizationId,
           ...options
         }
       });
@@ -40,9 +47,15 @@ class ProductController {
   async getProductById(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      const product = await this.productService.getProductById(id, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const product = await this.productService.getProductById(id, organizationId);
       
       res.json({ data: product });
     } catch (error) {
@@ -57,9 +70,16 @@ class ProductController {
   async createProduct(req, res, next) {
     try {
       const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const productData = req.body;
       
-      const createdProduct = await this.productService.createProduct(productData, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const createdProduct = await this.productService.createProduct(productData, userId, organizationId);
       
       res.status(201).json({
         data: createdProduct,
@@ -77,10 +97,16 @@ class ProductController {
   async updateProduct(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       const updateData = req.body;
       
-      const updatedProduct = await this.productService.updateProduct(id, updateData, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const updatedProduct = await this.productService.updateProduct(id, updateData, organizationId);
       
       res.json({
         data: updatedProduct,
@@ -98,9 +124,15 @@ class ProductController {
   async deleteProduct(req, res, next) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      await this.productService.deleteProduct(id, userId);
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      await this.productService.deleteProduct(id, organizationId);
       
       res.json({
         message: 'Product deleted successfully'
@@ -117,7 +149,13 @@ class ProductController {
   async searchProducts(req, res, next) {
     try {
       const { q: searchTerm } = req.query;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
+      
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
       
       if (!searchTerm) {
         return res.status(400).json({
@@ -125,12 +163,13 @@ class ProductController {
         });
       }
       
-      const products = await this.productService.searchProducts(searchTerm, userId);
+      const products = await this.productService.searchProducts(searchTerm, organizationId);
       
       res.json({
         data: products,
         meta: {
           searchTerm,
+          organizationId,
           total: products.length
         }
       });
@@ -146,14 +185,21 @@ class ProductController {
   async getExpiringProducts(req, res, next) {
     try {
       const { days = 30 } = req.query;
-      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
       
-      const products = await this.productService.getExpiringSoonProducts(userId, parseInt(days));
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+      
+      const products = await this.productService.getExpiringSoonProducts(organizationId, parseInt(days));
       
       res.json({
         data: products,
         meta: {
           days: parseInt(days),
+          organizationId,
           total: products.length
         }
       });

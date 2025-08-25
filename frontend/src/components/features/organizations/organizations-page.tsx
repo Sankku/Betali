@@ -23,143 +23,6 @@ import {
   useDeleteOrganization,
 } from '@/hooks/useOrganizations';
 
-// Fallback table component with modern styling
-interface OrganizationsTableProps {
-  data: Organization[];
-  onAction: (action: string, row: Organization) => void;
-  isLoading: boolean;
-}
-
-function OrganizationsTable({ data, onAction, isLoading }: OrganizationsTableProps) {
-  if (isLoading) {
-    return (
-      <div className="w-full">
-        <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-200">
-            <div className="h-4 bg-neutral-200 rounded animate-pulse" />
-          </div>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="px-6 py-4 border-b border-neutral-100">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-neutral-200 rounded-full animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-neutral-200 rounded animate-pulse" />
-                  <div className="h-3 bg-neutral-200 rounded animate-pulse w-3/4" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="w-full">
-        <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-          <div className="px-6 py-12 text-center">
-            <Building2 className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No organizations found</h3>
-            <p className="text-neutral-500 mb-4">Get started by creating your first organization.</p>
-            <Button onClick={() => onAction('create', {} as Organization)}>
-              Create Organization
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full">
-      <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Organization
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-              {data.map((organization) => (
-                <tr key={organization.organization_id} className="hover:bg-neutral-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-neutral-900 truncate">
-                          {organization.name}
-                        </div>
-                        <div className="text-sm text-neutral-500 truncate">
-                          {organization.slug}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-neutral-900 max-w-xs truncate">
-                      {organization.description || 'No description'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        organization.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-neutral-100 text-neutral-800'
-                      }`}
-                    >
-                      {organization.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-neutral-500">
-                    {new Date(organization.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onAction('edit', organization)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onAction('delete', organization)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface ModalState {
   isOpen: boolean;
@@ -189,7 +52,10 @@ export function OrganizationsPage() {
     error: configError,
   } = useTableConfig('organizations');
   
-  const { data: organizations = [], isLoading, error } = useOrganizationManagement();
+  const { data: userOrganizations = [], isLoading, error } = useOrganizationManagement();
+  
+  // Transform user organizations to extract just the organization data for the table
+  const organizations = userOrganizations.map(userOrg => userOrg.organization);
   const createOrganization = useCreateOrganization();
   const updateOrganization = useUpdateOrganization();
   const deleteOrganization = useDeleteOrganization();
@@ -279,7 +145,7 @@ export function OrganizationsPage() {
         description={
           configLoading
             ? 'Loading table configuration...'
-            : 'Manage organizations and their settings'
+            : 'Manage organizations in the multi-tenant system. Each organization has its own data isolation and team management.'
         }
         data={organizations}
         isLoading={isLoading || isLoaderVisible || configLoading}
@@ -293,13 +159,7 @@ export function OrganizationsPage() {
               onAction={handleTableAction}
               isLoading={isLoading || isLoaderVisible}
             />
-          ) : (
-            <OrganizationsTable
-              data={organizations}
-              onAction={handleTableAction}
-              isLoading={isLoading || isLoaderVisible}
-            />
-          )
+          ) : null
         }
       />
 

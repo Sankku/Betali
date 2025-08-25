@@ -18,22 +18,22 @@ class ProductRepository extends BaseRepository {
   }
 
   /**
-   * Find products by user ID
-   * @param {string} userId - User ID
+   * Find products by organization ID
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
    */
-  async findByUserId(userId, options = {}) {
-    return this.findAll({ owner_id: userId }, options);
+  async findByOrganizationId(organizationId, options = {}) {
+    return this.findAll({ organization_id: organizationId }, options);
   }
 
   /**
    * Find products expiring soon
    * @param {number} days - Days ahead to check
-   * @param {string} userId - User ID (optional)
+   * @param {string} organizationId - Organization ID (optional)
    * @returns {Promise<Array>}
    */
-  async findExpiringSoon(days = 30, userId = null) {
+  async findExpiringSoon(days = 30, organizationId = null) {
     try {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + days);
@@ -43,8 +43,8 @@ class ProductRepository extends BaseRepository {
         .select('*')
         .lte('expiration_date', futureDate.toISOString());
 
-      if (userId) {
-        query = query.eq('owner_id', userId);
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
       }
 
       const { data, error } = await query;
@@ -57,29 +57,34 @@ class ProductRepository extends BaseRepository {
   }
 
   /**
-   * Find products by batch number
+   * Find products by batch number within organization
    * @param {string} batchNumber - Batch number
+   * @param {string} organizationId - Organization ID (optional)
    * @returns {Promise<Array>}
    */
-  async findByBatchNumber(batchNumber) {
-    return this.findAll({ batch_number: batchNumber });
+  async findByBatchNumber(batchNumber, organizationId = null) {
+    const filters = { batch_number: batchNumber };
+    if (organizationId) {
+      filters.organization_id = organizationId;
+    }
+    return this.findAll(filters);
   }
 
   /**
-   * Search products by name or description
+   * Search products by name or description within organization
    * @param {string} searchTerm - Search term
-   * @param {string} userId - User ID (optional)
+   * @param {string} organizationId - Organization ID (optional)
    * @returns {Promise<Array>}
    */
-  async search(searchTerm, userId = null) {
+  async search(searchTerm, organizationId = null) {
     try {
       let query = this.client
         .from(this.table)
         .select('*')
         .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
 
-      if (userId) {
-        query = query.eq('owner_id', userId);
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
       }
 
       const { data, error } = await query;

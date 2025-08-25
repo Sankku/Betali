@@ -90,9 +90,9 @@ export function OrganizationModal({
           <div>
             <ModalTitle>{title}</ModalTitle>
             <ModalDescription>
-              {mode === 'create' && 'Create a new organization to manage'}
-              {mode === 'edit' && 'Update organization information'}
-              {mode === 'view' && 'View organization details'}
+              {mode === 'create' && 'Create a new organization with isolated data and team management'}
+              {mode === 'edit' && 'Update organization information and settings'}
+              {mode === 'view' && 'View organization details and current status'}
             </ModalDescription>
           </div>
         </div>

@@ -9,28 +9,28 @@ class ProductService {
     }
   
     /**
-     * Get all products for a user
-     * @param {string} userId - User ID
+     * Get all products for an organization
+     * @param {string} organizationId - Organization ID
      * @param {Object} options - Query options
      * @returns {Promise<Array>}
      */
-    async getUserProducts(userId, options = {}) {
+    async getOrganizationProducts(organizationId, options = {}) {
       try {
-        this.logger.info(`Fetching products for user: ${userId}`);
-        return await this.repository.findByUserId(userId, options);
+        this.logger.info(`Fetching products for organization: ${organizationId}`);
+        return await this.repository.findByOrganizationId(organizationId, options);
       } catch (error) {
-        this.logger.error(`Error fetching user products: ${error.message}`);
+        this.logger.error(`Error fetching organization products: ${error.message}`);
         throw error;
       }
     }
   
     /**
-     * Get product by ID with ownership validation
+     * Get product by ID with organization validation
      * @param {string} productId - Product ID
-     * @param {string} userId - User ID
+     * @param {string} organizationId - Organization ID
      * @returns {Promise<Object>}
      */
-    async getProductById(productId, userId) {
+    async getProductById(productId, organizationId) {
       try {
         const product = await this.repository.findById(productId, 'product_id');
         
@@ -38,9 +38,9 @@ class ProductService {
           throw new Error('Product not found');
         }
   
-        // Validate ownership
-        if (product.owner_id !== userId) {
-          throw new Error('Access denied: Product does not belong to user');
+        // Validate organization access
+        if (product.organization_id !== organizationId) {
+          throw new Error('Access denied: Product does not belong to your organization');
         }
   
         return product;
@@ -54,23 +54,25 @@ class ProductService {
      * Create new product with validation
      * @param {Object} productData - Product data
      * @param {string} userId - User ID
+     * @param {string} organizationId - Organization ID
      * @returns {Promise<Object>}
      */
-    async createProduct(productData, userId) {
+    async createProduct(productData, userId, organizationId) {
       try {
         // Validate required fields
         this.validateProductData(productData);
   
-        // Check for duplicate batch number
-        const existingProduct = await this.repository.findByBatchNumber(productData.batch_number);
+        // Check for duplicate batch number within organization
+        const existingProduct = await this.repository.findByBatchNumber(productData.batch_number, organizationId);
         if (existingProduct.length > 0) {
-          throw new Error('Product with this batch number already exists');
+          throw new Error('Product with this batch number already exists in your organization');
         }
   
         // Prepare product data
         const newProduct = {
           ...productData,
           owner_id: userId,
+          organization_id: organizationId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -89,20 +91,20 @@ class ProductService {
      * Update product with validation
      * @param {string} productId - Product ID
      * @param {Object} updateData - Update data
-     * @param {string} userId - User ID
+     * @param {string} organizationId - Organization ID
      * @returns {Promise<Object>}
      */
-    async updateProduct(productId, updateData, userId) {
+    async updateProduct(productId, updateData, organizationId) {
       try {
-        // Verify ownership
-        await this.getProductById(productId, userId);
+        // Verify organization access
+        await this.getProductById(productId, organizationId);
   
         // Validate update data
         if (updateData.batch_number) {
-          const existingProduct = await this.repository.findByBatchNumber(updateData.batch_number);
+          const existingProduct = await this.repository.findByBatchNumber(updateData.batch_number, organizationId);
           const duplicateProduct = existingProduct.find(p => p.product_id !== productId);
           if (duplicateProduct) {
-            throw new Error('Another product with this batch number already exists');
+            throw new Error('Another product with this batch number already exists in your organization');
           }
         }
   
@@ -119,13 +121,13 @@ class ProductService {
     /**
      * Delete product with validation
      * @param {string} productId - Product ID
-     * @param {string} userId - User ID
+     * @param {string} organizationId - Organization ID
      * @returns {Promise<boolean>}
      */
-    async deleteProduct(productId, userId) {
+    async deleteProduct(productId, organizationId) {
       try {
-        // Verify ownership
-        await this.getProductById(productId, userId);
+        // Verify organization access
+        await this.getProductById(productId, organizationId);
   
         await this.repository.delete(productId, 'product_id');
         
@@ -138,14 +140,14 @@ class ProductService {
     }
   
     /**
-     * Get products expiring soon for a user
-     * @param {string} userId - User ID
+     * Get products expiring soon for an organization
+     * @param {string} organizationId - Organization ID
      * @param {number} days - Days ahead to check
      * @returns {Promise<Array>}
      */
-    async getExpiringSoonProducts(userId, days = 30) {
+    async getExpiringSoonProducts(organizationId, days = 30) {
       try {
-        return await this.repository.findExpiringSoon(days, userId);
+        return await this.repository.findExpiringSoon(days, organizationId);
       } catch (error) {
         this.logger.error(`Error fetching expiring products: ${error.message}`);
         throw error;
@@ -153,18 +155,18 @@ class ProductService {
     }
   
     /**
-     * Search products for a user
+     * Search products for an organization
      * @param {string} searchTerm - Search term
-     * @param {string} userId - User ID
+     * @param {string} organizationId - Organization ID
      * @returns {Promise<Array>}
      */
-    async searchProducts(searchTerm, userId) {
+    async searchProducts(searchTerm, organizationId) {
       try {
         if (!searchTerm || searchTerm.trim().length === 0) {
           return [];
         }
   
-        return await this.repository.search(searchTerm.trim(), userId);
+        return await this.repository.search(searchTerm.trim(), organizationId);
       } catch (error) {
         this.logger.error(`Error searching products: ${error.message}`);
         throw error;

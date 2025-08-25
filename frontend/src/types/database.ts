@@ -17,6 +17,7 @@ export type Database = {
           cuit: string
           email: string
           name: string
+          organization_id: string | null
           phone: string | null
           updated_at: string | null
           user_id: string | null
@@ -28,6 +29,7 @@ export type Database = {
           cuit: string
           email: string
           name: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           cuit?: string
           email?: string
           name?: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -50,6 +53,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
           },
         ]
       }
@@ -256,6 +266,97 @@ export type Database = {
           transaction_id?: string
         }
         Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          branch_id: string | null
+          business_type: string | null
+          contact_person: string | null
+          created_at: string | null
+          credit_limit: number | null
+          cuit: string
+          email: string
+          is_active: boolean | null
+          is_preferred: boolean | null
+          name: string
+          notes: string | null
+          organization_id: string
+          payment_terms: string | null
+          phone: string | null
+          supplier_id: string
+          tax_category: string | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id?: string | null
+          business_type?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          cuit: string
+          email: string
+          is_active?: boolean | null
+          is_preferred?: boolean | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          payment_terms?: string | null
+          phone?: string | null
+          supplier_id?: string
+          tax_category?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string | null
+          business_type?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          cuit?: string
+          email?: string
+          is_active?: boolean | null
+          is_preferred?: boolean | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          payment_terms?: string | null
+          phone?: string | null
+          supplier_id?: string
+          tax_category?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "suppliers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "suppliers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -483,9 +584,13 @@ export type Database = {
           email: string
           is_active: boolean | null
           name: string
+          organization_id: string | null
           password_hash: string
           role: string
           updated_at: string | null
+          updated_by: string | null
+          deactivated_by: string | null
+          deactivated_at: string | null
           user_id: string
         }
         Insert: {
@@ -493,9 +598,13 @@ export type Database = {
           email: string
           is_active?: boolean | null
           name: string
+          organization_id?: string | null
           password_hash: string
           role: string
           updated_at?: string | null
+          updated_by?: string | null
+          deactivated_by?: string | null
+          deactivated_at?: string | null
           user_id?: string
         }
         Update: {
@@ -503,9 +612,13 @@ export type Database = {
           email?: string
           is_active?: boolean | null
           name?: string
+          organization_id?: string | null
           password_hash?: string
           role?: string
           updated_at?: string | null
+          updated_by?: string | null
+          deactivated_by?: string | null
+          deactivated_at?: string | null
           user_id?: string
         }
         Relationships: []

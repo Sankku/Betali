@@ -5,6 +5,9 @@ import { QueryProvider } from "./lib/providers/query-provider";
 import { AuthProvider } from "./context/AuthContext";
 import { UserContextSwitcherProvider } from "./context/UserContextSwitcher";
 import { OrganizationProvider } from "./context/OrganizationContext";
+import { GlobalSyncProvider } from "./context/GlobalSyncContext";
+import { GlobalLoading } from "./components/ui/global-loading";
+import { useAuthStateChange } from "./hooks/useAuthStateChange";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -14,15 +17,19 @@ import Warehouses from "./pages/Dashboard/Warehouse";
 import StockMovements from "./pages/Dashboard/StockMovements";
 import Users from "./pages/Dashboard/Users";
 import Organizations from "./pages/Dashboard/Organizations";
+import Clients from "./pages/Dashboard/Clients";
+import Suppliers from "./pages/Dashboard/Suppliers";
 
-function App() {
+function AppContent() {
+  useAuthStateChange();
+  
   return (
-    <QueryProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <GlobalSyncProvider>
         <OrganizationProvider>
           <UserContextSwitcherProvider>
-            <HelmetProvider>
-              <BrowserRouter>
+          <HelmetProvider>
+            <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -74,13 +81,38 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/dashboard/clients"
+                    element={
+                      <ProtectedRoute>
+                        <Clients />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/suppliers"
+                    element={
+                      <ProtectedRoute>
+                        <Suppliers />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
-              </BrowserRouter>
-            </HelmetProvider>
+            </BrowserRouter>
+          </HelmetProvider>
+          <GlobalLoading />
           </UserContextSwitcherProvider>
         </OrganizationProvider>
-      </AuthProvider>
+      </GlobalSyncProvider>
+    </AuthProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryProvider>
+      <AppContent />
     </QueryProvider>
   );
 }

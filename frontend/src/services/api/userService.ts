@@ -1,31 +1,20 @@
 import { httpClient } from "../http/httpClient";
 import { Database } from "../../types/database";
 
-type User = Database["public"]["Tables"]["users"]["Row"] & {
-  organization_id?: string | null;
-  branch_id?: string | null;
-  permissions?: string[];
-};
+export type User = Database["public"]["Tables"]["users"]["Row"];
 
-type CreateUserData = {
+export type CreateUserData = {
   name: string;
   email: string;
   password: string;
-  role: string;
-  organization_id?: string | null;
-  branch_id?: string | null;
-  permissions?: string[];
   is_active?: boolean;
+  organization_id?: string;
 };
 
-type UpdateUserData = {
+export type UpdateUserData = {
   name?: string;
   email?: string;
   password?: string;
-  role?: string;
-  organization_id?: string | null;
-  branch_id?: string | null;
-  permissions?: string[];
   is_active?: boolean;
 };
 
@@ -105,11 +94,51 @@ export const userService = {
     }
   },
 
+  /**
+   * Get current user context (permissions, role, organization)
+   */
+  async getUserContext(): Promise<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      avatar_url?: string;
+      is_active: boolean;
+      created_at: string;
+    };
+    permissions: {
+      role: string;
+      roleName: string;
+      permissions: string[];
+    };
+    currentOrganization?: any;
+    hasOrganizationContext: boolean;
+  }> {
+    try {
+      const response = await httpClient.get('/api/users/me/context');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user context:', error);
+      throw error;
+    }
+  },
+
   async delete(id: string): Promise<void> {
     try {
-      await httpClient.delete(`/api/users/${id}`);
+      await httpClient.delete(`/api/users/${id}/hard-delete`);
     } catch (error) {
-      console.error(`Error deactivating user ${id}:`, error);
+      console.error(`Error deleting user ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async toggleStatus(id: string, is_active: boolean): Promise<User> {
+    try {
+      const response = await httpClient.put<{ data: User }>(`/api/users/${id}`, { is_active });
+      return response.data || response;
+    } catch (error) {
+      console.error(`Error toggling user status ${id}:`, error);
       throw error;
     }
   },

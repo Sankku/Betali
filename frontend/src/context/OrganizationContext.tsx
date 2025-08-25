@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
+import { useGlobalSync } from './GlobalSyncContext';
 import { apiService } from '../services/api';
 import { 
   Organization, 
@@ -47,6 +48,8 @@ interface OrganizationProviderProps {
 
 export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { showLoading, hideLoading } = useGlobalSync();
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
@@ -72,9 +75,12 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   }, []);
 
   // Check if current user can access users section based on their role
-  const canAccessUsersSection = currentUserRole === 'super_admin' || 
-                                currentUserRole === 'admin' || 
-                                currentUserRole === 'manager';
+  const canAccessUsersSection = useMemo(() => 
+    currentUserRole === 'super_admin' || 
+    currentUserRole === 'admin' || 
+    currentUserRole === 'manager',
+    [currentUserRole]
+  );
 
 
   // Use TanStack Query to fetch user organizations
@@ -84,14 +90,39 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     error 
   } = useQuery({
     queryKey: ['user-organizations'],
-    queryFn: () => apiService.organizations.getUserOrganizations(),
+    queryFn: async () => {
+      try {
+        console.log('🔄 Fetching user organizations for user:', user?.email);
+        const result = await apiService.organizations.getUserOrganizations();
+        console.log('📊 User organizations loaded:', result.length, 'organizations', result);
+        return result;
+      } catch (err) {
+        console.error('❌ Error fetching user organizations:', err);
+        throw err;
+      }
+    },
     enabled: !!user, // Only fetch when user is authenticated
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    retry: 2,
   });
+
+  // Debug logging for context state
+  React.useEffect(() => {
+    console.log('🔍 Organization Context State:', {
+      isLoading,
+      userOrganizationsCount: userOrganizations?.length || 0,
+      currentOrganization: currentOrganization?.name || 'none',
+      currentUserRole,
+      error: error?.message || 'none'
+    });
+  }, [isLoading, userOrganizations, currentOrganization, currentUserRole, error]);
 
   // Initialize organization context when data is available
   useEffect(() => {
-    if (user && userOrganizations.length > 0) {
+    if (!user || isLoading) return;
+    
+    // Only run when we have organizations and current organization is not set
+    if (userOrganizations.length > 0 && !currentOrganization) {
       // Check if there's a stored organization context
       const storedOrgId = localStorage.getItem('currentOrganizationId');
       let selectedOrg = null;
@@ -125,7 +156,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         
         console.log('Organization context updated:', selectedOrg.organization.name);
       }
-    } else if (user && !isLoading && userOrganizations.length === 0) {
+    } else if (userOrganizations.length === 0 && !currentOrganization) {
       console.warn('No organizations found for user');
       
       // Try to load from localStorage as fallback
@@ -150,22 +181,29 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         }
       }
     }
-  }, [user, userOrganizations, isLoading]);
+  }, [user, userOrganizations.length, isLoading, currentOrganization]);
 
-  const switchOrganization = async (organizationId: string) => {
+  const switchOrganization = useCallback(async (organizationId: string) => {
+    console.log('🔄 Attempting to switch to organization:', organizationId);
     setSwitching(true);
+    showLoading('Switching organization...');
     try {
       // Find the organization in user's list
       const targetOrg = userOrganizations.find(
         org => org?.organization?.organization_id === organizationId
       );
       
+      console.log('🔍 Target organization found:', targetOrg?.organization?.name || 'NOT FOUND');
+      
       if (!targetOrg || !targetOrg.organization?.organization_id) {
         throw new Error('Organization not found in user organizations');
       }
 
       // Switch context
+      console.log('🌐 Calling API to switch context...');
       const context = await apiService.organizations.switchContext(organizationId);
+      
+      console.log('📝 API response:', context);
       
       if (context?.organization?.organization_id) {
         setCurrentOrganization(context.organization);
@@ -183,7 +221,11 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         permissions: context.permissions
       }));
       
-      console.log('Switched to organization:', context.organization.name);
+      console.log('✅ Successfully switched to organization:', context.organization.name);
+      
+      // Invalidate all queries to refetch with new organization context
+      console.log('🔄 Invalidating all queries for organization switch...');
+      await queryClient.invalidateQueries();
       
       // Dispatch custom event for other parts of the app to listen to
       window.dispatchEvent(new CustomEvent('organizationChanged', { 
@@ -191,41 +233,50 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       }));
       
     } catch (error) {
-      console.error('Error switching organization:', error);
+      console.error('❌ Error switching organization:', error);
       throw error;
     } finally {
       setSwitching(false);
+      hideLoading();
     }
-  };
+  }, [userOrganizations, queryClient, showLoading, hideLoading]);
 
-  const createOrganization = async (data: { name: string; slug: string }): Promise<Organization> => {
+  const createOrganization = useCallback(async (data: { name: string; slug: string }): Promise<Organization> => {
+    console.log('🏢 Creating new organization:', data);
     try {
-      const newOrg = await apiService.organizations.createOrganization(data);
+      const newOrg = await apiService.organizations.create(data);
+      
+      console.log('📝 Organization created:', newOrg);
       
       if (!newOrg?.organization_id) {
         throw new Error('Invalid organization created');
       }
       
-      // Note: TanStack Query will automatically refetch when we switch to the new organization
+      // Invalidate the user organizations query to refetch the list
+      console.log('🔄 Invalidating user organizations query...');
+      await queryClient.invalidateQueries({ queryKey: ['user-organizations'] });
+      
       // Switch to the new organization
+      console.log('🔄 Switching to new organization...');
       await switchOrganization(newOrg.organization_id);
       
+      console.log('✅ Organization creation complete');
       return newOrg;
     } catch (error) {
-      console.error('Error creating organization:', error);
+      console.error('❌ Error creating organization:', error);
       throw error;
     }
-  };
+  }, [queryClient, switchOrganization]);
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     if (currentPermissions.includes('*')) {
       return true; // Super admin has all permissions
     }
     
     return currentPermissions.includes(permission);
-  };
+  }, [currentPermissions]);
 
-  const value: OrganizationContextState = {
+  const value: OrganizationContextState = useMemo(() => ({
     currentOrganization,
     currentUserRole,
     currentPermissions,
@@ -236,7 +287,18 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     createOrganization,
     hasPermission,
     canAccessUsersSection,
-  };
+  }), [
+    currentOrganization,
+    currentUserRole,
+    currentPermissions,
+    userOrganizations,
+    isLoading,
+    switching,
+    switchOrganization,
+    createOrganization,
+    hasPermission,
+    canAccessUsersSection,
+  ]);
 
   return (
     <OrganizationContext.Provider value={value}>

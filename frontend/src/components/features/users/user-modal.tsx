@@ -1,74 +1,141 @@
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import React, { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Users } from 'lucide-react';
+import { z } from 'zod';
+import { ModalForm } from '../../templates/modal-form';
 import { UserForm } from './user-form';
+import { User, CreateUserData } from '../../../hooks/useUsers';
 
-export interface User {
-  user_id: string;
-  name: string;
-  email: string;
-  role: 'super_admin' | 'admin' | 'manager' | 'employee' | 'viewer';
-  organization_id?: string | null;
-  branch_id?: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+const userSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name cannot exceed 100 characters'),
+  email: z
+    .string()
+    .email('Please enter a valid email address')
+    .max(100, 'Email cannot exceed 100 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one lowercase letter, one uppercase letter, and one number'
+    )
+    .optional()
+    .or(z.literal('')),
+  role: z
+    .string()
+    .min(1, 'Role is required'),
+  is_active: z.boolean().default(true),
+});
 
-interface UserModalProps {
+export type UserFormData = z.infer<typeof userSchema>;
+
+export interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CreateUserData) => void | Promise<void>;
+  mode: 'create' | 'edit' | 'view';
+  user?: User;
   isLoading?: boolean;
-  user?: User | null;
-  mode: 'create' | 'edit';
 }
 
 export function UserModal({
   isOpen,
   onClose,
   onSubmit,
-  isLoading = false,
-  user,
   mode,
+  user,
+  isLoading = false,
 }: UserModalProps) {
-  const isEditing = mode === 'edit';
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: user?.name || '',
+      email: user?.email || '',
+      password: '',
+      role: user?.role || 'employee',
+      is_active: user?.is_active ?? true,
+    },
+  });
+
+  const getModalTitle = () => {
+    switch (mode) {
+      case 'create':
+        return 'Create New User';
+      case 'edit':
+        return `Edit ${user?.name}`;
+      case 'view':
+        return `${user?.name} Details`;
+      default:
+        return 'User';
+    }
+  };
+
+  const getModalDescription = () => {
+    switch (mode) {
+      case 'create':
+        return 'Add a new user to the system. They will need to be invited to organizations separately.';
+      case 'edit':
+        return `Modify the global user information for "${user?.name}". Organization-specific roles are managed in the team section.`;
+      case 'view':
+        return `Global user information for "${user?.name}". Organization roles and permissions are managed separately.`;
+      default:
+        return '';
+    }
+  };
+
+  const handleSubmit = async (data: UserFormData) => {
+    // If editing and password is empty, don't include it
+    if (mode === 'edit' && !data.password) {
+      const { password, ...dataWithoutPassword } = data;
+      await onSubmit(dataWithoutPassword as CreateUserData);
+    } else {
+      await onSubmit(data as CreateUserData);
+    }
+    
+    if (mode === 'create') {
+      form.reset();
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && user && mode !== 'create') {
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        password: '',
+        is_active: user.is_active ?? true,
+      });
+    } else if (isOpen && mode === 'create') {
+      form.reset({
+        name: '',
+        email: '',
+        password: '',
+        is_active: true,
+      });
+    }
+  }, [isOpen, user, mode, form]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit User' : 'Create New User'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? 'Update user information and permissions. Leave password empty to keep current password.'
-              : 'Add a new user to the system with appropriate role and permissions.'}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-4">
-          <UserForm
-            onSubmit={onSubmit}
-            isLoading={isLoading}
-            initialData={user ? {
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              organization_id: user.organization_id,
-              branch_id: user.branch_id,
-              is_active: user.is_active,
-            } : undefined}
-            isEditing={isEditing}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <ModalForm
+      isOpen={isOpen}
+      onClose={onClose}
+      form={form}
+      onSubmit={handleSubmit}
+      title={getModalTitle()}
+      description={getModalDescription()}
+      icon={Users}
+      mode={mode}
+      isLoading={isLoading}
+      size="lg"
+    >
+      <UserForm form={form} mode={mode} isLoading={isLoading} />
+    </ModalForm>
   );
 }
+
+// Re-export types for convenience
+export type { User, UserFormData };

@@ -42,7 +42,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
 
   return (
     <DropdownMenuContext.Provider value={{ isOpen, setIsOpen, triggerRef }}>
-      <div className="relative inline-block text-left">{children}</div>
+      <div className="relative inline-block text-lef">{children}</div>
     </DropdownMenuContext.Provider>
   );
 };
@@ -75,7 +75,7 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({ asChild = fal
 
 const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
   children,
-  align = 'end',
+  align = 'center',
   className,
   sideOffset = 4,
   usePortal = true,
@@ -114,36 +114,36 @@ const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
   }, [isOpen, setIsOpen, triggerRef]);
 
   useEffect(() => {
-    if (isOpen && triggerRef.current && usePortal) {
+    if (isOpen && triggerRef.current && contentRef.current && usePortal) {
       const triggerRect = triggerRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
+      const contentRect = contentRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
       let top = triggerRect.bottom + sideOffset;
-
-      const dropdownHeight = 200;
-      if (top + dropdownHeight > viewportHeight && triggerRect.top > dropdownHeight) {
-        top = triggerRect.top - dropdownHeight - sideOffset;
+      if (top + contentRect.height > viewportHeight && triggerRect.top > contentRect.height) {
+        top = triggerRect.top - contentRect.height - sideOffset;
       }
 
-      let left = triggerRect.left;
-      const dropdownWidth = 200;
-
+      let left = 0;
       switch (align) {
         case 'start':
           left = triggerRect.left;
           break;
         case 'center':
-          left = triggerRect.left + triggerRect.width / 2 - dropdownWidth / 2;
+          left = triggerRect.left + triggerRect.width / 2 - contentRect.width / 2;
           break;
         case 'end':
-        default:
-          left = triggerRect.right - dropdownWidth;
+          left = triggerRect.right - contentRect.width;
           break;
       }
 
-      if (left < 0) left = 8;
-      if (left + dropdownWidth > viewportWidth) left = viewportWidth - dropdownWidth - 8;
+      const padding = 8;
+      if (left < padding) {
+        left = padding;
+      } else if (left + contentRect.width > viewportWidth - padding) {
+        left = viewportWidth - contentRect.width - padding;
+      }
 
       setPosition({ top, left });
     }
@@ -161,8 +161,8 @@ const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
     <div
       ref={contentRef}
       className={cn(
-        'min-w-[8rem] overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg',
-        'animate-in fade-in-0 zoom-in-95 duration-200',
+        'overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg',
+        'animate-in fade-in-0 zoom-in-95 duration-200 max-w-64',
         usePortal ? 'fixed' : `absolute mt-2 ${alignmentClasses[align]}`,
         className
       )}

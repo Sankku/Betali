@@ -10,16 +10,16 @@ class WarehouseService {
   }
 
   /**
-   * Get all warehouses for a user
-   * @param {string} userId - User ID
+   * Get all warehouses for an organization
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
-   * @returns {Promise<Array>} User warehouses with stats
+   * @returns {Promise<Array>} Organization warehouses with stats
    */
-  async getUserWarehouses(userId, options = {}) {
+  async getOrganizationWarehouses(organizationId, options = {}) {
     try {
-      this.logger.info(`Fetching warehouses for user: ${userId}`);
+      this.logger.info(`Fetching warehouses for organization: ${organizationId}`);
       
-      const warehouses = await this.warehouseRepository.findByUserId(userId, options);
+      const warehouses = await this.warehouseRepository.findByOrganizationId(organizationId, options);
       
       // Enrich warehouses with statistics
       const warehousesWithStats = await Promise.all(
@@ -48,12 +48,12 @@ class WarehouseService {
   }
 
   /**
-   * Get warehouse by ID with ownership validation
+   * Get warehouse by ID with organization validation
    * @param {string} warehouseId - Warehouse ID
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Warehouse with stats
    */
-  async getWarehouseById(warehouseId, userId) {
+  async getWarehouseById(warehouseId, organizationId) {
     try {
       const warehouse = await this.warehouseRepository.findById(warehouseId, 'warehouse_id');
       
@@ -61,9 +61,9 @@ class WarehouseService {
         throw new Error('Warehouse not found');
       }
 
-      // Validate ownership (user_id or owner_id)
-      if (warehouse.user_id !== userId && warehouse.owner_id !== userId) {
-        throw new Error('Access denied: Warehouse does not belong to user');
+      // Validate organization access
+      if (warehouse.organization_id !== organizationId) {
+        throw new Error('Access denied: Warehouse does not belong to your organization');
       }
 
       // Add statistics
@@ -83,15 +83,16 @@ class WarehouseService {
    * Create new warehouse with validation
    * @param {Object} warehouseData - Warehouse data
    * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Created warehouse
    */
-  async createWarehouse(warehouseData, userId) {
+  async createWarehouse(warehouseData, userId, organizationId) {
     try {
       // Validate required fields
       this.validateWarehouseData(warehouseData);
 
-      // Check for duplicate name
-      await this.validateUniqueName(warehouseData.name, userId);
+      // Check for duplicate name within organization
+      await this.validateUniqueName(warehouseData.name, organizationId);
 
       // Prepare warehouse data
       const newWarehouse = {
@@ -100,6 +101,7 @@ class WarehouseService {
         location: warehouseData.location.trim(),
         user_id: userId,
         owner_id: userId,
+        organization_id: organizationId,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -119,13 +121,13 @@ class WarehouseService {
    * Update warehouse with validation
    * @param {string} warehouseId - Warehouse ID
    * @param {Object} updateData - Update data
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Updated warehouse
    */
-  async updateWarehouse(warehouseId, updateData, userId) {
+  async updateWarehouse(warehouseId, updateData, organizationId) {
     try {
-      // Verify ownership
-      const existingWarehouse = await this.getWarehouseById(warehouseId, userId);
+      // Verify organization access
+      const existingWarehouse = await this.getWarehouseById(warehouseId, organizationId);
 
       // Validate update data
       if (updateData.name) {
@@ -134,8 +136,8 @@ class WarehouseService {
           throw new Error('Warehouse name cannot be empty');
         }
         
-        // Check for duplicate name (excluding current warehouse)
-        await this.validateUniqueName(updateData.name, userId, warehouseId);
+        // Check for duplicate name within organization (excluding current warehouse)
+        await this.validateUniqueName(updateData.name, organizationId, warehouseId);
       }
 
       if (updateData.location) {
@@ -166,13 +168,13 @@ class WarehouseService {
   /**
    * Deactivate warehouse (soft delete)
    * @param {string} warehouseId - Warehouse ID
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} Deactivated warehouse
    */
-  async deactivateWarehouse(warehouseId, userId) {
+  async deactivateWarehouse(warehouseId, organizationId) {
     try {
-      // Verify ownership
-      await this.getWarehouseById(warehouseId, userId);
+      // Verify organization access
+      await this.getWarehouseById(warehouseId, organizationId);
 
       // Check for stock movements
       const hasMovements = await this.hasStockMovements(warehouseId);
@@ -197,13 +199,13 @@ class WarehouseService {
   /**
    * Permanently delete warehouse
    * @param {string} warehouseId - Warehouse ID
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @returns {Promise<boolean>} Success status
    */
-  async deleteWarehouse(warehouseId, userId) {
+  async deleteWarehouse(warehouseId, organizationId) {
     try {
-      // Verify ownership
-      await this.getWarehouseById(warehouseId, userId);
+      // Verify organization access
+      await this.getWarehouseById(warehouseId, organizationId);
 
       // Check for stock movements
       const hasMovements = await this.hasStockMovements(warehouseId);
@@ -224,14 +226,14 @@ class WarehouseService {
   /**
    * Get warehouse stock movements
    * @param {string} warehouseId - Warehouse ID
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Object>} Movements data
    */
-  async getWarehouseMovements(warehouseId, userId, options = {}) {
+  async getWarehouseMovements(warehouseId, organizationId, options = {}) {
     try {
-      // Verify ownership
-      const warehouse = await this.getWarehouseById(warehouseId, userId);
+      // Verify organization access
+      const warehouse = await this.getWarehouseById(warehouseId, organizationId);
 
       const movements = await this.stockMovementRepository.findByWarehouseId(warehouseId, {
         limit: options.limit || 20,
@@ -317,15 +319,15 @@ class WarehouseService {
   }
 
   /**
-   * Validate unique warehouse name
+   * Validate unique warehouse name within organization
    * @param {string} name - Warehouse name
-   * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID
    * @param {string} excludeId - Warehouse ID to exclude from check
    * @throws {Error} If name is not unique
    */
-  async validateUniqueName(name, userId, excludeId = null) {
+  async validateUniqueName(name, organizationId, excludeId = null) {
     try {
-      const existingWarehouses = await this.warehouseRepository.findByUserId(userId);
+      const existingWarehouses = await this.warehouseRepository.findByOrganizationId(organizationId);
       
       const nameExists = existingWarehouses.some(warehouse => 
         warehouse.warehouse_id !== excludeId &&
@@ -334,7 +336,7 @@ class WarehouseService {
       );
 
       if (nameExists) {
-        throw new Error('An active warehouse with that name already exists');
+        throw new Error('An active warehouse with that name already exists in your organization');
       }
     } catch (error) {
       if (error.message.includes('already exists')) {

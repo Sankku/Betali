@@ -71,7 +71,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           <Input
             {...register('name')}
             label="Product Name"
-            placeholder="E.g.: NPK Fertilizer"
+            placeholder="E.g.: Premium Widget"
             icon={<Package className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.name?.message}
@@ -83,15 +83,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isViewMode ? (
             <ViewField
-              label="Batch Number"
+              label="SKU/Batch Number"
               value={currentBatchNumber}
               icon={<Package className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('batch_number')}
-              label="Batch Number"
-              placeholder="E.g.: LT-2024-001"
+              label="SKU/Batch Number"
+              placeholder="E.g.: SKU-2024-001"
               icon={<Package className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.batch_number?.message}
@@ -100,15 +100,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           )}
           {isViewMode ? (
             <ViewField
-              label="Country of Origin"
+              label="Origin/Source"
               value={currentOriginCountry}
               icon={<Globe className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('origin_country')}
-              label="Country of Origin"
-              placeholder="E.g.: Argentina"
+              label="Origin/Source"
+              placeholder="E.g.: Local Supplier"
               icon={<Globe className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.origin_country?.message}
@@ -118,7 +118,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         </div>
         {isViewMode ? (
           <ViewField
-            label="Expiration Date"
+            label="Expiry/Best Before Date"
             value={formatDateForDisplay(currentExpirationDate)}
             icon={<Calendar className="inline h-4 w-4 mr-2" />}
           />
@@ -126,7 +126,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           <Input
             {...register('expiration_date')}
             type="date"
-            label="Expiration Date"
+            label="Expiry/Best Before Date"
             icon={<Calendar className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.expiration_date?.message}

@@ -20,7 +20,11 @@ const createStockMovementRoutes = require('./routes/stockMovements');
 const tableConfigRoutes = require('./routes/tableConfig');
 const userRoutes = require('./routes/users');
 const { createOrganizationRoutes } = require('./routes/organizations');
+const clientRoutes = require('./routes/clients');
+const supplierRoutes = require('./routes/suppliers');
+const authRoutes = require('./routes/auth');
 const healthRoutes = require('./routes/health');
+const debugRoutes = require('./routes/debug');
 
 /**
  * Application class following OOP principles
@@ -125,8 +129,14 @@ class Application {
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-organization-id']
     }));
+    
+    // Additional CORS headers for organization context
+    this.app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-organization-id');
+      next();
+    });
 
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -164,6 +174,7 @@ class Application {
    */
   setupRoutes() {
     this.app.use('/health', healthRoutes);
+    this.app.use('/api/auth', authRoutes);
 
     this.app.use('/api/products', productRoutes);
     this.app.use('/api/warehouse', warehouseRoutes); 
@@ -172,21 +183,32 @@ class Application {
     this.app.use('/api/tables', tableConfigRoutes);
     this.app.use('/api/users', userRoutes);
     this.app.use('/api/organizations', createOrganizationRoutes(container));
+    this.app.use('/api/clients', clientRoutes);
+    this.app.use('/api/suppliers', supplierRoutes);
+    
+    // Debug routes (development only)
+    if (process.env.NODE_ENV === 'development') {
+      this.app.use('/api/debug', debugRoutes);
+    }
 
     this.app.get('/', (req, res) => {
       res.json({
-        message: 'AgroPanel API',
+        message: 'Betali API',
         version: '1.0.0',
         status: 'operational',
         timestamp: new Date().toISOString(),
         endpoints: {
           health: '/health',
+          auth: '/api/auth',
           products: '/api/products',
           warehouses: '/api/warehouse',
           stockMovements: '/api/stock-movements',
           dashboard: '/api/dashboard',
           tableConfigs: '/api/tables',
-          users: '/api/users'
+          users: '/api/users',
+          organizations: '/api/organizations',
+          clients: '/api/clients',
+          suppliers: '/api/suppliers'
         }
       });
     });

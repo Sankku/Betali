@@ -141,7 +141,7 @@ class I18n {
    * @param {number} statusCode - HTTP status code
    * @returns {Object} - Error response object
    */
-  createErrorResponse(key, interpolation = {}, language = 'en', statusCode = 400) {
+  createErrorResponse(key, interpolation = {}, language = 'en', _statusCode = 400) {
     const message = this.t(key, interpolation, language);
     
     return {

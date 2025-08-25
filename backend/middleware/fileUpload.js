@@ -1,6 +1,6 @@
 const multer = require('multer');
 const { fileTypeFromBuffer } = require('file-type');
-const mime = require('mime-types');
+// const mime = require('mime-types'); // TODO: Use when implementing MIME type validation
 const path = require('path');
 const fs = require('fs').promises;
 const { Logger } = require('../utils/Logger');
@@ -109,7 +109,7 @@ function generateSecureFilename(originalName, userId) {
 function createFileUpload(options = {}) {
   const {
     allowedTypes = 'images',
-    destination = './uploads',
+    // destination: _destination = './uploads', // TODO: Use when implementing custom upload destinations
     maxFiles = 5,
     requireAuth = true
   } = options;

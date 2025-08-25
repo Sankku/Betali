@@ -5,7 +5,7 @@ const Joi = require('joi');
  * Centralized validation rules for stock movement operations
  */
 
-const VALID_MOVEMENT_TYPES = ['entry', 'exit', 'adjustment', 'senasa'];
+const VALID_MOVEMENT_TYPES = ['entry', 'exit', 'adjustment', 'compliance'];
 
 const createStockMovementSchema = Joi.object({
   movement_type: Joi.string()

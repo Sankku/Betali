@@ -2,9 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚀 AI Assistant Priority Instructions
+
+**CRITICAL**: Betali is currently undergoing a major architecture migration to a SaaS multi-tenant model.
+
+### 📖 Required Reading (in order):
+
+1. **`/SAAS_ARCHITECTURE.md`** - 🚨 **READ FIRST** - Complete specification for the new SaaS multi-tenant architecture we're implementing. This is the definitive guide for all development decisions during migration.
+
+2. **`/BETALI_MCP_DOCS.md`** - Original MCP-style documentation with established patterns and best practices.
+
+### ⚠️ Migration Status
+- **Current State**: Hybrid architecture (old + new patterns)
+- **Target State**: Self-service SaaS multi-tenant (similar to Discord/Notion)
+- **Implementation Rule**: ALL new features must follow the new SaaS architecture
+- **Legacy Support**: Existing features being gradually migrated
+
 ## Project Overview
 
-This is AgroPanel - a full-stack agricultural inventory management system with SENASA integration, built as a monorepo using Bun workspaces.
+This is Betali - a full-stack business inventory management SaaS platform built as a monorepo using Bun workspaces. **Currently transitioning to a SaaS multi-tenant architecture** to serve businesses of all types with comprehensive inventory and business management solutions.
 
 ## Development Commands
 
@@ -52,8 +68,8 @@ This is AgroPanel - a full-stack agricultural inventory management system with S
 
 ### Database
 - Uses Supabase with TypeScript types in `/frontend/src/types/database.ts`
-- Main entities: products, warehouse, stock_movements, orders, clients, users
-- SENASA integration for agricultural product compliance
+- Main entities: products, warehouse, stock_movements, orders, clients, users, organizations
+- Multi-tenant architecture with organization-based data isolation
 
 ### Authentication
 - Supabase Auth with JWT tokens

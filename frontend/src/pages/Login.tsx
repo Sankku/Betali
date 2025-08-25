@@ -75,8 +75,8 @@ export default function Login() {
               <Package className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">AgroPanel</h1>
-          <p className="text-gray-500 mt-1">Agricultural product management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
+          <p className="text-gray-500 mt-1">Business inventory management</p>
         </div>
 
         {message && (

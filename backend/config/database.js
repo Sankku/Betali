@@ -33,7 +33,7 @@ class DatabaseConfig {
    */
   async healthCheck() {
     try {
-      const { data, error } = await this.supabase
+      const { error } = await this.supabase
         .from('users')
         .select('count', { count: 'exact', head: true });
       
