@@ -1,0 +1,25 @@
+{
+  "name": "project-docs-mcp",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["mcp", "documentation", "betali"],
+  "author": "",
+  "license": "ISC",
+  "description": "MCP server for project documentation and development automation",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "typescript": "^5.0.0",
+    "glob": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/glob": "^8.0.0"
+  }
+}
