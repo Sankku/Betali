@@ -1,0 +1,22 @@
+{
+    "project": {
+      "name": "betali",
+      "mcp_server": "./project-docs-mcp",
+      "documentation_path": "./docs",
+      "auto_update": true
+    },
+    "workflows": {
+      "analyze_project": {
+        "trigger": ["git_push", "schedule_daily"],
+        "steps": ["analyze-project", "update-docs"]
+      },
+      "implement_feature": {
+        "trigger": ["new_prd"],
+        "steps": ["generate-prd", "create-components", "write-tests", "update-registry"]
+      },
+      "fix_bug": {
+        "trigger": ["bug_detected"],
+        "steps": ["analyze-bug", "propose-fix", "implement-fix", "update-bug-registry"]
+      }
+    }
+  }

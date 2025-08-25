@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "betali-docs": {
+      "command": "node",
+      "args": ["/Users/santiagoalaniz/Documents/Personal/SaasRestaurant/project-docs-mcp/dist/index.js"],
+      "cwd": "/Users/santiagoalaniz/Documents/Personal/SaasRestaurant"
+    }
+  }
+}
