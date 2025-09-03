@@ -9,6 +9,8 @@ import {
   Building2,
   UserCheck,
   Truck,
+  ShoppingCart,
+  Percent,
   Menu,
   X,
   LogOut,
@@ -74,6 +76,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <Truck className="w-5 h-5" />,
       label: 'Suppliers',
       checkAccess: () => canAccess.viewSuppliers(),
+    },
+    {
+      path: '/dashboard/orders',
+      icon: <ShoppingCart className="w-5 h-5" />,
+      label: 'Orders',
+      checkAccess: () => true, // Temporary: always visible until permissions are properly configured
+    },
+    {
+      path: '/dashboard/taxes',
+      icon: <Percent className="w-5 h-5" />,
+      label: 'Tax Management',
+      checkAccess: () => true, // Temporary: always visible until permissions are properly configured
     },
     {
       path: '/dashboard/organizations',

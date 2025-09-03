@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Select,
   SelectContent,
@@ -7,13 +6,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Info, Shield, Lock } from 'lucide-react';
+import { Info, Shield } from 'lucide-react';
 import {
   UserRole as UserRoleType,
   getAssignableRoles,
-  isProtectedRole,
   getRoleDisplayName,
-  getRoleRestrictions
 } from '@/utils/roleUtils';
 
 export interface UserRole {
@@ -21,7 +18,7 @@ export interface UserRole {
   label: string;
   description: string;
   permissions: string[];
-  color: 'default' | 'secondary' | 'destructive' | 'outline';
+  color: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'outline';
 }
 
 export const USER_ROLES: UserRole[] = [
@@ -30,7 +27,7 @@ export const USER_ROLES: UserRole[] = [
     label: 'Super Administrator',
     description: 'Full system access across all organizations',
     permissions: ['All permissions'],
-    color: 'destructive',
+    color: 'danger',
   },
   {
     value: 'admin',
@@ -45,7 +42,7 @@ export const USER_ROLES: UserRole[] = [
       'admin:users',
       'admin:system',
     ],
-    color: 'destructive',
+    color: 'danger',
   },
   {
     value: 'manager',
@@ -70,7 +67,7 @@ export const USER_ROLES: UserRole[] = [
       'stock_movements:read/create',
       'dashboard:read',
     ],
-    color: 'secondary',
+    color: 'info',
   },
   {
     value: 'viewer',

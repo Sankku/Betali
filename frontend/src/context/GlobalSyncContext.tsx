@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
@@ -51,6 +51,15 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addSyncEvent = useCallback((event: Omit<SyncEvent, 'id' | 'timestamp'>) => {
     const newEvent: SyncEvent = {

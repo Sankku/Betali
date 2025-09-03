@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { useGlobalSync } from './GlobalSyncContext';
@@ -54,6 +54,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
   const [switching, setSwitching] = useState(false);
+  const isInitializedRef = useRef(false);
 
   // Clean up potentially corrupted localStorage on mount
   React.useEffect(() => {
@@ -121,8 +122,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   useEffect(() => {
     if (!user || isLoading) return;
     
-    // Only run when we have organizations and current organization is not set
-    if (userOrganizations.length > 0 && !currentOrganization) {
+    // Only run when we have organizations and haven't initialized yet
+    if (userOrganizations.length > 0 && !isInitializedRef.current) {
       // Check if there's a stored organization context
       const storedOrgId = localStorage.getItem('currentOrganizationId');
       let selectedOrg = null;
@@ -155,6 +156,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         }));
         
         console.log('Organization context updated:', selectedOrg.organization.name);
+        isInitializedRef.current = true;
       }
     } else if (userOrganizations.length === 0 && !currentOrganization) {
       console.warn('No organizations found for user');
@@ -169,6 +171,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
             setCurrentUserRole(parsedContext.userRole);
             setCurrentPermissions(parsedContext.permissions || []);
             console.log('Loaded organization context from localStorage');
+            isInitializedRef.current = true;
           } else {
             console.warn('Invalid organization context in localStorage');
             localStorage.removeItem('currentOrganizationContext');
@@ -181,7 +184,17 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         }
       }
     }
-  }, [user, userOrganizations.length, isLoading, currentOrganization]);
+  }, [user, userOrganizations.length, isLoading]);
+
+  // Reset initialization flag when user changes
+  useEffect(() => {
+    if (!user) {
+      isInitializedRef.current = false;
+      setCurrentOrganization(null);
+      setCurrentUserRole(null);
+      setCurrentPermissions([]);
+    }
+  }, [user]);
 
   const switchOrganization = useCallback(async (organizationId: string) => {
     console.log('🔄 Attempting to switch to organization:', organizationId);

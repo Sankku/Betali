@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Eye, Edit, Trash } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
+import { DataTable } from '../../components/ui/data-table';
 import { useTableConfig } from '../../hooks/useTableConfig';
+import { TableConfig } from '../../types/table';
 import { ProductModal, Product, ProductFormData } from '../../components/features/products';
 import { Button } from '../../components/ui/button';
 import { ToastContainer } from '../../components/ui/toast';
@@ -32,6 +34,14 @@ interface DeleteConfirmState {
   show: boolean;
   product?: Product;
 }
+
+// Type guard to safely check tableConfig
+const isValidTableConfig = (config: any): config is TableConfig => {
+  return config && 
+    typeof config === 'object' && 
+    typeof config.name === 'string' &&
+    Array.isArray(config.columns);
+};
 
 const ProductsPage: React.FC = () => {
   const [modal, setModal] = useState<ModalState>({
@@ -128,6 +138,90 @@ const ProductsPage: React.FC = () => {
   const isLoaderVisible =
     createProduct.isPending || updateProduct.isPending || deleteProduct.isPending;
 
+  // Fallback columns for DataTable when backend config is not available
+  const fallbackColumns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Product Name',
+      cell: ({ row }: { row: any }) => (
+        <div className="font-medium text-gray-900">
+          {row.original.name}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'sku',
+      header: 'SKU',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-600 font-mono">
+          {row.original.sku || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'price',
+      header: 'Price',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-900 font-medium">
+          ${row.original.price ? row.original.price.toFixed(2) : 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'batch_number',
+      header: 'Batch',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-600">
+          {row.original.batch_number || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'origin_country',
+      header: 'Origin',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-600">
+          {row.original.origin_country || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: { row: any }) => {
+        const product = row.original as Product;
+        return (
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => openModal('view', product)}
+              className="h-8 w-8 p-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => openModal('edit', product)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleDelete(product)}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ], []);
+
   return (
     <>
       <Helmet>
@@ -135,7 +229,7 @@ const ProductsPage: React.FC = () => {
       </Helmet>
 
       <CRUDPage
-        title={(tableConfig as any)?.name || 'Product Management'}
+        title={isValidTableConfig(tableConfig) ? tableConfig.name : 'Product Management'}
         description={
           configLoading
             ? 'Loading table configuration...'
@@ -146,14 +240,42 @@ const ProductsPage: React.FC = () => {
         error={error || configError}
         onCreateClick={handleCreateClick}
         customTable={
-          tableConfig ? (
+          isValidTableConfig(tableConfig) ? (
             <BackendConfiguredTable
-              config={tableConfig as any}
+              config={tableConfig}
               data={products}
               onAction={handleTableAction}
               isLoading={isLoading || isLoaderVisible}
             />
-          ) : null
+          ) : (
+            // Fallback to DataTable if backend configuration is not available
+            <div className="space-y-4">
+              {(configError || (!configLoading && !tableConfig)) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                  <div className="flex">
+                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        {configError ? 
+                          `Backend table configuration unavailable: ${configError.message || configError}` : 
+                          'Using default table configuration.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DataTable
+                columns={fallbackColumns}
+                data={products || []}
+                loading={isLoading || isLoaderVisible}
+                searchable={true}
+                enablePagination={true}
+                pageSize={10}
+                emptyMessage="No products found. Create your first product to get started."
+              />
+            </div>
+          )
         }
       />
 

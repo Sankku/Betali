@@ -1,8 +1,13 @@
 const express = require('express');
 const { authenticateUser } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
-// const { validateRequest } = require('../middleware/validation'); // TODO: Re-enable when implementing validation
+const { validateRequest } = require('../middleware/validation');
 const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
+const { 
+  createOrganizationSchema, 
+  updateOrganizationSchema, 
+  inviteUserSchema 
+} = require('../validations/organizationValidation');
 
 /**
  * Organization routes
@@ -15,44 +20,6 @@ function createOrganizationRoutes(container) {
   // Apply authentication to all routes
   router.use(authenticateUser);
 
-  // TODO: Organization validation schemas - re-enable when implementing validation
-  // const createOrganizationSchema = {
-  //   type: 'object',
-  //   properties: {
-  //     name: { type: 'string', minLength: 1, maxLength: 255 },
-  //     description: { type: 'string', maxLength: 1000 }
-  //   },
-  //   required: ['name'],
-  //   additionalProperties: false
-  // };
-
-  // const updateOrganizationSchema = {
-  //   type: 'object',
-  //   properties: {
-  //     name: { type: 'string', minLength: 1, maxLength: 255 },
-  //     description: { type: 'string', maxLength: 1000 }
-  //   },
-  //   additionalProperties: false
-  // };
-
-  // const inviteUserSchema = {
-  //   type: 'object',
-  //   properties: {
-  //     email: { type: 'string', format: 'email' },
-  //     name: { type: 'string', minLength: 1, maxLength: 255 },
-  //     role: { 
-  //       type: 'string', 
-  //       enum: ['super_admin', 'admin', 'manager', 'employee', 'viewer'] 
-  //     },
-  //     branch_id: { type: 'string', format: 'uuid' },
-  //     permissions: { 
-  //       type: 'array',
-  //       items: { type: 'string' }
-  //     }
-  //   },
-  //   required: ['email', 'name', 'role'],
-  //   additionalProperties: false
-  // };
 
   // const updateMemberSchema = {
   //   type: 'object',
@@ -106,6 +73,7 @@ function createOrganizationRoutes(container) {
    */
   router.post('/',
     createLimiter,
+    validateRequest(createOrganizationSchema),
     organizationController.createOrganization.bind(organizationController)
   );
 
@@ -124,6 +92,7 @@ function createOrganizationRoutes(container) {
    */
   router.put('/:id',
     createLimiter,
+    validateRequest(updateOrganizationSchema),
     requirePermission(PERMISSIONS.ORGANIZATIONS_UPDATE),
     organizationController.updateOrganization.bind(organizationController)
   );
@@ -153,6 +122,7 @@ function createOrganizationRoutes(container) {
    */
   router.post('/:id/invite',
     createLimiter,
+    validateRequest(inviteUserSchema),
     organizationController.inviteUser.bind(organizationController)
   );
 

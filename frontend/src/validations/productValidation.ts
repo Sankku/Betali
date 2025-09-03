@@ -43,7 +43,20 @@ export const createProductSchema = yup.object({
     .string()
     .trim()
     .max(100, 'External product ID must be less than 100 characters')
+    .optional(),
+  
+  price: yup
+    .number()
+    .required('Price is required')
+    .positive('Price must be greater than 0')
+    .max(999999.99, 'Price cannot exceed $999,999.99')
+    .typeError('Price must be a valid number'),
+
+  tax_rate_id: yup
+    .string()
+    .trim()
     .optional()
+    .nullable()
 });
 
 export const updateProductSchema = yup.object({
@@ -84,7 +97,20 @@ export const updateProductSchema = yup.object({
     .string()
     .trim()
     .max(100, 'External product ID must be less than 100 characters')
+    .optional(),
+  
+  price: yup
+    .number()
+    .positive('Price must be greater than 0')
+    .max(999999.99, 'Price cannot exceed $999,999.99')
+    .typeError('Price must be a valid number')
+    .optional(),
+
+  tax_rate_id: yup
+    .string()
+    .trim()
     .optional()
+    .nullable()
 });
 
 // Type inference from Yup schemas

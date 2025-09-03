@@ -22,6 +22,8 @@ const userRoutes = require('./routes/users');
 const { createOrganizationRoutes } = require('./routes/organizations');
 const clientRoutes = require('./routes/clients');
 const supplierRoutes = require('./routes/suppliers');
+const { createOrderRoutes } = require('./routes/orders');
+const { createPricingRoutes } = require('./routes/pricing');
 const authRoutes = require('./routes/auth');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
@@ -185,6 +187,8 @@ class Application {
     this.app.use('/api/organizations', createOrganizationRoutes(container));
     this.app.use('/api/clients', clientRoutes);
     this.app.use('/api/suppliers', supplierRoutes);
+    this.app.use('/api/orders', createOrderRoutes(container));
+    this.app.use('/api/pricing', createPricingRoutes(container));
     
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {
@@ -208,7 +212,8 @@ class Application {
           users: '/api/users',
           organizations: '/api/organizations',
           clients: '/api/clients',
-          suppliers: '/api/suppliers'
+          suppliers: '/api/suppliers',
+          orders: '/api/orders'
         }
       });
     });
@@ -270,14 +275,26 @@ class Application {
    * @param {Object} server - Express server instance
    */
   setupGracefulShutdown(server) {
-    const shutdown = (signal) => {
+    const shutdown = async (signal) => {
       this.logger.info(`Received ${signal}, starting graceful shutdown`);
       
-      server.close(() => {
+      server.close(async () => {
+        try {
+          // Close database connections
+          if (this.db && this.db.close) {
+            await this.db.close();
+            this.logger.info('Database connections closed');
+          }
 
-        
-        this.logger.info('Graceful shutdown completed');
-        process.exit(0);
+          // Clear any running intervals/timeouts
+          // Note: Supabase client handles its own connection pooling
+          
+          this.logger.info('Graceful shutdown completed');
+          process.exit(0);
+        } catch (error) {
+          this.logger.error('Error during graceful shutdown:', error);
+          process.exit(1);
+        }
       });
 
       setTimeout(() => {

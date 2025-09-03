@@ -164,6 +164,131 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
+   * Get current stock for a product in a specific warehouse
+   * @param {string} productId - Product ID
+   * @param {string} warehouseId - Warehouse ID (optional, if null gets stock across all warehouses)
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<number>} Available stock quantity
+   */
+  async getCurrentStock(productId, warehouseId, organizationId) {
+    try {
+      let query = this.client
+        .from(this.table)
+        .select('movement_type, quantity')
+        .eq('product_id', productId)
+        .eq('organization_id', organizationId);
+      
+      if (warehouseId) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Calculate stock: entries - exits
+      let totalStock = 0;
+      data.forEach(movement => {
+        if (movement.movement_type === 'entry') {
+          totalStock += parseFloat(movement.quantity);
+        } else if (movement.movement_type === 'exit') {
+          totalStock -= parseFloat(movement.quantity);
+        }
+      });
+
+      return Math.max(0, totalStock); // Never return negative stock
+    } catch (error) {
+      throw new Error(`Error getting current stock: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get current stock for multiple products in a specific warehouse
+   * @param {Array<string>} productIds - Array of product IDs
+   * @param {string} warehouseId - Warehouse ID (optional)
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object>} Object with productId as keys and stock quantities as values
+   */
+  async getCurrentStockBulk(productIds, warehouseId, organizationId) {
+    try {
+      let query = this.client
+        .from(this.table)
+        .select('product_id, movement_type, quantity')
+        .in('product_id', productIds)
+        .eq('organization_id', organizationId);
+      
+      if (warehouseId) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Group movements by product and calculate stock
+      const stockByProduct = {};
+      
+      // Initialize all products with 0 stock
+      productIds.forEach(productId => {
+        stockByProduct[productId] = 0;
+      });
+
+      // Calculate stock for each product
+      data.forEach(movement => {
+        if (!stockByProduct[movement.product_id]) {
+          stockByProduct[movement.product_id] = 0;
+        }
+        
+        if (movement.movement_type === 'entry') {
+          stockByProduct[movement.product_id] += parseFloat(movement.quantity);
+        } else if (movement.movement_type === 'exit') {
+          stockByProduct[movement.product_id] -= parseFloat(movement.quantity);
+        }
+      });
+
+      // Ensure no negative stock
+      Object.keys(stockByProduct).forEach(productId => {
+        stockByProduct[productId] = Math.max(0, stockByProduct[productId]);
+      });
+
+      return stockByProduct;
+    } catch (error) {
+      throw new Error(`Error getting bulk stock: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create multiple stock movements in a single batch
+   * @param {Array<Object>} movements - Array of movement objects
+   * @returns {Promise<Array>}
+   */
+  async createBulk(movements) {
+    try {
+      if (!Array.isArray(movements) || movements.length === 0) {
+        return [];
+      }
+
+      // Set created_at timestamp for all movements
+      const now = new Date().toISOString();
+      const movementsWithTimestamp = movements.map(movement => ({
+        ...movement,
+        created_at: now
+      }));
+
+      const { data, error } = await this.client
+        .from(this.table)
+        .insert(movementsWithTimestamp)
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Error creating bulk stock movements: ${error.message}`);
+    }
+  }
+
+  /**
    * Update movement by ID (override to not add updated_at)
    * @param {string} id - Movement ID
    * @param {Object} updates - Update data

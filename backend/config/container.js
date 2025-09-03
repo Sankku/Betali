@@ -10,6 +10,14 @@ const OrganizationRepository = require('../repositories/OrganizationRepository')
 const UserOrganizationRepository = require('../repositories/UserOrganizationRepository');
 const ClientRepository = require('../repositories/ClientRepository');
 const SupplierRepository = require('../repositories/SupplierRepository');
+const OrderRepository = require('../repositories/OrderRepository');
+const OrderDetailRepository = require('../repositories/OrderDetailRepository');
+const PricingTierRepository = require('../repositories/PricingTierRepository');
+const CustomerPricingRepository = require('../repositories/CustomerPricingRepository');
+const TaxRateRepository = require('../repositories/TaxRateRepository');
+const ProductTaxGroupRepository = require('../repositories/ProductTaxGroupRepository');
+const DiscountRuleRepository = require('../repositories/DiscountRuleRepository');
+const AppliedDiscountRepository = require('../repositories/AppliedDiscountRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
@@ -20,6 +28,8 @@ const UserService = require('../services/UserService');
 const OrganizationService = require('../services/OrganizationService');
 const ClientService = require('../services/ClientService');
 const SupplierService = require('../services/SupplierService');
+const OrderService = require('../services/OrderService');
+const PricingService = require('../services/PricingService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
@@ -30,6 +40,8 @@ const UserController = require('../controllers/UserController');
 const OrganizationController = require('../controllers/OrganizationController');
 const ClientController = require('../controllers/ClientController');
 const SupplierController = require('../controllers/SupplierController');
+const OrderController = require('../controllers/OrderController');
+const PricingController = require('../controllers/PricingController');
 
 /**
  * Dependency injection container
@@ -154,6 +166,46 @@ function initializeContainer() {
     return new SupplierRepository(dbConfig.getClient());
   }, true);
 
+  container.register('orderRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new OrderRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('orderDetailRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new OrderDetailRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('pricingTierRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new PricingTierRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('customerPricingRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new CustomerPricingRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('taxRateRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new TaxRateRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('productTaxGroupRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductTaxGroupRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('discountRuleRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new DiscountRuleRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('appliedDiscountRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new AppliedDiscountRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const logger = container.get('logger');
@@ -228,6 +280,39 @@ function initializeContainer() {
     return new SupplierService(supplierRepository, logger);
   }, true);
 
+  container.register('pricingService', () => {
+    const pricingTierRepository = container.get('pricingTierRepository');
+    const customerPricingRepository = container.get('customerPricingRepository');
+    const taxRateRepository = container.get('taxRateRepository');
+    const productTaxGroupRepository = container.get('productTaxGroupRepository');
+    const discountRuleRepository = container.get('discountRuleRepository');
+    const appliedDiscountRepository = container.get('appliedDiscountRepository');
+    const productRepository = container.get('productRepository');
+    const logger = container.get('logger');
+    return new PricingService(
+      pricingTierRepository, 
+      customerPricingRepository, 
+      taxRateRepository, 
+      productTaxGroupRepository, 
+      discountRuleRepository, 
+      appliedDiscountRepository, 
+      productRepository, 
+      logger
+    );
+  }, true);
+
+  container.register('orderService', () => {
+    const orderRepository = container.get('orderRepository');
+    const orderDetailRepository = container.get('orderDetailRepository');
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const logger = container.get('logger');
+    const stockMovementRepository = container.get('stockMovementRepository');
+    const clientRepository = container.get('clientRepository');
+    const pricingService = container.get('pricingService');
+    return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, clientRepository, pricingService, logger);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -271,6 +356,20 @@ function initializeContainer() {
   container.register('supplierController', () => {
     const supplierService = container.get('supplierService');
     return new SupplierController(supplierService);
+  }, true);
+
+  container.register('orderController', () => {
+    const orderService = container.get('orderService');
+    return new OrderController(orderService);
+  }, true);
+
+  container.register('pricingController', () => {
+    const pricingService = container.get('pricingService');
+    const pricingTierRepository = container.get('pricingTierRepository');
+    const customerPricingRepository = container.get('customerPricingRepository');
+    const taxRateRepository = container.get('taxRateRepository');
+    const discountRuleRepository = container.get('discountRuleRepository');
+    return new PricingController(pricingService, pricingTierRepository, customerPricingRepository, taxRateRepository, discountRuleRepository);
   }, true);
 }
 

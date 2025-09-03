@@ -1,13 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
+const supabase = require('../lib/supabaseClient');
 const { Logger } = require('../utils/Logger');
-require('dotenv').config();
 
 const logger = new Logger('AuthMiddleware');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 /**
  * Authentication middleware
@@ -82,11 +76,19 @@ const authenticateUser = async (req, res, next) => {
 
         // For multi-tenant: Get organization context and roles
         try {
+          logger.info('Fetching user organizations', { userId: user.id });
           const { data: userOrgs, error: orgError } = await supabase
             .from('user_organizations')
             .select('organization_id, role, permissions, organization:organizations(*)')
             .eq('user_id', user.id)
             .eq('is_active', true);
+
+          logger.info('User organizations query result', { 
+            userId: user.id, 
+            orgError: orgError?.message, 
+            userOrgsCount: userOrgs?.length || 0,
+            userOrgs: userOrgs?.map(org => ({ id: org.organization_id, role: org.role })) 
+          });
 
           if (!orgError && userOrgs && userOrgs.length > 0) {
             // Assign highest role (for global permissions)
@@ -118,6 +120,14 @@ const authenticateUser = async (req, res, next) => {
               user.currentOrganization = currentOrg.organization;
               user.currentOrganizationRole = currentOrg.role.toUpperCase();
               user.currentOrganizationPermissions = currentOrg.permissions || [];
+              
+              logger.info('Set current organization context', {
+                userId: user.id,
+                currentOrganizationId: user.currentOrganizationId,
+                currentOrganizationRole: user.currentOrganizationRole
+              });
+            } else {
+              logger.warn('No current organization found for user', { userId: user.id });
             }
           } else {
             user.role = 'VIEWER'; // Default if no organizations

@@ -1,17 +1,5 @@
 const { Logger } = require('../utils/Logger');
-const { createClient } = require('@supabase/supabase-js');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  throw new Error('Need to define SUPABASE_URL & SUPABASE_SERVICE_KEY this variables are required.');
-}
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const supabase = require('../lib/supabaseClient');
 
 /**
  * Class to manage requests to bbdd
@@ -72,7 +60,7 @@ class DatabaseManager {
       
       return data || null;
     } catch (error) {
-      Logger(`Error in getById ptoara ${table}:`, error.message);
+      Logger(`Error in getById para ${table}:`, error.message);
       throw error;
     }
   }

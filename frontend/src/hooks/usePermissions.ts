@@ -88,6 +88,12 @@ export function usePermissions() {
     updateSuppliers: () => hasPermission('suppliers:update'),
     deleteSuppliers: () => hasPermission('suppliers:delete'),
     
+    // Orders
+    viewOrders: () => hasPermission('orders:read'),
+    createOrders: () => hasPermission('orders:create'),
+    updateOrders: () => hasPermission('orders:update'),
+    deleteOrders: () => hasPermission('orders:delete'),
+    
     // Dashboard
     viewDashboard: () => hasPermission('dashboard:read'),
     viewAnalytics: () => hasPermission('dashboard:analytics'),
