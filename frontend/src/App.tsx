@@ -19,6 +19,8 @@ import Users from "./pages/Dashboard/Users";
 import Organizations from "./pages/Dashboard/Organizations";
 import Clients from "./pages/Dashboard/Clients";
 import Suppliers from "./pages/Dashboard/Suppliers";
+import Orders from "./pages/Dashboard/Orders";
+import TaxManagement from "./pages/Dashboard/TaxManagement";
 
 function AppContent() {
   useAuthStateChange();
@@ -94,6 +96,22 @@ function AppContent() {
                     element={
                       <ProtectedRoute>
                         <Suppliers />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/orders"
+                    element={
+                      <ProtectedRoute>
+                        <Orders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/taxes"
+                    element={
+                      <ProtectedRoute>
+                        <TaxManagement />
                       </ProtectedRoute>
                     }
                   />

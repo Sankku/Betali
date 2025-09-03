@@ -3,6 +3,7 @@ const { ServiceFactory } = require('../config/container');
 const { validateRequest } = require('../middleware/validation');
 const { createLimiter } = require('../middleware/rateLimiting');
 const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/sanitization');
+const { completeSignupSchema } = require('../validations/authValidation');
 
 /**
  * Authentication routes for SaaS signup flow
@@ -13,165 +14,219 @@ const router = express.Router();
 const userController = ServiceFactory.createUserController();
 const organizationController = ServiceFactory.createOrganizationController();
 
-// Validation schemas
-const completeSignupSchema = {
-  type: 'object',
-  properties: {
-    user_id: { type: 'string', format: 'uuid' },
-    email: { type: 'string', format: 'email' },
-    name: { type: 'string', minLength: 1, maxLength: 255 },
-    organization_name: { type: 'string', minLength: 1, maxLength: 255 }
-  },
-  required: ['user_id', 'email', 'name'],
-  additionalProperties: false
-};
 
 /**
  * POST /api/auth/complete-signup
- * Complete the signup process by creating the user's first organization
- * This should be called immediately after Supabase Auth signup
+ * Simplified signup: Create user first, then organization, then link them
  */
 router.post(
   '/complete-signup',
   createLimiter,
   sanitizeMiddleware(SANITIZATION_RULES.user),
-  // validateRequest(completeSignupSchema), // TODO: Fix validation schema
+  validateRequest(completeSignupSchema),
   async (req, res, next) => {
     try {
       const { user_id, email, name, organization_name } = req.body;
       
-      console.log('🚀 Starting SaaS signup completion for user:', user_id);
+      console.log('🚀 Starting simplified SaaS signup for user:', user_id);
       
-      // 1. First create the organization
-      console.log('🏢 Creating organization first to satisfy constraints...');
-      const defaultOrgName = organization_name || `${name}'s Organization`;
-      const orgSlug = defaultOrgName
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      
-      // Create organization without owner first (to avoid FK constraint)
-      const organizationService = ServiceFactory.createOrganizationService();
-      const organizationData = {
-        name: defaultOrgName,
-        slug: orgSlug
-        // Don't set owner_user_id yet - user doesn't exist
-      };
-      
-      console.log('🏢 Creating organization:', organizationData);
-      const organization = await organizationService.organizationRepository.create(organizationData);
-      console.log('✅ Organization created:', organization.organization_id);
-      
-      // 2. Now create user WITH organization_id to satisfy constraint
+      // Step 1: Create user WITHOUT organization_id (constraint now allows this temporarily)
       const userData = {
         user_id,
         email,
         name,
-        organization_id: organization.organization_id, // Set it immediately
+        organization_id: null, // Explicitly null - allowed by new constraint
         is_active: true
       };
       
       let user;
       try {
         user = await userController.createUserFromAuth(userData);
-        console.log('✅ User created in database:', user.user_id);
+        console.log('✅ User created successfully:', user.user_id);
       } catch (error) {
-        // User might already exist, try to get existing user
+        // Handle duplicate user scenario
         if (error.message?.includes('already exists') || error.code === '23505') {
-          console.log('ℹ️  User already exists, fetching existing user');
-          user = { user_id, email, name };
+          console.log('ℹ️ User already exists, continuing with existing user');
+          const userService = ServiceFactory.createUserService();
+          user = await userService.findById(user_id);
+          
+          // If user already has organization, they're already set up
+          if (user.organization_id) {
+            console.log('✅ User already has organization, signup complete');
+            return res.status(200).json({
+              success: true,
+              message: 'User already registered and set up',
+              data: {
+                user: {
+                  user_id: user.user_id,
+                  email: user.email,
+                  name: user.name,
+                  organization_id: user.organization_id
+                }
+              }
+            });
+          }
         } else {
+          console.error('❌ Failed to create user:', error.message);
           throw error;
         }
       }
       
-      // 3. Create the owner relationship
-      const ownerRelationship = await organizationService.userOrganizationRepository.create({
-        user_id: user_id,
-        organization_id: organization.organization_id,
-        role: 'super_admin', // Using existing role system for now
-        permissions: ['*'] // Owner has all permissions
-      });
+      // Step 2: Create organization
+      const defaultOrgName = organization_name || `${name}'s Organization`;
+      const baseSlug = defaultOrgName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 40)
+        .trim();
       
-      console.log('✅ Owner relationship created:', ownerRelationship.user_organization_id);
+      // Make slug unique by adding timestamp
+      const orgSlug = `${baseSlug}-${Date.now()}`;
       
-      // 4. User already has organization_id set, skip update
-      console.log('✅ User already has organization_id set');
-      
-      // 5. Update organization with owner
-      await organizationService.organizationRepository.update(organization.organization_id, {
+      const organizationService = ServiceFactory.createOrganizationService();
+      const organizationData = {
+        name: defaultOrgName,
+        slug: orgSlug,
         owner_user_id: user_id
-      });
-      console.log('✅ Organization owner updated');
-      
-      const result = { organization: { ...organization, owner_user_id: user_id }, ownerRelationship };
-      
-      // 3. Return the complete context for the frontend
-      const response = {
-        user: {
-          user_id,
-          email,
-          name
-        },
-        organization: {
-          organization_id: result.organization.organization_id,
-          name: result.organization.name,
-          slug: result.organization.slug,
-          owner_user_id: user_id
-        },
-        userRole: 'owner',
-        permissions: ['*'],
-        ownerRelationship: result.ownerRelationship,
-        message: 'Signup completed successfully! Welcome to AgroPanel.'
       };
       
-      console.log('🎉 SaaS signup completion successful');
+      console.log('🏢 Creating organization:', defaultOrgName);
+      const organization = await organizationService.organizationRepository.create(organizationData);
+      console.log('✅ Organization created:', organization.organization_id);
+      
+      // Step 3: Update user with organization_id
+      const userService = ServiceFactory.createUserService();
+      await userService.updateUser(user_id, {
+        organization_id: organization.organization_id
+      });
+      console.log('✅ User updated with organization_id');
+      
+      // Step 4: Create user-organization relationship (owner = super_admin in current schema)
+      const relationshipData = {
+        user_id: user_id,
+        organization_id: organization.organization_id,
+        role: 'super_admin', // Using super_admin as owner role in current schema
+        permissions: [],
+        is_active: true,
+        joined_at: new Date().toISOString()
+      };
+      
+      const userOrgRelationship = await organizationService.userOrganizationRepository.create(relationshipData);
+      console.log('✅ Owner relationship created:', userOrgRelationship.user_organization_id);
+      
+      // Success response
+      const response = {
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          name: user.name,
+          organization_id: organization.organization_id
+        },
+        organization: {
+          organization_id: organization.organization_id,
+          name: organization.name,
+          slug: organization.slug,
+          owner_user_id: user_id
+        },
+        relationship: {
+          role: relationshipData.role,
+          permissions: relationshipData.permissions,
+          joined_at: relationshipData.joined_at
+        },
+        message: 'Signup completed successfully! Welcome to Betali.'
+      };
+      
+      console.log('🎉 Signup completed successfully');
       
       res.status(201).json({
+        success: true,
         data: response,
         meta: {
           signupCompleted: true,
           organizationCreated: true,
-          userRole: 'owner'
+          userRole: 'super_admin' // Owner role mapped to super_admin in current schema
         }
       });
       
     } catch (error) {
-      console.error('❌ Signup completion failed:', error);
-      next(error);
+      console.error('❌ Signup failed:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Registration failed. Please try again.',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/auth/signup-status/:user_id
+ * Check signup status for a user
+ */
+router.get(
+  '/signup-status/:user_id',
+  async (req, res) => {
+    try {
+      const { user_id } = req.params;
+      const userService = ServiceFactory.createUserService();
+      
+      const user = await userService.getUserById(user_id);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          status: 'not_found',
+          message: 'User not found'
+        });
+      }
+      
+      const status = user.organization_id ? 'complete' : 'pending';
+      
+      res.json({
+        success: true,
+        status,
+        data: {
+          signupCompleted: status === 'complete',
+          user: {
+            user_id: user.user_id,
+            email: user.email,
+            name: user.name,
+            organization_id: user.organization_id,
+            is_active: user.is_active
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Failed to check signup status:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check signup status'
+      });
     }
   }
 );
 
 /**
  * POST /api/auth/check-user-setup
- * Check if a user has completed their setup (has organizations)
- * Used to redirect users who signed up but didn't complete setup
+ * Legacy endpoint - check if user has organizations
  */
 router.post(
   '/check-user-setup',
   createLimiter,
-  // validateRequest({
-  //   type: 'object',
-  //   properties: {
-  //     user_id: { type: 'string', format: 'uuid' }
-  //   },
-  //   required: ['user_id'],
-  //   additionalProperties: false
-  // }), // TODO: Fix validation schema
   async (req, res, next) => {
     try {
       const { user_id } = req.body;
       
-      // Check if user has any organizations using the service
       const organizationService = ServiceFactory.createOrganizationService();
       const userOrganizations = await organizationService.getUserOrganizations(user_id);
       
       const hasSetup = userOrganizations && userOrganizations.length > 0;
       
       res.json({
+        success: true,
         data: {
           user_id,
           hasCompletedSetup: hasSetup,

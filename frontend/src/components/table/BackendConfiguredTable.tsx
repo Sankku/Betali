@@ -49,6 +49,17 @@ export function BackendConfiguredTable<T extends Record<string, any>>({
 }: BackendConfiguredTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('');
 
+  // Early return if config is not available yet
+  if (!config || !config.config || !config.config.columns) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-500">Loading table configuration...</div>
+        </div>
+      </div>
+    );
+  }
+
   const columns: ColumnDef<T>[] = React.useMemo(() => {
     return config.config.columns.map((columnConfig: any) => {
       // For compound columns, we need a custom accessor that gets the primary field

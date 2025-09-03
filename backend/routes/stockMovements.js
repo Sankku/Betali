@@ -6,8 +6,8 @@ const { validateRequest } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
 const { 
   createStockMovementSchema, 
-  updateStockMovementSchema
-  // queryParamsSchema // TODO: Re-enable when implementing query validation
+  updateStockMovementSchema,
+  queryParamsSchema
 } = require('../validations/stockMovementValidation');
 
 /**

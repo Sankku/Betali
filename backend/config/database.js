@@ -1,5 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const supabase = require('../lib/supabaseClient');
 
 /**
  * Database configuration and connection setup
@@ -11,10 +10,7 @@ class DatabaseConfig {
       return DatabaseConfig.instance;
     }
 
-    this.supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
-    );
+    this.supabase = supabase;
 
     DatabaseConfig.instance = this;
   }

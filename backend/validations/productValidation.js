@@ -69,6 +69,18 @@ const createProductSchema = Joi.object({
     .allow('')
     .messages({
       'string.max': 'External product ID must be less than 100 characters'
+    }),
+  
+  price: Joi.number()
+    .positive()
+    .precision(2)
+    .max(999999.99)
+    .required()
+    .messages({
+      'number.base': 'Price must be a valid number',
+      'number.positive': 'Price must be greater than 0',
+      'number.max': 'Price cannot exceed $999,999.99',
+      'any.required': 'Price is required'
     })
 });
 
@@ -132,6 +144,17 @@ const updateProductSchema = Joi.object({
     .allow('')
     .messages({
       'string.max': 'External product ID must be less than 100 characters'
+    }),
+  
+  price: Joi.number()
+    .positive()
+    .precision(2)
+    .max(999999.99)
+    .optional()
+    .messages({
+      'number.base': 'Price must be a valid number',
+      'number.positive': 'Price must be greater than 0',
+      'number.max': 'Price cannot exceed $999,999.99'
     })
 });
 

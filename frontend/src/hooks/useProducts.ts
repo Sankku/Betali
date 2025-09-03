@@ -15,7 +15,15 @@ export function useProducts(options: UseProductsOptions = {}) {
     queryKey: ["products", currentOrganization?.organization_id],
     queryFn: async () => {
       const response = await productsService.getAll();
-      return Array.isArray(response) ? response : (response?.data || []);
+      // Normalize the response structure for consistent access
+      if (Array.isArray(response)) {
+        return { data: response, total: response.length };
+      }
+      if (response?.data && Array.isArray(response.data)) {
+        return { data: response.data, total: response.data.length };
+      }
+      // Fallback for other response structures
+      return { data: [], total: 0 };
     },
     enabled: options.enabled !== false,
     refetchInterval: options.refetchInterval,

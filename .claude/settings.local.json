@@ -9,7 +9,9 @@
       "Bash(bun add:*)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

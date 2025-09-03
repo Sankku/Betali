@@ -72,7 +72,7 @@ export default function Register() {
       }
 
       // Step 2: Complete SaaS signup by creating organization
-      const response = await fetch('http://localhost:4000/api/auth/complete-signup', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/complete-signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,8 +88,14 @@ export default function Register() {
       const signupResult = await response.json();
 
       if (!response.ok) {
-        throw new Error(signupResult.error || 'Failed to complete signup');
+        throw new Error(signupResult.message || signupResult.error || 'Failed to complete signup');
       }
+
+      if (!signupResult.success) {
+        throw new Error(signupResult.message || 'Signup failed');
+      }
+
+      console.log('✅ Signup completed successfully:', signupResult.data);
 
       // Success! Redirect to dashboard
       navigate('/dashboard?welcome=true');
@@ -263,10 +269,19 @@ export default function Register() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
+                className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Loading...' : 'Create account'}
-                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    Creating account...
+                  </div>
+                ) : (
+                  <>
+                    Create account
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>

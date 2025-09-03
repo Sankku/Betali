@@ -17,6 +17,8 @@ export interface Product {
   owner_id?: string;
   description?: string;
   external_product_id?: string;
+  price?: number;
+  sku?: string;
 }
 
 export interface ProductModalProps {
@@ -44,7 +46,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       expiration_date: product?.expiration_date || '',
       origin_country: product?.origin_country || '',
       description: product?.description || '',
-      external_product_id: product?.external_product_id || ''
+      external_product_id: product?.external_product_id || '',
+      price: product?.price || 0
     },
   });
 
@@ -90,7 +93,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           origin_country: '',
           expiration_date: '',
           description: '',
-          senasa_product_id: ''
+          external_product_id: '',
+          price: 0
         });
       } else if (product && (mode === 'edit' || mode === 'view')) {
         form.reset({
@@ -99,7 +103,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           origin_country: product.origin_country || '',
           expiration_date: product.expiration_date || '',
           description: product.description || '',
-          senasa_product_id: product.senasa_product_id || ''
+          external_product_id: product.external_product_id || '',
+          price: product.price || 0
         });
       }
     }

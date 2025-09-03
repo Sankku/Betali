@@ -179,7 +179,7 @@ class ProductService {
      * @throws {Error} If validation fails
      */
     validateProductData(productData) {
-      const requiredFields = ['name', 'batch_number', 'origin_country', 'expiration_date'];
+      const requiredFields = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price'];
       
       for (const field of requiredFields) {
         if (!productData[field] || productData[field].toString().trim() === '') {
@@ -195,6 +195,16 @@ class ProductService {
   
       if (expirationDate < new Date()) {
         throw new Error('Expiration date cannot be in the past');
+      }
+
+      // Validate price
+      const price = parseFloat(productData.price);
+      if (isNaN(price) || price <= 0) {
+        throw new Error('Price must be a positive number');
+      }
+
+      if (price > 999999.99) {
+        throw new Error('Price cannot exceed $999,999.99');
       }
     }
   }

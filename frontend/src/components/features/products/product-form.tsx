@@ -1,7 +1,10 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Package, Calendar, Globe } from 'lucide-react';
+import { Package, Calendar, Globe, DollarSign, Percent } from 'lucide-react';
 import { Input } from '../../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Label } from '../../ui/label';
+import { useTaxRates, formatTaxRate } from '../../../hooks/useTaxRates';
 
 import { ProductFormSchemaData } from '../../../validations/productValidation';
 
@@ -18,13 +21,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
   const {
     register,
     watch,
+    setValue,
     formState: { errors },
   } = form;
+
+  // Load tax rates
+  const { data: taxRates, isLoading: taxRatesLoading } = useTaxRates({ active_only: true });
 
   const currentName = watch('name') || '';
   const currentBatchNumber = watch('batch_number') || '';
   const currentExpirationDate = watch('expiration_date') || '';
   const currentOriginCountry = watch('origin_country') || '';
+  const currentPrice = watch('price') || 0;
+  const currentTaxRateId = watch('tax_rate_id') || '';
 
   const ViewField: React.FC<{
     label: string;
@@ -78,6 +87,96 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
             description="Product identification name"
             required
           />
+        )}
+
+        {isViewMode ? (
+          <ViewField
+            label="Price"
+            value={`$${currentPrice.toFixed(2)}`}
+            icon={<DollarSign className="inline h-4 w-4 mr-2" />}
+            description="Product selling price"
+          />
+        ) : (
+          <Input
+            {...register('price')}
+            type="number"
+            step="0.01"
+            min="0"
+            label="Price"
+            placeholder="0.00"
+            icon={<DollarSign className="h-4 w-4" />}
+            disabled={isLoading}
+            error={errors.price?.message}
+            description="Product selling price"
+            required
+          />
+        )}
+
+        {/* Tax Rate Selection */}
+        {isViewMode ? (
+          <ViewField
+            label="Tax Rate"
+            value={
+              currentTaxRateId && taxRates?.data 
+                ? (() => {
+                    const selectedTaxRate = taxRates.data.find(rate => rate.tax_rate_id === currentTaxRateId);
+                    return selectedTaxRate 
+                      ? `${selectedTaxRate.name} (${formatTaxRate(selectedTaxRate.rate)})`
+                      : 'No tax rate selected';
+                  })()
+                : 'No tax rate selected'
+            }
+            icon={<Percent className="inline h-4 w-4 mr-2" />}
+            description="Tax rate applied to this product"
+          />
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="tax_rate_id" className="text-gray-900 font-medium flex items-center gap-2">
+              <Percent className="h-4 w-4" />
+              Tax Rate
+            </Label>
+            <Select
+              value={currentTaxRateId}
+              onValueChange={(value) => setValue('tax_rate_id', value === 'none' ? '' : value)}
+              disabled={isLoading || taxRatesLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  taxRatesLoading ? "Loading tax rates..." : 
+                  "Select tax rate (optional)"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  <span className="text-gray-500 italic">No tax rate</span>
+                </SelectItem>
+                {taxRates?.data && taxRates.data.length > 0 ? (
+                  taxRates.data.map((taxRate) => (
+                    <SelectItem key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-900">{taxRate.name}</span>
+                        <span className="text-sm text-gray-600">
+                          {formatTaxRate(taxRate.rate)} • {taxRate.is_inclusive ? 'Tax Inclusive' : 'Tax Exclusive'}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))
+                ) : (
+                  !taxRatesLoading && (
+                    <SelectItem value="no-tax-rates" disabled>
+                      <span className="text-gray-500 italic">No tax rates configured</span>
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+            {errors.tax_rate_id && (
+              <p className="text-sm text-red-600">{errors.tax_rate_id.message}</p>
+            )}
+            <p className="text-xs text-gray-600">
+              Configure tax rates in <a href="/dashboard/taxes" className="text-blue-600 hover:underline">Tax Management</a> section
+            </p>
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
