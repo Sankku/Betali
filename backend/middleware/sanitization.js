@@ -287,6 +287,29 @@ const SANITIZATION_RULES = {
     }
   },
   
+  // Authentication sanitization rules
+  auth: {
+    body: {
+      email: { type: 'email', maxLength: 100 },
+      password: { type: 'string', maxLength: 128 },
+      name: { type: 'string', maxLength: 100, normalizeWhitespace: true },
+      organization_name: { type: 'string', maxLength: 255, normalizeWhitespace: true },
+      user_id: { type: 'string', maxLength: 36 }
+    }
+  },
+  
+  // General purpose sanitization
+  general: {
+    body: {
+      name: { type: 'string', maxLength: 255, normalizeWhitespace: true },
+      description: { type: 'string', maxLength: 1000, allowHtml: false },
+      type: { type: 'string', maxLength: 100 },
+      value: { type: 'number' },
+      rate: { type: 'number' },
+      organization_id: { type: 'string', maxLength: 36 }
+    }
+  },
+  
   // Search and query sanitization
   search: {
     query: {
