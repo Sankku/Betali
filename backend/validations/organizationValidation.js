@@ -17,6 +17,18 @@ const createOrganizationSchema = Joi.object({
       'any.required': 'Organization name is required'
     }),
   
+  slug: Joi.string()
+    .min(3)
+    .max(50)
+    .pattern(/^[a-z0-9-]+$/)
+    .required()
+    .messages({
+      'string.min': 'Slug must be at least 3 characters long',
+      'string.max': 'Slug cannot exceed 50 characters',
+      'string.pattern.base': 'Slug can only contain lowercase letters, numbers, and hyphens',
+      'any.required': 'Slug is required'
+    }),
+  
   description: Joi.string()
     .max(1000)
     .optional()
@@ -33,6 +45,17 @@ const updateOrganizationSchema = Joi.object({
     .messages({
       'string.min': 'Organization name must be at least 1 character long',
       'string.max': 'Organization name cannot exceed 255 characters'
+    }),
+  
+  slug: Joi.string()
+    .min(3)
+    .max(50)
+    .pattern(/^[a-z0-9-]+$/)
+    .optional()
+    .messages({
+      'string.min': 'Slug must be at least 3 characters long',
+      'string.max': 'Slug cannot exceed 50 characters',
+      'string.pattern.base': 'Slug can only contain lowercase letters, numbers, and hyphens'
     }),
   
   description: Joi.string()

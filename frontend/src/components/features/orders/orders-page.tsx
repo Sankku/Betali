@@ -370,50 +370,82 @@ export function OrdersPage() {
         {/* Stats Cards */}
         {orderStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{orderStats.total_orders}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${orderStats.total_revenue.toFixed(2)}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{orderStats.orders_this_month}</div>
-                <p className="text-xs text-muted-foreground">
-                  ${orderStats.revenue_this_month.toFixed(2)} revenue
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <Filter className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {orderStats.orders_by_status.pending || 0}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 rounded-md p-3 bg-blue-50">
+                    <ShoppingCart className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900">{orderStats?.total_orders ?? 0}</div>
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 rounded-md p-3 bg-green-50">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900">${orderStats?.total_revenue?.toFixed(2) ?? '0.00'}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 rounded-md p-3 bg-purple-50">
+                    <ShoppingCart className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">This Month</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900">{orderStats?.orders_this_month ?? 0}</div>
+                        <div className="text-sm text-gray-500">
+                          ${orderStats?.revenue_this_month?.toFixed(2) ?? '0.00'} revenue
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 rounded-md p-3 bg-orange-50">
+                    <Filter className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Pending</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900">
+                          {orderStats?.orders_by_status?.pending || 0}
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

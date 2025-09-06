@@ -160,22 +160,14 @@ export function NoOrganizationFallback() {
       </div>
 
       {/* Create Organization Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>Create New Organization</ModalTitle>
-            <ModalDescription>
-              Set up your organization to start managing your business inventory.
-            </ModalDescription>
-          </ModalHeader>
-          
-          <CreateOrganizationForm
-            onSubmit={handleCreateOrganization}
-            onCancel={() => setShowCreateModal(false)}
-            isLoading={isCreating}
-          />
-        </ModalContent>
-      </Modal>
+      <CreateOrganizationForm
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          setIsCreating(false);
+        }}
+      />
     </>
   );
 }

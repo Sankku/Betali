@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Shield, ChevronDown, Eye, AlertCircle, Building2, LogOut, Settings, RefreshCw } from 'lucide-react';
+import { User, Shield, ChevronDown, Eye, AlertCircle, Building2, LogOut, Settings, RefreshCw, Plus } from 'lucide-react';
 import { useUserContext } from '@/hooks/useUsers';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useAuth } from '@/context/AuthContext';
@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { CreateOrganizationForm } from '../organizations/create-organization-form';
 
 /**
  * Component to show current user context with role, permissions, and organization
@@ -38,6 +39,7 @@ export function UserContextIndicator() {
   const { signOut } = useAuth();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOrgSwitching, setIsOrgSwitching] = useState(false);
+  const [showCreateOrganizationModal, setShowCreateOrganizationModal] = useState(false);
 
   const handleRefreshContext = async () => {
     try {
@@ -87,6 +89,12 @@ export function UserContextIndicator() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleCreateOrganizationSuccess = () => {
+    setShowCreateOrganizationModal(false);
+    // Trigger a context refresh to load the new organization
+    handleRefreshContext();
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -230,6 +238,15 @@ export function UserContextIndicator() {
                 <span className="text-sm">No organizations available</span>
               </DropdownMenuItem>
             )}
+            
+            {/* Create Organization Option */}
+            <DropdownMenuItem
+              onClick={() => setShowCreateOrganizationModal(true)}
+              className="cursor-pointer border-t border-gray-100 mt-1"
+            >
+              <Plus className="w-4 h-4 mr-2 text-green-600" />
+              <span className="text-sm text-green-600">Create Organization</span>
+            </DropdownMenuItem>
           </div>
           
           <DropdownMenuSeparator />
@@ -388,6 +405,13 @@ export function UserContextIndicator() {
           </div>
         </ModalContent>
       </Modal>
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationForm
+        isOpen={showCreateOrganizationModal}
+        onClose={() => setShowCreateOrganizationModal(false)}
+        onSuccess={handleCreateOrganizationSuccess}
+      />
     </>
   );
 }

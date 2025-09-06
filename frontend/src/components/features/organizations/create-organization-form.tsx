@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { useOrganization } from '../../../context/OrganizationContext';
+import { ModalForm } from '../../templates/modal-form';
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(255, 'Name too long'),
@@ -16,12 +17,13 @@ const createOrganizationSchema = z.object({
 type CreateOrganizationFormData = z.infer<typeof createOrganizationSchema>;
 
 interface CreateOrganizationFormProps {
+  isOpen: boolean;
+  onClose: () => void;
   onSuccess?: () => void;
 }
 
-export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProps) {
-  const { createOrganization } = useOrganization();
-  const [isCreating, setIsCreating] = useState(false);
+export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrganizationFormProps) {
+  const { createOrganization, loading } = useOrganization();
   
   const form = useForm<CreateOrganizationFormData>({
     resolver: zodResolver(createOrganizationSchema),
@@ -31,7 +33,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
     }
   });
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = form;
+  const { register, formState: { errors }, watch, setValue } = form;
   const watchName = watch('name');
 
   // Auto-generate slug from name
@@ -48,41 +50,61 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
   }, [watchName, setValue]);
 
   const onSubmit = async (data: CreateOrganizationFormData) => {
-    setIsCreating(true);
     try {
       await createOrganization(data);
       onSuccess?.();
-    } catch (error) {
+      onClose();
+      form.reset();
+    } catch (error: any) {
       console.error('Error creating organization:', error);
-    } finally {
-      setIsCreating(false);
+      
+      // Handle duplicate slug error specifically
+      if (error?.code === 'DUPLICATE_SLUG' || error?.message?.includes('slug already exists')) {
+        form.setError('slug', {
+          type: 'manual',
+          message: 'This organization name is already taken. Please choose a different name.'
+        });
+      } else if (error?.field === 'name') {
+        form.setError('name', {
+          type: 'manual',
+          message: error.message || 'Invalid organization name'
+        });
+      } else {
+        // Generic error handling
+        form.setError('name', {
+          type: 'manual',
+          message: 'Failed to create organization. Please try again.'
+        });
+      }
     }
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="p-2 rounded-lg bg-blue-50">
-          <Building2 className="h-5 w-5 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="font-medium text-gray-900">Create Organization</h3>
-          <p className="text-sm text-gray-500">Set up your first organization</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <ModalForm
+      isOpen={isOpen}
+      onClose={onClose}
+      form={form}
+      onSubmit={onSubmit}
+      title="Create Organization"
+      description="Set up your organization to start managing your business inventory and team members."
+      icon={Building2}
+      mode="create"
+      isLoading={loading}
+      size="md"
+      submitLabel="Create Organization"
+    >
+      <div className="space-y-4">
         {/* Organization Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Organization Name
+            Organization Name *
           </label>
           <input
             {...register('name')}
             type="text"
             id="name"
             placeholder="Enter organization name"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-500"
           />
           {errors.name && (
             <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -92,39 +114,23 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
         {/* Organization Slug */}
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            URL Slug
+            URL Slug *
           </label>
           <input
             {...register('slug')}
             type="text"
             id="slug"
             placeholder="organization-slug"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-500"
           />
           {errors.slug && (
             <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>
           )}
           <p className="mt-1 text-xs text-gray-500">
-            Used in URLs and must be unique
+            URL-friendly identifier (auto-generated from name)
           </p>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isCreating}
-          className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isCreating ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            'Create Organization'
-          )}
-        </button>
-      </form>
-    </div>
+      </div>
+    </ModalForm>
   );
 }

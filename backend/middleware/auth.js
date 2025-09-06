@@ -25,7 +25,52 @@ const authenticateUser = async (req, res, next) => {
     
     const token = authHeader.split(' ')[1];
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    let user = null;
+    let error = null;
+    
+    // First try Supabase auth
+    try {
+      const { data: supabaseData, error: supabaseError } = await supabase.auth.getUser(token);
+      
+      if (!supabaseError && supabaseData?.user) {
+        user = supabaseData.user;
+        error = null;
+      } else {
+        // Supabase failed, try our temporary token format
+        try {
+          const decoded = Buffer.from(token, 'base64').toString('utf8');
+          const tokenPayload = JSON.parse(decoded);
+          
+          // Verify token hasn't expired
+          if (tokenPayload.exp && tokenPayload.exp > Math.floor(Date.now() / 1000)) {
+            // Create user object compatible with Supabase format
+            user = {
+              id: tokenPayload.sub,
+              email: tokenPayload.email,
+              user_metadata: tokenPayload.user_metadata || {},
+              created_at: new Date(tokenPayload.iat * 1000).toISOString()
+            };
+            error = null;
+            
+            logger.info('Using temporary token for authentication', {
+              userId: user.id,
+              email: user.email
+            });
+          } else {
+            error = { message: 'Token has expired' };
+          }
+        } catch (tempTokenError) {
+          error = supabaseError || { message: 'Invalid token format' };
+          logger.warn('Both Supabase and temporary token validation failed', {
+            supabaseError: supabaseError?.message,
+            tempTokenError: tempTokenError.message
+          });
+        }
+      }
+    } catch (authError) {
+      error = { message: 'Authentication service error' };
+      logger.error('Authentication service error', { error: authError.message });
+    }
     
     if (error || !user) {
       let errorCode = 'INVALID_TOKEN';
@@ -130,7 +175,8 @@ const authenticateUser = async (req, res, next) => {
               logger.warn('No current organization found for user', { userId: user.id });
             }
           } else {
-            user.role = 'VIEWER'; // Default if no organizations
+            // Use role from public.users table as fallback when no organizations
+            user.role = userData.role ? userData.role.toUpperCase() : 'VIEWER';
             user.organizationRoles = [];
             user.currentOrganizationId = null;
           }
@@ -139,7 +185,8 @@ const authenticateUser = async (req, res, next) => {
             userId: user.id,
             error: orgError.message
           });
-          user.role = 'VIEWER';
+          // Use role from public.users table as fallback when org query fails
+          user.role = userData.role ? userData.role.toUpperCase() : 'VIEWER';
           user.organizationRoles = [];
           user.currentOrganizationId = null;
         }

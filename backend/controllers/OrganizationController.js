@@ -181,10 +181,10 @@ class OrganizationController {
    * POST /api/organizations
    */
   async createOrganization(req, res, next) {
+    const organizationData = req.body;
+    const ownerId = req.user.id;
+    
     try {
-      const organizationData = req.body;
-      const ownerId = req.user.id;
-      
       const result = await this.organizationService.createWithOwner(organizationData, ownerId);
       
       this.logger.info('Organization created successfully', {
@@ -200,6 +200,22 @@ class OrganizationController {
         }
       });
     } catch (error) {
+      // Handle duplicate slug error specifically
+      if (error.message && error.message.includes('duplicate key value violates unique constraint "organizations_slug_key"')) {
+        this.logger.warn('Attempt to create organization with duplicate slug', {
+          organizationData,
+          ownerId,
+          error: error.message
+        });
+        
+        return res.status(409).json({
+          error: 'Conflict',
+          message: 'An organization with this slug already exists. Please choose a different name.',
+          field: 'slug',
+          code: 'DUPLICATE_SLUG'
+        });
+      }
+      
       next(error);
     }
   }
