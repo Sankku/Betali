@@ -44,6 +44,7 @@ import {
   useBusinessTypes,
   CreateSupplierData,
 } from '@/hooks/useSuppliers';
+import { useOrganization } from '@/context/OrganizationContext';
 import { supplierService } from '@/services/api/supplierService';
 
 interface ModalState {
@@ -64,6 +65,8 @@ interface FilterState {
 }
 
 export function SuppliersPage() {
+  const { currentOrganization } = useOrganization();
+  
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -386,7 +389,10 @@ export function SuppliersPage() {
                   ) : suppliers.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                        No se encontraron proveedores
+                        {!currentOrganization 
+                          ? "Please select or create an organization to access supplier management features."
+                          : "No se encontraron proveedores. ¡Crea tu primer proveedor para comenzar!"
+                        }
                       </td>
                     </tr>
                   ) : (

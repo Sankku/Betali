@@ -9,7 +9,7 @@ export interface TaxRate {
   name: string;
   description?: string;
   rate: number; // Decimal format (0.21 for 21%)
-  is_inclusive: boolean; // true = tax included in price, false = tax added to price
+  is_inclusive: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -20,7 +20,7 @@ export interface CreateTaxRateData {
   description?: string;
   rate: number;
   is_inclusive: boolean;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 export interface UpdateTaxRateData extends Partial<CreateTaxRateData> {
@@ -39,12 +39,21 @@ export function useTaxRates(options: UseTaxRatesOptions = {}) {
   return useQuery({
     queryKey: ["taxRates", currentOrganization?.organization_id, options.active_only],
     queryFn: async () => {
-      const params = options.active_only ? { active: 'true' } : {};
-      const response = await httpClient.get('/api/pricing/taxes/rates', { params });
-      return response.data;
+      try {
+        const endpoint = options.active_only ? '/api/tax-rates/active' : '/api/tax-rates';
+        const response = await httpClient.get(endpoint);
+        // Backend returns { success: true, data: [...], meta: {...} }
+        // But component expects { data: [...] }, so we return the full response
+        return response;
+      } catch (error) {
+        console.error('Error fetching tax rates:', error);
+        // Return empty array on error to prevent UI break
+        return { data: [] };
+      }
     },
     enabled: options.enabled !== false && !!currentOrganization,
     staleTime: 5 * 60 * 1000,
+    retry: 1, // Only retry once
   });
 }
 
@@ -55,7 +64,7 @@ export function useTaxRate(taxRateId: string, enabled = true) {
   return useQuery({
     queryKey: ["taxRate", taxRateId, currentOrganization?.organization_id],
     queryFn: async () => {
-      const response = await httpClient.get(`/api/pricing/taxes/rates/${taxRateId}`);
+      const response = await httpClient.get(`/api/tax-rates/${taxRateId}`);
       return response.data?.data || response.data;
     },
     enabled: enabled && !!taxRateId && !!currentOrganization,
@@ -70,11 +79,15 @@ export function useCreateTaxRate() {
 
   return useMutation({
     mutationFn: async (data: CreateTaxRateData) => {
-      const response = await httpClient.post('/api/pricing/taxes/rates', data);
+      const response = await httpClient.post('/api/tax-rates', data);
       return response.data;
     },
     onSuccess: (response) => {
+      // Invalidate all tax rate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["taxRates"] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, true] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, false] });
       toast.success("Tax rate created successfully");
       return response;
     },
@@ -92,12 +105,16 @@ export function useUpdateTaxRate() {
 
   return useMutation({
     mutationFn: async ({ taxRateId, taxRateData }: { taxRateId: string; taxRateData: UpdateTaxRateData }) => {
-      const response = await httpClient.put(`/api/pricing/taxes/rates/${taxRateId}`, taxRateData);
+      const response = await httpClient.put(`/api/tax-rates/${taxRateId}`, taxRateData);
       return response.data;
     },
     onSuccess: (response, { taxRateId }) => {
+      // Invalidate all tax rate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["taxRates"] });
       queryClient.invalidateQueries({ queryKey: ["taxRate", taxRateId] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, true] });
+      queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, false] });
       toast.success("Tax rate updated successfully");
       return response;
     },
@@ -115,7 +132,7 @@ export function useDeleteTaxRate() {
 
   return useMutation({
     mutationFn: async (taxRateId: string) => {
-      const response = await httpClient.delete(`/api/pricing/taxes/rates/${taxRateId}`);
+      const response = await httpClient.delete(`/api/tax-rates/${taxRateId}`);
       return response.data;
     },
     onSuccess: (response) => {
@@ -176,22 +193,35 @@ export const formatTaxRate = (rate: number): string => {
   return `${(rate * 100).toFixed(2)}%`;
 };
 
-export const calculateTaxAmount = (amount: number, taxRate: number, isInclusive: boolean): number => {
+export const calculateTaxAmount = (amount: number, taxRate: number, isInclusive: boolean = false): number => {
   if (isInclusive) {
-    // Tax is included in the amount: tax = amount - (amount / (1 + rate))
-    return amount - (amount / (1 + taxRate));
+    // Tax-inclusive: extract tax from total price
+    // baseAmount = totalPrice / (1 + rate)
+    // taxAmount = totalPrice - baseAmount
+    const baseAmount = amount / (1 + taxRate);
+    return amount - baseAmount;
   } else {
-    // Tax is added to the amount: tax = amount * rate
+    // Tax-exclusive: calculate tax on base amount
     return amount * taxRate;
   }
 };
 
-export const calculateTotalWithTax = (amount: number, taxRate: number, isInclusive: boolean): number => {
+export const calculateTotalWithTax = (amount: number, taxRate: number, isInclusive: boolean = false): number => {
   if (isInclusive) {
-    // Total is the same as amount when tax is inclusive
+    // Tax-inclusive: the amount already includes tax
     return amount;
   } else {
-    // Total = amount + tax
+    // Tax-exclusive: add tax to base amount
     return amount + (amount * taxRate);
+  }
+};
+
+export const calculateBaseAmount = (amount: number, taxRate: number, isInclusive: boolean = false): number => {
+  if (isInclusive) {
+    // Tax-inclusive: extract base amount from total price
+    return amount / (1 + taxRate);
+  } else {
+    // Tax-exclusive: the amount is already the base amount
+    return amount;
   }
 };

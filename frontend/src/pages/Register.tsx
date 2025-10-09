@@ -252,12 +252,10 @@ export default function Register() {
                   checked={agreeTerms}
                   onCheckedChange={checked => setAgreeTerms(checked as boolean)}
                   id="terms"
-                  className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
                 />
                 <label
                   htmlFor="terms"
-                  className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  onClick={() => setAgreeTerms(!agreeTerms)}
+                  className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
                   I accept the{' '}
                   <Link to="/terms" className="text-primary-600 hover:text-primary-700 underline">

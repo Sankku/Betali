@@ -5,7 +5,7 @@ const Joi = require('joi');
  * Validates order data for API endpoints
  */
 
-// Valid order statuses
+// Valid order statuses - comprehensive workflow states
 const ORDER_STATUSES = ['draft', 'pending', 'processing', 'shipped', 'completed', 'cancelled'];
 
 // Order item schema
@@ -217,11 +217,76 @@ const orderIdSchema = Joi.object({
     })
 });
 
+// Calculate pricing schema - for pricing preview calculations
+const calculatePricingSchema = Joi.object({
+  items: Joi.array()
+    .items(orderItemSchema)
+    .min(1)
+    .max(100)
+    .required()
+    .messages({
+      'array.base': 'Items must be an array',
+      'array.min': 'Must have at least 1 item to calculate pricing',
+      'array.max': 'Cannot calculate pricing for more than 100 items',
+      'any.required': 'Items are required for pricing calculation'
+    }),
+  client_id: Joi.string()
+    .uuid()
+    .allow(null)
+    .messages({
+      'string.guid': 'Client ID must be a valid UUID'
+    }),
+  discount_codes: Joi.array()
+    .items(Joi.string().max(50))
+    .max(10)
+    .default([])
+    .messages({
+      'array.base': 'Discount codes must be an array',
+      'array.max': 'Cannot apply more than 10 discount codes'
+    }),
+  tax_rate_ids: Joi.array()
+    .items(Joi.string().uuid())
+    .max(10)
+    .default([])
+    .messages({
+      'array.base': 'Tax rate IDs must be an array',
+      'array.max': 'Cannot apply more than 10 tax rates',
+      'string.guid': 'Each tax rate ID must be a valid UUID'
+    })
+});
+
+// Validate coupon schema
+const validateCouponSchema = Joi.object({
+  coupon_code: Joi.string()
+    .min(2)
+    .max(50)
+    .required()
+    .messages({
+      'string.min': 'Coupon code must be at least 2 characters',
+      'string.max': 'Coupon code cannot exceed 50 characters',
+      'any.required': 'Coupon code is required'
+    }),
+  order_total: Joi.number()
+    .positive()
+    .precision(2)
+    .max(9999999.99)
+    .required()
+    .messages({
+      'number.base': 'Order total must be a number',
+      'number.positive': 'Order total must be positive',
+      'number.precision': 'Order total can have maximum 2 decimal places',
+      'number.max': 'Order total cannot exceed 9,999,999.99',
+      'any.required': 'Order total is required'
+    })
+});
+
 module.exports = {
   createOrderSchema,
   updateOrderSchema,
   updateOrderStatusSchema,
   orderQuerySchema,
   orderIdSchema,
+  calculatePricingSchema,
+  validateCouponSchema,
   ORDER_STATUSES
 };

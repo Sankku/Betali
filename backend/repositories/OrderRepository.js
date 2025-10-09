@@ -135,6 +135,19 @@ class OrderRepository extends BaseRepository {
         orderData.order_number = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       }
       
+      // Validate and sanitize status value as additional protection
+      const validStatuses = ['draft', 'pending', 'processing', 'shipped', 'completed', 'cancelled'];
+      const requestedStatus = orderData.status || 'pending';
+      const finalStatus = validStatuses.includes(requestedStatus) ? requestedStatus : 'pending';
+
+      if (requestedStatus !== finalStatus) {
+        this.logger.warn('Invalid status in repository, correcting', { 
+          organizationId: orderData.organization_id,
+          requestedStatus,
+          finalStatus
+        });
+      }
+
       // DO NOT set order_id - let the database auto-generate UUID
 
       // Set timestamps
@@ -144,7 +157,7 @@ class OrderRepository extends BaseRepository {
         order_date: orderData.order_date || now,
         created_at: now,
         updated_at: now,
-        status: orderData.status || 'pending'
+        status: finalStatus
       };
 
       const { data, error } = await this.client
@@ -235,7 +248,7 @@ class OrderRepository extends BaseRepository {
       // Soft delete by setting status to cancelled
       const { data, error } = await this.client
         .from(this.table)
-        .update({ 
+        .update({
           status: 'cancelled',
           updated_at: new Date().toISOString()
         })
@@ -245,9 +258,9 @@ class OrderRepository extends BaseRepository {
         .single();
 
       if (error) {
-        this.logger.error('Error deleting order', { 
-          error: error.message, 
-          orderId 
+        this.logger.error('Error deleting order', {
+          error: error.message,
+          orderId
         });
         throw error;
       }
@@ -259,11 +272,68 @@ class OrderRepository extends BaseRepository {
       this.logger.info('Order deleted (cancelled) successfully', { orderId });
       return true;
     } catch (error) {
-      this.logger.error('Error deleting order', { 
-        error: error.message, 
-        orderId 
+      this.logger.error('Error deleting order', {
+        error: error.message,
+        orderId
       });
       throw new Error(`Error deleting order: ${error.message}`);
+    }
+  }
+
+  /**
+   * Permanently delete an order (hard delete)
+   * @param {string} orderId - Order ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<boolean>}
+   */
+  async hardDelete(orderId, organizationId) {
+    try {
+      this.logger.info('Hard deleting order', { orderId, organizationId });
+
+      // First delete all related order_details (cascade should handle this, but explicit is safer)
+      const { error: detailsError } = await this.client
+        .from('order_details')
+        .delete()
+        .eq('order_id', orderId)
+        .eq('organization_id', organizationId);
+
+      if (detailsError) {
+        this.logger.error('Error deleting order details', {
+          error: detailsError.message,
+          orderId
+        });
+        throw detailsError;
+      }
+
+      // Then delete the order itself
+      const { data, error } = await this.client
+        .from(this.table)
+        .delete()
+        .eq('order_id', orderId)
+        .eq('organization_id', organizationId)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error('Error hard deleting order', {
+          error: error.message,
+          orderId
+        });
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('Order not found or access denied');
+      }
+
+      this.logger.info('Order permanently deleted successfully', { orderId });
+      return true;
+    } catch (error) {
+      this.logger.error('Error hard deleting order', {
+        error: error.message,
+        orderId
+      });
+      throw new Error(`Error permanently deleting order: ${error.message}`);
     }
   }
 

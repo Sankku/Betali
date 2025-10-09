@@ -24,6 +24,7 @@ import {
   ModalDescription,
   ModalFooter,
 } from '../../components/ui';
+import { useOrganization } from '../../context/OrganizationContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -32,6 +33,8 @@ interface ModalState {
 }
 
 export default function StockMovementsPage() {
+  const { currentOrganization } = useOrganization();
+  
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -159,6 +162,11 @@ export default function StockMovementsPage() {
               data={movements}
               onAction={handleTableAction}
               isLoading={isLoading || isLoaderVisible}
+              emptyMessage={
+                !currentOrganization 
+                  ? "Please select or create an organization to access stock movement features." 
+                  : "No stock movements recorded yet. Create your first movement to get started!"
+              }
             />
           ) : null
         }

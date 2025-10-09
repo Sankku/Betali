@@ -158,29 +158,43 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         console.log('Organization context updated:', selectedOrg.organization.name);
         isInitializedRef.current = true;
       }
-    } else if (userOrganizations.length === 0 && !currentOrganization) {
+    } else if (userOrganizations.length === 0) {
       console.warn('No organizations found for user');
       
-      // Try to load from localStorage as fallback
-      const stored = localStorage.getItem('currentOrganizationContext');
-      if (stored) {
-        try {
-          const parsedContext = JSON.parse(stored);
-          if (parsedContext?.organization?.organization_id) {
-            setCurrentOrganization(parsedContext.organization);
-            setCurrentUserRole(parsedContext.userRole);
-            setCurrentPermissions(parsedContext.permissions || []);
-            console.log('Loaded organization context from localStorage');
-            isInitializedRef.current = true;
-          } else {
-            console.warn('Invalid organization context in localStorage');
-            localStorage.removeItem('currentOrganizationContext');
-            localStorage.removeItem('currentOrganizationId');
-          }
-        } catch (e) {
-          console.error('Error parsing stored organization context:', e);
-          localStorage.removeItem('currentOrganizationContext');
-          localStorage.removeItem('currentOrganizationId');
+      // Clear current organization context since user has no organizations
+      if (currentOrganization) {
+        console.log('User has no organizations, clearing current context');
+        setCurrentOrganization(null);
+        setCurrentUserRole(null);
+        setCurrentPermissions([]);
+      }
+      
+      // Clean up localStorage
+      localStorage.removeItem('currentOrganizationContext');
+      localStorage.removeItem('currentOrganizationId');
+      isInitializedRef.current = true;
+    } else if (userOrganizations.length > 0 && currentOrganization) {
+      // Check if current organization still exists in user's organizations
+      const currentOrgExists = userOrganizations.some(userOrg => 
+        userOrg?.organization?.organization_id === currentOrganization.organization_id
+      );
+      
+      if (!currentOrgExists) {
+        console.warn('Current organization no longer exists in user organizations, switching to first available');
+        // Current organization was deleted, switch to first available
+        const firstOrg = userOrganizations[0];
+        if (firstOrg?.organization?.organization_id) {
+          setCurrentOrganization(firstOrg.organization);
+          setCurrentUserRole(firstOrg.userRole);
+          setCurrentPermissions(firstOrg.userPermissions || []);
+          
+          // Update localStorage
+          localStorage.setItem('currentOrganizationId', firstOrg.organization.organization_id);
+          localStorage.setItem('currentOrganizationContext', JSON.stringify({
+            organization: firstOrg.organization,
+            userRole: firstOrg.userRole,
+            permissions: firstOrg.userPermissions || []
+          }));
         }
       }
     }
@@ -265,13 +279,57 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         throw new Error('Invalid organization created');
       }
       
-      // Invalidate the user organizations query to refetch the list
-      console.log('🔄 Invalidating user organizations query...');
+      // Invalidate and wait for the user organizations query to refetch
+      console.log('🔄 Invalidating and refetching user organizations query...');
       await queryClient.invalidateQueries({ queryKey: ['user-organizations'] });
       
-      // Switch to the new organization
-      console.log('🔄 Switching to new organization...');
-      await switchOrganization(newOrg.organization_id);
+      // Wait a bit for the query to refresh
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Manually fetch the updated organizations to ensure we have the latest data
+      try {
+        const updatedUserOrgs = await apiService.user.getOrganizations();
+        console.log('📋 Updated user organizations:', updatedUserOrgs);
+        
+        // Find the newly created organization in the updated list
+        const newOrgInList = updatedUserOrgs.find(org => 
+          org.organization?.organization_id === newOrg.organization_id
+        );
+        
+        if (newOrgInList) {
+          console.log('✅ Found new organization in user list, switching context...');
+          // Directly set the context without calling switchOrganization
+          setCurrentOrganization(newOrg);
+          setCurrentUserRole(newOrgInList.role.toUpperCase());
+          setCurrentPermissions(newOrgInList.permissions || []);
+          
+          // Store the new context
+          localStorage.setItem('currentOrganizationId', newOrg.organization_id);
+          localStorage.setItem('currentUserRole', newOrgInList.role);
+          localStorage.setItem('currentPermissions', JSON.stringify(newOrgInList.permissions || []));
+        } else {
+          console.log('⚠️ New organization not found in user list, using direct approach...');
+          // Fallback: set context directly from creation response
+          setCurrentOrganization(newOrg);
+          setCurrentUserRole('SUPER_ADMIN'); // Owner of new org
+          setCurrentPermissions(['*']); // Full permissions for owner
+          
+          localStorage.setItem('currentOrganizationId', newOrg.organization_id);
+          localStorage.setItem('currentUserRole', 'SUPER_ADMIN');
+          localStorage.setItem('currentPermissions', JSON.stringify(['*']));
+        }
+        
+      } catch (fetchError) {
+        console.warn('⚠️ Could not fetch updated organizations, using fallback approach:', fetchError);
+        // Fallback: set context directly from creation response
+        setCurrentOrganization(newOrg);
+        setCurrentUserRole('SUPER_ADMIN');
+        setCurrentPermissions(['*']);
+        
+        localStorage.setItem('currentOrganizationId', newOrg.organization_id);
+        localStorage.setItem('currentUserRole', 'SUPER_ADMIN');
+        localStorage.setItem('currentPermissions', JSON.stringify(['*']));
+      }
       
       console.log('✅ Organization creation complete');
       return newOrg;
@@ -279,7 +337,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       console.error('❌ Error creating organization:', error);
       throw error;
     }
-  }, [queryClient, switchOrganization]);
+  }, [queryClient]);
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (currentPermissions.includes('*')) {

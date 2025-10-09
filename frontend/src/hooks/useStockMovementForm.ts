@@ -14,7 +14,8 @@ const stockMovementSchema = z.object({
     ),
   quantity: z
     .number({ required_error: "Quantity is required" })
-    .positive("Quantity must be greater than 0"),
+    .positive("Quantity must be greater than 0")
+    .int("Quantity must be a whole number"),
   product_id: z
     .string()
     .min(1, "Product is required"),

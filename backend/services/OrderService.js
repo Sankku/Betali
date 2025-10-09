@@ -45,13 +45,26 @@ class OrderService {
       // Validate stock for all items
       await this.validateOrderItems(pricingResult.line_items, organizationId, orderData.warehouse_id);
 
+      // Validate and sanitize status value
+      const validStatuses = ['draft', 'pending', 'processing', 'shipped', 'completed', 'cancelled'];
+      const requestedStatus = orderData.status || 'pending';
+      const finalStatus = validStatuses.includes(requestedStatus) ? requestedStatus : 'pending';
+
+      if (requestedStatus !== finalStatus) {
+        this.logger.warn('Invalid status provided, defaulting to pending', { 
+          organizationId,
+          requestedStatus,
+          finalStatus
+        });
+      }
+
       // Prepare order data with advanced pricing
       const order = {
         organization_id: organizationId,
         client_id: orderData.client_id || null,
         warehouse_id: orderData.warehouse_id || null,
         user_id: orderData.user_id,
-        status: orderData.status || 'pending',
+        status: finalStatus,
         order_date: orderData.order_date || new Date().toISOString(),
         subtotal: pricingResult.subtotal,
         discount_amount: pricingResult.discount_amount,
@@ -70,7 +83,7 @@ class OrderService {
         organization_id: organizationId,
         product_id: item.product_id,
         quantity: item.quantity,
-        unit_price: item.unit_price,
+        price: item.unit_price, // Map unit_price to price field expected by database
         line_total: item.line_total,
         discount_amount: item.line_discount || 0,
         tax_amount: 0 // Tax is calculated at order level for now
@@ -294,34 +307,46 @@ class OrderService {
   }
 
   /**
-   * Delete (cancel) an order
+   * Delete (permanently remove) an order
    * @param {string} orderId - Order ID
    * @param {string} organizationId - Organization ID
+   * @param {boolean} hardDelete - If true, permanently deletes the order. If false, cancels it.
    * @returns {Promise<boolean>}
    */
-  async deleteOrder(orderId, organizationId) {
+  async deleteOrder(orderId, organizationId, hardDelete = true) {
     try {
-      this.logger.info('Deleting order', { orderId, organizationId });
+      this.logger.info('Deleting order', { orderId, organizationId, hardDelete });
 
       const currentOrder = await this.orderRepository.findById(orderId, organizationId);
       if (!currentOrder) {
         throw new Error('Order not found or access denied');
       }
 
-      // Validate that order can be deleted
-      if (['completed', 'shipped'].includes(currentOrder.status)) {
-        throw new Error('Cannot delete completed or shipped orders');
+      // If hard delete is requested
+      if (hardDelete) {
+        // Validate that order can be permanently deleted
+        if (['shipped', 'completed'].includes(currentOrder.status)) {
+          throw new Error('Cannot permanently delete shipped or completed orders. Cancel them instead.');
+        }
+
+        // Permanently delete the order
+        const success = await this.orderRepository.hardDelete(orderId, organizationId);
+        this.logger.info('Order permanently deleted successfully', { orderId });
+        return success;
+      } else {
+        // Soft delete (cancel) the order
+        if (['completed', 'shipped'].includes(currentOrder.status)) {
+          throw new Error('Cannot cancel completed or shipped orders');
+        }
+
+        const success = await this.orderRepository.delete(orderId, organizationId);
+        this.logger.info('Order cancelled successfully', { orderId });
+        return success;
       }
-
-      // Soft delete the order (sets status to cancelled)
-      const success = await this.orderRepository.delete(orderId, organizationId);
-
-      this.logger.info('Order deleted successfully', { orderId });
-      return success;
     } catch (error) {
-      this.logger.error('Error deleting order', { 
-        error: error.message, 
-        orderId 
+      this.logger.error('Error deleting order', {
+        error: error.message,
+        orderId
       });
       throw new Error(`Failed to delete order: ${error.message}`);
     }
@@ -545,9 +570,8 @@ class OrderService {
         total_price: detail.quantity * detail.price,
         movement_date: new Date().toISOString(),
         notes: `Sales order fulfillment - Order #${order.order_number || order.order_id.slice(-8)}`,
-        created_by: order.user_id,
-        reference_type: 'order',
-        reference_id: order.order_id
+        reference: `Order ${order.order_number || order.order_id.slice(-8)}`,
+        created_by: order.user_id
       };
 
       stockMovements.push(movement);
@@ -627,9 +651,8 @@ class OrderService {
         total_price: detail.quantity * detail.price,
         movement_date: new Date().toISOString(),
         notes: `Order cancellation - Stock restoration for Order #${order.order_number || order.order_id.slice(-8)}`,
-        created_by: order.user_id,
-        reference_type: 'order_cancellation',
-        reference_id: order.order_id
+        reference: `Order Cancellation ${order.order_number || order.order_id.slice(-8)}`,
+        created_by: order.user_id
       };
 
       restorationMovements.push(movement);

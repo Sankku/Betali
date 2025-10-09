@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ShoppingCart, Search, Plus, Eye, Edit, Trash, Copy, Filter, TrendingUp, Play, Truck, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Trash, Copy, Filter, TrendingUp, Play, Truck, CheckCircle, AlertCircle, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import {
   Modal,
   ModalContent,
@@ -26,6 +27,7 @@ import {
   useFulfillOrder,
   useCompleteOrder,
   ORDER_STATUS_OPTIONS,
+  getValidStatusTransitions,
 } from '@/hooks/useOrders';
 import { useClients } from '@/hooks/useClients';
 import { Order, OrderQueryParams } from '@/services/api/orderService';
@@ -48,6 +50,12 @@ export function OrdersPage() {
   const [deleteModalState, setDeleteModalState] = useState({
     isOpen: false,
     order: null as Order | null,
+  });
+  const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
+  const [batchActionModalState, setBatchActionModalState] = useState({
+    isOpen: false,
+    action: '' as 'process' | 'fulfill' | 'complete' | 'delete' | '',
+    orders: [] as Order[],
   });
 
   // Build query parameters
@@ -77,7 +85,8 @@ export function OrdersPage() {
   // Hooks
   const { data: ordersData, isLoading } = useOrders(queryParams);
   const { data: orderStats } = useOrderStats();
-  const { data: clients } = useClients();
+  const { data: clientsResponse } = useClients();
+  const clients = clientsResponse?.data || [];
   const updateOrderStatusMutation = useUpdateOrderStatus();
   const deleteOrderMutation = useDeleteOrder();
   const duplicateOrderMutation = useDuplicateOrder();
@@ -105,10 +114,6 @@ export function OrdersPage() {
     setModalState({ isOpen: true, mode: 'create' });
   }, []);
 
-  const handleViewOrder = useCallback((order: Order) => {
-    setModalState({ isOpen: true, mode: 'view', order });
-  }, []);
-
   const handleEditOrder = useCallback((order: Order) => {
     setModalState({ isOpen: true, mode: 'edit', order });
   }, []);
@@ -127,14 +132,6 @@ export function OrdersPage() {
       }
     }
   }, [deleteModalState.order, deleteOrderMutation]);
-
-  const handleDuplicateOrder = useCallback(async (order: Order) => {
-    try {
-      await duplicateOrderMutation.mutateAsync(order.order_id);
-    } catch (error) {
-      // Error handled by mutation hook
-    }
-  }, [duplicateOrderMutation]);
 
   const handleStatusChange = useCallback(async (order: Order, newStatus: Order['status']) => {
     try {
@@ -174,9 +171,85 @@ export function OrdersPage() {
     }
   }, [completeOrderMutation]);
 
+  // Batch action handlers
+  const handleBatchAction = useCallback((action: 'process' | 'fulfill' | 'complete' | 'delete') => {
+    if (selectedOrders.length === 0) return;
+    setBatchActionModalState({
+      isOpen: true,
+      action,
+      orders: selectedOrders,
+    });
+  }, [selectedOrders]);
+
+  const handleBatchDuplicate = useCallback(async () => {
+    if (selectedOrders.length === 0) return;
+
+    try {
+      const promises = selectedOrders.map(order => duplicateOrderMutation.mutateAsync(order.order_id));
+      await Promise.all(promises);
+      setSelectedOrders([]);
+    } catch (error) {
+      // Errors handled by mutation hook
+    }
+  }, [selectedOrders, duplicateOrderMutation]);
+
+  const confirmBatchAction = useCallback(async () => {
+    const { action, orders } = batchActionModalState;
+    if (!action || orders.length === 0) return;
+
+    try {
+      const promises = orders.map(order => {
+        switch (action) {
+          case 'process':
+            return processOrderMutation.mutateAsync(order.order_id);
+          case 'fulfill':
+            return fulfillOrderMutation.mutateAsync({ orderId: order.order_id, fulfillmentData: {} });
+          case 'complete':
+            return completeOrderMutation.mutateAsync(order.order_id);
+          case 'delete':
+            return deleteOrderMutation.mutateAsync(order.order_id);
+          default:
+            return Promise.resolve();
+        }
+      });
+
+      await Promise.all(promises);
+      setBatchActionModalState({ isOpen: false, action: '', orders: [] });
+      setSelectedOrders([]);
+    } catch (error) {
+      // Errors handled by mutation hooks
+    }
+  }, [batchActionModalState, processOrderMutation, fulfillOrderMutation, completeOrderMutation, deleteOrderMutation]);
+
+  const handleSelectionChange = useCallback((selected: Order[]) => {
+    setSelectedOrders(selected);
+  }, []);
+
+  const getValidOrdersForAction = useCallback((action: 'process' | 'fulfill' | 'complete' | 'delete') => {
+    return selectedOrders.filter(order => {
+      switch (action) {
+        case 'process':
+          return order.status === 'pending';
+        case 'fulfill':
+          return order.status === 'processing';
+        case 'complete':
+          return order.status === 'shipped';
+        case 'delete':
+          return !['completed', 'shipped'].includes(order.status);
+        default:
+          return false;
+      }
+    });
+  }, [selectedOrders]);
+
   const closeModal = useCallback(() => {
     setModalState({ isOpen: false, mode: 'create' });
   }, []);
+
+  // Clear selection when filters change
+  React.useEffect(() => {
+    setSelectedOrders([]);
+  }, [searchQuery, statusFilter, clientFilter, currentPage]);
 
   // Table columns configuration for DataTable
   const columns = React.useMemo(() => [
@@ -222,22 +295,37 @@ export function OrdersPage() {
       header: 'Status',
       cell: ({ row }: { row: any }) => {
         const order = row.original as Order;
+        const validTransitions = getValidStatusTransitions(order.status);
+        const hasTransitions = validTransitions.length > 0;
+
         return (
-          <Select
-            value={order.status}
-            onValueChange={(value) => handleStatusChange(order, value as Order['status'])}
+          <div
+            className="data-table-no-click relative z-10"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{ pointerEvents: 'auto' }}
           >
-            <SelectTrigger className="w-32 h-8">
+            {hasTransitions ? (
+              <Select
+                value={order.status}
+                onValueChange={(value) => handleStatusChange(order, value as Order['status'])}
+              >
+                <SelectTrigger className="w-32 h-8 relative z-10 cursor-pointer" style={{ pointerEvents: 'auto' }}>
+                  <OrderStatusBadge status={order.status} />
+                </SelectTrigger>
+                <SelectContent>
+                  {validTransitions.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      <OrderStatusBadge status={status.value} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
               <OrderStatusBadge status={order.status} />
-            </SelectTrigger>
-            <SelectContent>
-              {ORDER_STATUS_OPTIONS.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  <OrderStatusBadge status={status.value} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            )}
+          </div>
         );
       },
     },
@@ -245,108 +333,10 @@ export function OrdersPage() {
       accessorKey: 'total_price',
       header: 'Total',
       cell: ({ row }: { row: any }) => (
-        <div className="font-medium">${row.original.total_price.toFixed(2)}</div>
+        <div className="font-medium">${(row.original.total_price ?? 0).toFixed(2)}</div>
       ),
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }: { row: any }) => {
-        const order = row.original as Order;
-        return (
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleViewOrder(order)}
-              className="h-8 w-8 p-0"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleEditOrder(order)}
-              className="h-8 w-8 p-0"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            
-            {/* Fulfillment Action Buttons */}
-            {order.status === 'pending' && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleProcessOrder(order)}
-                disabled={processOrderMutation.isPending}
-                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                title="Mark as Processing"
-              >
-                <Play className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {order.status === 'processing' && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleFulfillOrder(order)}
-                disabled={fulfillOrderMutation.isPending}
-                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-                title="Fulfill Order (Ship & Deduct Stock)"
-              >
-                <Truck className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {order.status === 'shipped' && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleCompleteOrder(order)}
-                disabled={completeOrderMutation.isPending}
-                className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
-                title="Mark as Completed"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
-            )}
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleDuplicateOrder(order)}
-              disabled={duplicateOrderMutation.isPending}
-              className="h-8 w-8 p-0"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleDeleteOrder(order)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ], [
-    handleStatusChange, 
-    handleViewOrder, 
-    handleEditOrder, 
-    handleDuplicateOrder, 
-    handleDeleteOrder, 
-    handleProcessOrder,
-    handleFulfillOrder,
-    handleCompleteOrder,
-    duplicateOrderMutation.isPending,
-    processOrderMutation.isPending,
-    fulfillOrderMutation.isPending,
-    completeOrderMutation.isPending
-  ]);
+  ], [handleStatusChange]);
 
   return (
     <>
@@ -356,15 +346,9 @@ export function OrdersPage() {
 
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Orders</h1>
-            <p className="text-gray-600">Manage your sales orders</p>
-          </div>
-          <Button onClick={handleCreateOrder} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Order
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Orders</h1>
+          <p className="text-gray-600">Manage your sales orders</p>
         </div>
 
         {/* Stats Cards */}
@@ -452,46 +436,141 @@ export function OrdersPage() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search orders..."
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10"
-                  />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search orders..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  {ORDER_STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
 
-              <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All clients" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All clients</SelectItem>
-                  {clients?.data?.map((client) => (
-                    <SelectItem key={client.client_id} value={client.client_id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    {ORDER_STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={clientFilter} onValueChange={handleClientFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All clients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clients</SelectItem>
+                    {clients?.map((client) => (
+                      <SelectItem key={client.client_id} value={client.client_id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Toolbar - Always visible */}
+              <div className={cn(
+                "flex items-center justify-between px-4 py-3 rounded-lg border",
+                selectedOrders.length > 0
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-gray-50 border-gray-200"
+              )}>
+                {selectedOrders.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <CheckSquare className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-700">
+                        {selectedOrders.length} selected
+                      </span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {getValidOrdersForAction('process').length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBatchAction('process')}
+                          className="h-8 px-3 text-xs bg-white hover:bg-blue-50 border-blue-300 text-blue-700"
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Process ({getValidOrdersForAction('process').length})
+                        </Button>
+                      )}
+                      {getValidOrdersForAction('fulfill').length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBatchAction('fulfill')}
+                          className="h-8 px-3 text-xs bg-white hover:bg-purple-50 border-purple-300 text-purple-700"
+                        >
+                          <Truck className="h-3 w-3 mr-1" />
+                          Fulfill ({getValidOrdersForAction('fulfill').length})
+                        </Button>
+                      )}
+                      {getValidOrdersForAction('complete').length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBatchAction('complete')}
+                          className="h-8 px-3 text-xs bg-white hover:bg-green-50 border-green-300 text-green-700"
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Complete ({getValidOrdersForAction('complete').length})
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBatchDuplicate}
+                        disabled={duplicateOrderMutation.isPending}
+                        className="h-8 px-3 text-xs bg-white hover:bg-gray-50 border-gray-300 text-gray-700"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Duplicate ({selectedOrders.length})
+                      </Button>
+                      {getValidOrdersForAction('delete').length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBatchAction('delete')}
+                          className="h-8 px-3 text-xs bg-white hover:bg-red-50 border-red-300 text-red-700"
+                        >
+                          <Trash className="h-3 w-3 mr-1" />
+                          Delete ({getValidOrdersForAction('delete').length})
+                        </Button>
+                      )}
+                      <Button
+                        onClick={handleCreateOrder}
+                        size="sm"
+                        className="h-8 px-3 text-xs flex items-center gap-1"
+                      >
+                        <Plus className="h-3 w-3" />
+                        New Order
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full flex justify-end">
+                    <Button
+                      onClick={handleCreateOrder}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      New Order
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -505,8 +584,12 @@ export function OrdersPage() {
               loading={isLoading}
               searchable={false}
               enablePagination={true}
+              enableRowSelection={true}
+              selectedRows={selectedOrders}
+              onSelectionChange={handleSelectionChange}
+              getRowId={(order: Order) => order.order_id}
               pageSize={20}
-              onRowClick={handleViewOrder}
+              onRowDoubleClick={handleEditOrder}
               emptyMessage="No orders found. Get started by creating your first order."
             />
           </CardContent>
@@ -522,15 +605,15 @@ export function OrdersPage() {
       />
 
       {/* Delete Confirmation Modal */}
-      <Modal 
-        isOpen={deleteModalState.isOpen} 
+      <Modal
+        isOpen={deleteModalState.isOpen}
         onClose={() => setDeleteModalState({ isOpen: false, order: null })}
       >
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Cancel Order</ModalTitle>
+            <ModalTitle>Delete Order</ModalTitle>
             <ModalDescription>
-              Are you sure you want to cancel this order? This action cannot be undone.
+              Are you sure you want to permanently delete this order? This action cannot be undone.
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
@@ -545,7 +628,78 @@ export function OrdersPage() {
               onClick={confirmDelete}
               disabled={deleteOrderMutation.isPending}
             >
-              {deleteOrderMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
+              {deleteOrderMutation.isPending ? 'Deleting...' : 'Delete Order'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Batch Action Confirmation Modal */}
+      <Modal 
+        isOpen={batchActionModalState.isOpen} 
+        onClose={() => setBatchActionModalState({ isOpen: false, action: '', orders: [] })}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              Batch {batchActionModalState.action === 'process' ? 'Process' :
+                    batchActionModalState.action === 'fulfill' ? 'Fulfill' :
+                    batchActionModalState.action === 'complete' ? 'Complete' : 'Delete'} Orders
+            </ModalTitle>
+            <ModalDescription>
+              {batchActionModalState.action === 'delete' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Are you sure you want to permanently delete {getValidOrdersForAction('delete').length} orders? This action cannot be undone.</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p>
+                    Are you sure you want to {batchActionModalState.action} {getValidOrdersForAction(batchActionModalState.action).length} orders?
+                  </p>
+                  {batchActionModalState.action === 'fulfill' && (
+                    <div className="flex items-center gap-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>This will deduct stock from inventory.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {batchActionModalState.orders.length > getValidOrdersForAction(batchActionModalState.action).length && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-800">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">
+                      {batchActionModalState.orders.length - getValidOrdersForAction(batchActionModalState.action).length} orders
+                      will be skipped (invalid status for this action).
+                    </span>
+                  </div>
+                </div>
+              )}
+            </ModalDescription>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBatchActionModalState({ isOpen: false, action: '', orders: [] })}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={batchActionModalState.action === 'delete' ? 'destructive' : 'default'}
+              onClick={confirmBatchAction}
+              disabled={processOrderMutation.isPending || fulfillOrderMutation.isPending ||
+                       completeOrderMutation.isPending || deleteOrderMutation.isPending}
+            >
+              {(processOrderMutation.isPending || fulfillOrderMutation.isPending ||
+                completeOrderMutation.isPending || deleteOrderMutation.isPending)
+                ? 'Processing...'
+                : `${batchActionModalState.action === 'process' ? 'Process' :
+                     batchActionModalState.action === 'fulfill' ? 'Fulfill' :
+                     batchActionModalState.action === 'complete' ? 'Complete' : 'Delete'} Orders`}
             </Button>
           </ModalFooter>
         </ModalContent>

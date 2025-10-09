@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Building2 } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
 import { useTableConfig } from '../../hooks/useTableConfig';
@@ -26,6 +26,7 @@ import {
   useDeactivateWarehouse,
   useDeleteWarehouse,
 } from '../../hooks/useWarehouse';
+import { useOrganization } from '../../context/OrganizationContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -39,6 +40,8 @@ interface DeleteConfirmState {
 }
 
 const WarehousesPage: React.FC = () => {
+  const { currentOrganization } = useOrganization();
+  
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -154,6 +157,7 @@ const WarehousesPage: React.FC = () => {
     }
   }, [warehouses]);
 
+
   return (
     <>
       <Helmet>
@@ -178,6 +182,11 @@ const WarehousesPage: React.FC = () => {
               data={warehouses || []}
               onAction={handleTableAction}
               isLoading={isLoading || isLoaderVisible}
+              emptyMessage={
+                !currentOrganization 
+                  ? "Please select or create an organization to access warehouse management features." 
+                  : "No warehouses created yet. Create your first warehouse to get started!"
+              }
             />
           ) : null
         }

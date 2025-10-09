@@ -6,9 +6,9 @@ export interface Order {
   warehouse_id: string | null;
   order_date: string;
   status: 'draft' | 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
-  subtotal: number;
-  tax: number;
-  total_price: number;
+  subtotal?: number;
+  tax?: number;
+  total_price?: number;
   notes: string | null;
   organization_id: string;
   created_at: string;
@@ -33,7 +33,7 @@ export interface OrderDetail {
   order_id: string;
   product_id: string;
   quantity: number;
-  price: number;
+  price?: number;
   organization_id: string;
   created_at: string;
   // Relations

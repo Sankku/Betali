@@ -43,6 +43,32 @@ const tableConfigurations = [
           }
         },
         {
+          key: 'price',
+          header: 'Price',
+          dataType: 'currency',
+          sortable: true,
+          filterable: true,
+          currencyConfig: {
+            currency: 'USD',
+            locale: 'en-US'
+          }
+        },
+        {
+          key: 'current_stock',
+          header: 'Stock',
+          dataType: 'badge',
+          sortable: true,
+          filterable: true,
+          badgeConfig: {
+            variant: 'dynamic',
+            valueMap: [
+              { condition: { operator: '>', value: 10 }, label: null, variant: 'success' },
+              { condition: { operator: '>', value: 0 }, label: null, variant: 'warning' },
+              { condition: { operator: '<=', value: 0 }, label: 'Out of stock', variant: 'destructive' }
+            ]
+          }
+        },
+        {
           key: 'expiration_date',
           header: 'Expiration',
           dataType: 'compound',
@@ -642,6 +668,110 @@ const tableConfigurations = [
         searchableColumns: ['name', 'email', 'organization_name', 'role']
       }
     }
+  },
+  {
+    id: 'tax_rates',
+    name: 'Tax Rate Management',
+    entity: 'tax_rates',
+    config: {
+      columns: [
+        {
+          key: 'name',
+          header: 'Tax Name',
+          dataType: 'compound',
+          sortable: true,
+          filterable: true,
+          compoundConfig: {
+            fields: [
+              {
+                key: 'name',
+                type: 'icon-text',
+                config: {
+                  dataType: 'icon-text',
+                  iconConfig: { name: 'percent', position: 'left', size: 16 },
+                  textConfig: { weight: 'medium' }
+                }
+              },
+              {
+                key: 'description',
+                type: 'text',
+                config: {
+                  dataType: 'text',
+                  textConfig: { 
+                    size: 'sm', 
+                    color: 'text-neutral-500'
+                  }
+                }
+              }
+            ],
+            layout: 'vertical',
+            spacing: 'tight'
+          }
+        },
+        {
+          key: 'rate',
+          header: 'Tax Rate',
+          dataType: 'percentage',
+          sortable: true,
+          filterable: true,
+          percentageConfig: {
+            decimals: 2,
+            showIcon: true,
+            iconPosition: 'left'
+          }
+        },
+        {
+          key: 'is_active',
+          header: 'Status',
+          dataType: 'status',
+          sortable: true,
+          filterable: true,
+          statusConfig: {
+            activeLabel: 'Active',
+            inactiveLabel: 'Inactive',
+            activeVariant: 'success',
+            inactiveVariant: 'danger',
+            showToggle: true,
+            toggleDisabled: false
+          }
+        },
+        {
+          key: 'created_at',
+          header: 'Created',
+          dataType: 'date',
+          sortable: true,
+          filterable: true,
+          dateConfig: {
+            format: 'short',
+            locale: 'en-US'
+          }
+        },
+        {
+          key: 'actions',
+          header: 'Actions',
+          dataType: 'actions',
+          sortable: false,
+          filterable: false,
+          actionsConfig: {
+            actions: [
+              { key: 'view', label: 'View', icon: 'eye', variant: 'ghost' },
+              { key: 'edit', label: 'Edit', icon: 'edit', variant: 'ghost' },
+              { key: 'delete', label: 'Delete', icon: 'trash', variant: 'destructive' }
+            ]
+          }
+        }
+      ],
+      pagination: {
+        enabled: true,
+        defaultPageSize: 10,
+        pageSizeOptions: [5, 10, 20, 50]
+      },
+      search: {
+        enabled: true,
+        placeholder: 'Search tax rates...',
+        searchableColumns: ['name', 'description']
+      }
+    }
   }
 ];
 
@@ -677,12 +807,13 @@ async function populateTableConfigurations() {
     console.log('\n🎉 Population process completed!');
     console.log('\n📊 Summary:');
     console.log(`   - Configurations processed: ${tableConfigurations.length}`);
-    console.log('   - Configured tables: products, warehouse, stock_movements');
+    console.log('   - Configured tables: products, warehouse, stock_movements, organizations, users, tax_rates');
     console.log('\n🔗 You can test the APIs:');
     console.log('   - GET /api/tables/available');
     console.log('   - GET /api/tables/products/config');
     console.log('   - GET /api/tables/warehouse/config');
     console.log('   - GET /api/tables/stock_movements/config');
+    console.log('   - GET /api/tables/tax_rates/config');
     
   } catch (error) {
     console.error('❌ Error during population:', error.message);

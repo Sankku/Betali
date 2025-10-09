@@ -27,11 +27,18 @@ export function useSuppliers(options: UseSuppliersOptions = {}) {
   return useQuery({
     queryKey: ['suppliers', currentOrganization?.organization_id, options.searchOptions],
     queryFn: async () => {
-      const suppliers = await supplierService.getAll(options.searchOptions);
-      return suppliers;
+      try {
+        const suppliers = await supplierService.getAll(options.searchOptions);
+        return suppliers;
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        // Return empty array on error to prevent UI break
+        return [];
+      }
     },
     enabled: !!currentOrganization?.organization_id && (options.enabled !== false),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1, // Only retry once
   });
 }
 

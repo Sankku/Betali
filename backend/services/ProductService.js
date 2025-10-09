@@ -3,13 +3,14 @@
  * Handles business rules and validation
  */
 class ProductService {
-    constructor(productRepository, logger) {
+    constructor(productRepository, stockMovementRepository, logger) {
       this.repository = productRepository;
+      this.stockMovementRepository = stockMovementRepository;
       this.logger = logger;
     }
-  
+
     /**
-     * Get all products for an organization
+     * Get all products for an organization with current stock
      * @param {string} organizationId - Organization ID
      * @param {Object} options - Query options
      * @returns {Promise<Array>}
@@ -17,7 +18,25 @@ class ProductService {
     async getOrganizationProducts(organizationId, options = {}) {
       try {
         this.logger.info(`Fetching products for organization: ${organizationId}`);
-        return await this.repository.findByOrganizationId(organizationId, options);
+        const products = await this.repository.findByOrganizationId(organizationId, options);
+
+        // Get stock for all products
+        if (products && products.length > 0) {
+          const productIds = products.map(p => p.product_id);
+          const stockByProduct = await this.stockMovementRepository.getCurrentStockBulk(
+            productIds,
+            null, // null = all warehouses
+            organizationId
+          );
+
+          // Add stock to each product
+          return products.map(product => ({
+            ...product,
+            current_stock: stockByProduct[product.product_id] || 0
+          }));
+        }
+
+        return products;
       } catch (error) {
         this.logger.error(`Error fetching organization products: ${error.message}`);
         throw error;

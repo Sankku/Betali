@@ -42,6 +42,10 @@ const ClientController = require('../controllers/ClientController');
 const SupplierController = require('../controllers/SupplierController');
 const OrderController = require('../controllers/OrderController');
 const PricingController = require('../controllers/PricingController');
+const { TaxRateService } = require('../services/TaxRateService');
+const { DiscountRuleService } = require('../services/DiscountRuleService');
+const { TaxRateController } = require('../controllers/TaxRateController');
+const { DiscountRuleController } = require('../controllers/DiscountRuleController');
 
 /**
  * Dependency injection container
@@ -208,8 +212,9 @@ function initializeContainer() {
 
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
+    const stockMovementRepository = container.get('stockMovementRepository');
     const logger = container.get('logger');
-    return new ProductService(productRepository, logger);
+    return new ProductService(productRepository, stockMovementRepository, logger);
   }, true);
 
   container.register('warehouseService', () => {
@@ -313,6 +318,18 @@ function initializeContainer() {
     return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, clientRepository, pricingService, logger);
   }, true);
 
+  container.register('taxRateService', () => {
+    const taxRateRepository = container.get('taxRateRepository');
+    const logger = container.get('logger');
+    return new TaxRateService(taxRateRepository, logger);
+  }, true);
+
+  container.register('discountRuleService', () => {
+    const discountRuleRepository = container.get('discountRuleRepository');
+    const logger = container.get('logger');
+    return new DiscountRuleService(discountRuleRepository, logger);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -370,6 +387,16 @@ function initializeContainer() {
     const taxRateRepository = container.get('taxRateRepository');
     const discountRuleRepository = container.get('discountRuleRepository');
     return new PricingController(pricingService, pricingTierRepository, customerPricingRepository, taxRateRepository, discountRuleRepository);
+  }, true);
+
+  container.register('taxRateController', () => {
+    const taxRateService = container.get('taxRateService');
+    return new TaxRateController(taxRateService);
+  }, true);
+
+  container.register('discountRuleController', () => {
+    const discountRuleService = container.get('discountRuleService');
+    return new DiscountRuleController(discountRuleService);
   }, true);
 }
 
@@ -442,6 +469,22 @@ const ServiceFactory = {
 
   createLogger(context = 'Default') {
     return new Logger(context);
+  },
+
+  createTaxRateController() {
+    return container.get('taxRateController');
+  },
+
+  createDiscountRuleController() {
+    return container.get('discountRuleController');
+  },
+
+  createTaxRateService() {
+    return container.get('taxRateService');
+  },
+
+  createDiscountRuleService() {
+    return container.get('discountRuleService');
   }
 };
 

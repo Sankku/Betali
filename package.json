@@ -9,7 +9,11 @@
     ],
     "scripts": {
         "front": "cd frontend && bun run dev",
-        "back": "cd backend && bun run start"
+        "back": "cd backend && bun run start",
+        "build:front": "cd frontend && bun run build",
+        "build": "bun run build:front",
+        "preview:front": "cd frontend && bun run preview",
+        "serve:front": "bun run preview:front"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.1.1",

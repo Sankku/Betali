@@ -91,21 +91,21 @@ export function DashboardStats() {
         title="Total Products"
         value={isLoadingProducts ? 'Loading...' : productsCount}
         icon={<Package className="h-5 w-5 text-white" />}
-        to="/dashboard/productos"
+        to="/dashboard/products"
         color="bg-blue-500"
       />
       <StatCard
         title="Warehouses"
         value={isLoadingWarehouses ? 'Loading...' : warehousesCount}
         icon={<Warehouse className="h-5 w-5 text-white" />}
-        to="/dashboard/depositos"
+        to="/dashboard/warehouse"
         color="bg-green-500"
       />
       <StatCard
         title="Movements"
         value={isLoadingMovements ? 'Loading...' : movementsCount}
         icon={<RefreshCw className="h-5 w-5 text-white" />}
-        to="/dashboard/movimientos"
+        to="/dashboard/stock-movements"
         color="bg-purple-500"
       />
       <StatCard

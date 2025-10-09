@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { warehouseService } from "../services/api/warehouseService";
-import { toast } from "../lib/toast"; 
+import { toast } from "../lib/toast";
+import { useOrganization } from "../context/OrganizationContext"; 
 
 export interface WarehouseFormData {
   name: string;
@@ -14,35 +15,58 @@ export interface UseWarehousesOptions {
 }
 
 export function useWarehouses(options: UseWarehousesOptions = {}) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["warehouses"],
+    queryKey: ["warehouses", currentOrganization?.organization_id],
     queryFn: async () => {
-      return await warehouseService.getAll();
+      try {
+        const response = await warehouseService.getAll();
+        // Normalize the response structure for consistent access
+        if (Array.isArray(response)) {
+          return { data: response, total: response.length };
+        }
+        if (response?.data && Array.isArray(response.data)) {
+          return { data: response.data, total: response.data.length };
+        }
+        // Fallback for other response structures
+        return { data: [], total: 0 };
+      } catch (error) {
+        console.error('Error fetching warehouses:', error);
+        // Return empty array on error to prevent UI break
+        return { data: [], total: 0 };
+      }
     },
-    enabled: options.enabled !== false,
+    enabled: options.enabled !== false && !!currentOrganization,
     refetchInterval: options.refetchInterval,
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 1 * 60 * 1000, // 1 minute for fresher data
+    retry: 1, // Only retry once
   });
 }
 
 export function useWarehouse(id: string, enabled = true) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["warehouse", id],
+    queryKey: ["warehouse", id, currentOrganization?.organization_id],
     queryFn: async () => {
       return await warehouseService.getById(id);
     },
-    enabled: enabled && !!id,
+    enabled: enabled && !!id && !!currentOrganization,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useCreateWarehouse() {
   const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
 
   return useMutation({
     mutationFn: (data: WarehouseFormData) => warehouseService.create(data),
     onSuccess: (response) => {
+      // Invalidate all warehouse queries for fresh data
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["warehouses", currentOrganization?.organization_id] });
       toast.success("Warehouse created successfully");
       return response;
     },
@@ -108,12 +132,14 @@ export function useWarehouseMovements(
   warehouseId: string,
   options: { limit?: number; offset?: number } = {}
 ) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["warehouse-movements", warehouseId, options],
+    queryKey: ["warehouse-movements", warehouseId, options, currentOrganization?.organization_id],
     queryFn: async () => {
       return await warehouseService.getMovements(warehouseId, options);
     },
-    enabled: !!warehouseId,
+    enabled: !!warehouseId && !!currentOrganization,
     staleTime: 2 * 60 * 1000, 
   });
 }
@@ -132,7 +158,7 @@ export function useWarehouseManagement() {
   };
 
   return {
-    warehouses: warehouses.data,
+    warehouses: warehouses.data?.data || [],
     isLoading: warehouses.isLoading,
     error: warehouses.error,
     

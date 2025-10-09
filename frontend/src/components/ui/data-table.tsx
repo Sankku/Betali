@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -11,6 +11,7 @@ import {
   PaginationState,
   ColumnFiltersState,
   VisibilityState,
+  RowSelectionState,
 } from '@tanstack/react-table';
 import {
   ChevronUp,
@@ -27,12 +28,14 @@ import { Button } from './button';
 import { Input } from './input';
 import { Loading } from './loading';
 import { cn } from '../../lib/utils';
+import { handleTableRowSelection, getLastSelectedItem } from '../../lib/utils/selection';
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
   data: TData[];
   loading?: boolean;
   onRowClick?: (row: TData) => void;
+  onRowDoubleClick?: (row: TData) => void;
   emptyMessage?: string;
   className?: string;
   searchable?: boolean;
@@ -43,6 +46,10 @@ interface DataTableProps<TData> {
   enablePagination?: boolean;
   enableColumnFilters?: boolean;
   enableColumnVisibility?: boolean;
+  enableRowSelection?: boolean;
+  selectedRows?: TData[];
+  onSelectionChange?: (selectedRows: TData[]) => void;
+  getRowId?: (row: TData) => string;
   manualPagination?: boolean;
   pageCount?: number;
   onPaginationChange?: (pagination: PaginationState) => void;
@@ -55,6 +62,7 @@ export function DataTable<TData>({
   data: rawData,
   loading = false,
   onRowClick,
+  onRowDoubleClick,
   emptyMessage = 'No data available',
   className,
   searchable = true,
@@ -65,6 +73,10 @@ export function DataTable<TData>({
   enablePagination = true,
   enableColumnFilters = true,
   enableColumnVisibility = false,
+  enableRowSelection = false,
+  selectedRows = [],
+  onSelectionChange,
+  getRowId,
   manualPagination = false,
   pageCount,
   onPaginationChange,
@@ -75,10 +87,12 @@ export function DataTable<TData>({
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
   });
+  const lastSelectedItemRef = useRef<TData | null>(null);
 
   const data = useMemo(() => {
     if (!rawData) {
@@ -97,8 +111,66 @@ export function DataTable<TData>({
       console.error('DataTable: prop "columns" must be an array');
       return [];
     }
+    
+    // Add selection column if row selection is enabled
+    if (enableRowSelection) {
+      const selectionColumn = {
+        id: 'select',
+        header: ({ table }: any) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              checked={table.getIsAllPageRowsSelected()}
+              indeterminate={table.getIsSomePageRowsSelected()}
+              onChange={table.getToggleAllPageRowsSelectedHandler()}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: ({ row }: any) => {
+          const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            e.stopPropagation();
+            const isChecked = e.target.checked;
+            const currentIds = (selectedRows || []).map(getRowId!);
+            const rowId = getRowId!(row.original);
+
+            let newSelection: typeof selectedRows;
+            if (isChecked) {
+              // Add to selection if not already there
+              if (!currentIds.includes(rowId)) {
+                newSelection = [...(selectedRows || []), row.original];
+              } else {
+                newSelection = selectedRows || [];
+              }
+            } else {
+              // Remove from selection
+              newSelection = (selectedRows || []).filter(item => getRowId!(item) !== rowId);
+            }
+
+            onSelectionChange?.(newSelection);
+          };
+
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                checked={row.getIsSelected()}
+                onChange={handleCheckboxChange}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      };
+      return [selectionColumn, ...columns];
+    }
+    
     return columns;
-  }, [columns]);
+  }, [columns, enableRowSelection, selectedRows, getRowId, onSelectionChange]);
 
   const table = useReactTable({
     data,
@@ -111,7 +183,10 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: onColumnFiltersChange || setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     onPaginationChange: onPaginationChange || setPagination,
+    enableRowSelection: enableRowSelection,
+    getRowId: getRowId,
     manualPagination,
     pageCount: pageCount ?? -1,
     state: {
@@ -119,18 +194,98 @@ export function DataTable<TData>({
       globalFilter,
       columnFilters,
       columnVisibility,
+      rowSelection,
       pagination,
     },
   });
 
-  const handleRowClick = (row: TData, event: React.MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const isButton = target.closest('button');
-    const isLink = target.closest('a');
-    const isInput = target.closest('input, select, textarea');
+  // Sync selectedRows prop to internal rowSelection state
+  React.useEffect(() => {
+    if (enableRowSelection && selectedRows && getRowId) {
+      const selectedIds = selectedRows.map(getRowId);
+      const newRowSelection: RowSelectionState = {};
 
-    if (!isButton && !isLink && !isInput && onRowClick) {
-      onRowClick(row);
+      data.forEach((item) => {
+        const itemId = getRowId(item);
+        if (selectedIds.includes(itemId)) {
+          newRowSelection[itemId] = true;
+        }
+      });
+
+      setRowSelection(newRowSelection);
+    }
+  }, [selectedRows, data, enableRowSelection, getRowId]);
+
+  const handleRowClick = (row: any, event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+
+    // Don't trigger row click if we're clicking on interactive elements
+    if (target.closest('.data-table-no-click')) {
+      return;
+    }
+
+    // Check if clicking on or inside interactive elements
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('textarea') ||
+      target.closest('[role="button"]') ||
+      target.closest('[data-radix-collection-item]') ||
+      target.hasAttribute('data-radix-collection-item')
+    ) {
+      return;
+    }
+
+    // If row selection is enabled and no custom onRowClick, handle selection with our custom logic
+    if (enableRowSelection && !onRowClick && onSelectionChange && getRowId) {
+      const newSelection = handleTableRowSelection({
+        currentSelection: selectedRows || [],
+        clickedItem: row.original,
+        allItems: data,
+        lastSelectedItem: lastSelectedItemRef.current,
+        isCtrlKey: event.ctrlKey || event.metaKey, // Support both Ctrl (Windows/Linux) and Cmd (Mac)
+        getItemId: getRowId,
+      });
+
+      // Update last selected item
+      lastSelectedItemRef.current = row.original;
+
+      // Notify parent of selection change
+      onSelectionChange(newSelection);
+      return;
+    }
+
+    if (onRowClick) {
+      onRowClick(row.original);
+    }
+  };
+
+  const handleRowDoubleClick = (row: any, event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+
+    // Don't trigger row double click if we're clicking on interactive elements
+    if (target.closest('.data-table-no-click')) {
+      return;
+    }
+
+    // Check if clicking on or inside interactive elements
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('textarea') ||
+      target.closest('[role="button"]') ||
+      target.closest('[data-radix-collection-item]') ||
+      target.hasAttribute('data-radix-collection-item')
+    ) {
+      return;
+    }
+
+    if (onRowDoubleClick) {
+      onRowDoubleClick(row.original);
     }
   };
 
@@ -286,10 +441,11 @@ export function DataTable<TData>({
                     table.getRowModel().rows.map((row, index) => (
                       <tr
                         key={row.id}
-                        onClick={e => handleRowClick(row.original, e)}
+                        onClick={e => handleRowClick(row, e)}
+                        onDoubleClick={e => handleRowDoubleClick(row, e)}
                         className={cn(
                           'transition-all duration-200 hover:bg-primary-50/40 hover:backdrop-blur-sm group',
-                          onRowClick && 'cursor-pointer',
+                          (onRowClick || onRowDoubleClick || enableRowSelection) && 'cursor-pointer',
                           index % 2 === 0 ? 'bg-white/30' : 'bg-white/15'
                         )}
                       >

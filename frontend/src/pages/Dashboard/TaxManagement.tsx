@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Percent, Settings, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,23 @@ import { BackendConfiguredTable } from '@/components/table/BackendConfiguredTabl
 import { TaxRateModal } from '@/components/features/taxes/tax-rate-modal';
 import { DashboardLayout } from '@/components/layout/Dashboard';
 import { useTaxRates, TaxRate } from '@/hooks/useTaxRates';
+import { useTableConfig } from '@/hooks/useTableConfig';
+import { useOrganization } from '@/context/OrganizationContext';
 import { formatCurrency } from '@/lib/utils';
 
 export default function TaxManagement() {
+  const { currentOrganization } = useOrganization();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaxRate, setSelectedTaxRate] = useState<TaxRate | undefined>();
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
 
   const { data: taxRates, isLoading } = useTaxRates();
+  const {
+    data: tableConfig,
+    isLoading: configLoading,
+    error: configError,
+  } = useTableConfig('tax_rates');
 
   const handleCreate = () => {
     setSelectedTaxRate(undefined);
@@ -35,75 +44,23 @@ export default function TaxManagement() {
     setIsModalOpen(true);
   };
 
-  const tableConfig = {
-    endpoint: '/api/pricing/taxes/rates',
-    columns: [
-      {
-        key: 'name',
-        title: 'Tax Name',
-        render: (value: string, row: TaxRate) => (
-          <div className="flex flex-col">
-            <span className="font-medium text-gray-900">{value}</span>
-            {row.description && (
-              <span className="text-sm text-gray-700">{row.description}</span>
-            )}
-          </div>
-        )
-      },
-      {
-        key: 'rate',
-        title: 'Tax Rate',
-        render: (value: number) => (
-          <div className="flex items-center gap-2">
-            <Percent className="h-4 w-4 text-gray-600" />
-            <span className="font-semibold text-gray-900">
-              {(value * 100).toFixed(2)}%
-            </span>
-          </div>
-        )
-      },
-      {
-        key: 'is_inclusive',
-        title: 'Type',
-        render: (value: boolean) => (
-          <Badge variant={value ? 'secondary' : 'outline'} className="font-medium">
-            {value ? 'Tax Inclusive' : 'Tax Exclusive'}
-          </Badge>
-        )
-      },
-      {
-        key: 'is_active',
-        title: 'Status',
-        render: (value: boolean) => (
-          <Badge 
-            variant={value ? 'success' : 'secondary'} 
-            className={value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-          >
-            {value ? 'Active' : 'Inactive'}
-          </Badge>
-        )
-      },
-      {
-        key: 'created_at',
-        title: 'Created',
-        render: (value: string) => (
-          <span className="text-gray-800">
-            {new Date(value).toLocaleDateString()}
-          </span>
-        )
-      }
-    ],
-    actions: {
-      view: handleView,
-      edit: handleEdit,
-    },
-    searchPlaceholder: "Search tax rates...",
-    emptyState: {
-      title: "No Tax Rates Found",
-      description: "Create your first tax rate to start managing taxes for your products.",
-      icon: Percent
+  // Handle table actions from the configurable table
+  const handleTableAction = useCallback((action: string, row: TaxRate) => {
+    switch (action) {
+      case 'view':
+        handleView(row);
+        break;
+      case 'edit':
+        handleEdit(row);
+        break;
+      case 'create':
+        handleCreate();
+        break;
+      default:
+        console.warn('Unknown action:', action);
     }
-  };
+  }, []);
+
 
   return (
     <>
@@ -228,10 +185,23 @@ export default function TaxManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <BackendConfiguredTable
-            config={tableConfig}
-            isLoading={isLoading}
-          />
+          {tableConfig ? (
+            <BackendConfiguredTable
+              config={tableConfig}
+              data={taxRates?.data || []}
+              onAction={handleTableAction}
+              isLoading={isLoading || configLoading}
+              emptyMessage={
+                !currentOrganization 
+                  ? "Please select or create an organization to access tax management features." 
+                  : "No tax rates created yet. Create your first tax rate to get started!"
+              }
+            />
+          ) : (
+            <div className="p-8 text-center text-gray-500">
+              {configLoading ? "Loading table configuration..." : "Table configuration unavailable"}
+            </div>
+          )}
         </CardContent>
       </Card>
 
