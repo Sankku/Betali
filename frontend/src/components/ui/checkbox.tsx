@@ -59,7 +59,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             )}
           </div>
 
-          <label className="relative inline-flex items-center cursor-pointer">
+          <div className="relative inline-flex items-center">
             <input
               type="checkbox"
               id={checkboxId}
@@ -70,18 +70,20 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               disabled={disabled}
               {...props}
             />
-            <div
+            <label
+              htmlFor={checkboxId}
               className={cn(
-                "relative peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:transition-all after:shadow-sm peer-disabled:opacity-50 peer-disabled:cursor-not-allowed rounded-md transition-colors duration-200",
+                "relative peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:transition-all after:shadow-sm peer-disabled:opacity-50 peer-disabled:cursor-not-allowed rounded-md transition-colors duration-200 cursor-pointer",
                 size === 'sm' && 'w-9 h-5 after:h-4 after:w-4 after:rounded-sm',
                 size === 'default' && 'w-11 h-6 after:h-5 after:w-5 after:rounded',
                 size === 'lg' && 'w-13 h-7 after:h-6 after:w-6 after:rounded-md',
                 checked ? 'bg-primary-500' : 'bg-neutral-200',
                 error && 'ring-2 ring-danger/20',
+                disabled && 'cursor-not-allowed',
                 className
               )}
             />
-          </label>
+          </div>
 
           {error && (
             <p className="text-xs text-danger-600 flex items-center gap-1 mt-1">
@@ -106,16 +108,18 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             disabled={disabled}
             {...props}
           />
-          <div
+          <label
+            htmlFor={checkboxId}
             className={cn(
-              'peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 border transition-all duration-200 flex items-center justify-center peer-disabled:opacity-50 peer-disabled:cursor-not-allowed rounded-sm shadow-sm',
+              'peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 border transition-all duration-200 flex items-center justify-center peer-disabled:opacity-50 peer-disabled:cursor-not-allowed rounded-sm shadow-sm cursor-pointer',
               size === 'sm' && 'h-4 w-4',
               size === 'default' && 'h-5 w-5',
               size === 'lg' && 'h-6 w-6',
               checked
-                ? 'bg-primary border-primary'
+                ? 'bg-primary-500 border-primary-500'
                 : 'bg-white border-neutral-300 hover:border-neutral-400',
               error && 'border-danger',
+              disabled && 'cursor-not-allowed',
               className
             )}
           >
@@ -129,7 +133,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 )}
               />
             )}
-          </div>
+          </label>
         </div>
 
         <div className="flex-1">

@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle, Eye, Edit, Trash } from 'lucide-react';
+import { AlertTriangle, Eye, Edit, Trash, Building2 } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
 import { DataTable } from '../../components/ui/data-table';
@@ -23,6 +23,7 @@ import {
   ModalDescription,
   ModalFooter,
 } from '../../components/ui';
+import { useOrganization } from '../../context/OrganizationContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -44,6 +45,8 @@ const isValidTableConfig = (config: any): config is TableConfig => {
 };
 
 const ProductsPage: React.FC = () => {
+  const { currentOrganization } = useOrganization();
+  
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -150,11 +153,11 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'sku',
+      accessorKey: 'batch_number',
       header: 'SKU',
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-600 font-mono">
-          {row.original.sku || 'N/A'}
+          {row.original.batch_number || 'N/A'}
         </div>
       ),
     },
@@ -168,13 +171,22 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'batch_number',
-      header: 'Batch',
-      cell: ({ row }: { row: any }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.batch_number || 'N/A'}
-        </div>
-      ),
+      accessorKey: 'current_stock',
+      header: 'Stock',
+      cell: ({ row }: { row: any }) => {
+        const stock = row.original.current_stock ?? 0;
+        const stockClass = stock > 10
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : stock > 0
+          ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+          : 'bg-red-100 text-red-800 border-red-200';
+
+        return (
+          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${stockClass}`}>
+            {stock > 0 ? stock : 'Out of stock'}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'origin_country',
@@ -222,6 +234,7 @@ const ProductsPage: React.FC = () => {
     },
   ], []);
 
+
   return (
     <>
       <Helmet>
@@ -246,6 +259,11 @@ const ProductsPage: React.FC = () => {
               data={products}
               onAction={handleTableAction}
               isLoading={isLoading || isLoaderVisible}
+              emptyMessage={
+                !currentOrganization 
+                  ? "Please select or create an organization to access product management features." 
+                  : "No products created yet. Create your first product to get started!"
+              }
             />
           ) : (
             // Fallback to DataTable if backend configuration is not available
@@ -272,7 +290,11 @@ const ProductsPage: React.FC = () => {
                 searchable={true}
                 enablePagination={true}
                 pageSize={10}
-                emptyMessage="No products found. Create your first product to get started."
+                emptyMessage={
+                  !currentOrganization 
+                    ? "Please select or create an organization to access product management features." 
+                    : "No products created yet. Create your first product to get started!"
+                }
               />
             </div>
           )

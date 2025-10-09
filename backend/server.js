@@ -25,6 +25,8 @@ const supplierRoutes = require('./routes/suppliers');
 const { createOrderRoutes } = require('./routes/orders');
 const { createPricingRoutes } = require('./routes/pricing');
 const authRoutes = require('./routes/auth');
+const taxRateRoutes = require('./routes/taxRates');
+const discountRuleRoutes = require('./routes/discountRules');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
 
@@ -128,11 +130,11 @@ class Application {
     }
 
     this.app.use(cors({
-      origin: process.env.NODE_ENV === 'production' 
+      origin: process.env.NODE_ENV === 'production'
         ? (process.env.FRONTEND_URL || 'http://localhost:3000')
         : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'x-organization-id']
     }));
     
@@ -191,6 +193,8 @@ class Application {
     this.app.use('/api/suppliers', supplierRoutes);
     this.app.use('/api/orders', createOrderRoutes(container));
     this.app.use('/api/pricing', createPricingRoutes(container));
+    this.app.use('/api/tax-rates', taxRateRoutes);
+    this.app.use('/api/discount-rules', discountRuleRoutes);
     
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {
@@ -215,7 +219,9 @@ class Application {
           organizations: '/api/organizations',
           clients: '/api/clients',
           suppliers: '/api/suppliers',
-          orders: '/api/orders'
+          orders: '/api/orders',
+          taxRates: '/api/tax-rates',
+          discountRules: '/api/discount-rules'
         }
       });
     });

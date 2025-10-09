@@ -80,7 +80,7 @@ class HttpClient {
 
   async put<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'PUT',
@@ -96,6 +96,31 @@ class HttpClient {
       return await response.json();
     } catch (error) {
       console.error(`Error in PUT ${endpoint}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Performs a PATCH request
+   */
+  async patch<T>(endpoint: string, data: any): Promise<T> {
+    const headers = await this.getHeaders();
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'PATCH',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error in PATCH ${endpoint}:`, error);
       throw error;
     }
   }
@@ -127,7 +152,7 @@ class HttpClient {
   private async handleResponseError(response: Response): Promise<never> {
     if (response.status === 401) {
       const {  error } = await supabase.auth.refreshSession();
-      
+
       if (error) {
         await supabase.auth.signOut();
         window.location.href = '/login?error=session_expired';
@@ -137,8 +162,14 @@ class HttpClient {
 
     try {
       const errorData = await response.json();
-      throw new Error(errorData.error || `Error: ${response.status}`);
+      // Extract error message from different possible formats
+      const errorMessage = errorData.error || errorData.message || `Error: ${response.status}`;
+      throw new Error(errorMessage);
     } catch (e) {
+      // If JSON parsing fails, use status text
+      if (e instanceof Error && e.message !== `Error: ${response.statusText}`) {
+        throw e; // Re-throw if it's our custom error
+      }
       throw new Error(`Error: ${response.statusText}`);
     }
   }

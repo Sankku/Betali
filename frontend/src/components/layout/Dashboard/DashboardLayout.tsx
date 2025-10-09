@@ -15,7 +15,7 @@ import {
   X,
   LogOut,
 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useOrganization } from '../../../context/OrganizationContext';
 import { SidebarItem } from '../Sidebar/SidebarItem';
@@ -118,12 +118,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex h-screen bg-gray-50">
       <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-4 border-b border-gray-200 h-16">
-          <div className="flex items-center">
+          <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
             <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
               <Package className="h-5 w-5 text-white" />
             </div>
             <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
-          </div>
+          </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {routes
@@ -163,7 +163,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 >
                   {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
-                <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
+                <Link to="/dashboard" className="ml-3 hover:opacity-80 transition-opacity">
+                  <h1 className="text-xl font-semibold text-gray-900">Betali</h1>
+                </Link>
               </div>
               <div className="hidden md:block">
                 <h1 className="text-xl font-semibold text-gray-900">{getPageTitle()}</h1>
@@ -186,12 +188,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
+                  <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
                       <Package className="h-5 w-5 text-white" />
                     </div>
                     <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
-                  </div>
+                  </Link>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"

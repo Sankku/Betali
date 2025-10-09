@@ -50,19 +50,19 @@ export function StockMovementForm({
   isLoading = false,
   onCancel,
 }: StockMovementFormProps) {
-  const {
-    data: productsData = [],
-    isLoading: productsLoading,
-    error: productsError,
-  } = useProducts();
-  const {
-    data: warehousesData = [],
-    isLoading: warehousesLoading,
-    error: warehousesError,
-  } = useWarehouses();
+  const productsQuery = useProducts();
+  const warehousesQuery = useWarehouses();
+
+  const productsData = productsQuery.data?.data || [];
+  const warehousesData = warehousesQuery.data?.data || [];
 
   const products = Array.isArray(productsData) ? productsData : [];
   const warehouses = Array.isArray(warehousesData) ? warehousesData : [];
+
+  const productsLoading = productsQuery.isLoading;
+  const warehousesLoading = warehousesQuery.isLoading;
+  const productsError = productsQuery.error;
+  const warehousesError = warehousesQuery.error;
 
   const validProducts = products.filter(p => p && p.product_id && p.name);
   const validWarehouses = warehouses.filter((w: any) => w && w.warehouse_id && w.name);
@@ -240,12 +240,12 @@ export function StockMovementForm({
           label="Quantity"
           type="number"
           min="0"
-          step="0.01"
+          step="1"
           placeholder="0"
           icon={<Hash className="h-4 w-4" />}
           disabled={isLoading}
           error={getFieldError('quantity')}
-          description="Number of units in the movement"
+          description="Number of units in the movement (whole numbers only)"
           required
         />
 

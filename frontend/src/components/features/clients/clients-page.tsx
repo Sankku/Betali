@@ -48,7 +48,8 @@ export function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOptions, setSearchOptions] = useState({});
 
-  const { data: clients = [], isLoading, error } = useClients({ searchOptions });
+  const { data: clientsResponse, isLoading, error } = useClients({ searchOptions });
+  const clients = clientsResponse?.data || [];
   const { data: clientStats } = useClientStats();
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
@@ -65,7 +66,7 @@ export function ClientsPage() {
 
   const handleCreateClick = () => openModal('create');
 
-  const handleDelete = async (client: Client) => {
+  const handleDelete = (client: Client) => {
     if (!client?.client_id) {
       console.error('Client ID is missing:', client);
       return;
@@ -340,7 +341,7 @@ export function ClientsPage() {
       />
 
       {/* Delete Confirmation Modal */}
-      <Modal open={showDeleteConfirm.show} onOpenChange={closeDeleteConfirm}>
+      <Modal isOpen={showDeleteConfirm.show} onClose={closeDeleteConfirm}>
         <ModalContent>
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2">

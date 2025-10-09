@@ -2,10 +2,25 @@
  * Request validation middleware using Joi schemas
  * Enhanced with better error handling and sanitization
  */
-const validateRequest = (schema) => {
+const validateRequest = (schema, type = 'body') => {
     return (req, res, next) => {
       try {
-        const { error, value } = schema.validate(req.body, { 
+        // Determine which part of the request to validate
+        let dataToValidate;
+        switch (type) {
+          case 'query':
+            dataToValidate = req.query;
+            break;
+          case 'params':
+            dataToValidate = req.params;
+            break;
+          case 'body':
+          default:
+            dataToValidate = req.body;
+            break;
+        }
+
+        const { error, value } = schema.validate(dataToValidate, { 
           abortEarly: false,
           stripUnknown: true, // Remove unknown fields for security
           convert: true // Convert types automatically
@@ -23,7 +38,7 @@ const validateRequest = (schema) => {
             .join(', ');
           
           return res.status(400).json({
-            error: 'Validation failed',
+            error: `Validation failed (${type})`,
             message: errorMessage,
             details: errorDetails,
             timestamp: new Date().toISOString()
@@ -31,7 +46,14 @@ const validateRequest = (schema) => {
         }
         
         // Use validated and sanitized data
-        req.body = value;
+        if (type === 'query') {
+          req.query = value;
+        } else if (type === 'params') {
+          req.params = value;
+        } else {
+          req.body = value;
+        }
+        
         next();
       } catch (err) {
         next(err);

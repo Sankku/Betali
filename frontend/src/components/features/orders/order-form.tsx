@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/useClients';
-import { useWarehouse } from '@/hooks/useWarehouse';
+import { useWarehouses } from '@/hooks/useWarehouse';
 import { useProducts } from '@/hooks/useProducts';
+import { useTaxRates } from '@/hooks/useTaxRates';
 import { Order } from '@/services/api/orderService';
 import { ORDER_STATUS_OPTIONS } from '@/hooks/useOrders';
 import { useRealtimePricing, formatPricing } from '@/hooks/usePricing';
@@ -28,6 +29,7 @@ interface OrderFormData {
   warehouse_id: string;
   status: Order['status'];
   notes: string;
+  tax_rate_ids: string[];
   items: Array<{
     product_id: string;
     quantity: number;
@@ -45,10 +47,17 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load hooks for dropdowns
-  const { data: clients } = useClients();
-  const { data: warehouses } = useWarehouse();
+  // Load hooks for dropdowns with fresh data
+  const { data: clients, refetch: refetchClients } = useClients({ 
+    enabled: true,
+    refetchInterval: false, // Only refetch manually or on invalidation
+  });
+  const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ 
+    enabled: true,
+    refetchInterval: false,
+  });
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts();
+  const { data: taxRates } = useTaxRates({ active_only: true });
 
   // Debug logging for products
   console.log('OrderForm - Products data:', products);
@@ -58,22 +67,36 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const { watch, setValue, register } = form;
   const watchedValues = watch();
 
-  // Prepare order data for pricing calculation
-  const orderDataForPricing = {
+  // Prepare order data for pricing calculation with memoization
+  const orderDataForPricing = useMemo(() => ({
     client_id: watchedValues.client_id !== 'no-client' ? watchedValues.client_id : undefined,
     warehouse_id: watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined,
+    tax_rate_ids: watchedValues.tax_rate_ids || [],
     items: items.filter(item => item.product_id && item.quantity > 0).map(item => ({
       product_id: item.product_id,
       quantity: item.quantity,
       price: item.price
     }))
-  };
+  }), [
+    watchedValues.client_id, 
+    watchedValues.warehouse_id, 
+    watchedValues.tax_rate_ids,
+    items
+  ]);
 
   // Use real-time pricing calculation
-  const { calculatePricing, pricingResult, isLoading: pricingLoading } = useRealtimePricing(
+  const { mutation: pricingMutation, pricingResult, isLoading: pricingLoading, isValidData } = useRealtimePricing(
     orderDataForPricing,
     true
   );
+
+  // Refresh data when component mounts (for modal usage)
+  useEffect(() => {
+    if (mode === 'create') {
+      refetchClients();
+      refetchWarehouses();
+    }
+  }, [mode, refetchClients, refetchWarehouses]);
 
   // Initialize items from form data
   useEffect(() => {
@@ -99,14 +122,27 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
 
   // Recalculate pricing when items change
   useEffect(() => {
-    if (items.length > 0 && items.some(item => item.product_id && item.quantity > 0)) {
+    if (isValidData && orderDataForPricing.items.length > 0) {
       const timeoutId = setTimeout(() => {
-        calculatePricing();
+        pricingMutation.mutate(orderDataForPricing);
       }, 500); // Debounce API calls
       
       return () => clearTimeout(timeoutId);
     }
-  }, [items, watchedValues.client_id, watchedValues.warehouse_id, calculatePricing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use serialized version of items to avoid infinite loops
+    JSON.stringify(items.map(item => ({ 
+      product_id: item.product_id, 
+      quantity: item.quantity, 
+      price: item.price 
+    }))),
+    watchedValues.client_id, 
+    watchedValues.warehouse_id,
+    watchedValues.tax_rate_ids,
+    isValidData
+    // orderDataForPricing and pricingMutation.mutate are derived/memoized values
+  ]);
 
   const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
     const newItems = [...items];
@@ -227,6 +263,34 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
               {warehouses?.data?.map((warehouse) => (
                 <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
                   <span className="text-gray-900 font-medium">{warehouse.name} - {warehouse.location}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tax_rate_ids" className="text-gray-900 font-medium">Tax Rates</Label>
+          <Select 
+            value={watchedValues.tax_rate_ids?.length ? watchedValues.tax_rate_ids[0] : 'no-tax'} 
+            onValueChange={(value) => setValue('tax_rate_ids', value === 'no-tax' ? [] : [value])}
+            disabled={isViewMode}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select tax rate (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="no-tax">
+                <span className="text-gray-500 italic">No tax</span>
+              </SelectItem>
+              {taxRates?.data?.map((taxRate) => (
+                <SelectItem key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-gray-900 font-medium">{taxRate.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {(taxRate.rate * 100).toFixed(1)}%
+                    </Badge>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

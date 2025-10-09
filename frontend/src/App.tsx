@@ -7,6 +7,7 @@ import { UserContextSwitcherProvider } from "./context/UserContextSwitcher";
 import { OrganizationProvider } from "./context/OrganizationContext";
 import { GlobalSyncProvider } from "./context/GlobalSyncContext";
 import { GlobalLoading } from "./components/ui/global-loading";
+import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
@@ -120,6 +121,7 @@ function AppContent() {
             </BrowserRouter>
           </HelmetProvider>
           <GlobalLoading />
+          <ToastContainer />
           </UserContextSwitcherProvider>
         </OrganizationProvider>
       </GlobalSyncProvider>

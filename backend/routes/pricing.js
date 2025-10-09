@@ -6,91 +6,14 @@ const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/saniti
 const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 
-// Validation schemas (placeholder - you would define these in validations/pricingValidation.js)
-const pricingValidationSchemas = {
-  calculatePricing: {
-    type: 'object',
-    properties: {
-      client_id: { type: 'string' },
-      items: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            product_id: { type: 'string' },
-            quantity: { type: 'number', minimum: 0.001 },
-            price: { type: 'number', minimum: 0 }
-          },
-          required: ['product_id', 'quantity']
-        },
-        minItems: 1
-      }
-    },
-    required: ['items']
-  },
-  validateCoupon: {
-    type: 'object',
-    properties: {
-      coupon_code: { type: 'string', minLength: 1 },
-      order_data: { type: 'object' }
-    },
-    required: ['coupon_code']
-  },
-  createPricingTier: {
-    type: 'object',
-    properties: {
-      tier_name: { type: 'string', minLength: 1, maxLength: 100 },
-      min_quantity: { type: 'number', minimum: 0.001 },
-      max_quantity: { type: 'number', minimum: 0.001 },
-      price: { type: 'number', minimum: 0 },
-      is_active: { type: 'boolean' },
-      valid_from: { type: 'string' },
-      valid_to: { type: 'string' }
-    },
-    required: ['tier_name', 'min_quantity', 'price']
-  },
-  createCustomerPricing: {
-    type: 'object',
-    properties: {
-      product_id: { type: 'string' },
-      price: { type: 'number', minimum: 0 },
-      is_active: { type: 'boolean' },
-      valid_from: { type: 'string' },
-      valid_to: { type: 'string' },
-      notes: { type: 'string', maxLength: 1000 }
-    },
-    required: ['product_id', 'price']
-  },
-  createTaxRate: {
-    type: 'object',
-    properties: {
-      name: { type: 'string', minLength: 1, maxLength: 100 },
-      description: { type: 'string', maxLength: 500 },
-      rate: { type: 'number', minimum: 0, maximum: 1 },
-      is_inclusive: { type: 'boolean' },
-      is_active: { type: 'boolean' }
-    },
-    required: ['name', 'rate']
-  },
-  createDiscountRule: {
-    type: 'object',
-    properties: {
-      name: { type: 'string', minLength: 1, maxLength: 100 },
-      description: { type: 'string', maxLength: 500 },
-      type: { type: 'string', enum: ['percentage', 'fixed_amount', 'buy_x_get_y', 'free_shipping'] },
-      value: { type: 'number', minimum: 0 },
-      applies_to: { type: 'string', enum: ['order', 'line_item', 'shipping'] },
-      min_order_amount: { type: 'number', minimum: 0 },
-      max_discount_amount: { type: 'number', minimum: 0 },
-      coupon_code: { type: 'string', maxLength: 50 },
-      max_uses: { type: 'integer', minimum: 1 },
-      is_active: { type: 'boolean' },
-      valid_from: { type: 'string' },
-      valid_to: { type: 'string' }
-    },
-    required: ['name', 'type', 'value']
-  }
-};
+const {
+  calculatePricingSchema,
+  validateCouponSchema,
+  createPricingTierSchema,
+  createCustomerPricingSchema,
+  createTaxRateSchema,
+  createDiscountRuleSchema
+} = require('../validations/pricingValidation');
 
 /**
  * Pricing routes - RESTful API endpoints for pricing management
@@ -113,7 +36,7 @@ function createPricingRoutes(container) {
     '/calculate',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.calculatePricing),
+    validateRequest(calculatePricingSchema),
     async (req, res, next) => {
       try {
         await pricingController.calculateOrderPricing(req, res, next);
@@ -128,7 +51,7 @@ function createPricingRoutes(container) {
     '/validate-coupon',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.validateCoupon),
+    validateRequest(validateCouponSchema),
     async (req, res, next) => {
       try {
         await pricingController.validateCouponCode(req, res, next);
@@ -157,7 +80,7 @@ function createPricingRoutes(container) {
     '/products/:productId/tiers',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.createPricingTier),
+    validateRequest(createPricingTierSchema),
     async (req, res, next) => {
       try {
         await pricingController.createPricingTier(req, res, next);
@@ -213,7 +136,7 @@ function createPricingRoutes(container) {
     '/customers/:clientId',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.createCustomerPricing),
+    validateRequest(createCustomerPricingSchema),
     async (req, res, next) => {
       try {
         await pricingController.createCustomerPricing(req, res, next);
@@ -256,7 +179,7 @@ function createPricingRoutes(container) {
     '/taxes/rates',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.createTaxRate),
+    validateRequest(createTaxRateSchema),
     async (req, res, next) => {
       try {
         await pricingController.createTaxRate(req, res, next);
@@ -299,7 +222,7 @@ function createPricingRoutes(container) {
     '/discounts/rules',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
-    validateRequest(pricingValidationSchemas.createDiscountRule),
+    validateRequest(createDiscountRuleSchema),
     async (req, res, next) => {
       try {
         await pricingController.createDiscountRule(req, res, next);

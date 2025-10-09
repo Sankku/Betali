@@ -162,12 +162,10 @@ export default function Login() {
                   checked={rememberMe}
                   onCheckedChange={checked => setRememberMe(checked as boolean)}
                   id="remember"
-                  className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
                 />
                 <label
                   htmlFor="remember"
-                  className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  onClick={() => setRememberMe(!rememberMe)}
+                  className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
                   Remember me
                 </label>

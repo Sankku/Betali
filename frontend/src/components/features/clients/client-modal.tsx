@@ -12,7 +12,16 @@ const clientSchema = z.object({
   name: z
     .string()
     .min(2, 'El nombre debe tener al menos 2 caracteres')
-    .max(200, 'El nombre no puede exceder 200 caracteres'),
+    .max(200, 'El nombre no puede exceder 200 caracteres')
+    .refine((name) => {
+      // Should not be only whitespace
+      return name.trim().length >= 2;
+    }, 'El nombre no puede estar vacío o contener solo espacios')
+    .refine((name) => {
+      // Should not contain only numbers or special characters
+      const hasLetter = /[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/.test(name);
+      return hasLetter;
+    }, 'El nombre debe contener al menos una letra'),
   cuit: z
     .string()
     .min(11, 'El CUIT debe tener 11 dígitos')
@@ -47,15 +56,56 @@ const clientSchema = z.object({
   email: z
     .string()
     .email('Ingrese una dirección de email válida')
-    .max(100, 'El email no puede exceder 100 caracteres'),
+    .max(100, 'El email no puede exceder 100 caracteres')
+    .refine((email) => {
+      // Additional email validation for business context
+      const domain = email.split('@')[1];
+      if (!domain) return false;
+      // Should have a valid domain with at least one dot
+      return domain.includes('.') && domain.length >= 4;
+    }, 'El email debe tener un dominio válido')
+    .refine((email) => {
+      // Check for common typos in domains
+      const commonDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
+      const typos = ['gmail.co', 'hotmail.co', 'yahoo.co', 'gmial.com', 'gmai.com'];
+      const domain = email.split('@')[1]?.toLowerCase();
+      if (typos.includes(domain)) {
+        return false;
+      }
+      return true;
+    }, 'Verifique el dominio del email (posible error tipográfico)'),
   phone: z
     .string()
-    .max(50, 'El teléfono no puede exceder 50 caracteres')
+    .max(20, 'El teléfono no puede exceder 20 caracteres')
+    .refine((phone) => {
+      if (!phone || phone === '') return true; // Optional field
+      // Remove all non-digit characters for validation
+      const cleaned = phone.replace(/\D/g, '');
+      // Should have between 8-15 digits (international standard)
+      return cleaned.length >= 8 && cleaned.length <= 15;
+    }, 'El teléfono debe tener entre 8 y 15 dígitos')
+    .refine((phone) => {
+      if (!phone || phone === '') return true; // Optional field
+      // Allow formats like: +54 9 11 1234-5678, (011) 1234-5678, 011-1234-5678, etc.
+      const phoneRegex = /^[\+]?[0-9\s\-\(\)\.]{8,20}$/;
+      return phoneRegex.test(phone);
+    }, 'Formato de teléfono inválido. Use números, espacios, guiones o paréntesis')
     .optional()
     .or(z.literal('')),
   address: z
     .string()
     .max(500, 'La dirección no puede exceder 500 caracteres')
+    .refine((address) => {
+      if (!address || address === '') return true; // Optional field
+      // Should not be only whitespace
+      return address.trim().length >= 5;
+    }, 'La dirección debe tener al menos 5 caracteres')
+    .refine((address) => {
+      if (!address || address === '') return true; // Optional field
+      // Should contain some letters (not only numbers and symbols)
+      const hasLetter = /[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/.test(address);
+      return hasLetter;
+    }, 'La dirección debe contener al menos una letra')
     .optional()
     .or(z.literal('')),
 });

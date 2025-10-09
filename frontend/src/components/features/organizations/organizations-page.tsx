@@ -22,6 +22,7 @@ import {
   useUpdateOrganization,
   useDeleteOrganization,
 } from '@/hooks/useOrganizations';
+import { useOrganization } from '@/context/OrganizationContext';
 
 
 interface ModalState {
@@ -36,6 +37,8 @@ interface DeleteConfirmState {
 }
 
 export function OrganizationsPage() {
+  const { currentOrganization } = useOrganization();
+  
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -75,14 +78,33 @@ export function OrganizationsPage() {
       console.error('Organization ID is missing:', organization);
       return;
     }
+    
+    // Check if this is the user's only organization
+    if (userOrganizations.length === 1) {
+      // Show different modal for last organization
+      setShowDeleteConfirm({ show: true, organization });
+      return;
+    }
+    
     setShowDeleteConfirm({ show: true, organization });
   };
 
   const confirmDelete = async () => {
     if (showDeleteConfirm.organization?.organization_id) {
       try {
+        const isLastOrganization = userOrganizations.length === 1;
+        const isDeletingCurrentOrg = currentOrganization?.organization_id === showDeleteConfirm.organization.organization_id;
+        
         await deleteOrganization.mutateAsync(showDeleteConfirm.organization.organization_id);
         setShowDeleteConfirm({ show: false });
+        
+        // If user deleted their only organization or their current organization,
+        // they'll be redirected to the no-organization fallback automatically
+        // by the context when it refetches
+        if (isLastOrganization || isDeletingCurrentOrg) {
+          // The OrganizationContext will handle the redirect automatically
+          console.log('User deleted their', isLastOrganization ? 'last organization' : 'current organization');
+        }
       } catch (error) {
         console.error('Error deleting:', error);
       }
@@ -181,13 +203,28 @@ export function OrganizationsPage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete organization?</ModalTitle>
+            <ModalTitle>
+              {userOrganizations.length === 1 ? 'Delete your only organization?' : 'Delete organization?'}
+            </ModalTitle>
             <ModalDescription>
-              This action cannot be undone. The organization{' '}
-              <span className="font-medium text-neutral-900">
-                "{showDeleteConfirm.organization?.name || 'selected'}"
-              </span>{' '}
-              will be permanently deleted.
+              {userOrganizations.length === 1 ? (
+                <>
+                  <strong>Warning:</strong> This is your only organization. Deleting{' '}
+                  <span className="font-medium text-neutral-900">
+                    "{showDeleteConfirm.organization?.name || 'selected'}"
+                  </span>{' '}
+                  will leave you without access to any organization features. 
+                  You'll need to create a new organization or be invited to an existing one to continue using Betali.
+                </>
+              ) : (
+                <>
+                  This action cannot be undone. The organization{' '}
+                  <span className="font-medium text-neutral-900">
+                    "{showDeleteConfirm.organization?.name || 'selected'}"
+                  </span>{' '}
+                  will be permanently deleted.
+                </>
+              )}
             </ModalDescription>
           </ModalHeader>
 
@@ -206,7 +243,7 @@ export function OrganizationsPage() {
               loading={deleteOrganization.isPending}
               className="w-full sm:w-auto"
             >
-              Delete
+              {userOrganizations.length === 1 ? 'Delete anyway' : 'Delete'}
             </Button>
           </ModalFooter>
         </ModalContent>

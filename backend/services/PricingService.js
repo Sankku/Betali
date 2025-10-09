@@ -71,8 +71,17 @@ class PricingService {
         organizationId
       );
 
-      // Calculate final total
-      const total = discountedAmount + taxCalculation.total_tax;
+      // Calculate final total based on tax method
+      let total;
+      const hasInclusiveTaxes = taxCalculation.tax_breakdown.some(tax => tax.is_inclusive);
+      
+      if (hasInclusiveTaxes) {
+        // For tax-inclusive: the discounted amount already includes taxes
+        total = discountedAmount;
+      } else {
+        // For tax-exclusive: add taxes to the discounted amount
+        total = discountedAmount + taxCalculation.total_tax;
+      }
 
       const result = {
         line_items: lineItems,
@@ -360,14 +369,28 @@ class PricingService {
       if (productTaxRates.length === 0) {
         const defaultTaxRate = await this.taxRateRepository.getDefaultTaxRate(organizationId);
         if (defaultTaxRate) {
-          const taxAmount = taxableAmount * defaultTaxRate.rate;
+          let taxAmount, adjustedTaxableAmount;
+          
+          if (defaultTaxRate.is_inclusive) {
+            // Tax-inclusive: extract tax from total price
+            // baseAmount = totalPrice / (1 + rate)
+            // taxAmount = totalPrice - baseAmount
+            const baseAmount = taxableAmount / (1 + defaultTaxRate.rate);
+            taxAmount = taxableAmount - baseAmount;
+            adjustedTaxableAmount = baseAmount;
+          } else {
+            // Tax-exclusive: add tax to base price
+            taxAmount = taxableAmount * defaultTaxRate.rate;
+            adjustedTaxableAmount = taxableAmount;
+          }
+          
           totalTax += taxAmount;
           
           taxBreakdown.push({
             tax_rate_id: defaultTaxRate.tax_rate_id,
             tax_name: defaultTaxRate.name,
             rate: defaultTaxRate.rate,
-            taxable_amount: taxableAmount,
+            taxable_amount: parseFloat(adjustedTaxableAmount.toFixed(2)),
             tax_amount: parseFloat(taxAmount.toFixed(2)),
             is_inclusive: defaultTaxRate.is_inclusive
           });
@@ -379,22 +402,33 @@ class PricingService {
           
           if (itemTaxRates.length > 0) {
             for (const taxRate of itemTaxRates) {
-              const itemTaxableAmount = item.line_subtotal;
-              const itemTaxAmount = itemTaxableAmount * taxRate.rate;
+              let itemTaxAmount, adjustedItemTaxableAmount;
+              const itemTotalAmount = item.line_subtotal;
+              
+              if (taxRate.is_inclusive) {
+                // Tax-inclusive: extract tax from total price
+                const itemBaseAmount = itemTotalAmount / (1 + taxRate.rate);
+                itemTaxAmount = itemTotalAmount - itemBaseAmount;
+                adjustedItemTaxableAmount = itemBaseAmount;
+              } else {
+                // Tax-exclusive: add tax to base price
+                itemTaxAmount = itemTotalAmount * taxRate.rate;
+                adjustedItemTaxableAmount = itemTotalAmount;
+              }
               
               totalTax += itemTaxAmount;
               
               // Find or create tax breakdown entry
               let existingTax = taxBreakdown.find(tb => tb.tax_rate_id === taxRate.tax_rate_id);
               if (existingTax) {
-                existingTax.taxable_amount += itemTaxableAmount;
+                existingTax.taxable_amount += adjustedItemTaxableAmount;
                 existingTax.tax_amount += itemTaxAmount;
               } else {
                 taxBreakdown.push({
                   tax_rate_id: taxRate.tax_rate_id,
                   tax_name: taxRate.name,
                   rate: taxRate.rate,
-                  taxable_amount: itemTaxableAmount,
+                  taxable_amount: parseFloat(adjustedItemTaxableAmount.toFixed(2)),
                   tax_amount: parseFloat(itemTaxAmount.toFixed(2)),
                   is_inclusive: taxRate.is_inclusive
                 });

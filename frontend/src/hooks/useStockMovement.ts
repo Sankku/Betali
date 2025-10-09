@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { stockMovementService, StockMovementFormData } from "../services/api/stockMovementService";
 import { toast } from "../lib/toast";
+import { useOrganization } from "../context/OrganizationContext";
 
 export interface UseStockMovementsOptions {
   enabled?: boolean;
@@ -8,8 +9,10 @@ export interface UseStockMovementsOptions {
 }
 
 export function useStockMovements(options: UseStockMovementsOptions = {}) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["stockMovements"],
+    queryKey: ["stockMovements", currentOrganization?.organization_id],
     queryFn: async () => {
       try {
         const response = await stockMovementService.getAll();
@@ -20,7 +23,7 @@ export function useStockMovements(options: UseStockMovementsOptions = {}) {
         return [];
       }
     },
-    enabled: options.enabled !== false,
+    enabled: options.enabled !== false && !!currentOrganization,
     refetchInterval: options.refetchInterval,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1, // Only retry once
@@ -28,13 +31,15 @@ export function useStockMovements(options: UseStockMovementsOptions = {}) {
 }
 
 export function useStockMovement(id: string, enabled = true) {
+  const { currentOrganization } = useOrganization();
+  
   return useQuery({
-    queryKey: ["stockMovement", id],
+    queryKey: ["stockMovement", id, currentOrganization?.organization_id],
     queryFn: async () => {
       const response = await stockMovementService.getById(id);
       return response?.data || response;
     },
-    enabled: enabled && !!id,
+    enabled: enabled && !!id && !!currentOrganization,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -47,6 +52,8 @@ export function useCreateStockMovement() {
       stockMovementService.create(movementData),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
+      // Invalidate products cache to update stock levels
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(response.message || "Movimiento creado exitosamente");
       return response;
     },
@@ -66,6 +73,8 @@ export function useUpdateStockMovement() {
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
       queryClient.invalidateQueries({ queryKey: ["stockMovement", variables.id] });
+      // Invalidate products cache to update stock levels
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(response.message || "Movimiento actualizado exitosamente");
       return response;
     },
@@ -83,6 +92,8 @@ export function useDeleteStockMovement() {
     mutationFn: (id: string) => stockMovementService.delete(id),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
+      // Invalidate products cache to update stock levels
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(response.message || "Movimiento eliminado exitosamente");
       return response;
     },

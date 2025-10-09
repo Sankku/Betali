@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/Dashboard';
 import { DashboardStats, ActivityList, TrendChart } from '../../components/modules/dashboard';
-import { DebugColors } from '../../components/ui/debugColors';
 import { useAuth } from '../../context/AuthContext';
 
 export default function DashboardPage() {
@@ -75,7 +74,6 @@ export default function DashboardPage() {
             <ActivityList />
             <TrendChart />
           </div>
-          <DebugColors></DebugColors>
         </div>
       </DashboardLayout>
     </>

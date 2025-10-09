@@ -27,15 +27,23 @@ export function useClients(options: UseClientsOptions = {}) {
     queryFn: async () => {
       try {
         const clients = await clientService.getAll(options.searchOptions);
-        return clients;
+        // Normalize the response structure for consistent access
+        if (Array.isArray(clients)) {
+          return { data: clients, total: clients.length };
+        }
+        if (clients?.data && Array.isArray(clients.data)) {
+          return { data: clients.data, total: clients.data.length };
+        }
+        // Fallback for other response structures
+        return { data: [], total: 0 };
       } catch (error) {
         console.error('Error fetching clients:', error);
-        return [];
+        return { data: [], total: 0 };
       }
     },
     enabled: options.enabled !== false && !!currentOrganization,
     refetchInterval: options.refetchInterval,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute for fresher data
     retry: 1,
   });
 }
@@ -84,11 +92,13 @@ export function useClientStats() {
   return useQuery({
     queryKey: ['clients', 'stats', currentOrganization?.organization_id],
     queryFn: async () => {
+      console.log('🔍 Fetching client stats for organization:', currentOrganization?.organization_id);
       const stats = await clientService.getStats();
+      console.log('📊 Client stats received:', stats);
       return stats;
     },
     enabled: !!currentOrganization,
-    staleTime: 10 * 60 * 1000, // 10 minutes for stats
+    staleTime: 2 * 60 * 1000, // 2 minutes for fresher stats
   });
 }
 

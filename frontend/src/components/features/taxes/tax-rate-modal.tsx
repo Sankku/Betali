@@ -18,7 +18,8 @@ import {
   TAX_RATE_PRESETS,
   formatTaxRate,
   calculateTaxAmount,
-  calculateTotalWithTax
+  calculateTotalWithTax,
+  calculateBaseAmount
 } from '@/hooks/useTaxRates';
 
 interface TaxRateModalProps {
@@ -145,6 +146,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
 
   // Tax calculation preview
   const currentRate = watchedValues.rate / 100;
+  const baseAmount = calculateBaseAmount(testAmount, currentRate, watchedValues.is_inclusive);
   const taxAmount = calculateTaxAmount(testAmount, currentRate, watchedValues.is_inclusive);
   const totalWithTax = calculateTotalWithTax(testAmount, currentRate, watchedValues.is_inclusive);
 
@@ -322,10 +324,17 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="space-y-1">
-                  <p className="font-medium text-gray-700">Base Amount</p>
+                  <p className="font-medium text-gray-700">
+                    {watchedValues.is_inclusive ? 'Input Amount' : 'Base Amount'}
+                  </p>
                   <p className="text-lg font-semibold text-gray-900">
                     ${testAmount.toFixed(2)}
                   </p>
+                  {watchedValues.is_inclusive && (
+                    <p className="text-xs text-gray-600">
+                      Base: ${baseAmount.toFixed(2)}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-gray-700">Tax Amount</p>
@@ -335,7 +344,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-gray-700">
-                    {watchedValues.is_inclusive ? 'Price (Tax Included)' : 'Total with Tax'}
+                    {watchedValues.is_inclusive ? 'Final Price' : 'Total with Tax'}
                   </p>
                   <p className="text-lg font-semibold text-green-600">
                     ${totalWithTax.toFixed(2)}
@@ -346,7 +355,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
                   {watchedValues.is_inclusive 
-                    ? `With tax-inclusive pricing, customers pay $${totalWithTax.toFixed(2)} and $${taxAmount.toFixed(2)} goes to taxes.`
+                    ? `With tax-inclusive pricing, customers pay $${totalWithTax.toFixed(2)} (which includes $${taxAmount.toFixed(2)} tax). Your business receives $${baseAmount.toFixed(2)}.`
                     : `With tax-exclusive pricing, $${testAmount.toFixed(2)} + $${taxAmount.toFixed(2)} tax = $${totalWithTax.toFixed(2)} total.`
                   }
                 </p>

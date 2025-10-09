@@ -138,16 +138,19 @@ export function useDeleteOrder() {
     onSuccess: (_, orderId) => {
       // Remove order from cache
       queryClient.removeQueries({ queryKey: ORDER_QUERY_KEYS.detail(orderId) });
-      
+
       // Invalidate orders list
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats() });
-      
-      toast.success('Order cancelled successfully');
+
+      // Invalidate products cache in case stock was affected
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+
+      toast.success('Order deleted successfully');
     },
     onError: (error: any) => {
       console.error('Delete order error:', error);
-      toast.error(error?.message || 'Failed to cancel order');
+      toast.error(error?.message || 'Failed to delete order');
     },
   });
 }
@@ -203,19 +206,23 @@ export function useFulfillOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, fulfillmentData }: { orderId: string; fulfillmentData?: any }) => 
+    mutationFn: ({ orderId, fulfillmentData }: { orderId: string; fulfillmentData?: any }) =>
       orderService.fulfillOrder(orderId, fulfillmentData),
     onSuccess: (fulfilledOrder) => {
       // Update specific order in cache
       queryClient.setQueryData(ORDER_QUERY_KEYS.detail(fulfilledOrder.order_id), fulfilledOrder);
-      
+
       // Invalidate orders list to reflect changes
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats() });
-      
-      // Also invalidate stock-related queries if they exist
+
+      // Invalidate stock-related queries
       queryClient.invalidateQueries({ queryKey: ['stock'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+
+      // Invalidate products cache to update stock levels
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+
       toast.success('Order fulfilled successfully! Stock has been deducted.');
     },
     onError: (error: any) => {
@@ -261,7 +268,7 @@ export function usePrefetchOrder() {
   };
 }
 
-// Order status options for forms
+// Order status options for forms - comprehensive workflow states
 export const ORDER_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', color: 'gray' },
   { value: 'pending', label: 'Pending', color: 'yellow' },
@@ -279,4 +286,22 @@ export function getOrderStatusOption(status: Order['status']) {
 // Helper to get status color for badges
 export function getOrderStatusColor(status: Order['status']) {
   return getOrderStatusOption(status)?.color || 'gray';
+}
+
+// Valid status transitions based on business rules
+const VALID_STATUS_TRANSITIONS: Record<Order['status'], Order['status'][]> = {
+  'draft': ['pending', 'cancelled'],
+  'pending': ['processing', 'cancelled'],
+  'processing': ['shipped', 'cancelled'],
+  'shipped': ['completed'],
+  'completed': [],
+  'cancelled': ['draft'],
+};
+
+// Helper to get valid next statuses for a given current status
+export function getValidStatusTransitions(currentStatus: Order['status']) {
+  const validNextStatuses = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+  return ORDER_STATUS_OPTIONS.filter(option =>
+    validNextStatuses.includes(option.value as Order['status'])
+  );
 }

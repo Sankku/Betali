@@ -224,15 +224,31 @@ class ClientService {
     try {
       this.logger.info(`Getting client statistics for organization: ${organizationId}`);
       
-      const totalClients = await this.repository.getActiveCountByOrganization(organizationId);
+      // Get all clients for the organization
+      const allClients = await this.repository.findByOrganization(organizationId);
+      const totalClients = allClients.length;
       
-      // You can extend this with more statistics as needed
+      // Get clients created in the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const recentClients = allClients.filter(client => {
+        const createdAt = new Date(client.created_at);
+        return createdAt >= thirtyDaysAgo;
+      });
+      
+      // For now, assuming all clients are active (since we don't have inactive status)
+      // In the future, you might want to add an is_active field to clients table
       const stats = {
-        total_clients: totalClients,
+        total: totalClients,
+        active: totalClients,
+        inactive: 0,
+        recentlyAdded: recentClients.length,
         organization_id: organizationId,
         calculated_at: new Date().toISOString()
       };
       
+      this.logger.info(`Client stats calculated: ${JSON.stringify(stats)}`);
       return stats;
     } catch (error) {
       this.logger.error(`Error getting client statistics: ${error.message}`);
@@ -259,7 +275,14 @@ class ClientService {
       throw error;
     }
 
-    // Validate CUIT format (basic validation)
+    // Validate name format
+    if (!this.isValidName(clientData.name)) {
+      const error = new Error('Invalid name format. Name must contain at least one letter and be between 2-200 characters');
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate CUIT format
     if (!this.isValidCuit(clientData.cuit)) {
       const error = new Error('Invalid CUIT format');
       error.status = 400;
@@ -273,6 +296,20 @@ class ClientService {
       throw error;
     }
 
+    // Validate phone format if provided
+    if (clientData.phone && !this.isValidPhone(clientData.phone)) {
+      const error = new Error('Invalid phone format. Phone must have 8-15 digits and contain only numbers, spaces, hyphens, or parentheses');
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate address format if provided
+    if (clientData.address && !this.isValidAddress(clientData.address)) {
+      const error = new Error('Invalid address format. Address must be between 5-500 characters and contain at least one letter');
+      error.status = 400;
+      throw error;
+    }
+
     // Check if CUIT already exists within organization
     const existingClientByCuit = await this.repository.findByCuit(clientData.cuit, clientData.organization_id);
     if (existingClientByCuit) {
@@ -281,13 +318,8 @@ class ClientService {
       throw error;
     }
 
-    // Check if email already exists within organization
-    const existingClientByEmail = await this.repository.findByEmail(clientData.email, clientData.organization_id);
-    if (existingClientByEmail) {
-      const error = new Error('A client with this email already exists in your organization');
-      error.status = 409;
-      throw error;
-    }
+    // Email does not need to be unique - same person can represent multiple business clients
+    // Removed email uniqueness validation to allow flexibility
   }
 
   /**
@@ -295,6 +327,13 @@ class ClientService {
    * @private
    */
   async validateClientUpdate(existingClient, clientData, organizationId) {
+    // Validate name format if being updated
+    if (clientData.name && !this.isValidName(clientData.name)) {
+      const error = new Error('Invalid name format. Name must contain at least one letter and be between 2-200 characters');
+      error.status = 400;
+      throw error;
+    }
+
     // Validate CUIT format if being updated
     if (clientData.cuit && !this.isValidCuit(clientData.cuit)) {
       const error = new Error('Invalid CUIT format');
@@ -309,6 +348,20 @@ class ClientService {
       throw error;
     }
 
+    // Validate phone format if being updated
+    if (clientData.phone && !this.isValidPhone(clientData.phone)) {
+      const error = new Error('Invalid phone format. Phone must have 8-15 digits and contain only numbers, spaces, hyphens, or parentheses');
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate address format if being updated
+    if (clientData.address && !this.isValidAddress(clientData.address)) {
+      const error = new Error('Invalid address format. Address must be between 5-500 characters and contain at least one letter');
+      error.status = 400;
+      throw error;
+    }
+
     // Check if CUIT is being changed and if it conflicts within organization
     if (clientData.cuit && clientData.cuit !== existingClient.cuit) {
       const clientWithCuit = await this.repository.findByCuit(clientData.cuit, organizationId);
@@ -319,15 +372,8 @@ class ClientService {
       }
     }
 
-    // Check if email is being changed and if it conflicts within organization
-    if (clientData.email && clientData.email !== existingClient.email) {
-      const clientWithEmail = await this.repository.findByEmail(clientData.email, organizationId);
-      if (clientWithEmail && clientWithEmail.client_id !== existingClient.client_id) {
-        const error = new Error('A client with this email already exists in your organization');
-        error.status = 409;
-        throw error;
-      }
-    }
+    // Email does not need to be unique - same person can represent multiple business clients
+    // Removed email uniqueness validation to allow flexibility
   }
 
   /**
@@ -364,8 +410,78 @@ class ClientService {
    * @private
    */
   isValidEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (!emailRegex.test(email)) return false;
+    
+    // Additional validation for domain
+    const domain = email.split('@')[1];
+    if (!domain || !domain.includes('.') || domain.length < 4) return false;
+    
+    // Check email length
+    if (email.length > 100) return false;
+    
+    return true;
+  }
+
+  /**
+   * Validate name format
+   * @private
+   */
+  isValidName(name) {
+    if (!name || typeof name !== 'string') return false;
+    
+    // Remove whitespace for length check
+    const trimmedName = name.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 200) return false;
+    
+    // Must contain at least one letter
+    const hasLetter = /[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/.test(name);
+    if (!hasLetter) return false;
+    
+    return true;
+  }
+
+  /**
+   * Validate phone format
+   * @private
+   */
+  isValidPhone(phone) {
+    if (!phone || typeof phone !== 'string') return false;
+    
+    // Check maximum length
+    if (phone.length > 20) return false;
+    
+    // Remove all non-digit characters for digit count validation
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Should have between 8-15 digits
+    if (cleaned.length < 8 || cleaned.length > 15) return false;
+    
+    // Should only contain allowed characters: numbers, spaces, hyphens, parentheses, dots, plus
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)\.]{8,20}$/;
+    if (!phoneRegex.test(phone)) return false;
+    
+    return true;
+  }
+
+  /**
+   * Validate address format
+   * @private
+   */
+  isValidAddress(address) {
+    if (!address || typeof address !== 'string') return false;
+    
+    // Remove whitespace for length check
+    const trimmedAddress = address.trim();
+    if (trimmedAddress.length < 5 || trimmedAddress.length > 500) return false;
+    
+    // Must contain at least one letter
+    const hasLetter = /[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/.test(address);
+    if (!hasLetter) return false;
+    
+    return true;
   }
 }
 

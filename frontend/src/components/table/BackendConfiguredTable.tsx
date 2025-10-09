@@ -5,6 +5,15 @@ import { GenericCell } from './GenericCell';
 import { Input } from '../ui/input';
 import { Search } from 'lucide-react';
 import { ApiTableConfigResponse } from '../../services/api/tableConfigService';
+import { BulkActionsButton } from '../ui/bulk-actions-button';
+
+interface BulkAction {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary';
+  onClick: (selectedRows: T[]) => void;
+}
 
 interface BackendConfiguredTableProps<T = any> {
   config: ApiTableConfigResponse;
@@ -12,6 +21,10 @@ interface BackendConfiguredTableProps<T = any> {
   onAction?: (action: string, row: T, columnKey?: string) => void;
   isLoading?: boolean;
   onRowClick?: (row: T) => void;
+  emptyMessage?: string;
+  enableRowSelection?: boolean;
+  bulkActions?: BulkAction[];
+  getRowId?: (row: T) => string;
 }
 
 const getColumnWidth = (columnConfig: any): number | undefined => {
@@ -46,8 +59,13 @@ export function BackendConfiguredTable<T extends Record<string, any>>({
   onAction,
   isLoading = false,
   onRowClick,
+  emptyMessage = "No data available",
+  enableRowSelection = false,
+  bulkActions = [],
+  getRowId,
 }: BackendConfiguredTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('');
+  const [selectedRows, setSelectedRows] = useState<T[]>([]);
 
   // Early return if config is not available yet
   if (!config || !config.config || !config.config.columns) {
@@ -130,17 +148,29 @@ export function BackendConfiguredTable<T extends Record<string, any>>({
 
   return (
     <div className="space-y-4">
-      {searchable && (
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1 max-w-md">
-            <Input
-              type="text"
-              icon={<Search className="h-4 w-4 text-neutral-600" />}
-              placeholder={searchPlaceholder}
-              value={globalFilter}
-              onChange={e => setGlobalFilter(e.target.value)}
-            />
+      {(searchable || (enableRowSelection && bulkActions.length > 0)) && (
+        <div className="flex items-center justify-between space-x-4">
+          <div className="flex items-center space-x-2 flex-1">
+            {searchable && (
+              <div className="relative flex-1 max-w-md">
+                <Input
+                  type="text"
+                  icon={<Search className="h-4 w-4 text-neutral-600" />}
+                  placeholder={searchPlaceholder}
+                  value={globalFilter}
+                  onChange={e => setGlobalFilter(e.target.value)}
+                />
+              </div>
+            )}
           </div>
+          
+          {enableRowSelection && bulkActions.length > 0 && (
+            <BulkActionsButton
+              selectedRows={selectedRows}
+              actions={bulkActions}
+              disabled={isLoading}
+            />
+          )}
         </div>
       )}
 
@@ -155,7 +185,10 @@ export function BackendConfiguredTable<T extends Record<string, any>>({
         enableSorting={true}
         enableColumnFilters={false}
         enableColumnVisibility={false}
-        emptyMessage="No data available"
+        enableRowSelection={enableRowSelection}
+        onSelectionChange={setSelectedRows}
+        getRowId={getRowId}
+        emptyMessage={emptyMessage}
       />
     </div>
   );

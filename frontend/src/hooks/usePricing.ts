@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import { toast } from "../lib/toast";
 import { useOrganization } from "../context/OrganizationContext";
 import { httpClient } from "../services/http/httpClient";
@@ -139,20 +140,20 @@ export const calculateTaxRate = (taxAmount: number, subtotal: number): number =>
 export function useRealtimePricing(orderData: OrderPricingData | null, enabled: boolean = true) {
   const calculatePricing = useCalculateOrderPricing();
   
-  const isValidOrderData = orderData && 
-    orderData.items && 
-    orderData.items.length > 0 && 
-    orderData.items.every(item => item.product_id && item.quantity > 0);
+  const isValidOrderData = useMemo(() => {
+    return orderData && 
+      orderData.items && 
+      orderData.items.length > 0 && 
+      orderData.items.every(item => item.product_id && item.quantity > 0);
+  }, [orderData]);
 
   return {
-    calculatePricing: () => {
-      if (isValidOrderData) {
-        calculatePricing.mutate(orderData);
-      }
-    },
+    mutation: calculatePricing,
+    orderData,
     pricingResult: calculatePricing.data as OrderPricingResult | undefined,
     isLoading: calculatePricing.isPending,
     error: calculatePricing.error,
-    isValidData: !!isValidOrderData
+    isValidData: !!isValidOrderData,
+    enabled
   };
 }

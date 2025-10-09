@@ -9,8 +9,8 @@ const logger = new Logger('RateLimiting');
  * Adjusted for development: 1000 requests per 15 minutes per IP
  */
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // More permissive in dev
+  windowMs: process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000, // 1 minute in dev, 15 minutes in prod
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Much more permissive in dev
   message: {
     error: 'Too many requests from this IP',
     message: 'Please try again after 15 minutes',

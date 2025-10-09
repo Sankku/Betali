@@ -39,12 +39,17 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
   // Auto-generate slug from name
   React.useEffect(() => {
     if (watchName) {
-      const autoSlug = watchName
+      const baseSlug = watchName
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
         .replace(/\s+/g, '-') // Replace spaces with hyphens
         .replace(/-+/g, '-') // Replace multiple hyphens with single
         .trim();
+      
+      // Add timestamp suffix to make it more unique
+      const timestamp = Date.now().toString().slice(-4); // Last 4 digits
+      const autoSlug = `${baseSlug}-${timestamp}`;
+      
       setValue('slug', autoSlug);
     }
   }, [watchName, setValue]);

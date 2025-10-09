@@ -18,10 +18,11 @@ import { useAuth } from '@/context/AuthContext';
  * Provides options to create or join an organization
  */
 export function NoOrganizationFallback() {
-  const { userOrganizations, loading } = useOrganization();
+  const { userOrganizations, loading, switchOrganization } = useOrganization();
   const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -114,13 +115,25 @@ export function NoOrganizationFallback() {
                       key={userOrg.organization?.organization_id}
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => {
-                        if (userOrg.organization?.organization_id) {
-                          window.location.reload(); // Simple approach to trigger context reload
+                      disabled={switchingOrgId === userOrg.organization?.organization_id}
+                      onClick={async () => {
+                        const orgId = userOrg.organization?.organization_id;
+                        if (orgId) {
+                          setSwitchingOrgId(orgId);
+                          try {
+                            await switchOrganization(orgId);
+                          } catch (error) {
+                            console.error('Error switching organization:', error);
+                            setSwitchingOrgId(null);
+                          }
                         }
                       }}
                     >
-                      <Building2 className="w-4 h-4 mr-2" />
+                      {switchingOrgId === userOrg.organization?.organization_id ? (
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Building2 className="w-4 h-4 mr-2" />
+                      )}
                       {userOrg.organization?.name}
                       <span className="ml-auto text-xs text-gray-500 capitalize">
                         {userOrg.userRole}

@@ -145,10 +145,10 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                     </div>
                     <div className="text-right">
                       <div className="font-medium">
-                        {item.quantity} × ${item.price.toFixed(2)}
+                        {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                       </div>
                       <div className="text-sm font-semibold">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        ${(item.quantity * (item.price ?? 0)).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -185,16 +185,16 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>${order.subtotal.toFixed(2)}</span>
+                  <span>${(order.subtotal ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tax:</span>
-                  <span>${order.tax.toFixed(2)}</span>
+                  <span>${(order.tax ?? 0).toFixed(2)}</span>
                 </div>
                 <hr className="border-t border-gray-200" />
                 <div className="flex justify-between font-semibold">
                   <span>Total:</span>
-                  <span>${order.total_price.toFixed(2)}</span>
+                  <span>${(order.total_price ?? 0).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

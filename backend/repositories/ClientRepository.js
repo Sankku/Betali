@@ -178,10 +178,10 @@ class ClientRepository extends BaseRepository {
       // Handle specific database errors
       if (error.code === '23505') { // Unique constraint violation
         if (error.message.includes('cuit')) {
-          throw new Error('A client with this CUIT already exists');
+          throw new Error('A client with this CUIT already exists in your organization');
         }
         if (error.message.includes('email')) {
-          throw new Error('A client with this email already exists');
+          throw new Error('Email constraint violation (unexpected - emails should not be unique)');
         }
         throw new Error('Client data violates unique constraint');
       }
@@ -215,10 +215,10 @@ class ClientRepository extends BaseRepository {
       // Handle specific database errors
       if (error.code === '23505') { // Unique constraint violation
         if (error.message.includes('cuit')) {
-          throw new Error('A client with this CUIT already exists');
+          throw new Error('A client with this CUIT already exists in your organization');
         }
         if (error.message.includes('email')) {
-          throw new Error('A client with this email already exists');
+          throw new Error('Email constraint violation (unexpected - emails should not be unique)');
         }
         throw new Error('Client data violates unique constraint');
       }

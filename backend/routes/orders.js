@@ -12,7 +12,9 @@ const {
   updateOrderSchema,
   updateOrderStatusSchema,
   orderQuerySchema,
-  orderIdSchema
+  orderIdSchema,
+  calculatePricingSchema,
+  validateCouponSchema
 } = require('../validations/orderValidation');
 
 /**
@@ -43,6 +45,7 @@ function createOrderRoutes(container) {
     '/calculate-pricing',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.product),
+    validateRequest(calculatePricingSchema),
     async (req, res, next) => {
       try {
         await orderController.calculateOrderPricing(req, res, next);
@@ -57,6 +60,7 @@ function createOrderRoutes(container) {
     '/validate-coupon',
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.general),
+    validateRequest(validateCouponSchema),
     async (req, res, next) => {
       try {
         await orderController.validateOrderCoupon(req, res, next);
