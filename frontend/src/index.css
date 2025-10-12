@@ -160,6 +160,106 @@
     outline-offset: 2px;
   }
 
+  /* Sobrescribir colores de texto de Tailwind para mejor contraste */
+  .text-gray-600 {
+    color: oklch(0.32 0 0) !important; /* Más oscuro que el original gray-600 */
+  }
+
+  .text-gray-500 {
+    color: oklch(0.40 0 0) !important; /* Más oscuro que el original gray-500 */
+  }
+
+  .text-gray-400 {
+    color: oklch(0.50 0 0) !important; /* Más oscuro que el original gray-400 */
+  }
+
+  .text-gray-700 {
+    color: oklch(0.25 0 0) !important; /* Asegurar buen contraste */
+  }
+
+  .text-gray-800 {
+    color: oklch(0.15 0 0) !important; /* Muy oscuro para máximo contraste */
+  }
+
+  .text-gray-900 {
+    color: oklch(0.09 0 0) !important; /* Negro casi puro */
+  }
+
+  /* Actualizar text-sm para usar mejor color por defecto */
+  .text-sm {
+    color: oklch(0.25 0 0); /* Usar gray-700 mejorado por defecto */
+  }
+
+  /* Font-medium debería ser más visible */
+  .font-medium {
+    color: oklch(0.15 0 0); /* Usar gray-800 mejorado */
+  }
+
+  /* Estilos base para elementos HTML de texto */
+  h1, h2, h3, h4, h5, h6 {
+    color: oklch(0.09 0 0); /* Negro casi puro para títulos */
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 2.25rem; /* 36px */
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.875rem; /* 30px */
+  }
+
+  h3 {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  h4 {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  h5 {
+    font-size: 1.125rem; /* 18px */
+  }
+
+  h6 {
+    font-size: 1rem; /* 16px */
+  }
+
+  p {
+    color: oklch(0.25 0 0); /* Gray-700 mejorado por defecto */
+    line-height: 1.5;
+  }
+
+  /* Estilos para iconos - color más oscuro por defecto */
+  svg {
+    color: oklch(0.15 0 0); /* Gray-800 mejorado por defecto */
+  }
+
+  /* Mejorar contraste de labels */
+  label {
+    color: oklch(0.15 0 0); /* Gray-800 mejorado */
+    font-weight: 500;
+  }
+
+  /* Strong y bold más oscuros */
+  strong, b {
+    color: oklch(0.09 0 0); /* Negro casi puro */
+    font-weight: 600;
+  }
+
+  /* Links con mejor contraste */
+  a {
+    color: oklch(0.45 0.18 206); /* Primary-600 */
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: oklch(0.35 0.14 206); /* Primary-700 */
+    text-decoration: underline;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
       animation-duration: 0.01ms !important;

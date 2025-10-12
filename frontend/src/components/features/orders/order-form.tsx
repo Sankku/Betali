@@ -59,11 +59,6 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts();
   const { data: taxRates } = useTaxRates({ active_only: true });
 
-  // Debug logging for products
-  console.log('OrderForm - Products data:', products);
-  console.log('OrderForm - Products loading:', productsLoading);
-  console.log('OrderForm - Products error:', productsError);
-
   const { watch, setValue, register } = form;
   const watchedValues = watch();
 
@@ -96,7 +91,8 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       refetchClients();
       refetchWarehouses();
     }
-  }, [mode, refetchClients, refetchWarehouses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]); // Only run when mode changes, not when refetch functions change
 
   // Initialize items from form data
   useEffect(() => {
@@ -118,7 +114,8 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       setItems([initialItem]);
       setValue('items', [initialItem]);
     }
-  }, [watchedValues.items, mode, products, setValue, items.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedValues.items, mode, products?.data]); // Removed items.length and setValue to prevent infinite loops
 
   // Recalculate pricing when items change
   useEffect(() => {

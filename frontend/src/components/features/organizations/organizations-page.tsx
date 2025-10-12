@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle, Building2 } from 'lucide-react';
+import { AlertTriangle, Building2, Eye, Edit, Trash, Users, Calendar } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
-import { BackendConfiguredTable } from '@/components/table/BackendConfiguredTable';
-import { useTableConfig } from '@/hooks/useTableConfig';
+import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { formatDate } from '@/lib/utils';
 import {
   Modal,
   ModalContent,
@@ -33,7 +34,7 @@ interface ModalState {
 
 interface DeleteConfirmState {
   show: boolean;
-  organization?: Organization;
+  organizations: Organization[];
 }
 
 export function OrganizationsPage() {
@@ -46,15 +47,9 @@ export function OrganizationsPage() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DeleteConfirmState>({
     show: false,
+    organizations: [],
   });
 
-  // Use the new table configuration system
-  const {
-    data: tableConfig,
-    isLoading: configLoading,
-    error: configError,
-  } = useTableConfig('organizations');
-  
   const { data: userOrganizations = [], isLoading, error } = useOrganizationManagement();
   
   // Transform user organizations to extract just the organization data for the table
@@ -73,48 +68,31 @@ export function OrganizationsPage() {
 
   const handleCreateClick = () => openModal('create');
 
-  const handleDelete = async (organization: Organization) => {
-    if (!organization?.organization_id) {
-      console.error('Organization ID is missing:', organization);
+  const handleDelete = async (organizations: Organization[]) => {
+    if (!organizations || organizations.length === 0) {
+      console.error('No organizations selected');
       return;
     }
-    
-    // Check if this is the user's only organization
-    if (userOrganizations.length === 1) {
-      // Show different modal for last organization
-      setShowDeleteConfirm({ show: true, organization });
-      return;
-    }
-    
-    setShowDeleteConfirm({ show: true, organization });
+    setShowDeleteConfirm({ show: true, organizations });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.organization?.organization_id) {
+    if (showDeleteConfirm.organizations.length > 0) {
       try {
-        const isLastOrganization = userOrganizations.length === 1;
-        const isDeletingCurrentOrg = currentOrganization?.organization_id === showDeleteConfirm.organization.organization_id;
-        
-        await deleteOrganization.mutateAsync(showDeleteConfirm.organization.organization_id);
-        setShowDeleteConfirm({ show: false });
-        
-        // If user deleted their only organization or their current organization,
-        // they'll be redirected to the no-organization fallback automatically
-        // by the context when it refetches
-        if (isLastOrganization || isDeletingCurrentOrg) {
-          // The OrganizationContext will handle the redirect automatically
-          console.log('User deleted their', isLastOrganization ? 'last organization' : 'current organization');
+        for (const org of showDeleteConfirm.organizations) {
+          if (org.organization_id) {
+            await deleteOrganization.mutateAsync(org.organization_id);
+          }
         }
+        setShowDeleteConfirm({ show: false, organizations: [] });
       } catch (error) {
         console.error('Error deleting:', error);
       }
-    } else {
-      console.error('Cannot delete: Organization ID is missing');
     }
   };
 
   const closeDeleteConfirm = useCallback(() => {
-    setShowDeleteConfirm({ show: false });
+    setShowDeleteConfirm({ show: false, organizations: [] });
   }, []);
 
   const handleSubmit = async (data: any) => {
@@ -133,28 +111,92 @@ export function OrganizationsPage() {
     }
   };
 
-  // Handle table actions from the configurable table
-  const handleTableAction = useCallback((action: string, row: Organization) => {
-    switch (action) {
-      case 'view':
-        openModal('view', row);
-        break;
-      case 'edit':
-        openModal('edit', row);
-        break;
-      case 'delete':
-        handleDelete(row);
-        break;
-      case 'create':
-        openModal('create');
-        break;
-      default:
-        console.warn('Unknown action:', action);
-    }
-  }, []);
-
   const isLoaderVisible =
     createOrganization.isPending || updateOrganization.isPending || deleteOrganization.isPending;
+
+  // Bulk actions configuration
+  const bulkActions: BulkAction<Organization>[] = useMemo(() => [{
+    key: 'delete',
+    label: 'Delete',
+    icon: Trash,
+    colorScheme: {
+      bg: 'bg-white',
+      border: 'border-red-300',
+      text: 'text-red-700',
+      hoverBg: 'hover:bg-red-50'
+    },
+    onClick: (organizations) => handleDelete(organizations),
+    alwaysShow: true,
+  }], []);
+
+  // Columns configuration
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Organization',
+      cell: ({ row }: any) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
+            {row.original.organization_id === currentOrganization?.organization_id && (
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1">
+                Current
+              </Badge>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Created',
+      cell: ({ row }: any) => (
+        <div className="flex items-center text-sm text-gray-900">
+          <Calendar className="w-4 h-4 text-gray-400 mr-2" />
+          <span className="tabular-nums">
+            {row.original.created_at ? formatDate(row.original.created_at) : '-'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openModal('view', row.original)}
+            className="text-blue-600 hover:text-blue-900"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openModal('edit', row.original)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete([row.original])}
+            className="text-red-600 hover:text-red-900"
+          >
+            <Trash className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [currentOrganization]);
 
   return (
     <>
@@ -163,25 +205,27 @@ export function OrganizationsPage() {
       </Helmet>
 
       <CRUDPage
-        title={(tableConfig as any)?.name || 'Organization Management'}
-        description={
-          configLoading
-            ? 'Loading table configuration...'
-            : 'Manage organizations in the multi-tenant system. Each organization has its own data isolation and team management.'
-        }
+        title="Organization Management"
+        description="Manage organizations in the multi-tenant system. Each organization has its own data isolation and team management."
         data={organizations}
-        isLoading={isLoading || isLoaderVisible || configLoading}
-        error={error || configError}
+        isLoading={isLoading || isLoaderVisible}
+        error={error}
         onCreateClick={handleCreateClick}
         customTable={
-          tableConfig ? (
-            <BackendConfiguredTable
-              config={tableConfig as any}
-              data={organizations}
-              onAction={handleTableAction}
-              isLoading={isLoading || isLoaderVisible}
-            />
-          ) : null
+          <TableWithBulkActions
+            data={organizations}
+            columns={columns}
+            loading={isLoading}
+            getRowId={(org: Organization) => org.organization_id}
+            bulkActions={bulkActions}
+            createButtonLabel="New Organization"
+            onCreateClick={handleCreateClick}
+            onRowDoubleClick={(org) => openModal('edit', org)}
+            searchable={true}
+            enablePagination={true}
+            pageSize={10}
+            emptyMessage="No organizations found. Create your first organization to get started!"
+          />
         }
       />
 
@@ -203,26 +247,25 @@ export function OrganizationsPage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>
-              {userOrganizations.length === 1 ? 'Delete your only organization?' : 'Delete organization?'}
-            </ModalTitle>
+            <ModalTitle>Delete organization?</ModalTitle>
             <ModalDescription>
-              {userOrganizations.length === 1 ? (
-                <>
-                  <strong>Warning:</strong> This is your only organization. Deleting{' '}
-                  <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.organization?.name || 'selected'}"
-                  </span>{' '}
-                  will leave you without access to any organization features. 
-                  You'll need to create a new organization or be invited to an existing one to continue using Betali.
-                </>
-              ) : (
+              {showDeleteConfirm.organizations.length === 1 ? (
                 <>
                   This action cannot be undone. The organization{' '}
                   <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.organization?.name || 'selected'}"
+                    "{showDeleteConfirm.organizations[0]?.name || 'selected'}"
                   </span>{' '}
                   will be permanently deleted.
+                  {showDeleteConfirm.organizations[0]?.organization_id === currentOrganization?.organization_id && (
+                    <>
+                      {' '}<strong>Warning:</strong> You are deleting your current organization.
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  This action will permanently delete <strong>{showDeleteConfirm.organizations.length}</strong> organizations.
+                  This action cannot be undone.
                 </>
               )}
             </ModalDescription>
@@ -243,7 +286,7 @@ export function OrganizationsPage() {
               loading={deleteOrganization.isPending}
               className="w-full sm:w-auto"
             >
-              {userOrganizations.length === 1 ? 'Delete anyway' : 'Delete'}
+              Delete
             </Button>
           </ModalFooter>
         </ModalContent>

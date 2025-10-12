@@ -22,6 +22,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CreateOrganizationForm } from '../organizations/create-organization-form';
+import { DateFormatSelector } from '../settings/date-format-selector';
+import { TimezoneSelector } from '../settings/timezone-selector';
 
 /**
  * Component to show current user context with role, permissions, and organization
@@ -261,12 +263,12 @@ export function UserContextIndicator() {
               <span className="text-sm">Sync Data</span>
             </DropdownMenuItem>
             
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => setIsDetailsOpen(true)}
               className="cursor-pointer"
             >
               <Settings className="w-4 h-4 mr-2" />
-              <span className="text-sm">View Permissions</span>
+              <span className="text-sm">Profile & Preferences</span>
             </DropdownMenuItem>
             
             <DropdownMenuItem 
@@ -285,18 +287,36 @@ export function UserContextIndicator() {
         <ModalContent className="max-w-2xl">
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              User Context Details
+              <Settings className="w-5 h-5" />
+              Profile & Preferences
             </ModalTitle>
             <ModalDescription>
-              Your current permissions and organization context
+              Your user information, preferences, and permissions
             </ModalDescription>
           </ModalHeader>
 
-          <div className="space-y-6 p-6">
+          <div className="space-y-6 p-6 max-h-[70vh] overflow-y-auto">
+            {/* Preferences Section */}
+            <div className="space-y-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-blue-600" />
+                Display Preferences
+              </h3>
+              <p className="text-sm text-gray-600">
+                Customize how dates and times are displayed across the application.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white rounded-lg p-4">
+                <DateFormatSelector />
+                <TimezoneSelector />
+              </div>
+            </div>
+
             {/* User Information */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <User className="w-5 h-5" />
+                User Information
+              </h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">Name:</span>

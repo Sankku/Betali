@@ -82,10 +82,10 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: 'max-w-xl',      // Era max-w-md (448px) -> ahora max-w-xl (576px) +28%
+    md: 'max-w-2xl',     // Era max-w-lg (512px) -> ahora max-w-2xl (672px) +31%
+    lg: 'max-w-4xl',     // Era max-w-2xl (672px) -> ahora max-w-4xl (896px) +33%
+    xl: 'max-w-6xl',     // Era max-w-4xl (896px) -> ahora max-w-6xl (1152px) +28%
     full: 'max-w-7xl mx-4',
   };
 

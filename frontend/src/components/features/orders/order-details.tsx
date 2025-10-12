@@ -17,6 +17,15 @@ interface OrderDetailsProps {
 export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
   const duplicateOrderMutation = useDuplicateOrder();
 
+  // Guard clause - if no order, show error
+  if (!order) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Error: Order data not available</p>
+      </div>
+    );
+  }
+
   const handleDuplicate = async () => {
     try {
       await duplicateOrderMutation.mutateAsync(order.order_id);
@@ -38,26 +47,36 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
 
   const statusColor = getOrderStatusColor(order.status);
 
+  // Calculate tax correctly (total - subtotal)
+  const calculatedTax = (order.total_price ?? 0) - (order.subtotal ?? 0);
+  const displayTax = order.tax && order.tax > 0 ? order.tax : calculatedTax;
+
   return (
     <div className="space-y-6">
       {/* Order Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between ">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold">Order #{order.order_id.slice(-8).toUpperCase()}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Order #{order.order_id?.slice(-8).toUpperCase() || 'N/A'}
+          </h2>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 ">
               <Calendar className="h-4 w-4" />
               <span>{formatDate(order.order_date)}</span>
             </div>
-            <Badge className={`bg-${statusColor}-100 text-${statusColor}-800 border-${statusColor}-200`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            <Badge
+              className={`bg-${statusColor}-100 text-${statusColor}-800 border-${statusColor}-200`}
+            >
+              {order.status
+                ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+                : 'Unknown'}
             </Badge>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           {onEdit && (
-            <Button onClick={onEdit} size="sm" className="flex items-center gap-2">
+            <Button onClick={onEdit} size="sm" className="flex items-center gap-2 text-gray-800">
               <Edit className="h-4 w-4" />
               Edit
             </Button>
@@ -79,21 +98,30 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
         {/* Order Information */}
         <div className="lg:col-span-2 space-y-6">
           {/* Customer & Shipping Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <User className="h-4 w-4" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <User className="h-5 w-5" />
                   Customer Information
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 {order.clients ? (
-                  <div className="space-y-2">
-                    <p className="font-medium">{order.clients.name}</p>
-                    <p className="text-sm text-gray-600">{order.clients.email}</p>
-                    <p className="text-sm text-gray-600">{order.clients.phone}</p>
-                  </div>
+                  <>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="font-medium">{order.clients.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Email</p>
+                      <p className="text-sm break-all">{order.clients.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Phone</p>
+                      <p className="text-sm">{order.clients.phone}</p>
+                    </div>
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500">No customer assigned</p>
                 )}
@@ -101,18 +129,24 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
             </Card>
 
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
                   Warehouse
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 {order.warehouse ? (
-                  <div className="space-y-2">
-                    <p className="font-medium">{order.warehouse.name}</p>
-                    <p className="text-sm text-gray-600">{order.warehouse.location}</p>
-                  </div>
+                  <>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="font-medium">{order.warehouse.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Location</p>
+                      <p className="text-sm">{order.warehouse.location}</p>
+                    </div>
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500">No warehouse assigned</p>
                 )}
@@ -122,38 +156,39 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
 
           {/* Order Items */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Package className="h-5 w-5" />
                 Order Items
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 text-gray-500">
                 {order.order_details?.map((item, index) => (
-                  <div key={item.order_detail_id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.products?.name}</div>
-                      <div className="text-sm text-gray-600">
-                        SKU: {item.products?.sku}
-                      </div>
+                  <div
+                    key={item.order_detail_id}
+                    className="flex items-start justify-between gap-4 p-5 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base mb-2">{item.products?.name}</div>
+                      <div className="text-sm text-gray-600 mb-1">SKU: {item.products?.sku}</div>
                       {item.products?.description && (
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-gray-500 mt-2 line-clamp-2">
                           {item.products.description}
                         </div>
                       )}
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-medium text-base mb-1">
                         {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                       </div>
-                      <div className="text-sm font-semibold">
+                      <div className="text-lg font-bold">
                         ${(item.quantity * (item.price ?? 0)).toFixed(2)}
                       </div>
                     </div>
                   </div>
                 )) || (
-                  <p className="text-sm text-gray-500">No items in this order</p>
+                  <p className="text-sm text-gray-500 py-8 text-center">No items in this order</p>
                 )}
               </div>
             </CardContent>
@@ -178,57 +213,61 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
         {/* Order Summary */}
         <div className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base font-semibold">Order Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span>${(order.subtotal ?? 0).toFixed(2)}</span>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm">Subtotal:</span>
+                  <span className="text-base font-medium">${(order.subtotal ?? 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Tax:</span>
-                  <span>${(order.tax ?? 0).toFixed(2)}</span>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm">Tax:</span>
+                  <span className="text-base font-medium">${displayTax.toFixed(2)}</span>
                 </div>
-                <hr className="border-t border-gray-200" />
-                <div className="flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span>${(order.total_price ?? 0).toFixed(2)}</span>
+                <Separator />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-base font-semibold text-gray-500">Total:</span>
+                  <span className="text-xl font-bold text-green-600">
+                    ${(order.total_price ?? 0).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Order Timeline</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base font-semibold">Order Timeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Order Created</p>
-                    <p className="text-xs text-gray-600">{formatDate(order.created_at)}</p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-1">Order Created</p>
+                    <p className="text-xs">{formatDate(order.created_at)}</p>
                   </div>
                 </div>
-                
+
                 {order.updated_at !== order.created_at && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div>
-                      <p className="text-sm font-medium">Last Updated</p>
-                      <p className="text-xs text-gray-600">{formatDate(order.updated_at)}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold mb-1">Last Updated</p>
+                      <p className="text-xs">{formatDate(order.updated_at)}</p>
                     </div>
                   </div>
                 )}
-                
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 bg-${statusColor}-500 rounded-full`}></div>
-                  <div>
-                    <p className="text-sm font-medium">Current Status</p>
-                    <p className="text-xs text-gray-600 capitalize">{order.status}</p>
+
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-2.5 h-2.5 bg-${statusColor}-500 rounded-full mt-1.5 flex-shrink-0`}
+                  ></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-1">Current Status</p>
+                    <p className="text-xs capitalize">{order.status || 'Unknown'}</p>
                   </div>
                 </div>
               </div>

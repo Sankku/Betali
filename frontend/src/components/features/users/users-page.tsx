@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, User as UserIcon, Mail, Shield, Eye, Edit, Trash, ToggleLeft, ToggleRight } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
-import { BackendConfiguredTable } from '@/components/table/BackendConfiguredTable';
-import { useTableConfig } from '@/hooks/useTableConfig';
+import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ToastContainer } from '@/components/ui/toast';
 import {
   Modal,
@@ -32,7 +32,7 @@ interface ModalState {
 
 interface DeleteConfirmState {
   show: boolean;
-  user?: User;
+  users: User[];
 }
 
 export function UsersPage() {
@@ -43,15 +43,9 @@ export function UsersPage() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DeleteConfirmState>({
     show: false,
+    users: [],
   });
 
-  // Use the new hooks and table configuration system
-  const {
-    data: tableConfig,
-    isLoading: configLoading,
-    error: configError,
-  } = useTableConfig('users');
-  
   const { data: users = [], isLoading, error } = useUserManagement();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -68,29 +62,31 @@ export function UsersPage() {
 
   const handleCreateClick = () => openModal('create');
 
-  const handleDelete = async (user: User) => {
-    if (!user?.user_id) {
-      console.error('User ID is missing:', user);
+  const handleDelete = async (users: User[]) => {
+    if (!users || users.length === 0) {
+      console.error('No users selected');
       return;
     }
-    setShowDeleteConfirm({ show: true, user });
+    setShowDeleteConfirm({ show: true, users });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.user?.user_id) {
+    if (showDeleteConfirm.users.length > 0) {
       try {
-        await deleteUser.mutateAsync(showDeleteConfirm.user.user_id);
-        setShowDeleteConfirm({ show: false });
+        for (const user of showDeleteConfirm.users) {
+          if (user.user_id) {
+            await deleteUser.mutateAsync(user.user_id);
+          }
+        }
+        setShowDeleteConfirm({ show: false, users: [] });
       } catch (error) {
         console.error('Error deleting:', error);
       }
-    } else {
-      console.error('Cannot delete: User ID is missing');
     }
   };
 
   const closeDeleteConfirm = useCallback(() => {
-    setShowDeleteConfirm({ show: false });
+    setShowDeleteConfirm({ show: false, users: [] });
   }, []);
 
   const handleToggleStatus = async (user: User) => {
@@ -124,31 +120,108 @@ export function UsersPage() {
     }
   };
 
-  // Handle table actions from the configurable table
-  const handleTableAction = useCallback((action: string, row: User) => {
-    switch (action) {
-      case 'view':
-        openModal('view', row);
-        break;
-      case 'edit':
-        openModal('edit', row);
-        break;
-      case 'delete':
-        handleDelete(row);
-        break;
-      case 'toggle-status':
-        handleToggleStatus(row);
-        break;
-      case 'create':
-        openModal('create');
-        break;
-      default:
-        console.warn('Unknown action:', action);
-    }
-  }, []);
-
   const isLoaderVisible =
     createUser.isPending || updateUser.isPending || deleteUser.isPending || toggleUserStatus.isPending;
+
+  // Bulk actions configuration
+  const bulkActions: BulkAction<User>[] = useMemo(() => [{
+    key: 'delete',
+    label: 'Delete',
+    icon: Trash,
+    colorScheme: {
+      bg: 'bg-white',
+      border: 'border-red-300',
+      text: 'text-red-700',
+      hoverBg: 'hover:bg-red-50'
+    },
+    onClick: (users) => handleDelete(users),
+    alwaysShow: true,
+  }], []);
+
+  // Columns configuration
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'User',
+      cell: ({ row }: any) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <UserIcon className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
+            <div className="text-sm text-gray-500">{row.original.email}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }: any) => (
+        <div className="flex items-center">
+          <Shield className="w-4 h-4 text-gray-400 mr-2" />
+          <Badge variant="outline" className="capitalize">
+            {row.original.role || 'user'}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }: any) => (
+        <Badge
+          variant={row.original.is_active ? "default" : "secondary"}
+          className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+        >
+          {row.original.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openModal('view', row.original)}
+            className="text-blue-600 hover:text-blue-900"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openModal('edit', row.original)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToggleStatus(row.original)}
+            className={row.original.is_active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"}
+          >
+            {row.original.is_active ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete([row.original])}
+            className="text-red-600 hover:text-red-900"
+          >
+            <Trash className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <>
@@ -157,25 +230,27 @@ export function UsersPage() {
       </Helmet>
 
       <CRUDPage
-        title={(tableConfig as any)?.name || 'User Management'}
-        description={
-          configLoading
-            ? 'Loading table configuration...'
-            : 'Manage system users, roles, and permissions'
-        }
+        title="User Management"
+        description="Manage system users, roles, and permissions"
         data={users}
-        isLoading={isLoading || isLoaderVisible || configLoading}
-        error={error || configError}
+        isLoading={isLoading || isLoaderVisible}
+        error={error}
         onCreateClick={handleCreateClick}
         customTable={
-          tableConfig ? (
-            <BackendConfiguredTable
-              config={tableConfig as any}
-              data={users}
-              onAction={handleTableAction}
-              isLoading={isLoading || isLoaderVisible}
-            />
-          ) : null
+          <TableWithBulkActions
+            data={users}
+            columns={columns}
+            loading={isLoading}
+            getRowId={(user: User) => user.user_id}
+            bulkActions={bulkActions}
+            createButtonLabel="New User"
+            onCreateClick={handleCreateClick}
+            onRowDoubleClick={(user) => openModal('edit', user)}
+            searchable={true}
+            enablePagination={true}
+            pageSize={10}
+            emptyMessage="No users found. Create your first user to get started!"
+          />
         }
       />
 
@@ -196,11 +271,20 @@ export function UsersPage() {
             </div>
             <ModalTitle>Delete user permanently?</ModalTitle>
             <ModalDescription>
-              This action will permanently delete the user{' '}
-              <span className="font-medium text-neutral-900">
-                "{showDeleteConfirm.user?.name || 'selected'}"
-              </span>
-              . This action cannot be undone and all data will be lost.
+              {showDeleteConfirm.users.length === 1 ? (
+                <>
+                  This action will permanently delete the user{' '}
+                  <span className="font-medium text-neutral-900">
+                    "{showDeleteConfirm.users[0]?.name || 'selected'}"
+                  </span>
+                  .
+                </>
+              ) : (
+                <>
+                  This action will permanently delete <strong>{showDeleteConfirm.users.length}</strong> users.
+                </>
+              )}
+              {' '}This action cannot be undone and all data will be lost.
             </ModalDescription>
           </ModalHeader>
 

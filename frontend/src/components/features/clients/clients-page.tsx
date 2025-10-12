@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, Building, Search, UserCheck, TrendingUp, Eye, Edit, Trash } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
+import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToastContainer } from '@/components/ui/toast';
@@ -32,7 +33,7 @@ interface ModalState {
 
 interface DeleteConfirmState {
   show: boolean;
-  client?: Client;
+  clients: Client[];
 }
 
 export function ClientsPage() {
@@ -43,6 +44,7 @@ export function ClientsPage() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DeleteConfirmState>({
     show: false,
+    clients: [],
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,29 +68,24 @@ export function ClientsPage() {
 
   const handleCreateClick = () => openModal('create');
 
-  const handleDelete = (client: Client) => {
-    if (!client?.client_id) {
-      console.error('Client ID is missing:', client);
-      return;
-    }
-    setShowDeleteConfirm({ show: true, client });
+  const handleDelete = (clients: Client[]) => {
+    setShowDeleteConfirm({ show: true, clients });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.client?.client_id) {
-      try {
-        await deleteClient.mutateAsync(showDeleteConfirm.client.client_id);
-        setShowDeleteConfirm({ show: false });
-      } catch (error) {
-        console.error('Error deleting:', error);
-      }
-    } else {
-      console.error('Cannot delete: Client ID is missing');
+    try {
+      const promises = showDeleteConfirm.clients.map(client =>
+        deleteClient.mutateAsync(client.client_id)
+      );
+      await Promise.all(promises);
+      setShowDeleteConfirm({ show: false, clients: [] });
+    } catch (error) {
+      console.error('Error deleting:', error);
     }
   };
 
   const closeDeleteConfirm = useCallback(() => {
-    setShowDeleteConfirm({ show: false });
+    setShowDeleteConfirm({ show: false, clients: [] });
   }, []);
 
   const handleSubmit = async (data: CreateClientData) => {
@@ -107,10 +104,6 @@ export function ClientsPage() {
     }
   };
 
-  // Handle table actions
-  const handleView = (client: Client) => openModal('view', client);
-  const handleEdit = (client: Client) => openModal('edit', client);
-  
   // Format CUIT for display
   const formatCuit = (cuit: string) => {
     if (!cuit) return '';
@@ -120,6 +113,95 @@ export function ClientsPage() {
     }
     return cuit;
   };
+
+  // Bulk actions
+  const bulkActions: BulkAction<Client>[] = useMemo(() => [
+    {
+      key: 'delete',
+      label: 'Eliminar',
+      icon: Trash,
+      colorScheme: {
+        bg: 'bg-white',
+        border: 'border-red-300',
+        text: 'text-red-700',
+        hoverBg: 'hover:bg-red-50'
+      },
+      onClick: (clients) => handleDelete(clients),
+      alwaysShow: true,
+    },
+  ], []);
+
+  // Table columns
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Cliente',
+      cell: ({ row }: { row: any }) => {
+        const client = row.original as Client;
+        return (
+          <div>
+            <div className="flex items-center">
+              <UserCheck className="w-4 h-4 text-gray-400 mr-2" />
+              <div className="text-sm font-medium text-gray-900">{client.name}</div>
+            </div>
+            <div className="text-sm text-gray-500">{client.email}</div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'cuit',
+      header: 'CUIT',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-900 font-mono">
+          {formatCuit(row.original.cuit)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Teléfono',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-900">{row.original.phone || '-'}</div>
+      ),
+    },
+    {
+      accessorKey: 'address',
+      header: 'Dirección',
+      cell: ({ row }: { row: any }) => (
+        <div className="text-sm text-gray-900 max-w-xs truncate">
+          {row.original.address || '-'}
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Acciones',
+      cell: ({ row }: { row: any }) => {
+        const client = row.original as Client;
+        return (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openModal('view', client)}
+              className="text-blue-600 hover:text-blue-900"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openModal('edit', client)}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ], [formatCuit]);
 
   // Handle search
   const handleSearch = async () => {
@@ -226,105 +308,20 @@ export function ClientsPage() {
           </div>
         }
         customTable={
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      CUIT
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Teléfono
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Dirección
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                        Cargando clientes...
-                      </td>
-                    </tr>
-                  ) : error ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-red-500">
-                        Error al cargar clientes
-                      </td>
-                    </tr>
-                  ) : clients.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                        No se encontraron clientes
-                      </td>
-                    </tr>
-                  ) : (
-                    clients.map((client) => (
-                      <tr key={client.client_id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="flex items-center">
-                              <UserCheck className="w-4 h-4 text-gray-400 mr-2" />
-                              <div className="text-sm font-medium text-gray-900">
-                                {client.name}
-                              </div>
-                            </div>
-                            <div className="text-sm text-gray-500">{client.email}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                          {formatCuit(client.cuit)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {client.phone || '-'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                          {client.address || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleView(client)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(client)}
-                              className="text-gray-600 hover:text-gray-900"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(client)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <TableWithBulkActions
+            data={clients}
+            columns={columns}
+            loading={isLoading}
+            getRowId={(client: Client) => client.client_id}
+            bulkActions={bulkActions}
+            createButtonLabel="Nuevo Cliente"
+            onCreateClick={handleCreateClick}
+            onRowDoubleClick={(client) => openModal('edit', client)}
+            searchable={false}
+            enablePagination={true}
+            pageSize={10}
+            emptyMessage="No se encontraron clientes"
+          />
         }
       />
 
@@ -349,8 +346,16 @@ export function ClientsPage() {
               Confirmar Eliminación
             </ModalTitle>
             <ModalDescription>
-              ¿Está seguro que desea eliminar al cliente{' '}
-              <strong>{showDeleteConfirm.client?.name}</strong>? Esta acción no se puede deshacer.
+              {showDeleteConfirm.clients.length === 1 ? (
+                <>
+                  ¿Está seguro que desea eliminar al cliente{' '}
+                  <strong>{showDeleteConfirm.clients[0]?.name}</strong>? Esta acción no se puede deshacer.
+                </>
+              ) : (
+                <>
+                  ¿Está seguro que desea eliminar {showDeleteConfirm.clients.length} clientes? Esta acción no se puede deshacer.
+                </>
+              )}
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
@@ -362,7 +367,7 @@ export function ClientsPage() {
               onClick={confirmDelete}
               disabled={deleteClient.isPending}
             >
-              {deleteClient.isPending ? 'Eliminando...' : 'Eliminar Cliente'}
+              {deleteClient.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </ModalFooter>
         </ModalContent>

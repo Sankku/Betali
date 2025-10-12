@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   LogOut,
+  Settings,
 } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
@@ -106,6 +107,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <BarChart3 className="w-5 h-5" />,
       label: 'Stock Control',
       requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
+    },
+    {
+      path: '/dashboard/settings',
+      icon: <Settings className="w-5 h-5" />,
+      label: 'Settings',
+      checkAccess: () => true, // Always visible for all users
     },
   ];
 

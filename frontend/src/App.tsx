@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { UserContextSwitcherProvider } from "./context/UserContextSwitcher";
 import { OrganizationProvider } from "./context/OrganizationContext";
 import { GlobalSyncProvider } from "./context/GlobalSyncContext";
+import { DateFormatProvider } from "./contexts/DateFormatContext";
 import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
@@ -22,6 +23,7 @@ import Clients from "./pages/Dashboard/Clients";
 import Suppliers from "./pages/Dashboard/Suppliers";
 import Orders from "./pages/Dashboard/Orders";
 import TaxManagement from "./pages/Dashboard/TaxManagement";
+import Settings from "./pages/Dashboard/Settings";
 
 function AppContent() {
   useAuthStateChange();
@@ -31,8 +33,9 @@ function AppContent() {
       <GlobalSyncProvider>
         <OrganizationProvider>
           <UserContextSwitcherProvider>
-          <HelmetProvider>
-            <BrowserRouter>
+            <DateFormatProvider>
+              <HelmetProvider>
+                <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -116,12 +119,21 @@ function AppContent() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/dashboard/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
-            </BrowserRouter>
-          </HelmetProvider>
-          <GlobalLoading />
-          <ToastContainer />
+                </BrowserRouter>
+              </HelmetProvider>
+              <GlobalLoading />
+              <ToastContainer />
+            </DateFormatProvider>
           </UserContextSwitcherProvider>
         </OrganizationProvider>
       </GlobalSyncProvider>
