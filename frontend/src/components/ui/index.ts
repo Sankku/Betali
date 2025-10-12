@@ -16,3 +16,7 @@ export * from './select';
 export * from './textarea';
 export * from './label';
 export * from './separator';
+export * from './table-with-bulk-actions';
+export * from './column-filter';
+export * from './date-picker';
+export * from './date-range-picker';

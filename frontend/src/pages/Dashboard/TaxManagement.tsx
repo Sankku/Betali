@@ -1,16 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Percent, Settings, AlertCircle } from 'lucide-react';
+import { Plus, Percent, Settings, AlertCircle, Eye, Edit, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BackendConfiguredTable } from '@/components/table/BackendConfiguredTable';
+import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { TaxRateModal } from '@/components/features/taxes/tax-rate-modal';
 import { DashboardLayout } from '@/components/layout/Dashboard';
-import { useTaxRates, TaxRate } from '@/hooks/useTaxRates';
-import { useTableConfig } from '@/hooks/useTableConfig';
+import { useTaxRates, useDeleteTaxRate, TaxRate } from '@/hooks/useTaxRates';
 import { useOrganization } from '@/context/OrganizationContext';
 import { formatCurrency } from '@/lib/utils';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+} from '@/components/ui';
 
 export default function TaxManagement() {
   const { currentOrganization } = useOrganization();
@@ -18,13 +25,13 @@ export default function TaxManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaxRate, setSelectedTaxRate] = useState<TaxRate | undefined>();
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
+    show: boolean;
+    taxRates: TaxRate[];
+  }>({ show: false, taxRates: [] });
 
   const { data: taxRates, isLoading } = useTaxRates();
-  const {
-    data: tableConfig,
-    isLoading: configLoading,
-    error: configError,
-  } = useTableConfig('tax_rates');
+  const deleteTaxRate = useDeleteTaxRate();
 
   const handleCreate = () => {
     setSelectedTaxRate(undefined);
@@ -44,22 +51,128 @@ export default function TaxManagement() {
     setIsModalOpen(true);
   };
 
-  // Handle table actions from the configurable table
-  const handleTableAction = useCallback((action: string, row: TaxRate) => {
-    switch (action) {
-      case 'view':
-        handleView(row);
-        break;
-      case 'edit':
-        handleEdit(row);
-        break;
-      case 'create':
-        handleCreate();
-        break;
-      default:
-        console.warn('Unknown action:', action);
+  const handleDelete = (taxRates: TaxRate[]) => {
+    if (!taxRates || taxRates.length === 0) {
+      console.error('No tax rates selected');
+      return;
     }
-  }, []);
+    setShowDeleteConfirm({ show: true, taxRates });
+  };
+
+  const confirmDelete = async () => {
+    if (showDeleteConfirm.taxRates.length > 0) {
+      try {
+        for (const rate of showDeleteConfirm.taxRates) {
+          if (rate.tax_rate_id) {
+            await deleteTaxRate.mutateAsync(rate.tax_rate_id);
+          }
+        }
+        setShowDeleteConfirm({ show: false, taxRates: [] });
+      } catch (error) {
+        console.error('Error deleting:', error);
+      }
+    }
+  };
+
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm({ show: false, taxRates: [] });
+  };
+
+  // Bulk actions configuration
+  const bulkActions: BulkAction<TaxRate>[] = useMemo(() => [{
+    key: 'delete',
+    label: 'Delete',
+    icon: Trash,
+    colorScheme: {
+      bg: 'bg-white',
+      border: 'border-red-300',
+      text: 'text-red-700',
+      hoverBg: 'hover:bg-red-50'
+    },
+    onClick: (rates) => handleDelete(rates),
+    alwaysShow: true,
+  }], []);
+
+  // Columns configuration
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Tax Rate Name',
+      cell: ({ row }: any) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
+          {row.original.description && (
+            <div className="text-sm text-gray-500">{row.original.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'rate',
+      header: 'Rate',
+      cell: ({ row }: any) => (
+        <div className="flex items-center">
+          <Percent className="w-4 h-4 text-gray-400 mr-2" />
+          <span className="text-sm font-medium text-gray-900">
+            {(row.original.rate * 100).toFixed(2)}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'is_inclusive',
+      header: 'Type',
+      cell: ({ row }: any) => (
+        <Badge variant="outline">
+          {row.original.is_inclusive ? 'Inclusive' : 'Exclusive'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }: any) => (
+        <Badge
+          variant={row.original.is_active ? "default" : "secondary"}
+          className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+        >
+          {row.original.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleView(row.original)}
+            className="text-blue-600 hover:text-blue-900"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(row.original)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete([row.original])}
+            className="text-red-600 hover:text-red-900"
+          >
+            <Trash className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ], []);
 
 
   return (
@@ -185,23 +298,24 @@ export default function TaxManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {tableConfig ? (
-            <BackendConfiguredTable
-              config={tableConfig}
-              data={taxRates?.data || []}
-              onAction={handleTableAction}
-              isLoading={isLoading || configLoading}
-              emptyMessage={
-                !currentOrganization 
-                  ? "Please select or create an organization to access tax management features." 
-                  : "No tax rates created yet. Create your first tax rate to get started!"
-              }
-            />
-          ) : (
-            <div className="p-8 text-center text-gray-500">
-              {configLoading ? "Loading table configuration..." : "Table configuration unavailable"}
-            </div>
-          )}
+          <TableWithBulkActions
+            data={taxRates?.data || []}
+            columns={columns}
+            loading={isLoading}
+            getRowId={(rate: TaxRate) => rate.tax_rate_id}
+            bulkActions={bulkActions}
+            createButtonLabel="Add Tax Rate"
+            onCreateClick={handleCreate}
+            onRowDoubleClick={(rate) => handleEdit(rate)}
+            searchable={true}
+            enablePagination={true}
+            pageSize={10}
+            emptyMessage={
+              !currentOrganization
+                ? "Please select or create an organization to access tax management features."
+                : "No tax rates created yet. Create your first tax rate to get started!"
+            }
+          />
         </CardContent>
       </Card>
 
@@ -212,6 +326,53 @@ export default function TaxManagement() {
         mode={modalMode}
         taxRate={selectedTaxRate}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={showDeleteConfirm.show} onClose={closeDeleteConfirm} size="sm">
+        <ModalContent>
+          <ModalHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <ModalTitle>Delete tax rate?</ModalTitle>
+            <ModalDescription>
+              {showDeleteConfirm.taxRates.length === 1 ? (
+                <>
+                  This action cannot be undone. The tax rate{' '}
+                  <span className="font-medium text-neutral-900">
+                    "{showDeleteConfirm.taxRates[0]?.name || 'selected'}"
+                  </span>{' '}
+                  will be permanently deleted.
+                </>
+              ) : (
+                <>
+                  This action will permanently delete <strong>{showDeleteConfirm.taxRates.length}</strong> tax rates.
+                  This action cannot be undone.
+                </>
+              )}
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={closeDeleteConfirm}
+              disabled={deleteTaxRate.isPending}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              loading={deleteTaxRate.isPending}
+              className="w-full sm:w-auto"
+            >
+              Delete
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
         </div>
       </DashboardLayout>
     </>

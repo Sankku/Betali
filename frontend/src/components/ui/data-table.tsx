@@ -27,6 +27,7 @@ import {
 import { Button } from './button';
 import { Input } from './input';
 import { Loading } from './loading';
+import { ColumnFilter } from './column-filter';
 import { cn } from '../../lib/utils';
 import { handleTableRowSelection, getLastSelectedItem } from '../../lib/utils/selection';
 
@@ -120,7 +121,8 @@ export function DataTable<TData>({
           <div onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+              style={{ accentColor: 'rgb(14 116 144)' }}
               checked={table.getIsAllPageRowsSelected()}
               indeterminate={table.getIsSomePageRowsSelected()}
               onChange={table.getToggleAllPageRowsSelectedHandler()}
@@ -155,7 +157,8 @@ export function DataTable<TData>({
             <div onClick={(e) => e.stopPropagation()}>
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                style={{ accentColor: 'rgb(14 116 144)' }}
                 checked={row.getIsSelected()}
                 onChange={handleCheckboxChange}
                 onClick={(e) => e.stopPropagation()}
@@ -371,47 +374,68 @@ export function DataTable<TData>({
                         index === 0 && 'bg-gradient-to-r from-neutral-100/60 to-white/40'
                       )}
                     >
-                      {headerGroup.headers.map(header => (
+                      {headerGroup.headers.map((header, index) => {
+                        const hasFilter = header.column.getFilterValue();
+                        return (
                         <th
                           key={header.id}
-                          className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-700"
+                          className={cn(
+                            "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider transition-colors",
+                            index !== headerGroup.headers.length - 1 && "border-r border-neutral-200",
+                            hasFilter
+                              ? "bg-primary-50/50 text-primary-900 border-b-2 border-b-primary-600"
+                              : "text-neutral-700"
+                          )}
                         >
                           {header.isPlaceholder ? null : (
-                            <div
-                              className={cn(
-                                'flex items-center space-x-1 transition-all duration-200',
-                                header.column.getCanSort() &&
-                                  'cursor-pointer select-none hover:text-primary-600 group'
-                              )}
-                              onClick={header.column.getToggleSortingHandler()}
-                            >
-                              <span className="group-hover:translate-x-0.5 transition-transform duration-200 text-neutral-800">
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                              </span>
-                              {header.column.getCanSort() && (
-                                <div className="flex flex-col opacity-60 group-hover:opacity-100 transition-opacity duration-200">
-                                  <ChevronUp
-                                    className={cn(
-                                      'h-3 w-3 transition-all duration-200',
-                                      header.column.getIsSorted() === 'asc'
-                                        ? 'text-primary-600 scale-110'
-                                        : 'text-neutral-500'
-                                    )}
-                                  />
-                                  <ChevronDown
-                                    className={cn(
-                                      'h-3 w-3 -mt-1 transition-all duration-200',
-                                      header.column.getIsSorted() === 'desc'
-                                        ? 'text-primary-600 scale-110'
-                                        : 'text-neutral-500'
-                                    )}
-                                  />
-                                </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div
+                                className={cn(
+                                  'flex items-center space-x-1 transition-all duration-200',
+                                  header.column.getCanSort() &&
+                                    'cursor-pointer select-none hover:text-primary-600 group'
+                                )}
+                                onClick={header.column.getToggleSortingHandler()}
+                              >
+                                <span className="group-hover:translate-x-0.5 transition-transform duration-200 text-neutral-800">
+                                  {flexRender(header.column.columnDef.header, header.getContext())}
+                                </span>
+                                {header.column.getCanSort() && (
+                                  <div className="flex flex-col opacity-60 group-hover:opacity-100 transition-opacity duration-200">
+                                    <ChevronUp
+                                      className={cn(
+                                        'h-3 w-3 transition-all duration-200',
+                                        header.column.getIsSorted() === 'asc'
+                                          ? 'text-primary-600 scale-110'
+                                          : 'text-neutral-500'
+                                      )}
+                                    />
+                                    <ChevronDown
+                                      className={cn(
+                                        'h-3 w-3 -mt-1 transition-all duration-200',
+                                        header.column.getIsSorted() === 'desc'
+                                          ? 'text-primary-600 scale-110'
+                                          : 'text-neutral-500'
+                                      )}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              {/* Column Filter */}
+                              {enableColumnFilters && header.column.getCanFilter() && header.id !== 'select' && (
+                                <ColumnFilter
+                                  value={(header.column.getFilterValue() as string) ?? ''}
+                                  onChange={(value) => header.column.setFilterValue(value)}
+                                  placeholder={`Filter ${header.column.columnDef.header}...`}
+                                  filterType={(header.column.columnDef.meta as any)?.filterType || 'text'}
+                                  options={(header.column.columnDef.meta as any)?.filterOptions || []}
+                                />
                               )}
                             </div>
                           )}
                         </th>
-                      ))}
+                        );
+                      })}
                     </tr>
                   ))}
                 </thead>
@@ -438,27 +462,39 @@ export function DataTable<TData>({
                       </td>
                     </tr>
                   ) : (
-                    table.getRowModel().rows.map((row, index) => (
+                    table.getRowModel().rows.map((row, index) => {
+                      const isSelected = row.getIsSelected();
+                      return (
                       <tr
                         key={row.id}
                         onClick={e => handleRowClick(row, e)}
                         onDoubleClick={e => handleRowDoubleClick(row, e)}
+                        style={isSelected ? { boxShadow: 'inset 4px 0 0 0 rgb(14 116 144)' } : undefined}
                         className={cn(
-                          'transition-all duration-200 hover:bg-primary-50/40 hover:backdrop-blur-sm group',
+                          'transition-all duration-200 group',
                           (onRowClick || onRowDoubleClick || enableRowSelection) && 'cursor-pointer',
-                          index % 2 === 0 ? 'bg-white/30' : 'bg-white/15'
+                          isSelected
+                            ? 'bg-teal-50/70 hover:bg-teal-50'
+                            : cn(
+                                'hover:bg-primary-50/40 hover:backdrop-blur-sm',
+                                index % 2 === 0 ? 'bg-white/30' : 'bg-white/15'
+                              )
                         )}
                       >
-                        {row.getVisibleCells().map(cell => (
+                        {row.getVisibleCells().map((cell, cellIndex) => (
                           <td
                             key={cell.id}
-                            className="px-4 py-3 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200"
+                            className={cn(
+                              "px-4 py-3 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200",
+                              cellIndex !== row.getVisibleCells().length - 1 && "border-r border-neutral-200/60"
+                            )}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}
                       </tr>
-                    ))
+                    );
+                    })
                   )}
                 </tbody>
               </table>

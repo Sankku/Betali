@@ -1,11 +1,8 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle, Eye, Edit, Trash, Building2 } from 'lucide-react';
+import { AlertTriangle, Eye, Edit, Trash } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
-import { BackendConfiguredTable } from '../../components/table/BackendConfiguredTable';
-import { DataTable } from '../../components/ui/data-table';
-import { useTableConfig } from '../../hooks/useTableConfig';
-import { TableConfig } from '../../types/table';
+import { TableWithBulkActions, BulkAction } from '../../components/ui/table-with-bulk-actions';
 import { ProductModal, Product, ProductFormData } from '../../components/features/products';
 import { Button } from '../../components/ui/button';
 import { ToastContainer } from '../../components/ui/toast';
@@ -33,20 +30,12 @@ interface ModalState {
 
 interface DeleteConfirmState {
   show: boolean;
-  product?: Product;
+  products: Product[];
 }
-
-// Type guard to safely check tableConfig
-const isValidTableConfig = (config: any): config is TableConfig => {
-  return config && 
-    typeof config === 'object' && 
-    typeof config.name === 'string' &&
-    Array.isArray(config.columns);
-};
 
 const ProductsPage: React.FC = () => {
   const { currentOrganization } = useOrganization();
-  
+
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -54,14 +43,9 @@ const ProductsPage: React.FC = () => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DeleteConfirmState>({
     show: false,
+    products: [],
   });
 
-  // Use the new table configuration system
-  const {
-    data: tableConfig,
-    isLoading: configLoading,
-    error: configError,
-  } = useTableConfig('products');
   const { products, isLoading, error } = useProductManagement();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -77,29 +61,24 @@ const ProductsPage: React.FC = () => {
 
   const handleCreateClick = () => openModal('create');
 
-  const handleDelete = async (product: Product) => {
-    if (!product?.product_id) {
-      console.error('Product ID is missing:', product);
-      return;
-    }
-    setShowDeleteConfirm({ show: true, product });
+  const handleDelete = async (products: Product[]) => {
+    setShowDeleteConfirm({ show: true, products });
   };
 
   const confirmDelete = async () => {
-    if (showDeleteConfirm.product?.product_id) {
-      try {
-        await deleteProduct.mutateAsync(showDeleteConfirm.product.product_id);
-        setShowDeleteConfirm({ show: false });
-      } catch (error) {
-        console.error('Error deleting:', error);
-      }
-    } else {
-      console.error('Cannot delete: Product ID is missing');
+    try {
+      const promises = showDeleteConfirm.products.map(product =>
+        deleteProduct.mutateAsync(product.product_id)
+      );
+      await Promise.all(promises);
+      setShowDeleteConfirm({ show: false, products: [] });
+    } catch (error) {
+      console.error('Error deleting:', error);
     }
   };
 
   const closeDeleteConfirm = useCallback(() => {
-    setShowDeleteConfirm({ show: false });
+    setShowDeleteConfirm({ show: false, products: [] });
   }, []);
 
   const handleSubmit = async (data: ProductFormData) => {
@@ -118,31 +97,28 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  // Handle table actions from the configurable table
-  const handleTableAction = useCallback((action: string, row: Product) => {
-    switch (action) {
-      case 'view':
-        openModal('view', row);
-        break;
-      case 'edit':
-        openModal('edit', row);
-        break;
-      case 'delete':
-        handleDelete(row);
-        break;
-      case 'create':
-        openModal('create');
-        break;
-      default:
-        console.warn('Unknown action:', action);
-    }
-  }, []);
-
   const isLoaderVisible =
     createProduct.isPending || updateProduct.isPending || deleteProduct.isPending;
 
-  // Fallback columns for DataTable when backend config is not available
-  const fallbackColumns = useMemo(() => [
+  // Define bulk actions
+  const bulkActions: BulkAction<Product>[] = useMemo(() => [
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: Trash,
+      colorScheme: {
+        bg: 'bg-white',
+        border: 'border-red-300',
+        text: 'text-red-700',
+        hoverBg: 'hover:bg-red-50'
+      },
+      onClick: (products) => handleDelete(products),
+      alwaysShow: true,
+    },
+  ], []);
+
+  // Columns configuration
+  const columns = useMemo(() => [
     {
       accessorKey: 'name',
       header: 'Product Name',
@@ -220,14 +196,6 @@ const ProductsPage: React.FC = () => {
             >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleDelete(product)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
           </div>
         );
       },
@@ -242,62 +210,32 @@ const ProductsPage: React.FC = () => {
       </Helmet>
 
       <CRUDPage
-        title={isValidTableConfig(tableConfig) ? tableConfig.name : 'Product Management'}
-        description={
-          configLoading
-            ? 'Loading table configuration...'
-            : 'Manage product inventory and information'
-        }
+        title="Product Management"
+        description="Manage product inventory and information"
         data={products}
-        isLoading={isLoading || isLoaderVisible || configLoading}
-        error={error || configError}
+        isLoading={isLoading}
+        error={error}
         onCreateClick={handleCreateClick}
+        isAnyMutationLoading={isLoaderVisible}
         customTable={
-          isValidTableConfig(tableConfig) ? (
-            <BackendConfiguredTable
-              config={tableConfig}
-              data={products}
-              onAction={handleTableAction}
-              isLoading={isLoading || isLoaderVisible}
-              emptyMessage={
-                !currentOrganization 
-                  ? "Please select or create an organization to access product management features." 
-                  : "No products created yet. Create your first product to get started!"
-              }
-            />
-          ) : (
-            // Fallback to DataTable if backend configuration is not available
-            <div className="space-y-4">
-              {(configError || (!configLoading && !tableConfig)) && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                  <div className="flex">
-                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
-                    <div className="ml-3">
-                      <p className="text-sm text-yellow-700">
-                        {configError ? 
-                          `Backend table configuration unavailable: ${configError.message || configError}` : 
-                          'Using default table configuration.'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <DataTable
-                columns={fallbackColumns}
-                data={products || []}
-                loading={isLoading || isLoaderVisible}
-                searchable={true}
-                enablePagination={true}
-                pageSize={10}
-                emptyMessage={
-                  !currentOrganization 
-                    ? "Please select or create an organization to access product management features." 
-                    : "No products created yet. Create your first product to get started!"
-                }
-              />
-            </div>
-          )
+          <TableWithBulkActions
+            data={products || []}
+            columns={columns}
+            loading={isLoading || isLoaderVisible}
+            getRowId={(product: Product) => product.product_id}
+            bulkActions={bulkActions}
+            createButtonLabel="New Product"
+            onCreateClick={handleCreateClick}
+            onRowDoubleClick={(product) => openModal('edit', product)}
+            searchable={true}
+            enablePagination={true}
+            pageSize={10}
+            emptyMessage={
+              !currentOrganization
+                ? "Please select or create an organization to access product management features."
+                : "No products created yet. Create your first product to get started!"
+            }
+          />
         }
       />
 
@@ -316,13 +254,23 @@ const ProductsPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete product?</ModalTitle>
+            <ModalTitle>
+              Delete {showDeleteConfirm.products.length} product{showDeleteConfirm.products.length > 1 ? 's' : ''}?
+            </ModalTitle>
             <ModalDescription>
-              This action cannot be undone. The product{' '}
-              <span className="font-medium text-neutral-900">
-                "{showDeleteConfirm.product?.name || 'selected'}"
-              </span>{' '}
-              will be permanently deleted.
+              This action cannot be undone. {showDeleteConfirm.products.length === 1 ? (
+                <>
+                  The product{' '}
+                  <span className="font-medium text-neutral-900">
+                    "{showDeleteConfirm.products[0]?.name}"
+                  </span>{' '}
+                  will be permanently deleted.
+                </>
+              ) : (
+                <>
+                  The selected {showDeleteConfirm.products.length} products will be permanently deleted.
+                </>
+              )}
             </ModalDescription>
           </ModalHeader>
 

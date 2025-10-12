@@ -566,12 +566,8 @@ class OrderService {
         warehouse_id: order.warehouse_id,
         movement_type: 'exit',
         quantity: detail.quantity,
-        unit_price: detail.price,
-        total_price: detail.quantity * detail.price,
         movement_date: new Date().toISOString(),
-        notes: `Sales order fulfillment - Order #${order.order_number || order.order_id.slice(-8)}`,
-        reference: `Order ${order.order_number || order.order_id.slice(-8)}`,
-        created_by: order.user_id
+        reference: `Order ${order.order_number || order.order_id.slice(-8)}`
       };
 
       stockMovements.push(movement);
@@ -647,12 +643,8 @@ class OrderService {
         warehouse_id: order.warehouse_id,
         movement_type: 'entry',
         quantity: detail.quantity,
-        unit_price: detail.price,
-        total_price: detail.quantity * detail.price,
         movement_date: new Date().toISOString(),
-        notes: `Order cancellation - Stock restoration for Order #${order.order_number || order.order_id.slice(-8)}`,
-        reference: `Order Cancellation ${order.order_number || order.order_id.slice(-8)}`,
-        created_by: order.user_id
+        reference: `Order Cancellation ${order.order_number || order.order_id.slice(-8)}`
       };
 
       restorationMovements.push(movement);
