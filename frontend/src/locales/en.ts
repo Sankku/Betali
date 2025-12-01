@@ -1,0 +1,342 @@
+import { TranslationKeys } from './es';
+
+export const en: TranslationKeys = {
+  // Common
+  common: {
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    search: 'Search',
+    filter: 'Filter',
+    export: 'Export',
+    import: 'Import',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    confirm: 'Confirm',
+    close: 'Close',
+    back: 'Back',
+    next: 'Next',
+    previous: 'Previous',
+    yes: 'Yes',
+    no: 'No',
+    active: 'Active',
+    inactive: 'Inactive',
+    view: 'View',
+    actions: 'Actions',
+    selected: 'selected',
+    selectAll: 'Select all',
+    deselectAll: 'Deselect all',
+    noResults: 'No results found',
+    total: 'Total',
+    showing: 'Showing',
+    of: 'of',
+    name: 'Name',
+    description: 'Description',
+    createdAt: 'Created at',
+    updatedAt: 'Last updated',
+    status: 'Status',
+    price: 'Price',
+    quantity: 'Quantity',
+    email: 'Email',
+    phone: 'Phone',
+    address: 'Address',
+    notes: 'Notes',
+    create: 'Create',
+    update: 'Update',
+  },
+
+  // Navigation
+  nav: {
+    products: 'Products',
+    warehouses: 'Warehouses',
+    movements: 'Movements',
+    users: 'Users',
+    clients: 'Clients',
+    suppliers: 'Suppliers',
+    orders: 'Orders',
+    taxManagement: 'Tax Management',
+    organizations: 'Organizations',
+    traceability: 'Traceability',
+    stockControl: 'Stock Control',
+    settings: 'Settings',
+    dashboard: 'Dashboard',
+  },
+
+  // Layout
+  layout: {
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    version: 'Betali v1.0',
+  },
+
+  // Settings
+  settings: {
+    title: 'Settings',
+    subtitle: 'Manage your application preferences and configurations',
+    dateFormat: {
+      title: 'Date Format',
+      description: 'Select how you want to see dates throughout the application',
+      example: 'Example',
+      preview: 'Preview with current date:',
+      note: 'This format applies visually to all tables, reports, and views in the application.',
+    },
+    language: {
+      title: 'Language',
+      description: 'Select the application language',
+      spanish: 'Español',
+      english: 'English',
+      note: 'The language will be applied throughout the application interface.',
+    },
+  },
+
+  // Dashboard
+  dashboard: {
+    title: 'Dashboard',
+    welcome: 'Welcome',
+  },
+
+  // Products
+  products: {
+    title: 'Products',
+    add: 'Add Product',
+    edit: 'Edit Product',
+    delete: 'Delete Product',
+    view: 'View Product',
+    deleteConfirm: 'Are you sure you want to delete {{count}} product(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this product?',
+    deleteSuccess: 'Product(s) deleted successfully',
+    createSuccess: 'Product created successfully',
+    updateSuccess: 'Product updated successfully',
+    fields: {
+      name: 'Product Name',
+      description: 'Description',
+      sku: 'SKU',
+      price: 'Price',
+      cost: 'Cost',
+      stock: 'Stock',
+      category: 'Category',
+      barcode: 'Barcode',
+    },
+  },
+
+  // Clients
+  clients: {
+    title: 'Clients',
+    add: 'Add Client',
+    edit: 'Edit Client',
+    delete: 'Delete Client',
+    view: 'View Client',
+    deleteConfirm: 'Are you sure you want to delete {{count}} client(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this client?',
+    deleteSuccess: 'Client(s) deleted successfully',
+    createSuccess: 'Client created successfully',
+    updateSuccess: 'Client updated successfully',
+    fields: {
+      name: 'Client Name',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+      taxId: 'Tax ID',
+      company: 'Company',
+    },
+  },
+
+  // Orders
+  orders: {
+    title: 'Orders',
+    add: 'Add Order',
+    edit: 'Edit Order',
+    delete: 'Delete Order',
+    view: 'View Order',
+    deleteConfirm: 'Are you sure you want to delete {{count}} order(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this order?',
+    deleteSuccess: 'Order(s) deleted successfully',
+    createSuccess: 'Order created successfully',
+    updateSuccess: 'Order updated successfully',
+    fields: {
+      orderNumber: 'Order Number',
+      client: 'Client',
+      date: 'Date',
+      status: 'Status',
+      total: 'Total',
+      items: 'Items',
+    },
+    status: {
+      pending: 'Pending',
+      processing: 'Processing',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+    },
+  },
+
+  // Warehouse
+  warehouse: {
+    title: 'Warehouses',
+    add: 'Add Warehouse',
+    edit: 'Edit Warehouse',
+    delete: 'Delete Warehouse',
+    view: 'View Warehouse',
+    deleteConfirm: 'Are you sure you want to delete {{count}} warehouse(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this warehouse?',
+    deleteSuccess: 'Warehouse(s) deleted successfully',
+    createSuccess: 'Warehouse created successfully',
+    updateSuccess: 'Warehouse updated successfully',
+    fields: {
+      name: 'Warehouse Name',
+      location: 'Location',
+      capacity: 'Capacity',
+      type: 'Type',
+    },
+  },
+
+  // Stock Movements
+  stockMovements: {
+    title: 'Stock Movements',
+    add: 'Add Movement',
+    view: 'View Movement',
+    fields: {
+      type: 'Movement Type',
+      product: 'Product',
+      quantity: 'Quantity',
+      warehouse: 'Warehouse',
+      date: 'Date',
+      reference: 'Reference',
+    },
+    types: {
+      in: 'In',
+      out: 'Out',
+      transfer: 'Transfer',
+      adjustment: 'Adjustment',
+    },
+  },
+
+  // Suppliers
+  suppliers: {
+    title: 'Suppliers',
+    add: 'Add Supplier',
+    edit: 'Edit Supplier',
+    delete: 'Delete Supplier',
+    view: 'View Supplier',
+    deleteConfirm: 'Are you sure you want to delete {{count}} supplier(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this supplier?',
+    deleteSuccess: 'Supplier(s) deleted successfully',
+    createSuccess: 'Supplier created successfully',
+    updateSuccess: 'Supplier updated successfully',
+    fields: {
+      name: 'Supplier Name',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+      taxId: 'Tax ID',
+      contact: 'Contact',
+    },
+  },
+
+  // Users
+  users: {
+    title: 'Users',
+    add: 'Add User',
+    edit: 'Edit User',
+    delete: 'Delete User',
+    view: 'View User',
+    deleteConfirm: 'Are you sure you want to delete {{count}} user(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this user?',
+    deleteSuccess: 'User(s) deleted successfully',
+    createSuccess: 'User created successfully',
+    updateSuccess: 'User updated successfully',
+    fields: {
+      name: 'Name',
+      email: 'Email',
+      role: 'Role',
+      status: 'Status',
+      lastLogin: 'Last Login',
+    },
+    roles: {
+      superAdmin: 'Super Admin',
+      admin: 'Admin',
+      manager: 'Manager',
+      employee: 'Employee',
+    },
+  },
+
+  // Organizations
+  organizations: {
+    title: 'Organizations',
+    add: 'Add Organization',
+    edit: 'Edit Organization',
+    delete: 'Delete Organization',
+    view: 'View Organization',
+    deleteConfirm: 'Are you sure you want to delete {{count}} organization(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this organization?',
+    deleteSuccess: 'Organization(s) deleted successfully',
+    createSuccess: 'Organization created successfully',
+    updateSuccess: 'Organization updated successfully',
+    fields: {
+      name: 'Organization Name',
+      taxId: 'Tax ID',
+      address: 'Address',
+      phone: 'Phone',
+      email: 'Email',
+      website: 'Website',
+    },
+  },
+
+  // Tax Management
+  taxManagement: {
+    title: 'Tax Management',
+    add: 'Add Tax',
+    edit: 'Edit Tax',
+    delete: 'Delete Tax',
+    fields: {
+      name: 'Tax Name',
+      rate: 'Rate (%)',
+      type: 'Type',
+      description: 'Description',
+    },
+  },
+
+  // Auth
+  auth: {
+    login: 'Log In',
+    register: 'Sign Up',
+    logout: 'Log Out',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    forgotPassword: 'Forgot your password?',
+    rememberMe: 'Remember me',
+    signIn: 'Sign In',
+    signUp: 'Sign Up',
+    alreadyHaveAccount: 'Already have an account?',
+    dontHaveAccount: "Don't have an account?",
+    welcomeBack: 'Welcome back',
+    createAccount: 'Create your account',
+  },
+
+  // Date context
+  dateContext: {
+    invalidDate: 'Invalid date',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    daysAgo: '{{days}} days ago',
+  },
+
+  // Errors
+  errors: {
+    generic: 'An error occurred. Please try again.',
+    network: 'Connection error. Check your internet.',
+    notFound: 'The requested resource was not found.',
+    unauthorized: 'You do not have permission to perform this action.',
+    validation: 'Please check the entered data.',
+  },
+
+  // Confirmations
+  confirmations: {
+    deleteTitle: 'Confirm Deletion',
+    deleteMessage: 'Are you sure you want to delete this item?',
+    unsavedChanges: 'You have unsaved changes. Do you want to continue?',
+  },
+} as const;

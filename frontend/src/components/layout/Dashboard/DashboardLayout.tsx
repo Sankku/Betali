@@ -19,6 +19,7 @@ import {
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useOrganization } from '../../../context/OrganizationContext';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { SidebarItem } from '../Sidebar/SidebarItem';
 import { UserContextIndicator } from '../../features/users/user-context-indicator';
 import { NoOrganizationFallback } from '../../features/organizations/no-organization-fallback';
@@ -32,6 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const { currentOrganization, loading } = useOrganization();
   const { canAccess } = usePermissions();
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Show fallback if no organization is selected
@@ -45,80 +47,80 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       path: '/dashboard/products',
       icon: <Package className="w-5 h-5" />,
-      label: 'Products',
+      label: t('nav.products'),
       checkAccess: () => canAccess.viewProducts(),
     },
     {
       path: '/dashboard/warehouse',
       icon: <Warehouse className="w-5 h-5" />,
-      label: 'Warehouses',
+      label: t('nav.warehouses'),
       checkAccess: () => canAccess.viewWarehouses(),
     },
     {
       path: '/dashboard/stock-movements',
       icon: <RefreshCw className="w-5 h-5" />,
-      label: 'Movements',
+      label: t('nav.movements'),
       checkAccess: () => canAccess.viewStockMovements(),
     },
     {
       path: '/dashboard/users',
       icon: <Users className="w-5 h-5" />,
-      label: 'Users',
+      label: t('nav.users'),
       checkAccess: () => canAccess.viewUsers(),
     },
     {
       path: '/dashboard/clients',
       icon: <UserCheck className="w-5 h-5" />,
-      label: 'Clients',
+      label: t('nav.clients'),
       checkAccess: () => canAccess.viewClients(),
     },
     {
       path: '/dashboard/suppliers',
       icon: <Truck className="w-5 h-5" />,
-      label: 'Suppliers',
+      label: t('nav.suppliers'),
       checkAccess: () => canAccess.viewSuppliers(),
     },
     {
       path: '/dashboard/orders',
       icon: <ShoppingCart className="w-5 h-5" />,
-      label: 'Orders',
+      label: t('nav.orders'),
       checkAccess: () => true, // Temporary: always visible until permissions are properly configured
     },
     {
       path: '/dashboard/taxes',
       icon: <Percent className="w-5 h-5" />,
-      label: 'Tax Management',
+      label: t('nav.taxManagement'),
       checkAccess: () => true, // Temporary: always visible until permissions are properly configured
     },
     {
       path: '/dashboard/organizations',
       icon: <Building2 className="w-5 h-5" />,
-      label: 'Organizations',
+      label: t('nav.organizations'),
       checkAccess: () => canAccess.viewOrganizations(),
     },
     {
       path: '/dashboard/trazabilidad',
       icon: <FileSpreadsheet className="w-5 h-5" />,
-      label: 'Traceability',
+      label: t('nav.traceability'),
       requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
     },
     {
       path: '/dashboard/control-stock',
       icon: <BarChart3 className="w-5 h-5" />,
-      label: 'Stock Control',
+      label: t('nav.stockControl'),
       requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
     },
     {
       path: '/dashboard/settings',
       icon: <Settings className="w-5 h-5" />,
-      label: 'Settings',
+      label: t('nav.settings'),
       checkAccess: () => true, // Always visible for all users
     },
   ];
 
   const getPageTitle = () => {
     const currentRoute = routes.find(route => route.path === location.pathname);
-    return currentRoute?.label || 'Dashboard';
+    return currentRoute?.label || t('nav.dashboard');
   };
 
   return (
@@ -154,7 +156,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
         <div className="p-4 border-t border-gray-200">
           {/* Compact info or branding */}
-          <div className="text-xs text-gray-500 text-center">Betali v1.0</div>
+          <div className="text-xs text-gray-500 text-center">{t('layout.version')}</div>
         </div>
       </aside>
 
@@ -166,7 +168,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-                  aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                  aria-label={isMobileMenuOpen ? t('layout.closeMenu') : t('layout.openMenu')}
                 >
                   {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
@@ -204,7 +206,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-                    aria-label="Close menu"
+                    aria-label={t('layout.closeMenu')}
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -232,7 +234,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </nav>
               <div className="p-4 border-t border-gray-200">
                 {/* Mobile branding/info */}
-                <div className="text-xs text-gray-500 text-center">Betali v1.0</div>
+                <div className="text-xs text-gray-500 text-center">{t('layout.version')}</div>
               </div>
             </div>
           </div>

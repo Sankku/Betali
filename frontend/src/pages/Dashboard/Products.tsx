@@ -21,6 +21,7 @@ import {
   ModalFooter,
 } from '../../components/ui';
 import { useOrganization } from '../../context/OrganizationContext';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -35,6 +36,7 @@ interface DeleteConfirmState {
 
 const ProductsPage: React.FC = () => {
   const { currentOrganization } = useOrganization();
+  const { t } = useTranslation();
 
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
@@ -104,7 +106,7 @@ const ProductsPage: React.FC = () => {
   const bulkActions: BulkAction<Product>[] = useMemo(() => [
     {
       key: 'delete',
-      label: 'Delete',
+      label: t('common.delete'),
       icon: Trash,
       colorScheme: {
         bg: 'bg-white',
@@ -115,13 +117,13 @@ const ProductsPage: React.FC = () => {
       onClick: (products) => handleDelete(products),
       alwaysShow: true,
     },
-  ], []);
+  ], [t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Product Name',
+      header: t('products.fields.name'),
       cell: ({ row }: { row: any }) => (
         <div className="font-medium text-gray-900">
           {row.original.name}
@@ -130,7 +132,7 @@ const ProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'batch_number',
-      header: 'SKU',
+      header: t('products.fields.sku'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-600 font-mono">
           {row.original.batch_number || 'N/A'}
@@ -139,7 +141,7 @@ const ProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'price',
-      header: 'Price',
+      header: t('products.fields.price'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-900 font-medium">
           ${row.original.price ? row.original.price.toFixed(2) : 'N/A'}
@@ -148,7 +150,7 @@ const ProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'current_stock',
-      header: 'Stock',
+      header: t('products.fields.stock'),
       cell: ({ row }: { row: any }) => {
         const stock = row.original.current_stock ?? 0;
         const stockClass = stock > 10
@@ -175,7 +177,7 @@ const ProductsPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       cell: ({ row }: { row: any }) => {
         const product = row.original as Product;
         return (
@@ -200,18 +202,18 @@ const ProductsPage: React.FC = () => {
         );
       },
     },
-  ], []);
+  ], [t]);
 
 
   return (
     <>
       <Helmet>
-        <title>Products - Dashboard</title>
+        <title>{t('products.title')} - Dashboard</title>
       </Helmet>
 
       <CRUDPage
-        title="Product Management"
-        description="Manage product inventory and information"
+        title={t('products.title')}
+        description={t('products.title')}
         data={products}
         isLoading={isLoading}
         error={error}
@@ -224,7 +226,7 @@ const ProductsPage: React.FC = () => {
             loading={isLoading || isLoaderVisible}
             getRowId={(product: Product) => product.product_id}
             bulkActions={bulkActions}
-            createButtonLabel="New Product"
+            createButtonLabel={t('products.add')}
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(product) => openModal('edit', product)}
             searchable={true}
@@ -232,8 +234,8 @@ const ProductsPage: React.FC = () => {
             pageSize={10}
             emptyMessage={
               !currentOrganization
-                ? "Please select or create an organization to access product management features."
-                : "No products created yet. Create your first product to get started!"
+                ? t('products.title')
+                : t('products.title')
             }
           />
         }
@@ -255,22 +257,13 @@ const ProductsPage: React.FC = () => {
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
             <ModalTitle>
-              Delete {showDeleteConfirm.products.length} product{showDeleteConfirm.products.length > 1 ? 's' : ''}?
+              {t('confirmations.deleteTitle')}
             </ModalTitle>
             <ModalDescription>
-              This action cannot be undone. {showDeleteConfirm.products.length === 1 ? (
-                <>
-                  The product{' '}
-                  <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.products[0]?.name}"
-                  </span>{' '}
-                  will be permanently deleted.
-                </>
-              ) : (
-                <>
-                  The selected {showDeleteConfirm.products.length} products will be permanently deleted.
-                </>
-              )}
+              {showDeleteConfirm.products.length === 1
+                ? t('products.deleteConfirmSingle')
+                : t('products.deleteConfirm', { count: showDeleteConfirm.products.length.toString() })
+              }
             </ModalDescription>
           </ModalHeader>
 
@@ -281,7 +274,7 @@ const ProductsPage: React.FC = () => {
               disabled={deleteProduct.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -289,7 +282,7 @@ const ProductsPage: React.FC = () => {
               loading={deleteProduct.isPending}
               className="w-full sm:w-auto"
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

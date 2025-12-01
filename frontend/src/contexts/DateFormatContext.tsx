@@ -81,20 +81,20 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
     const dateObj = date instanceof Date ? date : new Date(date);
 
     if (isNaN(dateObj.getTime())) {
-      return 'Fecha inválida';
+      return 'Invalid date';
     }
 
     const style = styleOverride || preferences.dateStyle;
 
-    // Handle relative dates
+    // Handle relative dates (Note: use useDateTranslations hook for translated relative dates)
     if (style === 'relative') {
       const now = new Date();
       const diffTime = now.getTime() - dateObj.getTime();
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays === 0) return 'Hoy';
-      if (diffDays === 1) return 'Ayer';
-      if (diffDays < 7) return `Hace ${diffDays} días`;
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
       // Fall through to normal formatting for older dates
     }
 
@@ -155,7 +155,7 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
     const dateObj = date instanceof Date ? date : new Date(date);
 
     if (isNaN(dateObj.getTime())) {
-      return 'Fecha inválida';
+      return 'Invalid date';
     }
 
     try {

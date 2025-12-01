@@ -27,6 +27,7 @@ const { createPricingRoutes } = require('./routes/pricing');
 const authRoutes = require('./routes/auth');
 const taxRateRoutes = require('./routes/taxRates');
 const discountRuleRoutes = require('./routes/discountRules');
+const subscriptionPlanRoutes = require('./routes/subscriptionPlans');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
 
@@ -195,7 +196,8 @@ class Application {
     this.app.use('/api/pricing', createPricingRoutes(container));
     this.app.use('/api/tax-rates', taxRateRoutes);
     this.app.use('/api/discount-rules', discountRuleRoutes);
-    
+    this.app.use('/api/subscription-plans', subscriptionPlanRoutes);
+
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {
       this.app.use('/api/debug', debugRoutes);

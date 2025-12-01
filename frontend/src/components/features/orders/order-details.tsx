@@ -47,9 +47,10 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
 
   const statusColor = getOrderStatusColor(order.status);
 
-  // Calculate tax correctly (total - subtotal)
-  const calculatedTax = (order.total_price ?? 0) - (order.subtotal ?? 0);
-  const displayTax = order.tax && order.tax > 0 ? order.tax : calculatedTax;
+  // Use tax_amount from DB, fallback to legacy tax field
+  const displayTax = order.tax_amount ?? order.tax ?? 0;
+  // Use total from DB, fallback to legacy total_price field
+  const displayTotal = order.total ?? order.total_price ?? 0;
 
   return (
     <div className="space-y-6">
@@ -230,7 +231,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-base font-semibold text-gray-500">Total:</span>
                   <span className="text-xl font-bold text-green-600">
-                    ${(order.total_price ?? 0).toFixed(2)}
+                    ${displayTotal.toFixed(2)}
                   </span>
                 </div>
               </div>

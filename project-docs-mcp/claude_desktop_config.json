@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "project-docs-mcp": {
+      "command": "node",
+      "args": ["/Users/santiagoalaniz/Dev/Personal/SaasRestaurant/project-docs-mcp/dist/index.js"]
+    }
+  }
+}
