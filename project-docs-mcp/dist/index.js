@@ -139,8 +139,8 @@ class ProjectDocsMCP {
             // Generar registro de features 
             const featuresRegistry = JSON.parse(await this.tracker.generateFeaturesRegistry());
             // Generar documentos markdown
-            const projectOverview = await this.markdownGen.generateProjectOverview(projectAnalysis);
-            const featuresDoc = await this.markdownGen.generateFeaturesDocument(featuresRegistry);
+            await this.markdownGen.generateProjectOverview(projectAnalysis);
+            await this.markdownGen.generateFeaturesDocument(featuresRegistry);
             return `Documentación actualizada exitosamente:\n\n` +
                 `## Documentos generados:\n` +
                 `- PROJECT_OVERVIEW.md\n` +

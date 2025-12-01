@@ -7,6 +7,9 @@ export interface Order {
   order_date: string;
   status: 'draft' | 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   subtotal?: number;
+  tax_amount?: number;
+  total?: number;
+  // Legacy fields for backwards compatibility
   tax?: number;
   total_price?: number;
   notes: string | null;

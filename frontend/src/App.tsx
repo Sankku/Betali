@@ -7,6 +7,7 @@ import { UserContextSwitcherProvider } from "./context/UserContextSwitcher";
 import { OrganizationProvider } from "./context/OrganizationContext";
 import { GlobalSyncProvider } from "./context/GlobalSyncContext";
 import { DateFormatProvider } from "./contexts/DateFormatContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
@@ -33,9 +34,10 @@ function AppContent() {
       <GlobalSyncProvider>
         <OrganizationProvider>
           <UserContextSwitcherProvider>
-            <DateFormatProvider>
-              <HelmetProvider>
-                <BrowserRouter>
+            <LanguageProvider>
+              <DateFormatProvider>
+                <HelmetProvider>
+                  <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -129,11 +131,12 @@ function AppContent() {
                   />
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
-                </BrowserRouter>
-              </HelmetProvider>
-              <GlobalLoading />
-              <ToastContainer />
-            </DateFormatProvider>
+                  </BrowserRouter>
+                </HelmetProvider>
+                <GlobalLoading />
+                <ToastContainer />
+              </DateFormatProvider>
+            </LanguageProvider>
           </UserContextSwitcherProvider>
         </OrganizationProvider>
       </GlobalSyncProvider>

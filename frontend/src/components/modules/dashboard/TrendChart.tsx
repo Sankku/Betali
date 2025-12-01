@@ -1,9 +1,11 @@
-import { ShoppingCart, Loader2, Info } from 'lucide-react';
+import { ShoppingCart, Loader2, Info, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { orderService } from '../../../services/api/orderService';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Bar } from 'recharts';
+import { DateRangePicker, DateRange } from '@/components/ui/date-range-picker';
+import { Button } from '@/components/ui/button';
 
 interface OrderData {
   date: string;
@@ -11,37 +13,74 @@ interface OrderData {
   total: number;
 }
 
+type DateRangeType = 'today' | 'week' | 'month' | 'year' | 'custom';
+
 export function TrendChart() {
   const [showInfo, setShowInfo] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRangeType>('week');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [pendingCustomDateRange, setPendingCustomDateRange] = useState<DateRange | undefined>();
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+
+  // Calculate date range based on selection
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (dateRange) {
+      case 'today':
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case 'custom':
+        if (customDateRange?.from) {
+          startDate = customDateRange.from;
+        }
+        break;
+    }
+
+    const endDate = dateRange === 'custom' && customDateRange?.to
+      ? customDateRange.to
+      : now;
+
+    return { startDate, endDate };
+  };
+
+  const { startDate, endDate } = getDateRange();
 
   const { data: orderTrends, isLoading } = useQuery({
-    queryKey: ['orderTrends'],
+    queryKey: ['orderTrends', dateRange, customDateRange?.from, customDateRange?.to],
     queryFn: async (): Promise<OrderData[]> => {
-      const last7Days = new Date();
-      last7Days.setDate(last7Days.getDate() - 7);
-      const formattedDate = last7Days.toISOString().split('T')[0];
 
-      // Fetch orders from the last 7 days using the API service
+      // Fetch orders using the API service
       const response = await orderService.getOrders({
         page: 1,
         limit: 200, // Maximum allowed by backend
         sortBy: 'created_at',
-        sortOrder: 'desc', // Get most recent first
+        sortOrder: 'desc',
       });
 
       const orders = response.data || [];
 
-      // Filter orders from last 7 days (client-side filter as fallback)
+      // Filter orders by selected date range (using order_date instead of created_at)
       const filteredOrders = orders.filter((order: any) => {
-        const orderDate = new Date(order.created_at);
-        return orderDate >= last7Days;
+        const orderDate = new Date(order.order_date || order.created_at);
+        return orderDate >= startDate && orderDate <= endDate;
       });
 
       // Group by date
       const grouped: Record<string, { orders: number; total: number }> = {};
 
       filteredOrders.forEach((order: any) => {
-        const date = new Date(order.created_at).toLocaleDateString('es-ES', {
+        const date = new Date(order.order_date || order.created_at).toLocaleDateString('es-ES', {
           month: 'short',
           day: 'numeric'
         });
@@ -51,7 +90,7 @@ export function TrendChart() {
         }
 
         grouped[date].orders += 1;
-        grouped[date].total += order.total_price || 0;
+        grouped[date].total += order.total || 0;
       });
 
       return Object.entries(grouped).map(([date, values]) => ({
@@ -78,37 +117,32 @@ export function TrendChart() {
     );
   }
 
-  if (!orderTrends || orderTrends.length === 0) {
-    return (
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Órdenes Recientes</h3>
-        </div>
-        <div className="px-4 py-5 sm:p-6 flex items-center justify-center h-64">
-          <div className="text-center">
-            <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Sin órdenes</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              No hay órdenes registradas en los últimos 7 días
-            </p>
-            <div className="mt-6">
-              <Link
-                to="/dashboard/orders"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-              >
-                Crear orden
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hasNoData = !orderTrends || orderTrends.length === 0;
+
+  const getRangeLabel = () => {
+    switch (dateRange) {
+      case 'today':
+        return 'Hoy';
+      case 'week':
+        return 'Últimos 7 días';
+      case 'month':
+        return 'Último mes';
+      case 'year':
+        return 'Último año';
+      case 'custom':
+        if (customDateRange?.from && customDateRange?.to) {
+          return `${customDateRange.from.toLocaleDateString('es-ES')} - ${customDateRange.to.toLocaleDateString('es-ES')}`;
+        }
+        return 'Rango personalizado';
+      default:
+        return 'Últimos 7 días';
+    }
+  };
 
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Órdenes Recientes</h3>
             <div className="relative">
@@ -133,7 +167,7 @@ export function TrendChart() {
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Este gráfico muestra el número de órdenes creadas (barras azules) y el revenue total generado (línea verde) durante los últimos 7 días.
+                    Este gráfico muestra el número de órdenes creadas (barras azules) y el revenue total generado (línea verde) durante el período seleccionado.
                     Útil para identificar tendencias de ventas y días de mayor actividad.
                   </p>
                 </div>
@@ -147,10 +181,144 @@ export function TrendChart() {
             Ver todas
           </Link>
         </div>
-        <p className="mt-1 text-sm text-gray-500">Últimos 7 días</p>
+
+        {/* Date Range Selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => { setDateRange('today'); setShowCustomDatePicker(false); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                dateRange === 'today'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              onClick={() => { setDateRange('week'); setShowCustomDatePicker(false); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                dateRange === 'week'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => { setDateRange('month'); setShowCustomDatePicker(false); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                dateRange === 'month'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Mes
+            </button>
+            <button
+              onClick={() => { setDateRange('year'); setShowCustomDatePicker(false); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                dateRange === 'year'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Año
+            </button>
+            <button
+              onClick={() => {
+                setDateRange('custom');
+                setShowCustomDatePicker(!showCustomDatePicker);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
+                dateRange === 'custom'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              Personalizado
+            </button>
+          </div>
+          <span className="text-xs text-gray-500 ml-2">{getRangeLabel()}</span>
+        </div>
+
+        {/* Custom Date Picker */}
+        {showCustomDatePicker && dateRange === 'custom' && (
+          <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Selecciona rango de fechas
+                </label>
+                <DateRangePicker
+                  value={pendingCustomDateRange}
+                  onChange={setPendingCustomDateRange}
+                  placeholder="Selecciona fechas..."
+                  className="w-full"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setCustomDateRange(pendingCustomDateRange);
+                  }}
+                  disabled={!pendingCustomDateRange?.from || !pendingCustomDateRange?.to}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Aplicar filtro
+                </Button>
+                <Button
+                  onClick={() => {
+                    setPendingCustomDateRange(undefined);
+                    setCustomDateRange(undefined);
+                    setDateRange('week');
+                    setShowCustomDatePicker(false);
+                  }}
+                  variant="outline"
+                  className="border-gray-300"
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="px-4 py-5 sm:p-6">
-        <ResponsiveContainer width="100%" height={250}>
+        {hasNoData ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              {dateRange === 'custom' && (!customDateRange?.from || !customDateRange?.to) ? (
+                <>
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Selecciona un rango de fechas</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Usa el selector de fechas arriba y haz clic en "Aplicar filtro" para ver las estadísticas
+                  </p>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin órdenes</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    No hay órdenes registradas en el período seleccionado
+                  </p>
+                  <div className="mt-6">
+                    <Link
+                      to="/dashboard/orders"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                    >
+                      Crear orden
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={250}>
           <ComposedChart data={orderTrends} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis
@@ -162,6 +330,7 @@ export function TrendChart() {
               yAxisId="left"
               tick={{ fontSize: 12 }}
               tickLine={{ stroke: '#e5e7eb' }}
+              allowDecimals={false}
             />
             <YAxis
               yAxisId="right"
@@ -211,6 +380,8 @@ export function TrendChart() {
             <span className="text-gray-600">Revenue total</span>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

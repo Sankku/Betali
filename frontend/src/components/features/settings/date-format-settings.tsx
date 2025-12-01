@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { useDateFormat, DateFormatPattern } from '../../../contexts/DateFormatContext';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Label } from '../../ui/label';
 
@@ -14,6 +15,7 @@ const DATE_FORMAT_OPTIONS: { value: DateFormatPattern; label: string; example: s
 
 export function DateFormatSettings() {
   const { datePattern, setDatePattern, formatDate } = useDateFormat();
+  const { t } = useTranslation();
 
   const currentDate = new Date();
   const preview = formatDate(currentDate);
@@ -23,13 +25,13 @@ export function DateFormatSettings() {
       <CardHeader>
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          Formato de Fecha
+          {t('settings.dateFormat.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
           <Label className="text-sm font-medium mb-3 block">
-            Selecciona cómo quieres ver las fechas en toda la aplicación
+            {t('settings.dateFormat.description')}
           </Label>
           <div className="space-y-2">
             {DATE_FORMAT_OPTIONS.map(option => (
@@ -55,12 +57,14 @@ export function DateFormatSettings() {
                   />
                   <div>
                     <p className="font-medium text-sm">{option.label}</p>
-                    <p className="text-xs text-gray-500">Ejemplo: {option.example}</p>
+                    <p className="text-xs text-gray-500">
+                      {t('settings.dateFormat.example')}: {option.example}
+                    </p>
                   </div>
                 </div>
                 {datePattern === option.value && (
                   <span className="text-xs font-medium text-primary-700 bg-primary-100 px-2 py-1 rounded">
-                    Activo
+                    {t('common.active')}
                   </span>
                 )}
               </label>
@@ -70,15 +74,17 @@ export function DateFormatSettings() {
 
         <div className="pt-4 border-t">
           <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-xs font-medium text-gray-600 mb-2">Vista previa con fecha actual:</p>
+            <p className="text-xs font-medium text-gray-600 mb-2">
+              {t('settings.dateFormat.preview')}
+            </p>
             <p className="text-2xl font-semibold text-gray-900 tabular-nums">{preview}</p>
           </div>
         </div>
 
         <div className="pt-2">
           <p className="text-xs text-gray-500 leading-relaxed">
-            <strong>Nota:</strong> Este formato se aplica visualmente en todas las tablas, reportes
-            y vistas de la aplicación.
+            <strong>{t('settings.dateFormat.note').split('.')[0].replace('Este formato', '')}:</strong>{' '}
+            {t('settings.dateFormat.note')}
           </p>
         </div>
       </CardContent>

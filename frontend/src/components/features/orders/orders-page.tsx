@@ -382,10 +382,10 @@ export function OrdersPage() {
         },
       },
       {
-        accessorKey: 'total_price',
+        accessorKey: 'total',
         header: 'Total',
         cell: ({ row }: { row: any }) => (
-          <div className="font-medium">${(row.original.total_price ?? 0).toFixed(2)}</div>
+          <div className="font-medium">${(row.original.total ?? row.original.total_price ?? 0).toFixed(2)}</div>
         ),
       },
     ],

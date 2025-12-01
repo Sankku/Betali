@@ -48,17 +48,11 @@ export function CRUDPage<TEntity>({
             {description && <p className="text-neutral-600">{description}</p>}
           </div>
 
-          <div className="flex items-center space-x-3">
-            {headerActions}
-            <Button
-              onClick={onCreateClick}
-              disabled={isAnyMutationLoading}
-              className="bg-primary-600 hover:bg-primary-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create
-            </Button>
-          </div>
+          {headerActions && (
+            <div className="flex items-center space-x-3">
+              {headerActions}
+            </div>
+          )}
         </div>
         {beforeTable}
         {error ? (

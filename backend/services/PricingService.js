@@ -117,14 +117,19 @@ class PricingService {
     const lineItems = [];
 
     for (const item of items) {
-      // Get the applicable price for this item
-      const unitPrice = await this.getApplicablePrice(
-        item.product_id,
-        item.quantity,
-        clientId,
-        organizationId,
-        orderDate
-      );
+      // Use the price from the item if provided (manual override), otherwise get applicable price
+      let unitPrice;
+      if (item.price !== undefined && item.price !== null) {
+        unitPrice = parseFloat(item.price);
+      } else {
+        unitPrice = await this.getApplicablePrice(
+          item.product_id,
+          item.quantity,
+          clientId,
+          organizationId,
+          orderDate
+        );
+      }
 
       // Calculate line total
       const lineTotal = unitPrice * item.quantity;

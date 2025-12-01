@@ -24,6 +24,7 @@ import {
   useClientStats,
   CreateClientData,
 } from '@/hooks/useClients';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -37,6 +38,7 @@ interface DeleteConfirmState {
 }
 
 export function ClientsPage() {
+  const { t } = useTranslation();
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -118,7 +120,7 @@ export function ClientsPage() {
   const bulkActions: BulkAction<Client>[] = useMemo(() => [
     {
       key: 'delete',
-      label: 'Eliminar',
+      label: t('common.delete'),
       icon: Trash,
       colorScheme: {
         bg: 'bg-white',
@@ -129,13 +131,13 @@ export function ClientsPage() {
       onClick: (clients) => handleDelete(clients),
       alwaysShow: true,
     },
-  ], []);
+  ], [t]);
 
   // Table columns
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Cliente',
+      header: t('clients.fields.name'),
       cell: ({ row }: { row: any }) => {
         const client = row.original as Client;
         return (
@@ -151,7 +153,7 @@ export function ClientsPage() {
     },
     {
       accessorKey: 'cuit',
-      header: 'CUIT',
+      header: t('clients.fields.taxId'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-900 font-mono">
           {formatCuit(row.original.cuit)}
@@ -160,14 +162,14 @@ export function ClientsPage() {
     },
     {
       accessorKey: 'phone',
-      header: 'Teléfono',
+      header: t('clients.fields.phone'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-900">{row.original.phone || '-'}</div>
       ),
     },
     {
       accessorKey: 'address',
-      header: 'Dirección',
+      header: t('clients.fields.address'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-900 max-w-xs truncate">
           {row.original.address || '-'}
@@ -176,7 +178,7 @@ export function ClientsPage() {
     },
     {
       id: 'actions',
-      header: 'Acciones',
+      header: t('common.actions'),
       cell: ({ row }: { row: any }) => {
         const client = row.original as Client;
         return (
@@ -201,7 +203,7 @@ export function ClientsPage() {
         );
       },
     },
-  ], [formatCuit]);
+  ], [formatCuit, t]);
 
   // Handle search
   const handleSearch = async () => {
@@ -220,40 +222,40 @@ export function ClientsPage() {
   };
 
   // Stats cards data
-  const statsCards = [
+  const statsCards = useMemo(() => [
     {
-      title: 'Total Clientes',
+      title: t('common.total') + ' ' + t('clients.title'),
       value: clientStats?.total ?? 0,
       icon: Building,
       color: 'blue',
     },
     {
-      title: 'Activos',
+      title: t('common.active'),
       value: clientStats?.active ?? 0,
       icon: UserCheck,
       color: 'green',
     },
     {
-      title: 'Agregados Recientemente',
+      title: t('common.total'),
       value: clientStats?.recentlyAdded ?? 0,
       icon: TrendingUp,
       color: 'purple',
     },
-  ];
+  ], [clientStats, t]);
 
   return (
     <>
       <Helmet>
-        <title>Gestión de Clientes - Betali</title>
+        <title>{t('clients.title')} - Betali</title>
         <meta
           name="description"
-          content="Administre clientes, información fiscal y datos de contacto en Betali"
+          content={t('clients.title')}
         />
       </Helmet>
 
       <CRUDPage
-        title="Gestión de Clientes"
-        description="Administre clientes, información fiscal y datos de contacto"
+        title={t('clients.title')}
+        description={t('clients.title')}
         data={clients}
         isLoading={isLoading}
         error={error}
@@ -286,22 +288,22 @@ export function ClientsPage() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar por nombre, email o CUIT..."
+                  placeholder={t('common.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   className="pl-10"
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleSearch}
                 disabled={!searchQuery.trim() || searchClients.isPending}
               >
-                {searchClients.isPending ? 'Buscando...' : 'Buscar'}
+                {searchClients.isPending ? t('common.loading') : t('common.search')}
               </Button>
               {searchQuery && (
                 <Button variant="outline" onClick={clearSearch}>
-                  Limpiar
+                  {t('common.cancel')}
                 </Button>
               )}
             </div>
@@ -314,13 +316,13 @@ export function ClientsPage() {
             loading={isLoading}
             getRowId={(client: Client) => client.client_id}
             bulkActions={bulkActions}
-            createButtonLabel="Nuevo Cliente"
+            createButtonLabel={t('clients.add')}
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(client) => openModal('edit', client)}
             searchable={false}
             enablePagination={true}
             pageSize={10}
-            emptyMessage="No se encontraron clientes"
+            emptyMessage={t('common.noResults')}
           />
         }
       />
@@ -343,31 +345,25 @@ export function ClientsPage() {
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Confirmar Eliminación
+              {t('confirmations.deleteTitle')}
             </ModalTitle>
             <ModalDescription>
-              {showDeleteConfirm.clients.length === 1 ? (
-                <>
-                  ¿Está seguro que desea eliminar al cliente{' '}
-                  <strong>{showDeleteConfirm.clients[0]?.name}</strong>? Esta acción no se puede deshacer.
-                </>
-              ) : (
-                <>
-                  ¿Está seguro que desea eliminar {showDeleteConfirm.clients.length} clientes? Esta acción no se puede deshacer.
-                </>
-              )}
+              {showDeleteConfirm.clients.length === 1
+                ? t('clients.deleteConfirmSingle')
+                : t('clients.deleteConfirm', { count: showDeleteConfirm.clients.length.toString() })
+              }
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
             <Button variant="outline" onClick={closeDeleteConfirm}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteClient.isPending}
             >
-              {deleteClient.isPending ? 'Eliminando...' : 'Eliminar'}
+              {deleteClient.isPending ? t('common.loading') : t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

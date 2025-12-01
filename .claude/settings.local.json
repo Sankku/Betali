@@ -11,7 +11,8 @@
       "Bash(find:*)",
       "Bash(mv:*)",
       "Bash(pkill:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

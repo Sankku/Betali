@@ -97,17 +97,28 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   // Initialize items from form data
   useEffect(() => {
     if (watchedValues.items && watchedValues.items.length > 0) {
-      const orderItems: OrderItem[] = watchedValues.items.map(item => {
-        const product = products?.data?.find(p => p.product_id === item.product_id);
-        return {
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price: item.price,
-          product_name: product?.name,
-          product_sku: product?.sku,
-        };
-      });
-      setItems(orderItems);
+      // Check if items are already in sync to prevent unnecessary updates
+      const itemsInSync = items.length === watchedValues.items.length &&
+        items.every((item, index) => {
+          const watchedItem = watchedValues.items[index];
+          return item.product_id === watchedItem.product_id &&
+            item.quantity === watchedItem.quantity &&
+            item.price === watchedItem.price;
+        });
+
+      if (!itemsInSync) {
+        const orderItems: OrderItem[] = watchedValues.items.map(item => {
+          const product = products?.data?.find(p => p.product_id === item.product_id);
+          return {
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            product_name: product?.name,
+            product_sku: product?.sku,
+          };
+        });
+        setItems(orderItems);
+      }
     } else if (mode === 'create' && items.length === 0) {
       // Add one empty item for new orders
       const initialItem = { product_id: '', quantity: 1, price: 0 };
@@ -143,7 +154,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
 
   const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
     const newItems = [...items];
-    
+
     if (field === 'product_id') {
       const selectedProduct = products?.data?.find(p => p.product_id === value);
       if (selectedProduct) {
@@ -155,13 +166,23 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           product_sku: selectedProduct.sku,
         };
       }
+    } else if (field === 'quantity') {
+      newItems[index] = {
+        ...newItems[index],
+        quantity: Math.max(1, Number(value)),
+      };
+    } else if (field === 'price') {
+      newItems[index] = {
+        ...newItems[index],
+        price: Number(value),
+      };
     } else {
       newItems[index] = {
         ...newItems[index],
-        [field]: field === 'quantity' ? Math.max(1, Number(value)) : value,
+        [field]: value,
       };
     }
-    
+
     setItems(newItems);
     // Update form with simplified items data
     setValue('items', newItems.map(item => ({
