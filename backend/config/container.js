@@ -12,6 +12,7 @@ const ClientRepository = require('../repositories/ClientRepository');
 const SupplierRepository = require('../repositories/SupplierRepository');
 const OrderRepository = require('../repositories/OrderRepository');
 const OrderDetailRepository = require('../repositories/OrderDetailRepository');
+const StockReservationRepository = require('../repositories/StockReservationRepository');
 const PricingTierRepository = require('../repositories/PricingTierRepository');
 const CustomerPricingRepository = require('../repositories/CustomerPricingRepository');
 const TaxRateRepository = require('../repositories/TaxRateRepository');
@@ -180,6 +181,11 @@ function initializeContainer() {
     return new OrderDetailRepository(dbConfig.getClient());
   }, true);
 
+  container.register('stockReservationRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new StockReservationRepository(dbConfig.getClient());
+  }, true);
+
   container.register('pricingTierRepository', () => {
     const dbConfig = container.get('dbConfig');
     return new PricingTierRepository(dbConfig.getClient());
@@ -313,9 +319,10 @@ function initializeContainer() {
     const warehouseRepository = container.get('warehouseRepository');
     const logger = container.get('logger');
     const stockMovementRepository = container.get('stockMovementRepository');
+    const stockReservationRepository = container.get('stockReservationRepository');
     const clientRepository = container.get('clientRepository');
     const pricingService = container.get('pricingService');
-    return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, clientRepository, pricingService, logger);
+    return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger);
   }, true);
 
   container.register('taxRateService', () => {

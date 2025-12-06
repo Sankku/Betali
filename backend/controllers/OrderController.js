@@ -498,6 +498,150 @@ class OrderController {
       next(error);
     }
   }
+
+  /**
+   * POST /api/orders/:id/reserve-stock
+   * Reserve stock for an order
+   */
+  async reserveStockForOrder(req, res, next) {
+    try {
+      const { id: orderId } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+      const userId = req.user.userId;
+
+      this.logger.info('Reserving stock for order', { orderId, organizationId });
+
+      const reservations = await this.orderService.reserveStockForOrder(
+        orderId,
+        organizationId,
+        userId
+      );
+
+      this.logger.info('Stock reserved successfully', {
+        orderId,
+        reservationCount: reservations.length
+      });
+
+      res.json({
+        success: true,
+        message: 'Stock reserved successfully',
+        data: reservations
+      });
+    } catch (error) {
+      this.logger.error('Error reserving stock for order', { error: error.message });
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/orders/:id/release-stock
+   * Release stock reservations for an order
+   */
+  async releaseStockReservations(req, res, next) {
+    try {
+      const { id: orderId } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+      const { reason = 'cancelled' } = req.body;
+
+      this.logger.info('Releasing stock reservations', { orderId, organizationId, reason });
+
+      const releasedReservations = await this.orderService.releaseStockReservations(
+        orderId,
+        organizationId,
+        reason
+      );
+
+      this.logger.info('Stock reservations released', {
+        orderId,
+        count: releasedReservations.length
+      });
+
+      res.json({
+        success: true,
+        message: 'Stock reservations released successfully',
+        data: releasedReservations
+      });
+    } catch (error) {
+      this.logger.error('Error releasing stock reservations', { error: error.message });
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/orders/:id/reservations
+   * Get stock reservations for an order
+   */
+  async getOrderReservations(req, res, next) {
+    try {
+      const { id: orderId } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+
+      this.logger.info('Getting order reservations', { orderId, organizationId });
+
+      const reservations = await this.orderService.getOrderReservations(
+        orderId,
+        organizationId
+      );
+
+      this.logger.info('Order reservations retrieved', {
+        orderId,
+        count: reservations.length
+      });
+
+      res.json({
+        success: true,
+        data: reservations
+      });
+    } catch (error) {
+      this.logger.error('Error getting order reservations', { error: error.message });
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/products/:id/available-stock
+   * Get available stock for a product (physical - reserved)
+   */
+  async getAvailableStock(req, res, next) {
+    try {
+      const { id: productId } = req.params;
+      const { warehouse_id: warehouseId } = req.query;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!warehouseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'warehouse_id query parameter is required'
+        });
+      }
+
+      this.logger.info('Getting available stock', { productId, warehouseId, organizationId });
+
+      const availableStock = await this.orderService.getAvailableStock(
+        productId,
+        warehouseId,
+        organizationId
+      );
+
+      this.logger.info('Available stock retrieved', {
+        productId,
+        warehouseId,
+        availableStock
+      });
+
+      res.json({
+        success: true,
+        data: {
+          product_id: productId,
+          warehouse_id: warehouseId,
+          available_stock: availableStock
+        }
+      });
+    } catch (error) {
+      this.logger.error('Error getting available stock', { error: error.message });
+      next(error);
+    }
+  }
 }
 
 module.exports = OrderController;
