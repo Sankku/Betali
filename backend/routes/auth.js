@@ -250,7 +250,7 @@ router.post(
       logger.auth.signupFailed(user_id, error.message);
 
       // Categorize errors
-      const is AuthError = error.message?.includes('Authentication') || error.message?.includes('Supabase');
+      const isAuthError = error.message?.includes('Authentication') || error.message?.includes('Supabase');
       const isDBError = error.code?.startsWith('23'); // PostgreSQL error codes
 
       let statusCode = 500;
