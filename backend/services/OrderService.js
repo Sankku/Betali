@@ -5,12 +5,13 @@ const { Logger } = require('../utils/Logger');
  * Handles order creation, updates, status changes, and business rules
  */
 class OrderService {
-  constructor(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, clientRepository, pricingService, logger) {
+  constructor(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger) {
     this.orderRepository = orderRepository;
     this.orderDetailRepository = orderDetailRepository;
     this.productRepository = productRepository;
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
+    this.stockReservationRepository = stockReservationRepository;
     this.clientRepository = clientRepository;
     this.pricingService = pricingService;
     this.logger = logger || new Logger('OrderService');
@@ -497,57 +498,44 @@ class OrderService {
    * @private
    */
   async handleOrderProcessing(order, organizationId) {
-    this.logger.info('Processing order - reserving stock', { 
-      orderId: order.order_id, 
-      organizationId 
+    this.logger.info('Processing order - reserving stock', {
+      orderId: order.order_id,
+      organizationId
     });
 
-    // Get order details if not loaded
-    const orderDetails = order.order_details || 
-      await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
+    // Reserve stock for this order
+    // This will validate stock availability and create reservations
+    await this.reserveStockForOrder(
+      order.order_id,
+      organizationId,
+      order.user_id || order.created_by
+    );
 
-    // Validate stock availability before reserving
-    for (const detail of orderDetails) {
-      const currentStock = await this.stockMovementRepository.getCurrentStock(
-        detail.product_id, 
-        order.warehouse_id, 
-        organizationId
-      );
-
-      if (currentStock < detail.quantity) {
-        const product = await this.productRepository.findById(detail.product_id, organizationId);
-        throw new Error(
-          `Insufficient stock for product "${product?.name || detail.product_id}". ` +
-          `Required: ${detail.quantity}, Available: ${currentStock}`
-        );
-      }
-    }
-
-    this.logger.info('Stock validated for order processing', { orderId: order.order_id });
+    this.logger.info('Stock reserved for order processing', { orderId: order.order_id });
   }
 
   /**
    * Handle order shipped - create stock movements for fulfillment
-   * @private  
+   * @private
    */
   async handleOrderShipped(order, organizationId) {
-    this.logger.info('Order shipped - creating stock movements', { 
-      orderId: order.order_id, 
-      organizationId 
+    this.logger.info('Order shipped - creating stock movements', {
+      orderId: order.order_id,
+      organizationId
     });
 
     // Get order details if not loaded
-    const orderDetails = order.order_details || 
+    const orderDetails = order.order_details ||
       await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
 
     // Create stock exit movements for each order item
     const stockMovements = [];
-    
+
     for (const detail of orderDetails) {
       // Double-check stock availability
       const currentStock = await this.stockMovementRepository.getCurrentStock(
-        detail.product_id, 
-        order.warehouse_id, 
+        detail.product_id,
+        order.warehouse_id,
         organizationId
       );
 
@@ -576,13 +564,17 @@ class OrderService {
     // Create all stock movements in batch
     if (stockMovements.length > 0) {
       await this.stockMovementRepository.createBulk(stockMovements);
-      
-      this.logger.info('Stock movements created for order shipment', { 
+
+      this.logger.info('Stock movements created for order shipment', {
         orderId: order.order_id,
         movementCount: stockMovements.length,
         totalValue: stockMovements.reduce((sum, m) => sum + m.total_price, 0)
       });
     }
+
+    // Release (fulfill) stock reservations
+    await this.releaseStockReservations(order.order_id, organizationId, 'fulfilled');
+    this.logger.info('Stock reservations fulfilled for shipped order', { orderId: order.order_id });
   }
 
   /**
@@ -604,14 +596,18 @@ class OrderService {
   }
 
   /**
-   * Handle order cancelled - restore stock if needed
+   * Handle order cancelled - restore stock if needed and release reservations
    * @private
    */
   async handleOrderCancelled(order, organizationId) {
-    this.logger.info('Order cancelled - checking stock restoration', { 
-      orderId: order.order_id, 
-      organizationId 
+    this.logger.info('Order cancelled - checking stock restoration', {
+      orderId: order.order_id,
+      organizationId
     });
+
+    // Release any active stock reservations
+    await this.releaseStockReservations(order.order_id, organizationId, 'cancelled');
+    this.logger.info('Stock reservations cancelled', { orderId: order.order_id });
 
     // If order was already shipped, we need to create return stock movements
     if (['shipped', 'completed'].includes(order.status)) {
@@ -766,6 +762,183 @@ class OrderService {
         organizationId 
       });
       throw new Error(`Failed to calculate order pricing: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reserve stock for an order
+   * Creates stock reservations for all order items
+   * @param {string} orderId - Order ID
+   * @param {string} organizationId - Organization ID
+   * @param {string} userId - User ID who is reserving the stock
+   * @returns {Promise<Array>} - Created reservations
+   */
+  async reserveStockForOrder(orderId, organizationId, userId) {
+    try {
+      this.logger.info('Reserving stock for order', { orderId, organizationId });
+
+      // Get order with details
+      const order = await this.getOrderById(orderId, organizationId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // Don't reserve stock for cancelled or completed orders
+      if (['cancelled', 'completed', 'shipped'].includes(order.status)) {
+        this.logger.warn('Cannot reserve stock for order with status', {
+          orderId,
+          status: order.status
+        });
+        return [];
+      }
+
+      // Check if stock is already reserved
+      const existingReservations = await this.stockReservationRepository.getActiveReservationsByOrder(
+        orderId,
+        organizationId
+      );
+
+      if (existingReservations.length > 0) {
+        this.logger.info('Stock already reserved for this order', {
+          orderId,
+          reservationCount: existingReservations.length
+        });
+        return existingReservations;
+      }
+
+      // Get order details
+      const orderDetails = await this.orderDetailRepository.findByOrderId(orderId, organizationId);
+      if (!orderDetails || orderDetails.length === 0) {
+        throw new Error('No order details found');
+      }
+
+      // Create reservations for each item
+      const reservations = orderDetails.map(detail => ({
+        organization_id: organizationId,
+        order_id: orderId,
+        product_id: detail.product_id,
+        warehouse_id: order.warehouse_id,
+        quantity: detail.quantity,
+        created_by: userId,
+        notes: `Auto-reserved for order ${orderId}`
+      }));
+
+      // Validate stock availability before reserving
+      for (const reservation of reservations) {
+        const availability = await this.stockReservationRepository.checkStockAvailability(
+          reservation.product_id,
+          reservation.warehouse_id,
+          organizationId,
+          reservation.quantity
+        );
+
+        if (!availability.available) {
+          throw new Error(
+            `Insufficient stock for product ${reservation.product_id}. ` +
+            `Available: ${availability.availableStock}, Requested: ${reservation.quantity}`
+          );
+        }
+      }
+
+      // Create bulk reservations
+      const createdReservations = await this.stockReservationRepository.createBulkReservations(reservations);
+
+      this.logger.info('Stock reserved successfully', {
+        orderId,
+        reservationCount: createdReservations.length
+      });
+
+      return createdReservations;
+    } catch (error) {
+      this.logger.error('Error reserving stock for order', {
+        error: error.message,
+        orderId,
+        organizationId
+      });
+      throw new Error(`Failed to reserve stock: ${error.message}`);
+    }
+  }
+
+  /**
+   * Release stock reservations for an order
+   * Cancels all active reservations and returns stock to available pool
+   * @param {string} orderId - Order ID
+   * @param {string} organizationId - Organization ID
+   * @param {string} reason - Reason for release ('cancelled' or 'fulfilled')
+   * @returns {Promise<Array>} - Released reservations
+   */
+  async releaseStockReservations(orderId, organizationId, reason = 'cancelled') {
+    try {
+      this.logger.info('Releasing stock reservations', { orderId, organizationId, reason });
+
+      const releasedReservations = await this.stockReservationRepository.releaseOrderReservations(
+        orderId,
+        organizationId,
+        reason
+      );
+
+      this.logger.info('Stock reservations released', {
+        orderId,
+        count: releasedReservations.length,
+        reason
+      });
+
+      return releasedReservations;
+    } catch (error) {
+      this.logger.error('Error releasing stock reservations', {
+        error: error.message,
+        orderId,
+        organizationId
+      });
+      throw new Error(`Failed to release stock reservations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get available stock for a product
+   * Returns physical stock minus reserved stock
+   * @param {string} productId - Product ID
+   * @param {string} warehouseId - Warehouse ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<number>} - Available stock quantity
+   */
+  async getAvailableStock(productId, warehouseId, organizationId) {
+    try {
+      return await this.stockReservationRepository.getAvailableStock(
+        productId,
+        warehouseId,
+        organizationId
+      );
+    } catch (error) {
+      this.logger.error('Error getting available stock', {
+        error: error.message,
+        productId,
+        warehouseId,
+        organizationId
+      });
+      throw new Error(`Failed to get available stock: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get stock reservations for an order
+   * @param {string} orderId - Order ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Array>} - Order reservations
+   */
+  async getOrderReservations(orderId, organizationId) {
+    try {
+      return await this.stockReservationRepository.getReservationsByOrder(
+        orderId,
+        organizationId
+      );
+    } catch (error) {
+      this.logger.error('Error getting order reservations', {
+        error: error.message,
+        orderId,
+        organizationId
+      });
+      throw new Error(`Failed to get order reservations: ${error.message}`);
     }
   }
 }

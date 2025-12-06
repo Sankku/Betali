@@ -225,6 +225,47 @@ function createOrderRoutes(container) {
     }
   );
 
+  // POST /api/orders/:id/reserve-stock - Reserve stock for order
+  router.post(
+    '/:id/reserve-stock',
+    validateRequest(orderIdSchema, 'params'),
+    createLimiter,
+    async (req, res, next) => {
+      try {
+        await orderController.reserveStockForOrder(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // POST /api/orders/:id/release-stock - Release stock reservations
+  router.post(
+    '/:id/release-stock',
+    validateRequest(orderIdSchema, 'params'),
+    createLimiter,
+    async (req, res, next) => {
+      try {
+        await orderController.releaseStockReservations(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // GET /api/orders/:id/reservations - Get order stock reservations
+  router.get(
+    '/:id/reservations',
+    validateRequest(orderIdSchema, 'params'),
+    async (req, res, next) => {
+      try {
+        await orderController.getOrderReservations(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   return router;
 }
 
