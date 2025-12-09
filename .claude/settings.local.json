@@ -16,7 +16,14 @@
       "Bash(bun test:*)",
       "Bash(psql:*)",
       "Bash(npm install)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(npm --version:*)",
+      "Bash(npx playwright install:*)"
     ],
     "deny": []
   }

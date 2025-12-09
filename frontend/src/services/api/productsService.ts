@@ -71,5 +71,38 @@ export const productsService = {
       console.error(`Error deleting product ${id}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Get available stock for a product (physical stock - reserved stock)
+   * @param productId - Product ID
+   * @param warehouseId - Warehouse ID
+   * @returns Available stock quantity
+   */
+  async getAvailableStock(productId: string, warehouseId: string): Promise<{
+    product_id: string;
+    warehouse_id: string;
+    organization_id: string;
+    available_stock: number;
+    timestamp: string;
+  }> {
+    try {
+      if (!productId || !warehouseId) {
+        throw new Error('Product ID and Warehouse ID are required');
+      }
+
+      const response = await httpClient.get<{
+        product_id: string;
+        warehouse_id: string;
+        organization_id: string;
+        available_stock: number;
+        timestamp: string;
+      }>(`/api/products/${productId}/available-stock?warehouse_id=${warehouseId}`);
+
+      return response;
+    } catch (error) {
+      console.error(`Error fetching available stock for product ${productId}:`, error);
+      throw error;
+    }
   }
 };

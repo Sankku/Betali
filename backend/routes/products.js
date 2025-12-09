@@ -60,6 +60,18 @@ router.get(
 );
 
 router.get(
+  '/:id/available-stock',
+  requirePermission(PERMISSIONS.PRODUCTS_READ),
+  async (req, res, next) => {
+    try {
+      await productController.getAvailableStock(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
   '/:id',
   requirePermission(PERMISSIONS.PRODUCTS_READ),
   async (req, res, next) => {

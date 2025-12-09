@@ -22,6 +22,7 @@ const userRoutes = require('./routes/users');
 const { createOrganizationRoutes } = require('./routes/organizations');
 const clientRoutes = require('./routes/clients');
 const supplierRoutes = require('./routes/suppliers');
+const purchaseOrderRoutes = require('./routes/purchase-orders');
 const { createOrderRoutes } = require('./routes/orders');
 const { createPricingRoutes } = require('./routes/pricing');
 const authRoutes = require('./routes/auth');
@@ -193,6 +194,7 @@ class Application {
     this.app.use('/api/clients', clientRoutes);
     this.app.use('/api/suppliers', supplierRoutes);
     this.app.use('/api/orders', createOrderRoutes(container));
+    this.app.use('/api/purchase-orders', purchaseOrderRoutes);
     this.app.use('/api/pricing', createPricingRoutes(container));
     this.app.use('/api/tax-rates', taxRateRoutes);
     this.app.use('/api/discount-rules', discountRuleRoutes);

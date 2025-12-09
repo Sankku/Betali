@@ -10,6 +10,7 @@ import {
   UserCheck,
   Truck,
   ShoppingCart,
+  ShoppingBag,
   Percent,
   Menu,
   X,
@@ -84,6 +85,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       path: '/dashboard/orders',
       icon: <ShoppingCart className="w-5 h-5" />,
       label: t('nav.orders'),
+      checkAccess: () => true, // Temporary: always visible until permissions are properly configured
+    },
+    {
+      path: '/dashboard/purchase-orders',
+      icon: <ShoppingBag className="w-5 h-5" />,
+      label: 'Órdenes de Compra',
       checkAccess: () => true, // Temporary: always visible until permissions are properly configured
     },
     {

@@ -23,6 +23,7 @@ import Organizations from "./pages/Dashboard/Organizations";
 import Clients from "./pages/Dashboard/Clients";
 import Suppliers from "./pages/Dashboard/Suppliers";
 import Orders from "./pages/Dashboard/Orders";
+import PurchaseOrders from "./pages/Dashboard/PurchaseOrders";
 import TaxManagement from "./pages/Dashboard/TaxManagement";
 import Settings from "./pages/Dashboard/Settings";
 
@@ -110,6 +111,14 @@ function AppContent() {
                     element={
                       <ProtectedRoute>
                         <Orders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/purchase-orders"
+                    element={
+                      <ProtectedRoute>
+                        <PurchaseOrders />
                       </ProtectedRoute>
                     }
                   />

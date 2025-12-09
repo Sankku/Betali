@@ -38,6 +38,13 @@ const completeSignupSchema = Joi.object({
     .messages({
       'string.min': 'Organization name must be at least 1 character long',
       'string.max': 'Organization name cannot exceed 255 characters'
+    }),
+
+  password: Joi.string()
+    .min(6)
+    .optional()
+    .messages({
+      'string.min': 'Password must be at least 6 characters long'
     })
 });
 

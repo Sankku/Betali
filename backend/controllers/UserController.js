@@ -523,9 +523,9 @@ class UserController {
           const OrganizationRepository = require('../repositories/OrganizationRepository');
           const UserOrganizationRepository = require('../repositories/UserOrganizationRepository');
           const UserRepository = require('../repositories/UserRepository');
-          const ProductRepository = require('../repositories/ProductRepository');
-          const WarehouseRepository = require('../repositories/WarehouseRepository');
-          const StockMovementRepository = require('../repositories/StockMovementRepository');
+          const { ProductRepository } = require('../repositories/ProductRepository');
+          const { WarehouseRepository } = require('../repositories/WarehouseRepository');
+          const { StockMovementRepository } = require('../repositories/StockMovementRepository');
           
           const organizationService = new OrganizationService(
             new OrganizationRepository(this.client),
