@@ -3,9 +3,10 @@
  * Handles business rules and validation
  */
 class ProductService {
-    constructor(productRepository, stockMovementRepository, logger) {
+    constructor(productRepository, stockMovementRepository, stockReservationRepository, logger) {
       this.repository = productRepository;
       this.stockMovementRepository = stockMovementRepository;
+      this.stockReservationRepository = stockReservationRepository;
       this.logger = logger;
     }
 
@@ -199,19 +200,19 @@ class ProductService {
      */
     validateProductData(productData) {
       const requiredFields = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price'];
-      
+
       for (const field of requiredFields) {
         if (!productData[field] || productData[field].toString().trim() === '') {
           throw new Error(`${field} is required`);
         }
       }
-  
+
       // Validate expiration date
       const expirationDate = new Date(productData.expiration_date);
       if (isNaN(expirationDate.getTime())) {
         throw new Error('Invalid expiration date format');
       }
-  
+
       if (expirationDate < new Date()) {
         throw new Error('Expiration date cannot be in the past');
       }
@@ -226,6 +227,48 @@ class ProductService {
         throw new Error('Price cannot exceed $999,999.99');
       }
     }
+
+    /**
+     * Get available stock for a product (physical stock - reserved stock)
+     * @param {string} productId - Product ID
+     * @param {string} warehouseId - Warehouse ID
+     * @param {string} organizationId - Organization ID
+     * @returns {Promise<number>} Available stock quantity
+     */
+    async getAvailableStock(productId, warehouseId, organizationId) {
+      try {
+        this.logger.info(`Getting available stock for product ${productId} in warehouse ${warehouseId}`);
+
+        // Check if stockReservationRepository is available
+        if (!this.stockReservationRepository) {
+          this.logger.warn('stockReservationRepository not injected, falling back to physical stock only');
+
+          // Fallback: return physical stock only (without reservations)
+          const physicalStock = await this.stockMovementRepository.getCurrentStock(
+            productId,
+            warehouseId,
+            organizationId
+          );
+
+          return physicalStock || 0;
+        }
+
+        // Use the stock reservation repository to get available stock
+        // This calls the database function get_available_stock() which calculates:
+        // available_stock = physical_stock - reserved_stock
+        const availableStock = await this.stockReservationRepository.getAvailableStock(
+          productId,
+          warehouseId,
+          organizationId
+        );
+
+        this.logger.info(`Available stock for product ${productId}: ${availableStock}`);
+        return availableStock;
+      } catch (error) {
+        this.logger.error(`Error getting available stock: ${error.message}`);
+        throw new Error(`Failed to get available stock: ${error.message}`);
+      }
+    }
   }
-  
+
   module.exports = { ProductService };

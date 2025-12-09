@@ -209,27 +209,72 @@ class ProductController {
   }
 
   /**
+   * Get available stock for a product
+   * GET /api/products/:id/available-stock?warehouse_id=xxx
+   */
+  async getAvailableStock(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { warehouse_id } = req.query;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+
+      if (!warehouse_id) {
+        return res.status(400).json({
+          error: 'warehouse_id query parameter is required'
+        });
+      }
+
+      this.logger.info(`Getting available stock for product ${id} in warehouse ${warehouse_id}`);
+
+      // Get available stock using StockReservationRepository
+      // This will be injected via ProductService
+      const availableStock = await this.productService.getAvailableStock(
+        id,
+        warehouse_id,
+        organizationId
+      );
+
+      res.json({
+        product_id: id,
+        warehouse_id,
+        organization_id: organizationId,
+        available_stock: availableStock,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.logger.error(`Error getting available stock: ${error.message}`);
+      next(error);
+    }
+  }
+
+  /**
    * Build query options from request query parameters
    * @param {Object} query - Request query parameters
    * @returns {Object} Query options
    */
   buildQueryOptions(query) {
     const options = {};
-    
+
     if (query.limit) {
       options.limit = Math.min(parseInt(query.limit), 100); // Max 100 items
     }
     if (query.offset) {
       options.offset = parseInt(query.offset);
     }
-    
+
     if (query.sortBy) {
       options.orderBy = {
         column: query.sortBy,
         ascending: query.sortOrder !== 'desc'
       };
     }
-    
+
     return options;
   }
 }

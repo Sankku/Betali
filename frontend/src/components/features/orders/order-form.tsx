@@ -15,6 +15,7 @@ import { useTaxRates } from '@/hooks/useTaxRates';
 import { Order } from '@/services/api/orderService';
 import { ORDER_STATUS_OPTIONS } from '@/hooks/useOrders';
 import { useRealtimePricing, formatPricing } from '@/hooks/usePricing';
+import { OrderItemWithStockValidation } from './OrderItemWithStockValidation';
 
 interface OrderItem {
   product_id: string;
@@ -406,20 +407,15 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 )}
               </div>
 
-              <div>
-                <Label className="text-gray-900 font-medium">Quantity *</Label>
-                <Input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                  min="1"
-                  className={errors[`item_${index}_quantity`] ? 'border-red-500' : ''}
-                  disabled={isViewMode}
-                />
-                {errors[`item_${index}_quantity`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`item_${index}_quantity`]}</p>
-                )}
-              </div>
+              {/* Quantity with real-time stock validation */}
+              <OrderItemWithStockValidation
+                item={item}
+                index={index}
+                warehouseId={watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined}
+                onQuantityChange={handleItemChange}
+                errors={errors}
+                isViewMode={isViewMode}
+              />
 
               <div>
                 <Label className="text-gray-900 font-medium">Price *</Label>

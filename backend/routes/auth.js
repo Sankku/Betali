@@ -252,13 +252,18 @@ router.post(
       // Categorize errors
       const isAuthError = error.message?.includes('Authentication') || error.message?.includes('Supabase');
       const isDBError = error.code?.startsWith('23'); // PostgreSQL error codes
+      const isDuplicateEmail = error.message?.includes('already been registered');
 
       let statusCode = 500;
-      let errorMessage = 'Registration failed. Please try again.';
+      let errorMessage = error.message || 'Registration failed. Please try again.';
 
-      if (isAuthError) {
+      // Provide specific error messages
+      if (isDuplicateEmail) {
+        statusCode = 409;
+        errorMessage = error.message; // Use the specific Supabase message
+      } else if (isAuthError) {
         statusCode = 401;
-        errorMessage = 'Authentication setup failed. Please check your credentials.';
+        errorMessage = error.message; // Use the specific auth error message
       } else if (isDBError) {
         statusCode = 409;
         errorMessage = 'User or organization already exists.';

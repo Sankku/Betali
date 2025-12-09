@@ -6,11 +6,15 @@ const logger = new Logger('RateLimiting');
 
 /**
  * General API rate limiting
- * Adjusted for development: 1000 requests per 15 minutes per IP
+ * DISABLED in development, strict in production
  */
 const generalLimiter = rateLimit({
   windowMs: process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000, // 1 minute in dev, 15 minutes in prod
-  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Much more permissive in dev
+  max: process.env.NODE_ENV === 'development' ? 10000 : 100, // 10000 in dev, 100 in prod
+  skip: (req) => {
+    // Skip rate limiting completely in development for localhost
+    return process.env.NODE_ENV === 'development';
+  },
   message: {
     error: 'Too many requests from this IP',
     message: 'Please try again after 15 minutes',
@@ -62,11 +66,14 @@ const authLimiter = rateLimit({
 
 /**
  * Moderate rate limiting for create/update operations
- * 20 requests per 5 minutes per IP (200 in dev)
+ * DISABLED in development, 20 requests per 5 minutes in production
  */
 const createLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: process.env.NODE_ENV === 'development' ? 200 : 20, // More permissive in dev
+  max: process.env.NODE_ENV === 'development' ? 10000 : 20, // Unlimited in dev, 20 in prod
+  skip: (req) => {
+    return process.env.NODE_ENV === 'development';
+  },
   message: {
     error: 'Too many create/update requests',
     message: 'Please slow down your requests',
@@ -89,11 +96,14 @@ const createLimiter = rateLimit({
 
 /**
  * Rate limiting for search operations
- * 50 requests per 5 minutes per IP (500 in dev)
+ * DISABLED in development, 50 requests per 5 minutes in production
  */
 const searchLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: process.env.NODE_ENV === 'development' ? 500 : 50, // More permissive in dev
+  max: process.env.NODE_ENV === 'development' ? 10000 : 50, // Unlimited in dev, 50 in prod
+  skip: (req) => {
+    return process.env.NODE_ENV === 'development';
+  },
   message: {
     error: 'Too many search requests',
     message: 'Please reduce search frequency',

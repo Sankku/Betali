@@ -19,6 +19,8 @@ const TaxRateRepository = require('../repositories/TaxRateRepository');
 const ProductTaxGroupRepository = require('../repositories/ProductTaxGroupRepository');
 const DiscountRuleRepository = require('../repositories/DiscountRuleRepository');
 const AppliedDiscountRepository = require('../repositories/AppliedDiscountRepository');
+const PurchaseOrderRepository = require('../repositories/PurchaseOrderRepository');
+const PurchaseOrderDetailRepository = require('../repositories/PurchaseOrderDetailRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
@@ -31,6 +33,7 @@ const ClientService = require('../services/ClientService');
 const SupplierService = require('../services/SupplierService');
 const OrderService = require('../services/OrderService');
 const PricingService = require('../services/PricingService');
+const PurchaseOrderService = require('../services/PurchaseOrderService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
@@ -43,6 +46,7 @@ const ClientController = require('../controllers/ClientController');
 const SupplierController = require('../controllers/SupplierController');
 const OrderController = require('../controllers/OrderController');
 const PricingController = require('../controllers/PricingController');
+const PurchaseOrderController = require('../controllers/PurchaseOrderController');
 const { TaxRateService } = require('../services/TaxRateService');
 const { DiscountRuleService } = require('../services/DiscountRuleService');
 const { TaxRateController } = require('../controllers/TaxRateController');
@@ -181,6 +185,16 @@ function initializeContainer() {
     return new OrderDetailRepository(dbConfig.getClient());
   }, true);
 
+  container.register('purchaseOrderRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new PurchaseOrderRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('purchaseOrderDetailRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new PurchaseOrderDetailRepository(dbConfig.getClient());
+  }, true);
+
   container.register('stockReservationRepository', () => {
     const dbConfig = container.get('dbConfig');
     return new StockReservationRepository(dbConfig.getClient());
@@ -219,8 +233,9 @@ function initializeContainer() {
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
+    const stockReservationRepository = container.get('stockReservationRepository');
     const logger = container.get('logger');
-    return new ProductService(productRepository, stockMovementRepository, logger);
+    return new ProductService(productRepository, stockMovementRepository, stockReservationRepository, logger);
   }, true);
 
   container.register('warehouseService', () => {
@@ -325,6 +340,17 @@ function initializeContainer() {
     return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger);
   }, true);
 
+  container.register('purchaseOrderService', () => {
+    const purchaseOrderRepository = container.get('purchaseOrderRepository');
+    const purchaseOrderDetailRepository = container.get('purchaseOrderDetailRepository');
+    const supplierRepository = container.get('supplierRepository');
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const stockMovementRepository = container.get('stockMovementRepository');
+    const logger = container.get('logger');
+    return new PurchaseOrderService(purchaseOrderRepository, purchaseOrderDetailRepository, supplierRepository, productRepository, warehouseRepository, stockMovementRepository, logger);
+  }, true);
+
   container.register('taxRateService', () => {
     const taxRateRepository = container.get('taxRateRepository');
     const logger = container.get('logger');
@@ -385,6 +411,11 @@ function initializeContainer() {
   container.register('orderController', () => {
     const orderService = container.get('orderService');
     return new OrderController(orderService);
+  }, true);
+
+  container.register('purchaseOrderController', () => {
+    const purchaseOrderService = container.get('purchaseOrderService');
+    return new PurchaseOrderController(purchaseOrderService);
   }, true);
 
   container.register('pricingController', () => {
@@ -492,6 +523,14 @@ const ServiceFactory = {
 
   createDiscountRuleService() {
     return container.get('discountRuleService');
+  },
+
+  createPurchaseOrderController() {
+    return container.get('purchaseOrderController');
+  },
+
+  createPurchaseOrderService() {
+    return container.get('purchaseOrderService');
   }
 };
 

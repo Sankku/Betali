@@ -81,7 +81,8 @@ export default function Register() {
           user_id: authData.user.id,
           email: authData.user.email,
           name: name.trim(),
-          organization_name: organizationName.trim() || `${name.trim()}'s Organization`
+          organization_name: organizationName.trim() || `${name.trim()}'s Organization`,
+          password: password // Include password to generate session tokens
         }),
       });
 
