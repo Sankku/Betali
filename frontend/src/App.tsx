@@ -8,6 +8,7 @@ import { OrganizationProvider } from "./context/OrganizationContext";
 import { GlobalSyncProvider } from "./context/GlobalSyncContext";
 import { DateFormatProvider } from "./contexts/DateFormatContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
@@ -26,6 +27,9 @@ import Orders from "./pages/Dashboard/Orders";
 import PurchaseOrders from "./pages/Dashboard/PurchaseOrders";
 import TaxManagement from "./pages/Dashboard/TaxManagement";
 import Settings from "./pages/Dashboard/Settings";
+import Help from "./pages/Dashboard/Help";
+import Pricing from "./pages/Dashboard/Pricing";
+import { OnboardingWizard } from "./components/features/help/OnboardingWizard";
 
 function AppContent() {
   useAuthStateChange();
@@ -37,9 +41,10 @@ function AppContent() {
           <UserContextSwitcherProvider>
             <LanguageProvider>
               <DateFormatProvider>
-                <HelmetProvider>
-                  <BrowserRouter>
-                <Routes>
+                <OnboardingProvider>
+                  <HelmetProvider>
+                    <BrowserRouter>
+                  <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route
@@ -138,12 +143,30 @@ function AppContent() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/dashboard/help"
+                    element={
+                      <ProtectedRoute>
+                        <Help />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/pricing"
+                    element={
+                      <ProtectedRoute>
+                        <Pricing />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
                   </BrowserRouter>
                 </HelmetProvider>
+                <OnboardingWizard />
                 <GlobalLoading />
                 <ToastContainer />
+                </OnboardingProvider>
               </DateFormatProvider>
             </LanguageProvider>
           </UserContextSwitcherProvider>

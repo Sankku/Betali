@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PurchaseOrderForm, PurchaseOrderFormData } from './PurchaseOrderForm';
 import { useCreatePurchaseOrder, useUpdatePurchaseOrder } from '@/hooks/usePurchaseOrders';
 import { PurchaseOrder } from '@/types/purchaseOrders';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface PurchaseOrderModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function PurchaseOrderModal({
   mode,
   purchaseOrder,
 }: PurchaseOrderModalProps) {
+  const { t } = useTranslation();
   const createMutation = useCreatePurchaseOrder();
   const updateMutation = useUpdatePurchaseOrder();
 
@@ -132,10 +134,10 @@ export function PurchaseOrderModal({
         <ModalHeader>
           <ModalTitle>
             {mode === 'create'
-              ? 'Nueva Orden de Compra'
+              ? t('purchaseOrders.add')
               : mode === 'edit'
-              ? 'Editar Orden de Compra'
-              : 'Ver Orden de Compra'}
+              ? t('purchaseOrders.edit')
+              : t('purchaseOrders.view')}
           </ModalTitle>
           <button onClick={onClose} className="absolute right-4 top-4">
             <X className="h-5 w-5" />
@@ -149,11 +151,15 @@ export function PurchaseOrderModal({
 
           <ModalFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-              {isViewMode ? 'Cerrar' : 'Cancelar'}
+              {isViewMode ? t('common.close') : t('common.cancel')}
             </Button>
             {!isViewMode && (
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar Cambios'}
+                {isLoading
+                  ? t('common.loading')
+                  : mode === 'create'
+                  ? t('common.create')
+                  : t('common.save')}
               </Button>
             )}
           </ModalFooter>

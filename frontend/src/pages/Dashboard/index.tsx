@@ -2,8 +2,15 @@ import { Helmet } from 'react-helmet-async';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/Dashboard';
-import { DashboardStats, ActivityList, TrendChart } from '../../components/modules/dashboard';
+import { 
+  DashboardStats, 
+  ActivityList, 
+  TrendChart, 
+  ExpiringProducts, 
+  QuickActions 
+} from '../../components/modules/dashboard';
 import { useAuth } from '../../context/AuthContext';
+import { AlertsWidget } from '../../components/features/alerts/AlertsWidget';
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -63,16 +70,33 @@ export default function DashboardPage() {
             </div>
           )}
           
-          <div>
-            <h2 className="text-lg font-medium text-gray-900">Resumen</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Vista general del sistema de gestión de stock
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Resumen</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Vista general del sistema de gestión de stock
+              </p>
+            </div>
           </div>
+
+          <QuickActions />
+
           <DashboardStats />
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <ActivityList />
-            <TrendChart />
+
+          {/* Alerts Widget - Full width */}
+          <AlertsWidget maxAlerts={5} showDismissButton={true} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2">
+              <TrendChart />
+            </div>
+            <div className="lg:col-span-1 h-full"> 
+              <ExpiringProducts />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1">
+             <ActivityList />
           </div>
         </div>
       </DashboardLayout>

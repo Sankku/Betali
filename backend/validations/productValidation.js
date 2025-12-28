@@ -44,7 +44,7 @@ const createProductSchema = Joi.object({
   
   expiration_date: Joi.date()
     .iso()
-    .min('now')
+    .min(new Date(new Date().setHours(0, 0, 0, 0)))
     .required()
     .messages({
       'date.base': 'Expiry/Best before date must be a valid date',
@@ -120,7 +120,7 @@ const updateProductSchema = Joi.object({
   
   expiration_date: Joi.date()
     .iso()
-    .min('now')
+    .min(new Date(new Date().setHours(0, 0, 0, 0)))
     .optional()
     .messages({
       'date.base': 'Expiration date must be a valid date',

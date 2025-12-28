@@ -56,7 +56,34 @@ export const createProductSchema = yup.object({
     .string()
     .trim()
     .optional()
+    .nullable(),
+
+  // Inventory alert fields
+  min_stock: yup
+    .number()
+    .integer('Minimum stock must be a whole number')
+    .min(0, 'Minimum stock cannot be negative')
+    .optional()
     .nullable()
+    .default(0),
+
+  max_stock: yup
+    .number()
+    .integer('Maximum stock must be a whole number')
+    .min(0, 'Maximum stock cannot be negative')
+    .optional()
+    .nullable()
+    .when('min_stock', (min_stock: any, schema: any) => {
+      if (min_stock != null) {
+        return schema.min(min_stock, 'Maximum stock must be greater than minimum stock');
+      }
+      return schema;
+    }),
+
+  alert_enabled: yup
+    .boolean()
+    .optional()
+    .default(true)
 });
 
 export const updateProductSchema = yup.object({
@@ -110,7 +137,32 @@ export const updateProductSchema = yup.object({
     .string()
     .trim()
     .optional()
+    .nullable(),
+
+  // Inventory alert fields
+  min_stock: yup
+    .number()
+    .integer('Minimum stock must be a whole number')
+    .min(0, 'Minimum stock cannot be negative')
+    .optional()
+    .nullable(),
+
+  max_stock: yup
+    .number()
+    .integer('Maximum stock must be a whole number')
+    .min(0, 'Maximum stock cannot be negative')
+    .optional()
     .nullable()
+    .when('min_stock', (min_stock: any, schema: any) => {
+      if (min_stock != null) {
+        return schema.min(min_stock, 'Maximum stock must be greater than minimum stock');
+      }
+      return schema;
+    }),
+
+  alert_enabled: yup
+    .boolean()
+    .optional()
 });
 
 // Type inference from Yup schemas

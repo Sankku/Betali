@@ -175,7 +175,7 @@ class UserRepository extends BaseRepository {
       }
 
       if (error.code === '23514') { // Check constraint violation
-        if (error.message.includes('check_organization_required')) {
+        if (error.message.includes('check_organization_required') || error.message.includes('check_organization_flexible')) {
           throw new Error('Organization is required for non-super admin users');
         }
         throw new Error('User data violates database constraints');
@@ -216,7 +216,7 @@ class UserRepository extends BaseRepository {
       }
 
       if (error.code === '23514') { // Check constraint violation
-        if (error.message.includes('check_organization_required')) {
+        if (error.message.includes('check_organization_required') || error.message.includes('check_organization_flexible')) {
           throw new Error('Organization is required for non-super admin users');
         }
         throw new Error('User data violates database constraints');

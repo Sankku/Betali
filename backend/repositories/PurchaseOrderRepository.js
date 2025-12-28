@@ -25,7 +25,7 @@ class PurchaseOrderRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          suppliers!purchase_orders_supplier_id_fkey(supplier_id, name, email, phone, contact_name),
+          suppliers!purchase_orders_supplier_id_fkey(supplier_id, name, email, phone, contact_person, cuit),
           warehouse!purchase_orders_warehouse_id_fkey(warehouse_id, name, location),
           purchase_order_details(
             detail_id,
@@ -35,7 +35,7 @@ class PurchaseOrderRepository extends BaseRepository {
             unit_price,
             line_total,
             notes,
-            products!purchase_order_details_product_id_fkey(product_id, name, sku)
+            products!purchase_order_details_product_id_fkey(product_id, name)
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)

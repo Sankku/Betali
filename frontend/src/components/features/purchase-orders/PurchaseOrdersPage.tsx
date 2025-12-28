@@ -11,7 +11,9 @@ import {
   Trash2,
   FileText,
   Clock,
+  Truck,
 } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-// Using plain HTML table elements - no table component needed
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -31,6 +32,7 @@ import {
   ModalTitle,
   ModalFooter,
 } from '@/components/ui/modal';
+import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
 import { formatDate } from '@/lib/utils';
 import {
@@ -59,6 +61,7 @@ interface ModalState {
 }
 
 export function PurchaseOrdersPage() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | 'all'>('all');
   const [supplierFilter, setSupplierFilter] = useState<string>('all');
@@ -67,13 +70,14 @@ export function PurchaseOrdersPage() {
     isOpen: false,
     mode: 'create',
   });
-  const [actionModalState, setActionModalState] = useState<{
+  const [batchActionModalState, setBatchActionModalState] = useState<{
     isOpen: boolean;
     action: 'receive' | 'approve' | 'submit' | 'cancel' | '';
-    purchaseOrder?: PurchaseOrder;
+    purchaseOrders: PurchaseOrder[];
   }>({
     isOpen: false,
     action: '',
+    purchaseOrders: [],
   });
 
   // Build filters
@@ -98,7 +102,7 @@ export function PurchaseOrdersPage() {
 
   // Handlers
   const handleCreatePurchaseOrder = useCallback(() => {
-    setModalState({ isOpen: false, mode: 'create' });
+    setModalState({ isOpen: true, mode: 'create' });
   }, []);
 
   const handleViewPurchaseOrder = useCallback((purchaseOrder: PurchaseOrder) => {
@@ -113,48 +117,33 @@ export function PurchaseOrdersPage() {
     setModalState({ isOpen: false, mode: 'create' });
   }, []);
 
-  // Action handlers
-  const handleReceive = useCallback((purchaseOrder: PurchaseOrder) => {
-    setActionModalState({ isOpen: true, action: 'receive', purchaseOrder });
-  }, []);
-
-  const handleApprove = useCallback((purchaseOrder: PurchaseOrder) => {
-    setActionModalState({ isOpen: true, action: 'approve', purchaseOrder });
-  }, []);
-
-  const handleSubmit = useCallback((purchaseOrder: PurchaseOrder) => {
-    setActionModalState({ isOpen: true, action: 'submit', purchaseOrder });
-  }, []);
-
-  const handleCancel = useCallback((purchaseOrder: PurchaseOrder) => {
-    setActionModalState({ isOpen: true, action: 'cancel', purchaseOrder });
-  }, []);
-
-  const confirmAction = useCallback(async () => {
-    const { action, purchaseOrder } = actionModalState;
-    if (!action || !purchaseOrder) return;
+  // Batch action confirmation handler
+  const confirmBatchAction = useCallback(async () => {
+    const { action, purchaseOrders: orders } = batchActionModalState;
+    if (!action || orders.length === 0) return;
 
     try {
-      switch (action) {
-        case 'receive':
-          await receiveMutation.mutateAsync(purchaseOrder.purchase_order_id);
-          break;
-        case 'approve':
-          await approveMutation.mutateAsync(purchaseOrder.purchase_order_id);
-          break;
-        case 'submit':
-          await submitMutation.mutateAsync(purchaseOrder.purchase_order_id);
-          break;
-        case 'cancel':
-          await cancelMutation.mutateAsync(purchaseOrder.purchase_order_id);
-          break;
-      }
+      const promises = orders.map((order) => {
+        switch (action) {
+          case 'receive':
+            return receiveMutation.mutateAsync(order.purchase_order_id);
+          case 'approve':
+            return approveMutation.mutateAsync(order.purchase_order_id);
+          case 'submit':
+            return submitMutation.mutateAsync(order.purchase_order_id);
+          case 'cancel':
+            return cancelMutation.mutateAsync(order.purchase_order_id);
+          default:
+            return Promise.resolve();
+        }
+      });
 
-      setActionModalState({ isOpen: false, action: '', purchaseOrder: undefined });
+      await Promise.all(promises);
+      setBatchActionModalState({ isOpen: false, action: '', purchaseOrders: [] });
     } catch (error) {
       // Error handled by mutation hooks
     }
-  }, [actionModalState, receiveMutation, approveMutation, submitMutation, cancelMutation]);
+  }, [batchActionModalState, receiveMutation, approveMutation, submitMutation, cancelMutation]);
 
   /**
    * Get status badge color
@@ -177,228 +166,267 @@ export function PurchaseOrdersPage() {
     }
   };
 
-  /**
-   * Get available actions for a purchase order
-   */
-  const getAvailableActions = (purchaseOrder: PurchaseOrder) => {
-    const actions = [];
-    const availableTransitions = getAvailableStatusTransitions(purchaseOrder.status);
-
-    if (availableTransitions.includes('pending')) {
-      actions.push({ key: 'submit', label: 'Enviar', handler: () => handleSubmit(purchaseOrder) });
-    }
-
-    if (availableTransitions.includes('approved')) {
-      actions.push({
+  // Define bulk actions for the table
+  const bulkActions: BulkAction<PurchaseOrder>[] = useMemo(
+    () => [
+      {
+        key: 'submit',
+        label: t('common.actions') === 'Actions' ? 'Submit' : 'Enviar',
+        icon: FileText,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-blue-300',
+          text: 'text-blue-700',
+          hoverBg: 'hover:bg-blue-50',
+        },
+        onClick: (orders) =>
+          setBatchActionModalState({ isOpen: true, action: 'submit', purchaseOrders: orders }),
+        getValidItems: (orders) => orders.filter((o) => o.status === 'draft'),
+      },
+      {
         key: 'approve',
-        label: 'Aprobar',
-        handler: () => handleApprove(purchaseOrder),
-      });
-    }
-
-    if (availableTransitions.includes('received')) {
-      actions.push({
+        label: t('common.actions') === 'Actions' ? 'Approve' : 'Aprobar',
+        icon: CheckCircle,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-green-300',
+          text: 'text-green-700',
+          hoverBg: 'hover:bg-green-50',
+        },
+        onClick: (orders) =>
+          setBatchActionModalState({ isOpen: true, action: 'approve', purchaseOrders: orders }),
+        getValidItems: (orders) => orders.filter((o) => o.status === 'pending'),
+      },
+      {
         key: 'receive',
-        label: 'Recibir',
-        handler: () => handleReceive(purchaseOrder),
-      });
-    }
-
-    if (availableTransitions.includes('cancelled')) {
-      actions.push({
+        label: t('common.actions') === 'Actions' ? 'Receive' : 'Recibir',
+        icon: Truck,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-purple-300',
+          text: 'text-purple-700',
+          hoverBg: 'hover:bg-purple-50',
+        },
+        onClick: (orders) =>
+          setBatchActionModalState({ isOpen: true, action: 'receive', purchaseOrders: orders }),
+        getValidItems: (orders) => orders.filter((o) => o.status === 'approved'),
+      },
+      {
         key: 'cancel',
-        label: 'Cancelar',
-        handler: () => handleCancel(purchaseOrder),
-      });
-    }
+        label: t('common.cancel'),
+        icon: XCircle,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-red-300',
+          text: 'text-red-700',
+          hoverBg: 'hover:bg-red-50',
+        },
+        onClick: (orders) =>
+          setBatchActionModalState({ isOpen: true, action: 'cancel', purchaseOrders: orders }),
+        getValidItems: (orders) =>
+          orders.filter((o) => !['cancelled', 'received'].includes(o.status)),
+      },
+    ],
+    []
+  );
 
-    return actions;
-  };
+  // Table columns configuration
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'purchase_order_number',
+        header: t('purchaseOrders.fields.orderNumber'),
+        cell: ({ row }: { row: any }) => (
+          <div className="font-semibold text-foreground">{row.original.purchase_order_number}</div>
+        ),
+      },
+      {
+        accessorKey: 'suppliers',
+        header: t('purchaseOrders.fields.supplier'),
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as PurchaseOrder;
+          return (
+            <div className="font-medium text-foreground">
+              {order.suppliers?.name || 'N/A'}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'warehouse',
+        header: t('purchaseOrders.fields.warehouse'),
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as PurchaseOrder;
+          return (
+            <div className="font-medium text-foreground">{order.warehouse?.name || 'N/A'}</div>
+          );
+        },
+      },
+      {
+        accessorKey: 'order_date',
+        header: t('purchaseOrders.fields.date'),
+        cell: ({ row }: { row: any }) => (
+          <div className="font-medium text-foreground">{formatDate(row.original.order_date)}</div>
+        ),
+      },
+      {
+        accessorKey: 'expected_delivery_date',
+        header: t('purchaseOrders.fields.expectedDelivery'),
+        cell: ({ row }: { row: any }) => (
+          <div className="font-medium text-foreground">
+            {row.original.expected_delivery_date
+              ? formatDate(row.original.expected_delivery_date)
+              : '-'}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: t('purchaseOrders.fields.status'),
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as PurchaseOrder;
+          return (
+            <Badge variant={getStatusBadgeVariant(order.status) as any}>
+              {STATUS_LABELS[order.status]}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'total',
+        header: t('purchaseOrders.fields.total'),
+        cell: ({ row }: { row: any }) => (
+          <div className="text-right font-semibold text-foreground">
+            ${row.original.total.toFixed(2)}
+          </div>
+        ),
+      },
+      {
+        id: 'actions',
+        header: t('common.actions'),
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as PurchaseOrder;
+          return (
+            <div
+              className="data-table-no-click flex items-center justify-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleViewPurchaseOrder(order)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+
+              {order.status === 'draft' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEditPurchaseOrder(order)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [handleViewPurchaseOrder, handleEditPurchaseOrder, getStatusBadgeVariant, t]
+  );
+
+  // Filter components
+  const filterComponents = (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por número o notas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Status Filter */}
+      <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Estado" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los Estados</SelectItem>
+          {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Supplier Filter */}
+      <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+        <SelectTrigger>
+          <SelectValue placeholder="Proveedor" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los Proveedores</SelectItem>
+          {suppliers?.map((supplier) => (
+            <SelectItem key={supplier.supplier_id} value={supplier.supplier_id}>
+              {supplier.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Warehouse Filter */}
+      <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+        <SelectTrigger>
+          <SelectValue placeholder="Almacén" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los Almacenes</SelectItem>
+          {warehouses?.data?.map((warehouse) => (
+            <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
+              {warehouse.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <>
       <Helmet>
-        <title>Órdenes de Compra - Betali</title>
+        <title>{t('purchaseOrders.title')} - Betali</title>
       </Helmet>
 
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Órdenes de Compra</h1>
+            <h1 className="text-3xl font-bold">{t('purchaseOrders.title')}</h1>
             <p className="text-muted-foreground mt-1">Gestiona las compras a proveedores</p>
           </div>
-          <Button onClick={handleCreatePurchaseOrder}>
-            <Package className="h-4 w-4 mr-2" />
-            Nueva Orden de Compra
-          </Button>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por número o notas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Estados</SelectItem>
-                  {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Supplier Filter */}
-              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Proveedores</SelectItem>
-                  {suppliers?.map((supplier) => (
-                    <SelectItem key={supplier.supplier_id} value={supplier.supplier_id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Warehouse Filter */}
-              <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Almacén" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Almacenes</SelectItem>
-                  {warehouses?.data?.map((warehouse) => (
-                    <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Número</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Proveedor</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Almacén</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Fecha</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Entrega Esperada</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Estado</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium">Total</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Cargando...
-                      </td>
-                    </tr>
-                  ) : purchaseOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No se encontraron órdenes de compra
-                      </td>
-                    </tr>
-                  ) : (
-                    purchaseOrders.map((purchaseOrder) => (
-                      <tr key={purchaseOrder.purchase_order_id} className="hover:bg-muted/50">
-                        <td className="px-4 py-3 font-medium">
-                          {purchaseOrder.purchase_order_number}
-                        </td>
-                        <td className="px-4 py-3">
-                          {purchaseOrder.suppliers?.name || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3">
-                          {purchaseOrder.warehouse?.name || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3">{formatDate(purchaseOrder.order_date)}</td>
-                        <td className="px-4 py-3">
-                          {purchaseOrder.expected_delivery_date
-                            ? formatDate(purchaseOrder.expected_delivery_date)
-                            : '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={getStatusBadgeVariant(purchaseOrder.status) as any}>
-                            {STATUS_LABELS[purchaseOrder.status]}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium">
-                          ${purchaseOrder.total.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewPurchaseOrder(purchaseOrder)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-
-                            {purchaseOrder.status === 'draft' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditPurchaseOrder(purchaseOrder)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-
-                            {getAvailableActions(purchaseOrder).map((action) => (
-                              <Button
-                                key={action.key}
-                                variant="outline"
-                                size="sm"
-                                onClick={action.handler}
-                              >
-                                {action.label}
-                              </Button>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Table with Bulk Actions */}
+        <TableWithBulkActions
+          data={purchaseOrders}
+          columns={columns}
+          loading={isLoading}
+          getRowId={(row) => row.purchase_order_id}
+          bulkActions={bulkActions}
+          createButtonLabel={t('purchaseOrders.add')}
+          onCreateClick={handleCreatePurchaseOrder}
+          filterComponents={filterComponents}
+          onRowDoubleClick={handleViewPurchaseOrder}
+          emptyMessage={t('common.noResults')}
+          enablePagination={true}
+          pageSize={20}
+        />
       </div>
 
       {/* Create/Edit/View Modal */}
@@ -411,51 +439,63 @@ export function PurchaseOrdersPage() {
         />
       )}
 
-      {/* Action Confirmation Modal */}
+      {/* Batch Action Confirmation Modal */}
       <Modal
-        isOpen={actionModalState.isOpen}
-        onClose={() => setActionModalState({ isOpen: false, action: '', purchaseOrder: undefined })}
+        isOpen={batchActionModalState.isOpen}
+        onClose={() =>
+          setBatchActionModalState({ isOpen: false, action: '', purchaseOrders: [] })
+        }
       >
         <ModalContent>
           <ModalHeader>
             <ModalTitle>
-              Confirmar{' '}
-              {actionModalState.action === 'receive'
-                ? 'Recepción'
-                : actionModalState.action === 'approve'
-                ? 'Aprobación'
-                : actionModalState.action === 'submit'
-                ? 'Envío'
-                : 'Cancelación'}
+              {t('common.confirm')}{' '}
+              {batchActionModalState.action === 'receive'
+                ? t('purchaseOrders.actions.receive')
+                : batchActionModalState.action === 'approve'
+                ? t('purchaseOrders.actions.approve')
+                : batchActionModalState.action === 'submit'
+                ? t('purchaseOrders.actions.submit')
+                : t('purchaseOrders.actions.cancel')}
             </ModalTitle>
           </ModalHeader>
-          <div className="py-4">
-            {actionModalState.action === 'receive' && (
+          <div className="px-6 py-4">
+            {batchActionModalState.action === 'receive' && (
               <p>
-                ¿Está seguro de marcar la orden de compra "
-                {actionModalState.purchaseOrder?.purchase_order_number}" como recibida?
+                {t('common.actions') === 'Actions'
+                  ? `Are you sure you want to mark ${batchActionModalState.purchaseOrders.length} purchase order(s) as received?`
+                  : `¿Está seguro de marcar ${batchActionModalState.purchaseOrders.length} orden(es) de compra como recibida(s)?`}
                 <br />
-                <strong>Esto creará movimientos de stock de entrada automáticamente.</strong>
+                <strong>
+                  {t('common.actions') === 'Actions'
+                    ? 'This will automatically create stock entry movements.'
+                    : 'Esto creará movimientos de stock de entrada automáticamente.'}
+                </strong>
               </p>
             )}
-            {actionModalState.action === 'approve' && (
+            {batchActionModalState.action === 'approve' && (
               <p>
-                ¿Está seguro de aprobar la orden de compra "
-                {actionModalState.purchaseOrder?.purchase_order_number}"?
+                {t('common.actions') === 'Actions'
+                  ? `Are you sure you want to approve ${batchActionModalState.purchaseOrders.length} purchase order(s)?`
+                  : `¿Está seguro de aprobar ${batchActionModalState.purchaseOrders.length} orden(es) de compra?`}
               </p>
             )}
-            {actionModalState.action === 'submit' && (
+            {batchActionModalState.action === 'submit' && (
               <p>
-                ¿Está seguro de enviar la orden de compra "
-                {actionModalState.purchaseOrder?.purchase_order_number}" para aprobación?
+                {t('common.actions') === 'Actions'
+                  ? `Are you sure you want to submit ${batchActionModalState.purchaseOrders.length} purchase order(s) for approval?`
+                  : `¿Está seguro de enviar ${batchActionModalState.purchaseOrders.length} orden(es) de compra para aprobación?`}
               </p>
             )}
-            {actionModalState.action === 'cancel' && (
+            {batchActionModalState.action === 'cancel' && (
               <p className="text-destructive">
-                ¿Está seguro de cancelar la orden de compra "
-                {actionModalState.purchaseOrder?.purchase_order_number}"?
+                {t('common.actions') === 'Actions'
+                  ? `Are you sure you want to cancel ${batchActionModalState.purchaseOrders.length} purchase order(s)?`
+                  : `¿Está seguro de cancelar ${batchActionModalState.purchaseOrders.length} orden(es) de compra?`}
                 <br />
-                Esta acción no se puede deshacer.
+                {t('common.actions') === 'Actions'
+                  ? 'This action cannot be undone.'
+                  : 'Esta acción no se puede deshacer.'}
               </p>
             )}
           </div>
@@ -463,16 +503,16 @@ export function PurchaseOrdersPage() {
             <Button
               variant="outline"
               onClick={() =>
-                setActionModalState({ isOpen: false, action: '', purchaseOrder: undefined })
+                setBatchActionModalState({ isOpen: false, action: '', purchaseOrders: [] })
               }
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
-              onClick={confirmAction}
-              variant={actionModalState.action === 'cancel' ? 'destructive' : 'default'}
+              onClick={confirmBatchAction}
+              variant={batchActionModalState.action === 'cancel' ? 'destructive' : 'default'}
             >
-              Confirmar
+              {t('common.confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>
