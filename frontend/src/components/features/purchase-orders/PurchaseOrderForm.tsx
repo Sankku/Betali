@@ -14,6 +14,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TooltipHelp } from '@/components/ui/tooltip-help';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useWarehouses } from '@/hooks/useWarehouse';
 import { useProducts } from '@/hooks/useProducts';
@@ -198,7 +199,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
         {/* Warehouse */}
         <div className="space-y-2">
-          <Label htmlFor="warehouse_id">Almacén *</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="warehouse_id">Almacén *</Label>
+            <TooltipHelp
+              content="Almacén donde se recibirá y almacenará la mercadería de esta orden de compra."
+              position="right"
+            />
+          </div>
           <Select
             value={watchedValues.warehouse_id}
             onValueChange={(value) => setValue('warehouse_id', value)}
@@ -219,7 +226,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
         {/* Expected Delivery Date */}
         <div className="space-y-2">
-          <Label htmlFor="expected_delivery_date">Fecha de Entrega Esperada</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="expected_delivery_date">Fecha de Entrega Esperada</Label>
+            <TooltipHelp
+              content="Fecha estimada en la que esperas recibir la mercadería del proveedor. Ayuda a planificar el inventario."
+              position="right"
+            />
+          </div>
           <Input
             id="expected_delivery_date"
             type="date"
@@ -334,7 +347,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                   {/* Line Total */}
                   <div className="md:col-span-2">
                     <Label>Total</Label>
-                    <div className="h-10 flex items-center font-semibold">
+                    <div className="h-10 flex items-center font-semibold text-foreground">
                       ${calculateLineTotal(item.quantity, item.unit_price).toFixed(2)}
                     </div>
                   </div>
@@ -381,7 +394,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Discount */}
             <div className="space-y-2">
-              <Label htmlFor="discount_amount">Descuento</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="discount_amount">Descuento</Label>
+                <TooltipHelp
+                  content="Monto de descuento otorgado por el proveedor. Se restará del subtotal."
+                  position="right"
+                />
+              </div>
               <Input
                 id="discount_amount"
                 type="number"
@@ -395,7 +414,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
             {/* Tax */}
             <div className="space-y-2">
-              <Label htmlFor="tax_amount">Impuestos</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="tax_amount">Impuestos</Label>
+                <TooltipHelp
+                  content="Monto de impuestos aplicables a esta compra (IVA, etc.). Se sumará al total."
+                  position="right"
+                />
+              </div>
               <Input
                 id="tax_amount"
                 type="number"
@@ -409,7 +434,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
             {/* Shipping */}
             <div className="space-y-2">
-              <Label htmlFor="shipping_amount">Envío</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="shipping_amount">Envío</Label>
+                <TooltipHelp
+                  content="Costo de envío o flete de la mercadería. Se sumará al total de la compra."
+                  position="right"
+                />
+              </div>
               <Input
                 id="shipping_amount"
                 type="number"
@@ -425,29 +456,29 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             <div className="space-y-2">
               <div className="border rounded-lg p-4 bg-muted/30">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm">Subtotal:</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-foreground">Subtotal:</span>
+                  <span className="font-semibold text-foreground">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm">Descuento:</span>
-                  <span className="font-medium text-green-600">
+                  <span className="text-sm font-medium text-foreground">Descuento:</span>
+                  <span className="font-semibold text-green-700 dark:text-green-500">
                     -${(watchedValues.discount_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm">Impuestos:</span>
-                  <span className="font-medium">${(watchedValues.tax_amount || 0).toFixed(2)}</span>
+                  <span className="text-sm font-medium text-foreground">Impuestos:</span>
+                  <span className="font-semibold text-foreground">${(watchedValues.tax_amount || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm">Envío:</span>
-                  <span className="font-medium">
+                  <span className="text-sm font-medium text-foreground">Envío:</span>
+                  <span className="font-semibold text-foreground">
                     ${(watchedValues.shipping_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold">TOTAL:</span>
-                    <span className="font-bold text-lg">${total.toFixed(2)}</span>
+                    <span className="font-bold text-foreground">TOTAL:</span>
+                    <span className="font-bold text-lg text-foreground">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

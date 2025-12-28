@@ -39,6 +39,7 @@ export interface TableWithBulkActionsProps<T = any> {
   // Create button
   createButtonLabel?: string;
   onCreateClick?: () => void;
+  createButtonId?: string;
 
   // Table options
   searchable?: boolean; // Global search (deprecated, use column filters instead)
@@ -65,6 +66,7 @@ export function TableWithBulkActions<T = any>({
   bulkActions = [],
   createButtonLabel = 'New Item',
   onCreateClick,
+  createButtonId,
   searchable = false, // Disabled by default, use column filters instead
   enableColumnFilters = true, // Enabled by default
   enablePagination = true,
@@ -177,6 +179,7 @@ export function TableWithBulkActions<T = any>({
                   {/* Create button when items selected */}
                   {onCreateClick && (
                     <Button
+                      id={createButtonId}
                       onClick={onCreateClick}
                       className="flex items-center gap-2"
                     >
@@ -203,6 +206,7 @@ export function TableWithBulkActions<T = any>({
 
                     {onCreateClick && (
                       <Button
+                        id={createButtonId}
                         onClick={onCreateClick}
                         className="flex items-center gap-2"
                       >

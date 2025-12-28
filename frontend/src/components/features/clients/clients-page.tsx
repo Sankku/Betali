@@ -317,6 +317,7 @@ export function ClientsPage() {
             getRowId={(client: Client) => client.client_id}
             bulkActions={bulkActions}
             createButtonLabel={t('clients.add')}
+            createButtonId="create-client-button"
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(client) => openModal('edit', client)}
             searchable={false}

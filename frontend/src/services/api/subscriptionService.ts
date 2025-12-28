@@ -104,8 +104,61 @@ export interface UsageData {
   storage_used_mb: number;
 }
 
+export interface Subscription {
+  subscription_id: string;
+  organization_id: string;
+  plan_id: string;
+  status: 'pending' | 'active' | 'cancelled' | 'expired';
+  billing_cycle: 'monthly' | 'yearly';
+  amount: number;
+  currency: string;
+  start_date: string | null;
+  end_date: string | null;
+  next_billing_date: string | null;
+  cancelled_at: string | null;
+  requested_by: string | null;
+  activated_by: string | null;
+  created_at: string;
+  updated_at: string;
+  subscription_plans?: SubscriptionPlan;
+}
+
+export interface PlanChangeRequest {
+  planId: string;
+  currency: 'USD' | 'ARS';
+}
+
+export interface ManualPayment {
+  payment_id: string;
+  subscription_id: string;
+  organization_id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: 'pending' | 'confirmed' | 'failed';
+  payment_date: string;
+  confirmed_at: string | null;
+  reference_number: string | null;
+  notes: string | null;
+  recorded_by: string;
+  confirmed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordPaymentData {
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  paymentDate: string;
+  referenceNumber?: string;
+  notes?: string;
+}
+
 class SubscriptionService {
   private readonly BASE_PATH = '/api/subscription-plans';
+  private readonly SUBSCRIPTIONS_PATH = '/api/subscriptions';
 
   /**
    * Get all public subscription plans
@@ -231,6 +284,94 @@ class SubscriptionService {
       return value.toLocaleString();
     }
     return value;
+  }
+
+  // ============================================================================
+  // MANUAL BILLING METHODS
+  // ============================================================================
+
+  /**
+   * Get all plans (using new subscriptions endpoint)
+   */
+  async getPlans(): Promise<SubscriptionPlan[]> {
+    const response = await httpClient.get<{ data: SubscriptionPlan[] }>(this.BASE_PATH);
+    return response.data;
+  }
+
+  /**
+   * Get current organization's subscription
+   */
+  async getCurrentSubscription(): Promise<{ subscription: Subscription | null }> {
+    const response = await httpClient.get<{ subscription: Subscription | null }>(
+      `${this.SUBSCRIPTIONS_PATH}/current`
+    );
+    return response.data;
+  }
+
+  /**
+   * Request plan change
+   */
+  async requestPlanChange(data: PlanChangeRequest): Promise<Subscription> {
+    const response = await httpClient.post<{ subscription: Subscription }>(
+      `${this.SUBSCRIPTIONS_PATH}/request-change`,
+      data
+    );
+    return response.data.subscription;
+  }
+
+  /**
+   * Check if organization has access to a feature
+   */
+  async checkFeatureAccess(featureName: string): Promise<boolean> {
+    const response = await httpClient.get<{ hasAccess: boolean }>(
+      `${this.SUBSCRIPTIONS_PATH}/feature/${featureName}`
+    );
+    return response.data.hasAccess;
+  }
+
+  // ============================================================================
+  // ADMIN METHODS
+  // ============================================================================
+
+  /**
+   * Get pending subscriptions (admin only)
+   */
+  async getPendingSubscriptions(): Promise<Subscription[]> {
+    const response = await httpClient.get<{ subscriptions: Subscription[] }>(
+      `${this.SUBSCRIPTIONS_PATH}/pending`
+    );
+    return response.data.subscriptions;
+  }
+
+  /**
+   * Activate subscription (admin only)
+   */
+  async activateSubscription(subscriptionId: string): Promise<Subscription> {
+    const response = await httpClient.put<{ subscription: Subscription }>(
+      `${this.SUBSCRIPTIONS_PATH}/${subscriptionId}/activate`
+    );
+    return response.data.subscription;
+  }
+
+  /**
+   * Record manual payment (admin only)
+   */
+  async recordPayment(data: RecordPaymentData): Promise<ManualPayment> {
+    const response = await httpClient.post<{ payment: ManualPayment }>(
+      `${this.SUBSCRIPTIONS_PATH}/payments`,
+      data
+    );
+    return response.data.payment;
+  }
+
+  /**
+   * Confirm payment (admin only)
+   */
+  async confirmPayment(paymentId: string): Promise<{ payment: ManualPayment; subscription: Subscription }> {
+    const response = await httpClient.put<{ payment: ManualPayment; subscription: Subscription }>(
+      `${this.SUBSCRIPTIONS_PATH}/payments/${paymentId}/confirm`
+    );
+    return response.data;
   }
 }
 

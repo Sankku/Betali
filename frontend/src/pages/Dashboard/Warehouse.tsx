@@ -251,6 +251,7 @@ const WarehousesPage: React.FC = () => {
             getRowId={(warehouse: WarehouseWithStats) => warehouse.warehouse_id}
             bulkActions={bulkActions}
             createButtonLabel="New Warehouse"
+            createButtonId="create-warehouse-button"
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(warehouse) => openModal('edit', warehouse)}
             searchable={true}

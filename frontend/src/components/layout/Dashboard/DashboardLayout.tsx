@@ -14,11 +14,11 @@ import {
   Percent,
   Menu,
   X,
-  LogOut,
   Settings,
+  HelpCircle,
+  CreditCard,
 } from 'lucide-react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { useLocation, Link } from 'react-router-dom';
 import { useOrganization } from '../../../context/OrganizationContext';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { SidebarItem } from '../Sidebar/SidebarItem';
@@ -90,7 +90,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       path: '/dashboard/purchase-orders',
       icon: <ShoppingBag className="w-5 h-5" />,
-      label: 'Órdenes de Compra',
+      label: t('nav.purchaseOrders'),
       checkAccess: () => true, // Temporary: always visible until permissions are properly configured
     },
     {
@@ -118,9 +118,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
     },
     {
+      path: '/dashboard/pricing',
+      icon: <CreditCard className="w-5 h-5" />,
+      label: t('nav.pricing'),
+      checkAccess: () => true, // Always visible for all users
+    },
+    {
       path: '/dashboard/settings',
       icon: <Settings className="w-5 h-5" />,
       label: t('nav.settings'),
+      checkAccess: () => true, // Always visible for all users
+    },
+    {
+      path: '/dashboard/help',
+      icon: <HelpCircle className="w-5 h-5" />,
+      label: t('nav.help'),
       checkAccess: () => true, // Always visible for all users
     },
   ];
@@ -132,13 +144,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200">
-        <div className="p-4 border-b border-gray-200 h-16">
+      <aside className="hidden md:flex md:flex-col w-72 bg-white border-r border-gray-200">
+        <div className="p-4 border-b border-gray-200 h-16 flex items-center">
           <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
-            <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-green-600 flex items-center justify-center shadow-sm">
               <Package className="h-5 w-5 text-white" />
             </div>
-            <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
+            <h1 className="ml-3 text-xl font-bold text-gray-900 tracking-tight">Betali</h1>
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -161,15 +173,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               />
             ))}
         </nav>
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 bg-gray-50/50">
           {/* Compact info or branding */}
-          <div className="text-xs text-gray-500 text-center">{t('layout.version')}</div>
+          <div className="text-xs font-medium text-gray-500 text-center">{t('layout.version')}</div>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 z-10">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <header className="bg-white border-b border-gray-200 z-10 h-16 flex items-center">
+          <div className="px-4 sm:px-6 lg:px-8 w-full">
             <div className="flex items-center justify-between">
               <div className="flex items-center md:hidden">
                 <button
@@ -184,7 +196,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               </div>
               <div className="hidden md:block">
-                <h1 className="text-xl font-semibold text-gray-900">{getPageTitle()}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{getPageTitle()}</h1>
               </div>
               <div className="flex items-center">
                 {/* User Context Indicator - Always visible, responsive internally */}

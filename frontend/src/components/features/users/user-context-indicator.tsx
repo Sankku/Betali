@@ -24,6 +24,10 @@ import {
 import { CreateOrganizationForm } from '../organizations/create-organization-form';
 import { DateFormatSelector } from '../settings/date-format-selector';
 import { TimezoneSelector } from '../settings/timezone-selector';
+import { userService } from '@/services/api/userService';
+import { Input } from '@/components/ui/input';
+import { Check, X as XIcon } from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 /**
  * Component to show current user context with role, permissions, and organization
@@ -39,9 +43,45 @@ export function UserContextIndicator() {
     switching 
   } = useOrganization();
   const { signOut } = useAuth();
+  // const { toast } = useToast(); // Replaced by imported toast singleton
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOrgSwitching, setIsOrgSwitching] = useState(false);
   const [showCreateOrganizationModal, setShowCreateOrganizationModal] = useState(false);
+  
+  // Profile editing state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Initialize profile name when user data loads or modal opens
+  React.useEffect(() => {
+    if (userContext?.user?.name) {
+      setProfileName(userContext.user.name);
+    }
+  }, [userContext, isDetailsOpen]);
+
+  const handleSaveProfile = async () => {
+    if (!profileName.trim()) {
+    if (!profileName.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    }
+
+    setIsSavingProfile(true);
+    try {
+      await userService.updateCurrentProfile({ name: profileName });
+      await triggerFullSync('Profile updated');
+      setIsEditingProfile(false);
+      setIsEditingProfile(false);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleRefreshContext = async () => {
     try {
@@ -70,7 +110,6 @@ export function UserContextIndicator() {
   }
 
   const { user, permissions, hasOrganizationContext } = userContext;
-  const userContextOrg = userContext.currentOrganization;
   
   const handleSwitchOrganization = async (orgId: string) => {
     if (orgId === currentOrganization?.organization_id) return;
@@ -131,49 +170,40 @@ export function UserContextIndicator() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="flex items-center gap-2 px-3 py-1.5 h-auto hover:bg-gray-50 border border-gray-200 rounded-md"
+            className="flex items-center gap-3 pl-2 pr-2 py-1 h-auto hover:bg-gray-50 rounded-full transition-all duration-200 group border border-transparent hover:border-gray-200"
             disabled={switching || isOrgSwitching}
           >
-        {/* User Avatar */}
-        <div className="flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full">
-          {user.avatar_url ? (
-            <img 
-              src={user.avatar_url} 
-              alt={user.name} 
-              className="w-6 h-6 rounded-full"
-            />
-          ) : (
-            <User className="w-3 h-3 text-blue-600" />
-          )}
-        </div>
-
-        {/* User Info */}
-        <div className="flex flex-col items-start min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900 truncate">
-              {user.name}
-            </span>
-            <Badge 
-              variant="secondary" 
-              className={`text-xs ${getRoleBadgeColor(permissions.role)} border`}
-            >
-              <Shield className="w-3 h-3 mr-1" />
-              {getRoleDisplayName(permissions.role)}
-            </Badge>
-          </div>
-          
-          {hasOrganizationContext && currentOrganization ? (
-            <div className="text-xs text-gray-500 truncate">
-              {currentOrganization.name}
+            {/* User Avatar */}
+            <div className="relative">
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full shadow-sm ring-2 ring-white">
+                {user.avatar_url ? (
+                  <img 
+                    src={user.avatar_url} 
+                    alt={user.name} 
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-xs font-bold">
+                    {(user.name || 'User').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-          ) : (
-            <div className="text-xs text-orange-600">
-              No organization selected
-            </div>
-          )}
-        </div>
 
-            <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+            {/* User Info - Simplified */}
+            <div className="flex flex-col items-start min-w-0 mr-1 hidden sm:flex">
+              <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                {user.name || 'User'}
+              </span>
+              <span className="text-xs text-gray-500 font-medium capitalize">
+                {hasOrganizationContext && currentOrganization 
+                  ? currentOrganization.name 
+                  : 'No Organization'}
+              </span>
+            </div>
+
+            <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
           </Button>
         </DropdownMenuTrigger>
         
@@ -228,7 +258,7 @@ export function UserContextIndicator() {
                         )}
                       </div>
                       <div className="text-xs text-gray-500 capitalize">
-                        {userOrg.userRole} access
+                        {userOrg.role} access
                       </div>
                     </div>
                   </DropdownMenuItem>
@@ -318,9 +348,50 @@ export function UserContextIndicator() {
                 User Information
               </h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between min-h-[40px]">
                   <span className="text-sm font-medium text-gray-600">Name:</span>
-                  <span className="text-sm text-gray-900">{user.name}</span>
+                  {isEditingProfile ? (
+                    <div className="flex items-center gap-2">
+                       <Input 
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
+                        className="h-8 w-48"
+                        placeholder="Enter your name"
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={handleSaveProfile}
+                        disabled={isSavingProfile}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                        onClick={() => {
+                          setIsEditingProfile(false);
+                          setProfileName(user.name || '');
+                        }}
+                      >
+                        <XIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-900">{user.name || 'Not set'}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-6 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => setIsEditingProfile(true)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">Email:</span>
@@ -330,12 +401,12 @@ export function UserContextIndicator() {
                   <span className="text-sm font-medium text-gray-600">Role:</span>
                   <Badge className={getRoleBadgeColor(permissions.role)}>
                     <Shield className="w-3 h-3 mr-1" />
-                    {getRoleDisplayName(permissions.role)}
+                    {getRoleDisplayName(permissions.role as any)}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">Status:</span>
-                  <Badge variant={user.is_active ? "default" : "destructive"}>
+                  <Badge variant={user.is_active ? "default" : "danger"}>
                     {user.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
@@ -352,14 +423,7 @@ export function UserContextIndicator() {
                       <span className="text-sm font-medium text-gray-600">Organization:</span>
                       <span className="text-sm text-gray-900">{currentOrganization.name}</span>
                     </div>
-                    {currentOrganization.description && (
-                      <div className="flex items-start justify-between">
-                        <span className="text-sm font-medium text-gray-600">Description:</span>
-                        <span className="text-sm text-gray-900 text-right max-w-xs">
-                          {currentOrganization.description}
-                        </span>
-                      </div>
-                    )}
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600">Available Organizations:</span>
                       <span className="text-sm text-gray-900">{userOrganizations.length}</span>

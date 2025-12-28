@@ -21,6 +21,8 @@ const DiscountRuleRepository = require('../repositories/DiscountRuleRepository')
 const AppliedDiscountRepository = require('../repositories/AppliedDiscountRepository');
 const PurchaseOrderRepository = require('../repositories/PurchaseOrderRepository');
 const PurchaseOrderDetailRepository = require('../repositories/PurchaseOrderDetailRepository');
+const { InventoryAlertRepository } = require('../repositories/InventoryAlertRepository');
+const { SubscriptionRepository } = require('../repositories/SubscriptionRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
@@ -34,6 +36,8 @@ const SupplierService = require('../services/SupplierService');
 const OrderService = require('../services/OrderService');
 const PricingService = require('../services/PricingService');
 const PurchaseOrderService = require('../services/PurchaseOrderService');
+const { InventoryAlertService } = require('../services/InventoryAlertService');
+const { SubscriptionService } = require('../services/SubscriptionService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
@@ -51,6 +55,8 @@ const { TaxRateService } = require('../services/TaxRateService');
 const { DiscountRuleService } = require('../services/DiscountRuleService');
 const { TaxRateController } = require('../controllers/TaxRateController');
 const { DiscountRuleController } = require('../controllers/DiscountRuleController');
+const { InventoryAlertController } = require('../controllers/InventoryAlertController');
+const { SubscriptionController } = require('../controllers/SubscriptionController');
 
 /**
  * Dependency injection container
@@ -230,6 +236,16 @@ function initializeContainer() {
     return new AppliedDiscountRepository(dbConfig.getClient());
   }, true);
 
+  container.register('inventoryAlertRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new InventoryAlertRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('subscriptionRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new SubscriptionRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
@@ -363,6 +379,17 @@ function initializeContainer() {
     return new DiscountRuleService(discountRuleRepository, logger);
   }, true);
 
+  container.register('inventoryAlertService', () => {
+    const dbConfig = container.get('dbConfig');
+    return new InventoryAlertService(dbConfig.getClient());
+  }, true);
+
+  container.register('subscriptionService', () => {
+    const subscriptionRepository = container.get('subscriptionRepository');
+    const logger = container.get('logger');
+    return new SubscriptionService(subscriptionRepository, logger);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -390,7 +417,8 @@ function initializeContainer() {
 
   container.register('userController', () => {
     const userService = container.get('userService');
-    return new UserController(userService);
+    const organizationService = container.get('organizationService');
+    return new UserController(userService, organizationService);
   }, true);
 
   container.register('organizationController', () => {
@@ -435,6 +463,16 @@ function initializeContainer() {
   container.register('discountRuleController', () => {
     const discountRuleService = container.get('discountRuleService');
     return new DiscountRuleController(discountRuleService);
+  }, true);
+
+  container.register('inventoryAlertController', () => {
+    const inventoryAlertService = container.get('inventoryAlertService');
+    return new InventoryAlertController(inventoryAlertService);
+  }, true);
+
+  container.register('subscriptionController', () => {
+    const subscriptionService = container.get('subscriptionService');
+    return new SubscriptionController(subscriptionService);
   }, true);
 }
 
@@ -531,6 +569,22 @@ const ServiceFactory = {
 
   createPurchaseOrderService() {
     return container.get('purchaseOrderService');
+  },
+
+  createInventoryAlertController() {
+    return container.get('inventoryAlertController');
+  },
+
+  createInventoryAlertService() {
+    return container.get('inventoryAlertService');
+  },
+
+  createSubscriptionService() {
+    return container.get('subscriptionService');
+  },
+
+  createSubscriptionController() {
+    return container.get('subscriptionController');
   }
 };
 

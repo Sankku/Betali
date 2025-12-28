@@ -1,9 +1,10 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Package, Calendar, Globe, DollarSign, Percent } from 'lucide-react';
+import { Package, Calendar, Globe, DollarSign, Percent, AlertTriangle, Bell } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Label } from '../../ui/label';
+import { TooltipHelp } from '../../ui/tooltip-help';
 import { useTaxRates, formatTaxRate } from '../../../hooks/useTaxRates';
 
 import { ProductFormSchemaData } from '../../../validations/productValidation';
@@ -232,6 +233,97 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
             required
           />
         )}
+
+        {/* Inventory Alerts Configuration */}
+        <div className="border-t pt-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <h4 className="text-md font-semibold text-gray-900">Inventory Alerts</h4>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {isViewMode ? (
+              <>
+                <ViewField
+                  label="Minimum Stock"
+                  value={String(watch('min_stock') || 0)}
+                  icon={<Package className="inline h-4 w-4 mr-2" />}
+                  description="Alert when stock falls below this level"
+                />
+                <ViewField
+                  label="Maximum Stock"
+                  value={String(watch('max_stock') || 'Not set')}
+                  icon={<Package className="inline h-4 w-4 mr-2" />}
+                  description="Alert when stock exceeds this level"
+                />
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="min_stock" className="text-gray-900 font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Minimum Stock
+                    <TooltipHelp
+                      content="Set the minimum stock level. You'll receive an alert when inventory falls below this amount."
+                      position="right"
+                    />
+                  </Label>
+                  <Input
+                    {...register('min_stock')}
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    disabled={isLoading}
+                    error={errors.min_stock?.message}
+                  />
+                  <p className="text-xs text-gray-600">
+                    Alert will trigger when stock falls below this level
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max_stock" className="text-gray-900 font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Maximum Stock (Optional)
+                    <TooltipHelp
+                      content="Set the maximum stock level. You'll receive an alert when inventory exceeds this amount."
+                      position="right"
+                    />
+                  </Label>
+                  <Input
+                    {...register('max_stock')}
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Not set"
+                    disabled={isLoading}
+                    error={errors.max_stock?.message}
+                  />
+                  <p className="text-xs text-gray-600">
+                    Alert will trigger when stock exceeds this level
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {!isViewMode && (
+            <div className="mt-4 flex items-center gap-3">
+              <input
+                {...register('alert_enabled')}
+                type="checkbox"
+                id="alert_enabled"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <Label htmlFor="alert_enabled" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Enable inventory alerts for this product
+              </Label>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

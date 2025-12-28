@@ -11,6 +11,27 @@ interface ActivityItemProps {
   status?: string;
 }
 
+const getTypeLabel = (type: string) => {
+  const types: Record<string, string> = {
+    entry: 'Entrada',
+    exit: 'Salida',
+    adjustment: 'Ajuste',
+    transfer: 'Transferencia',
+    senasa: 'SENASA'
+  };
+  return types[type] || type;
+};
+
+const getTypeColor = (type: string) => {
+  switch (type) {
+    case 'entry': return 'bg-blue-100 text-blue-800';
+    case 'exit': return 'bg-orange-100 text-orange-800';
+    case 'adjustment': return 'bg-purple-100 text-purple-800';
+    case 'transfer': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 export const ActivityItem: React.FC<ActivityItemProps> = ({
   type,
   product,
@@ -18,38 +39,26 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   date,
   status,
 }) => {
-  let statusColor = 'bg-gray-100 text-gray-800';
-
-  if (status === 'completed') {
-    statusColor = 'bg-green-100 text-green-800';
-  } else if (status === 'pending') {
-    statusColor = 'bg-yellow-100 text-yellow-800';
-  } else if (status === 'error') {
-    statusColor = 'bg-red-100 text-red-800';
-  }
+  const typeLabel = getTypeLabel(type);
+  const typeColor = getTypeColor(type);
 
   return (
     <li className="py-3">
       <div className="flex items-center space-x-4">
+        <div className="flex-shrink-0">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColor}`}>
+            {typeLabel}
+          </span>
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">
-            {type}
-            {product && <span className="font-normal"> - {product}</span>}
+            {product || 'Producto desconocido'}
           </p>
           <p className="text-sm text-gray-500 truncate">
             {warehouse && <span>{warehouse} • </span>}
             {date}
           </p>
         </div>
-        {status && (
-          <div>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
-            >
-              {status}
-            </span>
-          </div>
-        )}
       </div>
     </li>
   );
@@ -80,13 +89,15 @@ export function ActivityList() {
   });
 
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="bg-white shadow rounded-lg flex flex-col h-full">
       <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <h3 className="text-lg font-medium leading-6 text-gray-900">Actividad Reciente</h3>
+        <h3 className="text-lg font-medium leading-6 text-gray-900">Movimientos Recientes</h3>
       </div>
-      <div className="px-4 py-3 sm:px-6">
+      <div className="px-4 py-3 sm:px-6 flex-1 overflow-y-auto">
         {isLoading ? (
-          <p className="text-gray-500 text-sm">Cargando actividad...</p>
+          <div className="flex justify-center py-4">
+             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+          </div>
         ) : recentActivity && recentActivity.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {recentActivity.map((movement: any) => (
@@ -96,21 +107,20 @@ export function ActivityList() {
                 product={movement.products?.name}
                 warehouse={movement.warehouse?.name}
                 date={new Date(movement.movement_date).toLocaleDateString()}
-                status="completed"
               />
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500 text-sm">No hay actividad reciente</p>
+          <p className="text-gray-500 text-sm text-center py-4">No hay actividad reciente</p>
         )}
       </div>
-      <div className="px-4 py-4 sm:px-6 border-t border-gray-200">
+      <div className="px-4 py-4 sm:px-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
         <Link
-          to="/dashboard/movimientos"
-          className="text-sm font-medium text-green-600 hover:text-green-500"
+          to="/dashboard/stock-movements"
+          className="text-sm font-medium text-green-600 hover:text-green-500 flex items-center justify-center sm:justify-start"
         >
           Ver todos los movimientos
-          <span aria-hidden="true"> &rarr;</span>
+          <span aria-hidden="true" className="ml-1"> &rarr;</span>
         </Link>
       </div>
     </div>

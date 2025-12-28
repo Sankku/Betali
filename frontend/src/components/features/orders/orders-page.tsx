@@ -502,6 +502,7 @@ export function OrdersPage() {
           getRowId={(order: Order) => order.order_id}
           bulkActions={bulkActions}
           createButtonLabel="New Order"
+          createButtonId="create-order-button"
           onCreateClick={handleCreateOrder}
           onRowDoubleClick={handleViewOrder}
           searchable={false}

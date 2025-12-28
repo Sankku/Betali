@@ -691,6 +691,91 @@ export type Database = {
           }
         ]
       }
+      inventory_alerts: {
+        Row: {
+          alert_id: string
+          organization_id: string
+          product_id: string
+          warehouse_id: string | null
+          alert_type: 'low_stock' | 'out_of_stock' | 'overstock' | 'expiring_soon'
+          severity: 'low' | 'medium' | 'high' | 'critical'
+          status: 'active' | 'resolved' | 'dismissed'
+          current_stock: number
+          min_stock: number | null
+          max_stock: number | null
+          message: string
+          triggered_at: string
+          resolved_at: string | null
+          dismissed_at: string | null
+          dismissed_by: string | null
+          metadata: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_id?: string
+          organization_id: string
+          product_id: string
+          warehouse_id?: string | null
+          alert_type: 'low_stock' | 'out_of_stock' | 'overstock' | 'expiring_soon'
+          severity?: 'low' | 'medium' | 'high' | 'critical'
+          status?: 'active' | 'resolved' | 'dismissed'
+          current_stock: number
+          min_stock?: number | null
+          max_stock?: number | null
+          message: string
+          triggered_at?: string
+          resolved_at?: string | null
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_id?: string
+          organization_id?: string
+          product_id?: string
+          warehouse_id?: string | null
+          alert_type?: 'low_stock' | 'out_of_stock' | 'overstock' | 'expiring_soon'
+          severity?: 'low' | 'medium' | 'high' | 'critical'
+          status?: 'active' | 'resolved' | 'dismissed'
+          current_stock?: number
+          min_stock?: number | null
+          max_stock?: number | null
+          message?: string
+          triggered_at?: string
+          resolved_at?: string | null
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse"
+            referencedColumns: ["warehouse_id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

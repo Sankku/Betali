@@ -29,8 +29,11 @@ const authRoutes = require('./routes/auth');
 const taxRateRoutes = require('./routes/taxRates');
 const discountRuleRoutes = require('./routes/discountRules');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlans');
+const subscriptionRoutes = require('./routes/subscriptions');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
+const inventoryAlertRoutes = require('./routes/inventoryAlerts');
+const { alertChecker } = require('./jobs/inventoryAlertChecker');
 
 /**
  * Application class following OOP principles
@@ -199,6 +202,8 @@ class Application {
     this.app.use('/api/tax-rates', taxRateRoutes);
     this.app.use('/api/discount-rules', discountRuleRoutes);
     this.app.use('/api/subscription-plans', subscriptionPlanRoutes);
+    this.app.use('/api/subscriptions', subscriptionRoutes);
+    this.app.use('/api/alerts', inventoryAlertRoutes);
 
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {
@@ -225,7 +230,8 @@ class Application {
           suppliers: '/api/suppliers',
           orders: '/api/orders',
           taxRates: '/api/tax-rates',
-          discountRules: '/api/discount-rules'
+          discountRules: '/api/discount-rules',
+          alerts: '/api/alerts'
         }
       });
     });
@@ -264,7 +270,7 @@ class Application {
   async start() {
     try {
       await this.initialize();
-      
+
       const server = this.app.listen(this.port, () => {
         this.logger.info(`Server started successfully`, {
           port: this.port,
@@ -272,6 +278,10 @@ class Application {
           url: `http://localhost:${this.port}`
         });
       });
+
+      // Start inventory alert checker
+      alertChecker.start();
+      this.logger.info('Inventory alert checker started');
 
       this.setupGracefulShutdown(server);
 
@@ -292,6 +302,10 @@ class Application {
       
       server.close(async () => {
         try {
+          // Stop background jobs
+          alertChecker.stop();
+          this.logger.info('Background jobs stopped');
+
           // Close database connections
           if (this.db && this.db.close) {
             await this.db.close();
@@ -300,7 +314,7 @@ class Application {
 
           // Clear any running intervals/timeouts
           // Note: Supabase client handles its own connection pooling
-          
+
           this.logger.info('Graceful shutdown completed');
           process.exit(0);
         } catch (error) {

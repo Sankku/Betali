@@ -227,6 +227,7 @@ const ProductsPage: React.FC = () => {
             getRowId={(product: Product) => product.product_id}
             bulkActions={bulkActions}
             createButtonLabel={t('products.add')}
+            createButtonId="create-product-button"
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(product) => openModal('edit', product)}
             searchable={true}

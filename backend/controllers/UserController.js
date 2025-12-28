@@ -8,8 +8,9 @@ const bcrypt = require('bcryptjs');
  * Follows the separation of concerns principle
  */
 class UserController {
-  constructor(userService) {
+  constructor(userService, organizationService) {
     this.userService = userService;
+    this.organizationService = organizationService;
     this.logger = new Logger('UserController');
   }
 
@@ -33,7 +34,7 @@ class UserController {
       
       // Transform users data to remove sensitive information
       const transformedUsers = users.map(user => {
-        const { password_hash, ...userWithoutSensitive } = user;
+        const { password_hash, ...userWithoutSensitive } = user; // eslint-disable-line no-unused-vars
         return {
           ...userWithoutSensitive,
           // Add last_login field if it doesn't exist
@@ -79,7 +80,7 @@ class UserController {
       const user = await this.userService.getUserById(userId);
       
       // Remove sensitive information
-      const { password_hash, ...userProfile } = user;
+      const { password_hash, ...userProfile } = user; // eslint-disable-line no-unused-vars
       
       res.json({ data: userProfile });
     } catch (error) {
@@ -98,7 +99,7 @@ class UserController {
       const user = await this.userService.getUserById(id);
       
       // Remove sensitive information
-      const { password_hash, ...userProfile } = user;
+      const { password_hash, ...userProfile } = user; // eslint-disable-line no-unused-vars
       
       res.json({ data: userProfile });
     } catch (error) {
@@ -237,7 +238,7 @@ class UserController {
       }
       
       // Remove sensitive information from response
-      const { password_hash, ...userResponse } = newUser;
+      const { password_hash, ...userResponse } = newUser; // eslint-disable-line no-unused-vars
       
       this.logger.info('User created successfully', {
         userId: newUser.user_id,
@@ -310,7 +311,7 @@ class UserController {
       const updatedUser = await this.userService.updateUser(id, userData);
       
       // Remove sensitive information from response
-      const { password_hash, ...userResponse } = updatedUser;
+      const { password_hash, ...userResponse } = updatedUser; // eslint-disable-line no-unused-vars
 
       this.logger.info('User updated successfully', {
         userId: id,
@@ -343,13 +344,29 @@ class UserController {
         }
       });
 
+
       // Add update metadata
       filteredData.updated_at = new Date().toISOString();
 
-      const updatedUser = await this.userService.updateUser(userId, filteredData);
+      this.logger.info('Updating current user profile', {
+        userId,
+        filteredData
+      });
+
+      let updatedUser;
+      try {
+        updatedUser = await this.userService.updateUser(userId, filteredData);
+      } catch (updateError) {
+        this.logger.error('Error in userService.updateUser', {
+          error: updateError.message,
+          stack: updateError.stack,
+          userId
+        });
+        throw updateError;
+      }
       
       // Remove sensitive information from response
-      const { password_hash, ...userResponse } = updatedUser;
+      const { password_hash, ...userResponse } = updatedUser; // eslint-disable-line no-unused-vars
 
       this.logger.info('User profile updated', {
         userId,
@@ -358,6 +375,11 @@ class UserController {
 
       res.json({ data: userResponse });
     } catch (error) {
+      this.logger.error('Error in updateCurrentUserProfile controller', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id
+      });
       next(error);
     }
   }
@@ -509,36 +531,24 @@ class UserController {
   async getUserContext(req, res, next) {
     try {
       const userId = req.user.id;
-      const user = req.user;
+      // Fetch fresh user data from database to ensure up-to-date profile info (name, role, etc.)
+      // ignoring stale data that might be in the JWT token (req.user)
+      const user = await this.userService.getUserById(userId);
       
+      // Use organization ID from request context (middleware)
+      const currentOrganizationId = req.user.currentOrganizationId;
+
       // Get user permissions based on role
       const userPermissions = getUserPermissions(user.role);
       
       // Get current organization details if set
       let currentOrganization = null;
-      if (user.currentOrganizationId) {
+      if (currentOrganizationId && this.organizationService) {
         try {
-          // Use the organization service if available
-          const OrganizationService = require('../services/OrganizationService');
-          const OrganizationRepository = require('../repositories/OrganizationRepository');
-          const UserOrganizationRepository = require('../repositories/UserOrganizationRepository');
-          const UserRepository = require('../repositories/UserRepository');
-          const { ProductRepository } = require('../repositories/ProductRepository');
-          const { WarehouseRepository } = require('../repositories/WarehouseRepository');
-          const { StockMovementRepository } = require('../repositories/StockMovementRepository');
-          
-          const organizationService = new OrganizationService(
-            new OrganizationRepository(this.client),
-            new UserOrganizationRepository(this.client),
-            new UserRepository(this.client),
-            new ProductRepository(this.client),
-            new WarehouseRepository(this.client),
-            new StockMovementRepository(this.client)
-          );
-          currentOrganization = await organizationService.getById(user.currentOrganizationId);
+          currentOrganization = await this.organizationService.getById(currentOrganizationId);
         } catch (error) {
           this.logger.warn('Error fetching current organization', {
-            organizationId: user.currentOrganizationId,
+            organizationId: currentOrganizationId,
             error: error.message
           });
         }
@@ -546,7 +556,7 @@ class UserController {
       
       const userContext = {
         user: {
-          id: user.id,
+          id: user.user_id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -556,14 +566,14 @@ class UserController {
         },
         permissions: userPermissions,
         currentOrganization,
-        hasOrganizationContext: !!user.currentOrganizationId
+        hasOrganizationContext: !!currentOrganizationId
       };
       
       this.logger.info('User context retrieved', {
         userId,
         role: user.role,
         hasOrganization: !!currentOrganization,
-        organizationId: user.currentOrganizationId
+        organizationId: currentOrganizationId
       });
       
       res.json({ data: userContext });
