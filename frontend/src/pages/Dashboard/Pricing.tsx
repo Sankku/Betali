@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, X } from 'lucide-react';
 import { subscriptionService } from '../../services/api/subscriptionService';
+import { mercadoPagoService } from '../../services/api/mercadoPagoService';
 import { PricingCard } from '../../components/features/billing/PricingCard';
+import { PaymentModal } from '../../components/features/billing/PaymentModal';
 import { Button } from '../../components/ui/button';
 import { useToast } from '../../hooks/useToast';
 import { DashboardLayout } from '../../components/layout/Dashboard';
@@ -11,6 +13,8 @@ import { DashboardLayout } from '../../components/layout/Dashboard';
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,26 +31,31 @@ export default function Pricing() {
     queryFn: () => subscriptionService.getCurrentSubscription(),
   });
 
-  // Request plan change mutation
-  const { mutate: requestPlanChange, isPending: isRequestingChange } = useMutation({
-    mutationFn: (planId: string) =>
-      subscriptionService.requestPlanChange({
+  // Create pending subscription before opening payment modal
+  const { mutate: createPendingSubscription, isPending: isCreatingSubscription } = useMutation({
+    mutationFn: async ({ planId, currency }: { planId: string; currency: string }) => {
+      // Create pending subscription first
+      const subscription = await subscriptionService.requestPlanChange({
         planId,
-        currency: 'USD',
-      }),
-    onSuccess: () => {
-      toast({
-        title: 'Plan change requested',
-        description: 'Your plan upgrade request has been submitted. Our team will contact you shortly.',
-        variant: 'success',
+        currency,
       });
-      queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
-      setSelectedPlanId(null);
+      return { subscription, planId };
+    },
+    onSuccess: ({ subscription, planId }) => {
+      // Store the subscription ID and open payment modal
+      setCurrentSubscriptionId(subscription.subscription_id);
+      setPaymentModalOpen(true);
+
+      toast({
+        title: 'Suscripción creada',
+        description: 'Completa el pago para activar tu plan',
+        variant: 'default',
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Request failed',
-        description: error.response?.data?.message || 'Failed to request plan change. Please try again.',
+        title: 'Error',
+        description: error.message || 'No pudimos crear la suscripción. Por favor intenta nuevamente.',
         variant: 'destructive',
       });
       setSelectedPlanId(null);
@@ -63,9 +72,12 @@ export default function Pricing() {
       return;
     }
 
-    // Request plan change
+    // Create pending subscription (will trigger payment flow via CheckoutButton)
     setSelectedPlanId(planId);
-    requestPlanChange(planId);
+    createPendingSubscription({
+      planId,
+      currency: 'ARS' // Cambiar a 'USD' si prefieres
+    });
   };
 
   const currentPlanId = currentSubscription?.subscription?.plan_id;
@@ -127,18 +139,44 @@ export default function Pricing() {
 
           {/* Pricing Cards */}
           <div className="mt-12 grid gap-8 lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
-            {plans?.map((plan) => (
-              <PricingCard
-                key={plan.plan_id}
-                plan={plan}
-                isCurrentPlan={currentPlanId === plan.plan_id}
-                isPopular={plan.name === 'professional'}
-                billingCycle={billingCycle}
-                onSelectPlan={handleSelectPlan}
-                isLoading={isRequestingChange && selectedPlanId === plan.plan_id}
-              />
-            ))}
+            {plans?.map((plan) => {
+              const isLoadingThisPlan = isCreatingSubscription && selectedPlanId === plan.plan_id;
+
+              return (
+                <PricingCard
+                  key={plan.plan_id}
+                  plan={plan}
+                  isCurrentPlan={currentPlanId === plan.plan_id}
+                  isPopular={plan.name === 'professional'}
+                  billingCycle={billingCycle}
+                  onSelectPlan={handleSelectPlan}
+                  isLoading={isLoadingThisPlan}
+                />
+              );
+            })}
           </div>
+
+          {/* Payment Modal */}
+          {paymentModalOpen && currentSubscriptionId && selectedPlanId && (
+            <PaymentModal
+              isOpen={paymentModalOpen}
+              onClose={() => {
+                setPaymentModalOpen(false);
+                setCurrentSubscriptionId(null);
+                setSelectedPlanId(null);
+              }}
+              subscriptionId={currentSubscriptionId}
+              planId={selectedPlanId}
+              planName={plans?.find(p => p.plan_id === selectedPlanId)?.display_name || ''}
+              amount={
+                billingCycle === 'monthly'
+                  ? plans?.find(p => p.plan_id === selectedPlanId)?.price_monthly || 0
+                  : plans?.find(p => p.plan_id === selectedPlanId)?.price_yearly || 0
+              }
+              billingCycle={billingCycle}
+              currency="ARS"
+            />
+          )}
 
           {/* Feature Comparison Table */}
           <div className="mt-24">

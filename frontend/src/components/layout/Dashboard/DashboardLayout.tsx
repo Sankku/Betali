@@ -17,6 +17,7 @@ import {
   Settings,
   HelpCircle,
   CreditCard,
+  Receipt,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 import { useOrganization } from '../../../context/OrganizationContext';
@@ -121,6 +122,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       path: '/dashboard/pricing',
       icon: <CreditCard className="w-5 h-5" />,
       label: t('nav.pricing'),
+      checkAccess: () => true, // Always visible for all users
+    },
+    {
+      path: '/dashboard/subscription',
+      icon: <Receipt className="w-5 h-5" />,
+      label: t('nav.subscription') || 'Mi Suscripción',
       checkAccess: () => true, // Always visible for all users
     },
     {

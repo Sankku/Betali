@@ -100,16 +100,38 @@ export function SupplierForm({
   // Load supplier data for edit/view mode
   useEffect(() => {
     if (supplier && (isEditMode || isViewMode)) {
+      // Find matching options robustly (handling potential case differences)
+      const businessTypeOptions = supplierService.getBusinessTypeOptions();
+      const paymentTermsOptions = supplierService.getPaymentTermsOptions();
+
+      const findMatchingOption = (value: string | undefined | null, options: { value: string; label: string }[]) => {
+        if (!value) return '';
+        // 1. Try exact value match
+        const exactMatch = options.find(o => o.value === value);
+        if (exactMatch) return exactMatch.value;
+        
+        // 2. Try case-insensitive value match
+        const caseInsensitiveMatch = options.find(o => o.value.toLowerCase() === value.toLowerCase());
+        if (caseInsensitiveMatch) return caseInsensitiveMatch.value;
+
+        // 3. Try matching against the label (e.g. backend returns "Fabricante" but value is "Manufacturer")
+        const labelMatch = options.find(o => o.label.toLowerCase() === value.toLowerCase());
+        if (labelMatch) return labelMatch.value;
+
+        // 4. Return original value as fallback (though it likely won't show if not in options)
+        return value;
+      };
+
       reset({
         name: supplier.name || '',
         email: supplier.email || '',
         cuit: supplier.cuit || '',
         phone: supplier.phone || '',
         address: supplier.address || '',
-        business_type: supplier.business_type || '',
+        business_type: findMatchingOption(supplier.business_type, businessTypeOptions),
         contact_person: supplier.contact_person || '',
         website: supplier.website || '',
-        payment_terms: supplier.payment_terms || '',
+        payment_terms: findMatchingOption(supplier.payment_terms, paymentTermsOptions),
         tax_category: supplier.tax_category || '',
         credit_limit: supplier.credit_limit || undefined,
         is_preferred: supplier.is_preferred || false,

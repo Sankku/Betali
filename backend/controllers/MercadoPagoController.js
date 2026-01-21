@@ -1,0 +1,565 @@
+const mercadoPagoService = require('../services/MercadoPagoService');
+const { Logger } = require('../utils/Logger');
+const supabase = require('../lib/supabaseClient');
+
+/**
+ * MercadoPagoController - HTTP handlers for MercadoPago payment operations
+ */
+class MercadoPagoController {
+  constructor() {
+    this.logger = new Logger('MercadoPagoController');
+  }
+
+  /**
+   * Create checkout preference for subscription payment
+   * POST /api/mercadopago/create-checkout
+   *
+   * Request body:
+   * {
+   *   subscriptionId: string,
+   *   planId: string,
+   *   billingCycle: 'monthly' | 'yearly',
+   *   currency: 'ARS' | 'USD' | etc
+   * }
+   */
+  async createCheckout(req, res, next) {
+    try {
+      const { subscriptionId, planId, billingCycle = 'monthly', currency = 'ARS' } = req.body;
+      const user = req.user;
+
+      // Validation
+      if (!subscriptionId || !planId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: subscriptionId, planId'
+        });
+      }
+
+      this.logger.info('Creating MercadoPago checkout:', {
+        userId: user.id,
+        subscriptionId,
+        planId,
+        billingCycle,
+        currency
+      });
+
+      // Get subscription details
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          organizations!inner (
+            organization_id,
+            name
+          )
+        `)
+        .eq('subscription_id', subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        this.logger.error('Subscription not found:', { subscriptionId, error: subError });
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+
+      // Verify user belongs to this organization
+      if (subscription.organization_id !== user.currentOrganizationId) {
+        this.logger.warn('Unauthorized checkout attempt:', {
+          userId: user.id,
+          userOrgId: user.currentOrganizationId,
+          subscriptionOrgId: subscription.organization_id
+        });
+        return res.status(403).json({
+          success: false,
+          error: 'You do not have permission to process this payment'
+        });
+      }
+
+      // Get plan details
+      const { data: plan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('plan_id', planId)
+        .single();
+
+      if (planError || !plan) {
+        this.logger.error('Plan not found:', { planId, error: planError });
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription plan not found'
+        });
+      }
+
+      // Calculate amount based on billing cycle
+      const amount = billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly;
+
+      if (amount === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Free plans do not require payment'
+        });
+      }
+
+      // Create MercadoPago preference
+      const preference = await mercadoPagoService.createPaymentPreference({
+        subscriptionId: subscription.subscription_id,
+        organizationId: subscription.organization_id,
+        planId: plan.plan_id,
+        amount,
+        currency,
+        billingCycle,
+        userEmail: user.email,
+        organizationName: subscription.organizations.name
+      });
+
+      // Update subscription with MP preference ID
+      await supabase
+        .from('subscriptions')
+        .update({
+          payment_provider: 'mercadopago',
+          provider_subscription_id: preference.preferenceId,
+          currency,
+          billing_cycle: billingCycle,
+          updated_at: new Date().toISOString()
+        })
+        .eq('subscription_id', subscriptionId);
+
+      this.logger.info('Checkout created successfully:', {
+        subscriptionId,
+        preferenceId: preference.preferenceId
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          preferenceId: preference.preferenceId,
+          initPoint: preference.initPoint,
+          sandboxInitPoint: preference.sandboxInitPoint,
+          subscriptionId: subscription.subscription_id,
+          amount,
+          currency,
+          billingCycle
+        },
+        message: 'Checkout preference created successfully'
+      });
+
+    } catch (error) {
+      this.logger.error('Error creating checkout:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Get payment status
+   * GET /api/mercadopago/payment/:paymentId
+   */
+  async getPaymentStatus(req, res, next) {
+    try {
+      const { paymentId } = req.params;
+
+      if (!paymentId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment ID is required'
+        });
+      }
+
+      this.logger.info('Fetching payment status:', { paymentId });
+
+      const paymentInfo = await mercadoPagoService.getPaymentInfo(paymentId);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          id: paymentInfo.id,
+          status: paymentInfo.status,
+          statusDetail: paymentInfo.status_detail,
+          amount: paymentInfo.transaction_amount,
+          currency: paymentInfo.currency_id,
+          paymentMethod: paymentInfo.payment_method_id,
+          paymentType: paymentInfo.payment_type_id,
+          dateCreated: paymentInfo.date_created,
+          dateApproved: paymentInfo.date_approved,
+          externalReference: paymentInfo.external_reference
+        }
+      });
+
+    } catch (error) {
+      this.logger.error('Error fetching payment status:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Handle webhook notifications from Mercado Pago
+   * POST /api/webhooks/mercadopago
+   *
+   * This endpoint receives payment notifications and processes them
+   */
+  async handleWebhook(req, res, next) {
+    try {
+      const notification = req.body;
+
+      this.logger.info('Received MercadoPago webhook:', {
+        type: notification.type,
+        action: notification.action,
+        dataId: notification.data?.id
+      });
+
+      // Log webhook to database for debugging
+      await this.logWebhook(notification, req.headers);
+
+      // Process the notification
+      const result = await mercadoPagoService.processWebhookNotification(notification);
+
+      this.logger.info('Webhook processed successfully:', result);
+
+      // Always return 200 to MP to acknowledge receipt
+      return res.status(200).json({
+        success: true,
+        message: 'Webhook received and processed'
+      });
+
+    } catch (error) {
+      this.logger.error('Error processing webhook:', error);
+
+      // Still return 200 to prevent MP from retrying
+      // But log the error for manual review
+      return res.status(200).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Log webhook notification to database for debugging
+   */
+  async logWebhook(notification, headers) {
+    try {
+      await supabase
+        .from('webhook_logs')
+        .insert({
+          provider: 'mercadopago',
+          event_type: notification.type,
+          event_data: notification,
+          headers: {
+            'x-signature': headers['x-signature'],
+            'x-request-id': headers['x-request-id']
+          },
+          processed: true,
+          created_at: new Date().toISOString()
+        });
+    } catch (error) {
+      this.logger.error('Error logging webhook:', error);
+      // Don't throw - logging failure shouldn't break webhook processing
+    }
+  }
+
+  /**
+   * Get subscription payment history
+   * GET /api/mercadopago/subscription/:subscriptionId/payments
+   */
+  async getSubscriptionPayments(req, res, next) {
+    try {
+      const { subscriptionId } = req.params;
+      const user = req.user;
+
+      // Get subscription and verify ownership
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('subscription_id', subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+
+      if (subscription.organization_id !== user.currentOrganizationId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      // Get payment history
+      const { data: payments, error: paymentsError } = await supabase
+        .from('manual_payments')
+        .select('*')
+        .eq('subscription_id', subscriptionId)
+        .order('payment_date', { ascending: false });
+
+      if (paymentsError) {
+        throw paymentsError;
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: payments,
+        count: payments.length
+      });
+
+    } catch (error) {
+      this.logger.error('Error fetching subscription payments:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Cancel a subscription
+   * POST /api/mercadopago/subscription/:subscriptionId/cancel
+   */
+  async cancelSubscription(req, res, next) {
+    try {
+      const { subscriptionId } = req.params;
+      const user = req.user;
+      const { reason } = req.body;
+
+      // Verify ownership
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('subscription_id', subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+
+      if (subscription.organization_id !== user.currentOrganizationId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      // Cancel subscription
+      const result = await mercadoPagoService.cancelSubscription(subscriptionId);
+
+      // Log to history
+      await supabase
+        .from('subscription_history')
+        .insert({
+          subscription_id: subscriptionId,
+          organization_id: subscription.organization_id,
+          previous_plan_id: subscription.plan_id,
+          new_plan_id: null,
+          change_type: 'cancellation',
+          reason: reason || 'User cancelled subscription',
+          changed_by: user.id
+        });
+
+      this.logger.info('Subscription cancelled:', {
+        subscriptionId,
+        userId: user.id,
+        reason
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: result.subscription,
+        message: 'Subscription cancelled successfully'
+      });
+
+    } catch (error) {
+      this.logger.error('Error cancelling subscription:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Get supported payment methods for a country
+   * GET /api/mercadopago/payment-methods/:countryCode
+   */
+  async getPaymentMethods(req, res, next) {
+    try {
+      const { countryCode = 'AR' } = req.params;
+
+      const methods = mercadoPagoService.getSupportedPaymentMethods(countryCode);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          country: countryCode,
+          methods
+        }
+      });
+
+    } catch (error) {
+      this.logger.error('Error fetching payment methods:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Process payment from Payment Brick
+   * POST /api/mercadopago/process-payment
+   */
+  async processPayment(req, res, next) {
+    try {
+      const { paymentData, subscriptionId, amount, currency } = req.body;
+      const user = req.user;
+
+      this.logger.info('Processing Payment Brick payment:', {
+        userId: user.id,
+        subscriptionId,
+        amount,
+        currency,
+        paymentData
+      });
+
+      // Get subscription details with plan info
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          subscription_plans!inner (
+            plan_id,
+            name,
+            trial_period_days,
+            price_monthly,
+            price_yearly
+          )
+        `)
+        .eq('subscription_id', subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        this.logger.error('Subscription not found:', subError);
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+
+      // Verify user belongs to this organization
+      if (subscription.organization_id !== user.currentOrganizationId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      // Verify subscription is in pending_payment status
+      if (subscription.status !== 'pending_payment') {
+        this.logger.warn('Subscription is not pending payment:', {
+          subscriptionId,
+          currentStatus: subscription.status
+        });
+        return res.status(400).json({
+          success: false,
+          error: `Subscription status is ${subscription.status}, not pending_payment`
+        });
+      }
+
+      // Extract the actual payment data from the brick's formData
+      // The brick sends: { paymentType, selectedPaymentMethod, formData: {...actual payment data} }
+      const actualPaymentData = paymentData.formData || paymentData;
+
+      this.logger.info('Extracted payment data:', actualPaymentData);
+
+      // Process payment with MercadoPago
+      const payment = await mercadoPagoService.processPayment({
+        ...actualPaymentData,
+        description: `Suscripción ${subscription.plan_id}`,
+        external_reference: subscriptionId,
+        metadata: {
+          subscription_id: subscriptionId,
+          organization_id: subscription.organization_id
+        }
+      });
+
+      this.logger.info('Payment processed:', {
+        paymentId: payment.id,
+        status: payment.status
+      });
+
+      // Record payment in database
+      await supabase
+        .from('payments')
+        .insert({
+          payment_id: payment.id.toString(),
+          subscription_id: subscriptionId,
+          organization_id: subscription.organization_id,
+          amount: payment.transaction_amount,
+          currency: payment.currency_id,
+          payment_method: payment.payment_method_id,
+          status: payment.status === 'approved' ? 'confirmed' : payment.status,
+          payment_date: new Date().toISOString(),
+          confirmed_at: payment.status === 'approved' ? new Date().toISOString() : null,
+          reference_number: payment.id.toString()
+        });
+
+      // Update subscription if payment approved
+      if (payment.status === 'approved') {
+        const now = new Date();
+        const plan = subscription.subscription_plans;
+        const trialDays = plan.trial_period_days || 0;
+
+        // Determine subscription status based on trial period
+        const newStatus = trialDays > 0 ? 'trialing' : 'active';
+
+        // Calculate period end based on trial or billing cycle
+        let periodEnd;
+        if (trialDays > 0) {
+          // Trial period
+          periodEnd = new Date(now);
+          periodEnd.setDate(periodEnd.getDate() + trialDays);
+        } else {
+          // Regular billing (30 days for monthly)
+          periodEnd = new Date(now);
+          periodEnd.setDate(periodEnd.getDate() + 30);
+        }
+
+        this.logger.info('Activating subscription after payment:', {
+          subscriptionId,
+          newStatus,
+          trialDays,
+          periodStart: now.toISOString(),
+          periodEnd: periodEnd.toISOString()
+        });
+
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: newStatus,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            trial_end: trialDays > 0 ? periodEnd.toISOString() : null,
+            updated_at: now.toISOString(),
+            metadata: {
+              ...subscription.metadata,
+              pending_payment: false,
+              payment_confirmed_at: now.toISOString(),
+              first_payment_id: payment.id.toString()
+            }
+          })
+          .eq('subscription_id', subscriptionId);
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          paymentId: payment.id,
+          status: payment.status,
+          statusDetail: payment.status_detail
+        }
+      });
+
+    } catch (error) {
+      this.logger.error('Error processing payment:', error);
+      next(error);
+    }
+  }
+}
+
+module.exports = new MercadoPagoController();

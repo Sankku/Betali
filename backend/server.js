@@ -30,6 +30,7 @@ const taxRateRoutes = require('./routes/taxRates');
 const discountRuleRoutes = require('./routes/discountRules');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlans');
 const subscriptionRoutes = require('./routes/subscriptions');
+const mercadoPagoRoutes = require('./routes/mercadopago');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
 const inventoryAlertRoutes = require('./routes/inventoryAlerts');
@@ -203,6 +204,8 @@ class Application {
     this.app.use('/api/discount-rules', discountRuleRoutes);
     this.app.use('/api/subscription-plans', subscriptionPlanRoutes);
     this.app.use('/api/subscriptions', subscriptionRoutes);
+    this.app.use('/api/mercadopago', mercadoPagoRoutes);
+    this.app.use('/api', mercadoPagoRoutes); // For webhook route /api/webhooks/mercadopago
     this.app.use('/api/alerts', inventoryAlertRoutes);
 
     // Debug routes (development only)

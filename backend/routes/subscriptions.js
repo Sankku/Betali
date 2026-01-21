@@ -11,4 +11,8 @@ router.get('/current', (req, res, next) => {
   subscriptionController.getCurrentSubscription(req, res, next);
 });
 
+router.post('/request-change', (req, res, next) => {
+  subscriptionController.requestPlanChange(req, res, next);
+});
+
 module.exports = router;

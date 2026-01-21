@@ -25,7 +25,7 @@ class BaseRepository {
         if (error && error.code !== 'PGRST116') throw error;
         return data;
       } catch (error) {
-        throw new Error(`Error finding ${this.table} by ID: ${error.message}`);
+        throw new Error(`Error finding ${this.table} by ID: ${error?.message || String(error)}`);
       }
     }
   
@@ -62,7 +62,7 @@ class BaseRepository {
   
         return data || [];
       } catch (error) {
-        throw new Error(`Error finding ${this.table}: ${error.message}`);
+        throw new Error(`Error finding ${this.table}: ${error?.message || String(error)}`);
       }
     }
   
@@ -73,16 +73,43 @@ class BaseRepository {
      */
     async create(entityData) {
       try {
-        const { data, error } = await this.client
+        console.log(`[BaseRepository] Attempting to create in ${this.table}:`, entityData);
+
+        const response = await this.client
           .from(this.table)
           .insert(entityData)
           .select()
           .single();
-  
-        if (error) throw error;
+
+        console.log(`[BaseRepository] Full Supabase response for ${this.table}:`, response);
+
+        const { data, error } = response;
+
+        console.log(`[BaseRepository] Destructured - data:`, data, 'error:', error);
+
+        if (error) {
+          // Log the full error for debugging
+          console.error(`Supabase error creating ${this.table}:`, {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            status: error.status,
+            statusText: error.statusText,
+            fullError: error
+          });
+          throw error;
+        }
+
+        console.log(`[BaseRepository] Successfully created in ${this.table}:`, data);
         return data;
       } catch (error) {
-        throw new Error(`Error creating ${this.table}: ${error.message}`);
+        // If it's a Supabase error object, extract useful info
+        if (error.code || error.details || error.hint) {
+          const errorMsg = `Error creating ${this.table}: ${error.message || error.code} - ${error.details || ''} ${error.hint || ''}`;
+          throw new Error(errorMsg);
+        }
+        throw new Error(`Error creating ${this.table}: ${error?.message || JSON.stringify(error)}`);
       }
     }
   
@@ -105,7 +132,7 @@ class BaseRepository {
         if (error) throw error;
         return data;
       } catch (error) {
-        throw new Error(`Error updating ${this.table}: ${error.message}`);
+        throw new Error(`Error updating ${this.table}: ${error?.message || String(error)}`);
       }
     }
   
@@ -125,7 +152,7 @@ class BaseRepository {
         if (error) throw error;
         return true;
       } catch (error) {
-        throw new Error(`Error deleting ${this.table}: ${error.message}`);
+        throw new Error(`Error deleting ${this.table}: ${error?.message || String(error)}`);
       }
     }
   
@@ -151,7 +178,7 @@ class BaseRepository {
   
         return count || 0;
       } catch (error) {
-        throw new Error(`Error counting ${this.table}: ${error.message}`);
+        throw new Error(`Error counting ${this.table}: ${error?.message || String(error)}`);
       }
     }
 
@@ -175,7 +202,7 @@ class BaseRepository {
 
         return count || (data ? data.length : 0);
       } catch (error) {
-        throw new Error(`Error deleting ${this.table} by filter: ${error.message}`);
+        throw new Error(`Error deleting ${this.table} by filter: ${error?.message || String(error)}`);
       }
     }
   }
