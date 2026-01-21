@@ -184,18 +184,7 @@ export default function TaxManagement() {
       <DashboardLayout>
         <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tax Management</h1>
-          <p className="text-gray-800 mt-1">
-            Configure tax rates and rules for your products and orders
-          </p>
-        </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Tax Rate
-        </Button>
-      </div>
+
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

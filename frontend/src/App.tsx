@@ -29,6 +29,10 @@ import TaxManagement from "./pages/Dashboard/TaxManagement";
 import Settings from "./pages/Dashboard/Settings";
 import Help from "./pages/Dashboard/Help";
 import Pricing from "./pages/Dashboard/Pricing";
+import SubscriptionManagement from "./pages/Dashboard/SubscriptionManagement";
+import PaymentSuccess from "./pages/Dashboard/PaymentSuccess";
+import PaymentFailure from "./pages/Dashboard/PaymentFailure";
+import PaymentPending from "./pages/Dashboard/PaymentPending";
 import { OnboardingWizard } from "./components/features/help/OnboardingWizard";
 
 function AppContent() {
@@ -156,6 +160,38 @@ function AppContent() {
                     element={
                       <ProtectedRoute>
                         <Pricing />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/subscription"
+                    element={
+                      <ProtectedRoute>
+                        <SubscriptionManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment/success"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentSuccess />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment/failure"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentFailure />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment/pending"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentPending />
                       </ProtectedRoute>
                     }
                   />

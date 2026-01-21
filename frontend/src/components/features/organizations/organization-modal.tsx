@@ -111,7 +111,7 @@ export function OrganizationModal({
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 disabled={isViewMode}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                 placeholder="Enter organization name"
                 required
               />
@@ -127,7 +127,7 @@ export function OrganizationModal({
                 value={formData.slug}
                 onChange={(e) => handleInputChange('slug', e.target.value)}
                 disabled={isViewMode}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                 placeholder="organization-slug"
                 pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
                 title="Only lowercase letters, numbers, and hyphens are allowed"
@@ -147,7 +147,7 @@ export function OrganizationModal({
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 disabled={isViewMode}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                 placeholder="Enter organization description"
                 rows={3}
               />

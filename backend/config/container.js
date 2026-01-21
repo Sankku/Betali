@@ -23,6 +23,7 @@ const PurchaseOrderRepository = require('../repositories/PurchaseOrderRepository
 const PurchaseOrderDetailRepository = require('../repositories/PurchaseOrderDetailRepository');
 const { InventoryAlertRepository } = require('../repositories/InventoryAlertRepository');
 const { SubscriptionRepository } = require('../repositories/SubscriptionRepository');
+const { SubscriptionPlanRepository } = require('../repositories/SubscriptionPlanRepository');
 
 const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
@@ -38,6 +39,7 @@ const PricingService = require('../services/PricingService');
 const PurchaseOrderService = require('../services/PurchaseOrderService');
 const { InventoryAlertService } = require('../services/InventoryAlertService');
 const { SubscriptionService } = require('../services/SubscriptionService');
+const { SubscriptionPlanService } = require('../services/SubscriptionPlanService');
 
 const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
@@ -57,6 +59,7 @@ const { TaxRateController } = require('../controllers/TaxRateController');
 const { DiscountRuleController } = require('../controllers/DiscountRuleController');
 const { InventoryAlertController } = require('../controllers/InventoryAlertController');
 const { SubscriptionController } = require('../controllers/SubscriptionController');
+const { SubscriptionPlanController } = require('../controllers/SubscriptionPlanController');
 
 /**
  * Dependency injection container
@@ -246,6 +249,11 @@ function initializeContainer() {
     return new SubscriptionRepository(dbConfig.getClient());
   }, true);
 
+  container.register('subscriptionPlanRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new SubscriptionPlanRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
@@ -390,6 +398,12 @@ function initializeContainer() {
     return new SubscriptionService(subscriptionRepository, logger);
   }, true);
 
+  container.register('subscriptionPlanService', () => {
+    const subscriptionPlanRepository = container.get('subscriptionPlanRepository');
+    const logger = container.get('logger');
+    return new SubscriptionPlanService(subscriptionPlanRepository, logger);
+  }, true);
+
   container.register('productController', () => {
     const productService = container.get('productService');
     return new ProductController(productService);
@@ -473,6 +487,11 @@ function initializeContainer() {
   container.register('subscriptionController', () => {
     const subscriptionService = container.get('subscriptionService');
     return new SubscriptionController(subscriptionService);
+  }, true);
+
+  container.register('subscriptionPlanController', () => {
+    const subscriptionPlanService = container.get('subscriptionPlanService');
+    return new SubscriptionPlanController(subscriptionPlanService);
   }, true);
 }
 
@@ -585,6 +604,14 @@ const ServiceFactory = {
 
   createSubscriptionController() {
     return container.get('subscriptionController');
+  },
+
+  createSubscriptionPlanService() {
+    return container.get('subscriptionPlanService');
+  },
+
+  createSubscriptionPlanController() {
+    return container.get('subscriptionPlanController');
   }
 };
 

@@ -42,18 +42,13 @@ export function CRUDPage<TEntity>({
   return (
     <DashboardLayout>
       <div className={cn('space-y-6', className)}>
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{title}</h1>
-            {description && <p className="text-neutral-600">{description}</p>}
-          </div>
-
-          {headerActions && (
+        {headerActions && (
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-end md:space-y-0">
             <div className="flex items-center space-x-3">
               {headerActions}
             </div>
-          )}
-        </div>
+          </div>
+        )}
         {beforeTable}
         {error ? (
           <div className="p-6 text-center">

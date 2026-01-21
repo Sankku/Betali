@@ -316,7 +316,7 @@ class SubscriptionService {
       `${this.SUBSCRIPTIONS_PATH}/request-change`,
       data
     );
-    return response.data.subscription;
+    return response.subscription;
   }
 
   /**

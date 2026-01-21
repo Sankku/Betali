@@ -400,11 +400,7 @@ export function OrdersPage() {
       </Helmet>
 
       <div className="space-y-6">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-gray-600">Manage your sales orders</p>
-        </div>
+
 
         {/* Stats Cards */}
         {orderStats && (

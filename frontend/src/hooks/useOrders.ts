@@ -115,11 +115,19 @@ export function useUpdateOrderStatus() {
     onSuccess: (updatedOrder) => {
       // Update specific order in cache
       queryClient.setQueryData(ORDER_QUERY_KEYS.detail(updatedOrder.order_id), updatedOrder);
-      
+
       // Invalidate orders list to reflect changes
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats() });
-      
+
+      // If order was marked as shipped, invalidate stock-related queries
+      // because stock deduction happens on the backend
+      if (updatedOrder.status === 'shipped') {
+        queryClient.invalidateQueries({ queryKey: ['stock'] });
+        queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+      }
+
       toast.success('Order status updated successfully');
     },
     onError: (error: any) => {

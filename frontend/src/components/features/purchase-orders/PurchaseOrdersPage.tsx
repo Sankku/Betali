@@ -404,13 +404,7 @@ export function PurchaseOrdersPage() {
       </Helmet>
 
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">{t('purchaseOrders.title')}</h1>
-            <p className="text-muted-foreground mt-1">Gestiona las compras a proveedores</p>
-          </div>
-        </div>
+
 
         {/* Table with Bulk Actions */}
         <TableWithBulkActions
