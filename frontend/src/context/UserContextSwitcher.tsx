@@ -44,7 +44,7 @@ export const UserContextSwitcherProvider: React.FC<UserContextSwitcherProviderPr
         try {
           return JSON.parse(stored);
         } catch (e) {
-          console.error('Error parsing stored user context:', e);
+          // Error parsing stored context
         }
       }
     }
@@ -79,9 +79,6 @@ export const UserContextSwitcherProvider: React.FC<UserContextSwitcherProviderPr
       if (currentProfile) {
         setCurrentUserContext(currentProfile);
         localStorage.setItem('currentUserContext', JSON.stringify(currentProfile));
-        console.log('User context updated from fresh data');
-      } else if (!currentUserContext) {
-        console.warn('Current user profile not found in database');
       }
     }
   }, [user, availableUsers, currentUserContext]);
@@ -92,9 +89,7 @@ export const UserContextSwitcherProvider: React.FC<UserContextSwitcherProviderPr
     
     // Store in localStorage for persistence
     localStorage.setItem('currentUserContext', JSON.stringify(targetUser));
-    
-    console.log('Switched to user context:', targetUser);
-    
+
     // Dispatch custom event for other parts of the app
     window.dispatchEvent(new CustomEvent('userContextChanged', { 
       detail: { user: targetUser } 

@@ -8,9 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 📖 Required Reading (in order):
 
-1. **`/SAAS_ARCHITECTURE.md`** - 🚨 **READ FIRST** - Complete specification for the new SaaS multi-tenant architecture we're implementing. This is the definitive guide for all development decisions during migration.
+1. **`/docs/architecture/SAAS_ARCHITECTURE.md`** - 🚨 **READ FIRST** - Complete specification for the new SaaS multi-tenant architecture we're implementing. This is the definitive guide for all development decisions during migration.
 
-2. **`/BETALI_MCP_DOCS.md`** - Original MCP-style documentation with established patterns and best practices.
+2. **`/docs/architecture/BETALI_MCP_DOCS.md`** - Original MCP-style documentation with established patterns and best practices.
+
+3. **`/docs/README.md`** - Documentation structure guide for finding specific docs.
 
 ### ⚠️ Migration Status
 - **Current State**: Hybrid architecture (old + new patterns)

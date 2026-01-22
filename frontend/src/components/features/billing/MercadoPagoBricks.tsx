@@ -87,12 +87,9 @@ export function MercadoPagoBricks({
           },
           callbacks: {
             onReady: () => {
-              console.log('Payment Brick ready');
               setIsLoading(false);
             },
             onSubmit: async (formData: any) => {
-              console.log('Payment submitted:', formData);
-
               try {
                 setIsLoading(true);
 

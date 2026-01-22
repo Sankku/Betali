@@ -1,4 +1,7 @@
 const { InventoryAlertRepository } = require('../repositories/InventoryAlertRepository');
+const { Logger } = require('../utils/Logger');
+
+const logger = new Logger('InventoryAlertService');
 
 /**
  * Service layer for inventory alerts business logic
@@ -176,7 +179,7 @@ class InventoryAlertService {
       await this.alertRepository.autoResolveAlerts(productId, warehouseId, currentStock, minStock);
     } catch (error) {
       // Log error but don't throw - this is a background operation
-      console.error('Error auto-resolving alerts:', error.message);
+      logger.error('Error auto-resolving alerts:', { error: error.message, productId, warehouseId });
     }
   }
 }

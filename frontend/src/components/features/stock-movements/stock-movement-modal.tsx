@@ -64,10 +64,6 @@ export function StockMovementModal({
       }
     : undefined;
 
-  // Debug logs
-  console.log('StockMovementModal props:', { isOpen, mode, initialData });
-  console.log('Modal about to render with isOpen:', isOpen);
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" className="max-w-2xl">
       <ModalContent>

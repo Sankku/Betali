@@ -1,3 +1,5 @@
+const { Logger } = require('../utils/Logger');
+
 /**
  * Base repository pattern implementation
  * Provides common CRUD operations for all entities
@@ -6,6 +8,7 @@ class BaseRepository {
     constructor(supabaseClient, tableName) {
       this.client = supabaseClient;
       this.table = tableName;
+      this.logger = new Logger(`BaseRepository:${tableName}`);
     }
   
     /**
@@ -73,7 +76,7 @@ class BaseRepository {
      */
     async create(entityData) {
       try {
-        console.log(`[BaseRepository] Attempting to create in ${this.table}:`, entityData);
+        this.logger.debug('Attempting to create entity', { table: this.table, entityData });
 
         const response = await this.client
           .from(this.table)
@@ -81,27 +84,27 @@ class BaseRepository {
           .select()
           .single();
 
-        console.log(`[BaseRepository] Full Supabase response for ${this.table}:`, response);
+        this.logger.debug('Full Supabase response', { table: this.table, response });
 
         const { data, error } = response;
 
-        console.log(`[BaseRepository] Destructured - data:`, data, 'error:', error);
+        this.logger.debug('Destructured response', { table: this.table, hasData: !!data, hasError: !!error });
 
         if (error) {
           // Log the full error for debugging
-          console.error(`Supabase error creating ${this.table}:`, {
+          this.logger.error('Supabase error creating entity', {
+            table: this.table,
             message: error.message,
             code: error.code,
             details: error.details,
             hint: error.hint,
             status: error.status,
-            statusText: error.statusText,
-            fullError: error
+            statusText: error.statusText
           });
           throw error;
         }
 
-        console.log(`[BaseRepository] Successfully created in ${this.table}:`, data);
+        this.logger.info('Successfully created entity', { table: this.table, id: data?.id });
         return data;
       } catch (error) {
         // If it's a Supabase error object, extract useful info

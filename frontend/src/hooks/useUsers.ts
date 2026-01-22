@@ -199,11 +199,8 @@ export function useRefreshUserContext() {
       try {
         const { supabase } = await import('../lib/supabase');
         const { data, error } = await supabase.auth.refreshSession();
-        if (error) {
-          console.warn('Could not refresh Supabase session:', error.message);
-        }
       } catch (error) {
-        console.warn('Error refreshing session:', error);
+        // Error refreshing session
       }
       
       // Clear all relevant caches

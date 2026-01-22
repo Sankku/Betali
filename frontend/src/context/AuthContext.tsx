@@ -100,7 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       return;
     } catch (error) {
-      console.error('Error refreshing session:', error);
       await signOut();
     }
   };
@@ -110,7 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data } = await supabase.auth.getSession();
       return data.session?.access_token || null;
     } catch (error) {
-      console.error('Error getting access token:', error);
       return null;
     }
   };
