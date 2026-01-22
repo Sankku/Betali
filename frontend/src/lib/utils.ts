@@ -45,7 +45,6 @@ export function formatDate(date: Date | string): string {
         return `${day}/${month}/${year}`;
     }
   } catch (error) {
-    console.error('Error formatting date:', error);
     return dateObj.toLocaleDateString();
   }
 }

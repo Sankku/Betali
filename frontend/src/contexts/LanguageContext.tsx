@@ -45,7 +45,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         return stored as Locale;
       }
     } catch (error) {
-      console.error('Error loading language preference:', error);
+      // Error loading preference, using default
     }
     return 'es'; // Default to Spanish
   });
@@ -55,7 +55,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, locale);
     } catch (error) {
-      console.error('Error saving language preference:', error);
+      // Error saving preference
     }
   }, [locale]);
 

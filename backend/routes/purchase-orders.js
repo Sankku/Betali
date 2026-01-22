@@ -4,7 +4,9 @@ const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { createLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
+const { Logger } = require('../utils/Logger');
 
+const logger = new Logger('PurchaseOrderRoutes');
 const router = express.Router();
 
 // Get purchase order controller from service factory
@@ -12,7 +14,7 @@ const getPurchaseOrderController = () => {
   try {
     return ServiceFactory.createPurchaseOrderController();
   } catch (error) {
-    console.error('Error creating PurchaseOrderController:', error.message);
+    logger.error('Error creating PurchaseOrderController:', { error: error.message });
     throw error;
   }
 };

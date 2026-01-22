@@ -58,24 +58,18 @@ export function DateRangePicker({
   };
 
   const handleDateClick = (day: number) => {
-    console.log('[DateRangePicker] handleDateClick called with day:', day);
     const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    console.log('[DateRangePicker] Clicked date:', clickedDate);
-    console.log('[DateRangePicker] Current range:', range);
 
     if (!range.from || (range.from && range.to)) {
       // Start new range
-      console.log('[DateRangePicker] Starting new range');
       setRange({ from: clickedDate, to: undefined });
     } else if (clickedDate < range.from) {
       // Clicked date is before start, make it the new start
-      console.log('[DateRangePicker] Clicked before start, swapping');
       setRange({ from: clickedDate, to: range.from });
       onChange({ from: clickedDate, to: range.from });
       setIsOpen(false);
     } else {
       // Complete the range
-      console.log('[DateRangePicker] Completing range');
       setRange({ from: range.from, to: clickedDate });
       onChange({ from: range.from, to: clickedDate });
       setIsOpen(false);
@@ -152,13 +146,10 @@ export function DateRangePicker({
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handleQuickRange = (days: number) => {
-    console.log('[DateRangePicker] handleQuickRange called with days:', days);
     const today = new Date();
     const from = new Date();
     from.setDate(today.getDate() - days);
-    console.log('[DateRangePicker] Quick range:', { from, to: today });
     setRange({ from, to: today });
-    console.log('[DateRangePicker] Calling onChange with range');
     onChange({ from, to: today });
     setIsOpen(false);
   };

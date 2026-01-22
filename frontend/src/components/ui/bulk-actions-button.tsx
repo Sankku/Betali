@@ -24,14 +24,14 @@ const defaultActions: BulkAction[] = [
     label: 'Eliminar seleccionados',
     icon: <Trash2 className="h-4 w-4" />,
     variant: 'destructive',
-    onClick: (rows) => console.log('Delete', rows),
+    onClick: (rows) => {},
   },
   {
     id: 'export',
     label: 'Exportar seleccionados',
     icon: <Download className="h-4 w-4" />,
     variant: 'outline',
-    onClick: (rows) => console.log('Export', rows),
+    onClick: (rows) => {},
   },
 ];
 

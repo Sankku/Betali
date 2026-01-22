@@ -92,9 +92,7 @@ export function useClientStats() {
   return useQuery({
     queryKey: ['clients', 'stats', currentOrganization?.organization_id],
     queryFn: async () => {
-      console.log('🔍 Fetching client stats for organization:', currentOrganization?.organization_id);
       const stats = await clientService.getStats();
-      console.log('📊 Client stats received:', stats);
       return stats;
     },
     enabled: !!currentOrganization,

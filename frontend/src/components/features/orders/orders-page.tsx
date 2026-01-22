@@ -286,19 +286,14 @@ export function OrdersPage() {
           <div className="text-sm tabular-nums">{formatDate(row.original.order_date)}</div>
         ),
         filterFn: (row: any, columnId: string, filterValue: string) => {
-          console.log('[OrdersPage] filterFn called with filterValue:', filterValue);
-
           if (!filterValue) {
-            console.log('[OrdersPage] No filter value, returning true');
             return true;
           }
 
           const orderDate = new Date(row.original.order_date);
-          console.log('[OrdersPage] Order date:', orderDate, 'Raw:', row.original.order_date);
 
           // Check if it's a date range (contains |)
           if (filterValue.includes('|')) {
-            console.log('[OrdersPage] Date range filter detected');
             const [fromStr, toStr] = filterValue.split('|');
             const from = new Date(fromStr);
             const to = new Date(toStr);
@@ -309,17 +304,14 @@ export function OrdersPage() {
             const toDateOnly = new Date(to.getFullYear(), to.getMonth(), to.getDate());
 
             const result = orderDateOnly >= fromDateOnly && orderDateOnly <= toDateOnly;
-            console.log('[OrdersPage] Range comparison:', { orderDateOnly, fromDateOnly, toDateOnly, result });
             return result;
           } else {
-            console.log('[OrdersPage] Single date filter detected');
             // Single date filter
             const filterDate = new Date(filterValue);
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
 
             const result = orderDateOnly.getTime() === filterDateOnly.getTime();
-            console.log('[OrdersPage] Single date comparison:', { orderDateOnly, filterDateOnly, result });
             return result;
           }
         },

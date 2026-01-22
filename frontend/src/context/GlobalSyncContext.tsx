@@ -67,9 +67,8 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now()
     };
-    
+
     setSyncEvents(prev => [newEvent, ...prev].slice(0, 10)); // Keep last 10 events
-    console.log('🔄 Sync Event:', newEvent);
   }, []);
 
   const clearSyncEvents = useCallback(() => {
@@ -102,12 +101,10 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
-        console.warn('Could not refresh Supabase session:', error.message);
         return false;
       }
       return true;
     } catch (error) {
-      console.warn('Error refreshing Supabase session:', error);
       return false;
     }
   }, []);

@@ -97,7 +97,6 @@ export function DataTable<TData>({
 
   const data = useMemo(() => {
     if (!rawData) {
-      console.warn('DataTable: prop "data" is undefined, using empty array');
       return [];
     }
     if (!Array.isArray(rawData)) {

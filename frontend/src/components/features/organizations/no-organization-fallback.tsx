@@ -39,9 +39,8 @@ export function NoOrganizationFallback() {
     setIsCreating(true);
     try {
       // This will be handled by the CreateOrganizationForm
-      console.log('Creating organization:', data);
     } catch (error) {
-      console.error('Error creating organization:', error);
+      // Error creating organization
     } finally {
       setIsCreating(false);
       setShowCreateModal(false);
