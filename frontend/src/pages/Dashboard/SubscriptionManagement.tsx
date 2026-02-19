@@ -171,7 +171,7 @@ export default function SubscriptionManagement() {
               Selecciona un plan para comenzar a usar todas las funcionalidades
             </p>
             <Button
-              onClick={() => navigate('/pricing')}
+              onClick={() => navigate('/dashboard/pricing')}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Ver Planes
@@ -265,7 +265,7 @@ export default function SubscriptionManagement() {
             {/* Actions */}
             <div className="mt-8 flex gap-4">
               <Button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/dashboard/pricing')}
                 variant="outline"
                 className="flex items-center"
               >
@@ -284,12 +284,21 @@ export default function SubscriptionManagement() {
               )}
 
               {subscription.status === 'pending_payment' && (
-                <Button
-                  onClick={() => navigate('/pricing')}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Completar Pago
-                </Button>
+                <>
+                  <Button
+                    onClick={() => navigate('/dashboard/pricing')}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Completar Pago
+                  </Button>
+                  <Button
+                    onClick={handleCancelClick}
+                    variant="outline"
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    Cancelar
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -297,8 +306,15 @@ export default function SubscriptionManagement() {
 
         {/* Payment History */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-200">
+          <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-xl font-bold text-gray-900">Historial de Pagos</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/dashboard/payments')}
+            >
+              Ver todo
+            </Button>
           </div>
 
           {isLoadingPayments ? (

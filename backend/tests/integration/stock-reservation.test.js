@@ -54,7 +54,11 @@ let testData = {
   warehouseId: null,
   productId: null,
   clientId: null,
-  testOrders: []
+  testOrders: [],
+  createdOrganization: false,
+  createdUser: false,
+  createdWarehouse: false,
+  createdClient: false
 };
 
 // Cleanup function
@@ -72,14 +76,28 @@ async function cleanup() {
       await supabase.from('products').delete().eq('product_id', testData.productId);
     }
 
-    // Delete test warehouse
-    if (testData.warehouseId) {
+    // Delete test warehouse if we created it
+    if (testData.createdWarehouse && testData.warehouseId) {
       await supabase.from('warehouse').delete().eq('warehouse_id', testData.warehouseId);
+      logInfo('Deleted test warehouse');
     }
 
-    // Delete test client
-    if (testData.clientId) {
+    // Delete test client if we created it
+    if (testData.createdClient && testData.clientId) {
       await supabase.from('clients').delete().eq('client_id', testData.clientId);
+      logInfo('Deleted test client');
+    }
+
+    // Delete test user if we created it
+    if (testData.createdUser && testData.userId) {
+      await supabase.from('users').delete().eq('user_id', testData.userId);
+      logInfo('Deleted test user');
+    }
+
+    // Delete test organization if we created it
+    if (testData.createdOrganization && testData.organizationId) {
+      await supabase.from('organizations').delete().eq('organization_id', testData.organizationId);
+      logInfo('Deleted test organization');
     }
 
     logSuccess('Cleanup completed');
@@ -93,78 +111,128 @@ async function setupTestData() {
   logTest('SETUP: Creating test data');
 
   try {
-    // Get first organization and user
-    const { data: orgs } = await supabase
+    // Try to get existing organization, or create a test one
+    let { data: orgs } = await supabase
       .from('organizations')
       .select('organization_id')
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!orgs) {
-      throw new Error('No organization found. Please create one first.');
+      logWarning('No organization found. Creating test organization...');
+
+      // Create test organization
+      const { data: newOrg, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: `TEST Org - Stock Reservation ${Date.now()}`,
+          slug: `test-stock-${Date.now()}`,
+          subscription_tier: 'professional'
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        throw new Error(`Failed to create organization: ${orgError.message}`);
+      }
+
+      orgs = newOrg;
+      testData.createdOrganization = true;
+      logSuccess(`Test organization created: ${orgs.organization_id}`);
+    } else {
+      logInfo(`Using existing organization: ${orgs.organization_id}`);
     }
 
     testData.organizationId = orgs.organization_id;
-    logInfo(`Using organization: ${testData.organizationId}`);
 
-    // Get first user from this organization
-    const { data: users, error: userError } = await supabase
+    // Try to get existing user, or create a test one
+    let { data: users } = await supabase
       .from('users')
       .select('user_id')
       .eq('organization_id', testData.organizationId)
       .limit(1)
       .maybeSingle();
 
-    if (!users || userError) {
-      // Try to get any user for this organization from auth
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const orgUser = authUsers?.users?.find(u =>
-        u.user_metadata?.organization_id === testData.organizationId
-      );
+    if (!users) {
+      logWarning('No user found. Creating test user...');
 
-      if (!orgUser) {
-        throw new Error('No user found for this organization. Please create a user first.');
+      // Create test user in users table
+      const testUserId = require('crypto').randomUUID();
+      const { data: newUser, error: userError } = await supabase
+        .from('users')
+        .insert({
+          user_id: testUserId,
+          email: `test-stock-${Date.now()}@betali.test`,
+          name: `Test User ${Date.now()}`,
+          organization_id: testData.organizationId,
+          role: 'admin',
+          password_hash: 'test_hash'
+        })
+        .select()
+        .single();
+
+      if (userError) {
+        throw new Error(`Failed to create user: ${userError.message}`);
       }
 
-      testData.userId = orgUser.id;
-      logWarning(`Using auth user: ${testData.userId}`);
+      users = newUser;
+      testData.createdUser = true;
+      logSuccess(`Test user created: ${users.user_id}`);
     } else {
-      testData.userId = users.user_id;
-      logInfo(`Using user: ${testData.userId}`);
+      logInfo(`Using existing user: ${users.user_id}`);
     }
 
-    // Create test warehouse
-    const { data: warehouse, error: whError } = await supabase
-      .from('warehouse')
-      .insert({
-        organization_id: testData.organizationId,
-        name: 'TEST Warehouse - Stock Reservation',
-        location: 'Test Location',
-        capacity: 1000
-      })
-      .select()
-      .single();
+    testData.userId = users.user_id;
 
-    if (whError) throw whError;
-    testData.warehouseId = warehouse.warehouse_id;
-    logSuccess(`Warehouse created: ${testData.warehouseId}`);
+    // Try to get existing warehouse, or create a test one
+    let { data: warehouses } = await supabase
+      .from('warehouse')
+      .select('warehouse_id')
+      .eq('organization_id', testData.organizationId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!warehouses) {
+      logWarning('No warehouse found. Creating test warehouse...');
+
+      const { data: newWarehouse, error: whError } = await supabase
+        .from('warehouse')
+        .insert({
+          organization_id: testData.organizationId,
+          name: `TEST Warehouse - Stock Reservation ${Date.now()}`,
+          location: 'Test Location',
+          owner_id: testData.userId,
+          user_id: testData.userId
+        })
+        .select()
+        .single();
+
+      if (whError) throw new Error(`Failed to create warehouse: ${whError.message}`);
+
+      warehouses = newWarehouse;
+      testData.createdWarehouse = true;
+      logSuccess(`Test warehouse created: ${warehouses.warehouse_id}`);
+    } else {
+      logInfo(`Using existing warehouse: ${warehouses.warehouse_id}`);
+    }
+
+    testData.warehouseId = warehouses.warehouse_id;
 
     // Create test product
     const { data: product, error: prodError } = await supabase
       .from('products')
       .insert({
-        organization_id: testData.organizationId,
-        name: 'TEST Product - Stock Reservation',
-        sku: `TEST-${Date.now()}`,
-        category: 'Test',
-        unit: 'unit',
-        price: 100.00,
-        cost: 50.00
+        name: `TEST Product - Stock Reservation ${Date.now()}`,
+        batch_number: `BATCH-${Date.now()}`,
+        expiration_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        origin_country: 'Test Country',
+        owner_id: testData.userId,
+        description: 'Test product for stock reservation tests'
       })
       .select()
       .single();
 
-    if (prodError) throw prodError;
+    if (prodError) throw new Error(`Failed to create product: ${prodError.message}`);
     testData.productId = product.product_id;
     logSuccess(`Product created: ${testData.productId}`);
 
@@ -172,33 +240,50 @@ async function setupTestData() {
     const { error: stockError } = await supabase
       .from('stock_movements')
       .insert({
-        organization_id: testData.organizationId,
         warehouse_id: testData.warehouseId,
         product_id: testData.productId,
         movement_type: 'entry',
         quantity: 100,
-        reason: 'Initial stock for testing',
-        user_id: testData.userId
+        reference: 'Initial stock for testing'
       });
 
-    if (stockError) throw stockError;
+    if (stockError) throw new Error(`Failed to add initial stock: ${stockError.message}`);
     logSuccess('Initial stock added: 100 units');
 
-    // Create test client
-    const { data: client, error: clientError } = await supabase
+    // Try to get existing client, or create a test one
+    let { data: clients } = await supabase
       .from('clients')
-      .insert({
-        organization_id: testData.organizationId,
-        name: 'TEST Client - Stock Reservation',
-        email: 'test@example.com',
-        phone: '1234567890'
-      })
-      .select()
-      .single();
+      .select('client_id')
+      .eq('organization_id', testData.organizationId)
+      .limit(1)
+      .maybeSingle();
 
-    if (clientError) throw clientError;
-    testData.clientId = client.client_id;
-    logSuccess(`Client created: ${testData.clientId}`);
+    if (!clients) {
+      logWarning('No client found. Creating test client...');
+
+      const { data: newClient, error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          organization_id: testData.organizationId,
+          name: `TEST Client - Stock Reservation ${Date.now()}`,
+          email: `test-client-${Date.now()}@example.com`,
+          phone: '1234567890',
+          cuit: `20-${Date.now().toString().substring(0, 8)}-5`,
+          user_id: testData.userId
+        })
+        .select()
+        .single();
+
+      if (clientError) throw new Error(`Failed to create client: ${clientError.message}`);
+
+      clients = newClient;
+      testData.createdClient = true;
+      logSuccess(`Test client created: ${clients.client_id}`);
+    } else {
+      logInfo(`Using existing client: ${clients.client_id}`);
+    }
+
+    testData.clientId = clients.client_id;
 
     logSuccess('Setup completed successfully!\n');
     return true;
@@ -226,7 +311,6 @@ async function getPhysicalStock() {
   const { data, error } = await supabase
     .from('stock_movements')
     .select('quantity, movement_type')
-    .eq('organization_id', testData.organizationId)
     .eq('warehouse_id', testData.warehouseId)
     .eq('product_id', testData.productId);
 
@@ -262,7 +346,6 @@ async function createOrder(quantity, status = 'pending') {
   const { data, error } = await supabase
     .from('orders')
     .insert({
-      organization_id: testData.organizationId,
       client_id: testData.clientId,
       warehouse_id: testData.warehouseId,
       user_id: testData.userId,
@@ -273,21 +356,19 @@ async function createOrder(quantity, status = 'pending') {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw new Error(`Failed to create order: ${error.message}`);
 
   // Add order detail
   const { error: detailError } = await supabase
     .from('order_details')
     .insert({
       order_id: data.order_id,
-      organization_id: testData.organizationId,
       product_id: testData.productId,
       quantity: quantity,
-      unit_price: 100.00,
-      line_total: quantity * 100
+      price: 100.00
     });
 
-  if (detailError) throw detailError;
+  if (detailError) throw new Error(`Failed to create order detail: ${detailError.message}`);
 
   testData.testOrders.push(data.order_id);
   return data;
@@ -676,8 +757,81 @@ async function runAllTests() {
   process.exit(passed === total ? 0 : 1);
 }
 
-// Run tests
-runAllTests().catch(error => {
-  logError(`Fatal error: ${error.message}`);
-  cleanup().then(() => process.exit(1));
+// Jest test wrapper
+describe('Stock Reservation System - Integration Tests', () => {
+  beforeAll(async () => {
+    const setupSuccess = await setupTestData();
+    if (!setupSuccess) {
+      throw new Error('Setup failed');
+    }
+  }, 30000);
+
+  afterEach(async () => {
+    // Clean up orders, reservations and movements between tests
+    try {
+      // Delete all test orders
+      for (const orderId of testData.testOrders) {
+        // Delete order details first
+        await supabase.from('order_details').delete().eq('order_id', orderId);
+        // Delete stock reservations
+        await supabase.from('stock_reservations').delete().eq('order_id', orderId);
+        // Delete the order
+        await supabase.from('orders').delete().eq('order_id', orderId);
+      }
+
+      // Delete all stock movements for this product
+      if (testData.productId && testData.warehouseId) {
+        await supabase.from('stock_movements')
+          .delete()
+          .eq('product_id', testData.productId)
+          .eq('warehouse_id', testData.warehouseId)
+          .neq('reference', 'Initial stock for testing'); // Keep initial stock
+      }
+
+      // Clear the test orders array
+      testData.testOrders = [];
+    } catch (error) {
+      console.error('Cleanup between tests failed:', error);
+    }
+  }, 10000);
+
+  afterAll(async () => {
+    await cleanup();
+  }, 30000);
+
+  test('Test 1: Pending order should not reserve stock', async () => {
+    const result = await test1_PendingOrder();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 2: Processing order should reserve stock', async () => {
+    const result = await test2_ProcessingReservation();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 3: Shipped order should deduct physical stock', async () => {
+    const result = await test3_ShippedDeduction();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 4: Cancel from processing should restore availability', async () => {
+    const result = await test4_CancelFromProcessing();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 5: Cancel from shipped should restore physical stock', async () => {
+    const result = await test5_CancelFromShipped();
+    expect(result).toBe(true);
+  }, 30000);
 });
+
+// Standalone execution disabled - use Jest/Bun test instead
+// Uncomment for manual standalone testing:
+/*
+if (require.main === module) {
+  runAllTests().catch(error => {
+    logError(`Fatal error: ${error.message}`);
+    cleanup().then(() => process.exit(1));
+  });
+}
+*/

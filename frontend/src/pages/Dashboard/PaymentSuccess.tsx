@@ -195,18 +195,18 @@ export default function PaymentSuccess() {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/dashboard')}
                     className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
                   >
                     <Home className="h-4 w-4 mr-2" />
                     Ir al Dashboard
                   </Button>
                   <Button
-                    onClick={() => navigate('/pricing')}
+                    onClick={() => navigate('/dashboard/subscription')}
                     variant="outline"
                     className="flex-1"
                   >
-                    Ver Planes
+                    Ver Mi Suscripción
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>

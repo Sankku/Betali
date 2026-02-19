@@ -63,7 +63,11 @@ let testData = {
   warehouse2: null,
   client1: null,
   client2: null,
-  testEntities: []
+  testEntities: [],
+  createdOrg1: false,
+  createdOrg2: false,
+  createdUser1: false,
+  createdUser2: false
 };
 
 // Cleanup function
@@ -74,6 +78,28 @@ async function cleanup() {
     // Delete test entities
     for (const entity of testData.testEntities) {
       await supabase.from(entity.table).delete().eq(entity.idField, entity.id);
+    }
+
+    // Delete test users if we created them
+    if (testData.createdUser2 && testData.user2) {
+      await supabase.from('users').delete().eq('user_id', testData.user2);
+      logInfo('Deleted test user 2');
+    }
+
+    if (testData.createdUser1 && testData.user1) {
+      await supabase.from('users').delete().eq('user_id', testData.user1);
+      logInfo('Deleted test user 1');
+    }
+
+    // Delete test organizations if we created them
+    if (testData.createdOrg2 && testData.org2) {
+      await supabase.from('organizations').delete().eq('organization_id', testData.org2.organization_id);
+      logInfo('Deleted test organization 2');
+    }
+
+    if (testData.createdOrg1 && testData.org1) {
+      await supabase.from('organizations').delete().eq('organization_id', testData.org1.organization_id);
+      logInfo('Deleted test organization 1');
     }
 
     logSuccess('Cleanup completed');
@@ -87,39 +113,139 @@ async function setupTestOrganizations() {
   logTest('SETUP: Creating Two Test Organizations');
 
   try {
-    // Get existing organizations
+    // Try to get existing organizations, or create test ones
     const { data: orgs } = await supabase
       .from('organizations')
       .select('organization_id, name')
       .limit(2);
 
     if (!orgs || orgs.length < 1) {
-      throw new Error('Need at least 1 organization. Please create organizations first.');
+      logWarning('No organizations found. Creating test organizations...');
+
+      // Create Organization 1
+      const { data: newOrg1, error: org1Error } = await supabase
+        .from('organizations')
+        .insert({
+          name: `TEST Org 1 - Multi-Tenant ${Date.now()}`,
+          slug: `test-org1-${Date.now()}`,
+          subscription_tier: 'professional'
+        })
+        .select()
+        .single();
+
+      if (org1Error) {
+        throw new Error(`Failed to create organization 1: ${org1Error.message}`);
+      }
+
+      testData.org1 = newOrg1;
+      testData.createdOrg1 = true;
+      logSuccess(`Test organization 1 created: ${testData.org1.organization_id}`);
+    } else {
+      testData.org1 = orgs[0];
+      logInfo(`Organization 1: ${testData.org1.name} (${testData.org1.organization_id})`);
     }
 
-    testData.org1 = orgs[0];
-    logInfo(`Organization 1: ${testData.org1.name} (${testData.org1.organization_id})`);
-
-    if (orgs.length >= 2) {
+    // Get or create second organization
+    if (orgs && orgs.length >= 2) {
       testData.org2 = orgs[1];
       logInfo(`Organization 2: ${testData.org2.name} (${testData.org2.organization_id})`);
     } else {
-      logWarning('Only 1 organization found. Some tests will be skipped.');
-      logWarning('Create a second organization to run full multi-tenant tests.');
-    }
+      logWarning('Only 1 organization found. Creating second test organization...');
 
-    // Get users
-    const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const { data: newOrg2, error: org2Error } = await supabase
+        .from('organizations')
+        .insert({
+          name: `TEST Org 2 - Multi-Tenant ${Date.now()}`,
+          slug: `test-org2-${Date.now()}`,
+          subscription_tier: 'professional'
+        })
+        .select()
+        .single();
 
-    if (authUsers?.users?.length > 0) {
-      testData.user1 = authUsers.users[0].id;
-      logInfo(`User 1: ${authUsers.users[0].email}`);
-
-      if (authUsers.users.length > 1) {
-        testData.user2 = authUsers.users[1].id;
-        logInfo(`User 2: ${authUsers.users[1].email}`);
+      if (org2Error) {
+        throw new Error(`Failed to create organization 2: ${org2Error.message}`);
       }
+
+      testData.org2 = newOrg2;
+      testData.createdOrg2 = true;
+      logSuccess(`Test organization 2 created: ${testData.org2.organization_id}`);
     }
+
+    // Try to get existing users, or create test ones
+    let { data: users1 } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('organization_id', testData.org1.organization_id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!users1) {
+      logWarning('No user found for Org 1. Creating test user...');
+
+      const testUserId1 = require('crypto').randomUUID();
+      const { data: newUser1, error: user1Error } = await supabase
+        .from('users')
+        .insert({
+          user_id: testUserId1,
+          email: `test-mt-org1-${Date.now()}@betali.test`,
+          name: `Test User Org1 ${Date.now()}`,
+          organization_id: testData.org1.organization_id,
+          role: 'admin',
+          password_hash: 'test_hash'
+        })
+        .select()
+        .single();
+
+      if (user1Error) {
+        throw new Error(`Failed to create user 1: ${user1Error.message}`);
+      }
+
+      users1 = newUser1;
+      testData.createdUser1 = true;
+      logSuccess(`Test user 1 created: ${users1.user_id}`);
+    } else {
+      logInfo(`Using existing user 1: ${users1.user_id}`);
+    }
+
+    testData.user1 = users1.user_id;
+
+    // Get or create user for Org 2
+    let { data: users2 } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('organization_id', testData.org2.organization_id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!users2) {
+      logWarning('No user found for Org 2. Creating test user...');
+
+      const testUserId2 = require('crypto').randomUUID();
+      const { data: newUser2, error: user2Error } = await supabase
+        .from('users')
+        .insert({
+          user_id: testUserId2,
+          email: `test-mt-org2-${Date.now()}@betali.test`,
+          name: `Test User Org2 ${Date.now()}`,
+          organization_id: testData.org2.organization_id,
+          role: 'admin',
+          password_hash: 'test_hash'
+        })
+        .select()
+        .single();
+
+      if (user2Error) {
+        throw new Error(`Failed to create user 2: ${user2Error.message}`);
+      }
+
+      users2 = newUser2;
+      testData.createdUser2 = true;
+      logSuccess(`Test user 2 created: ${users2.user_id}`);
+    } else {
+      logInfo(`Using existing user 2: ${users2.user_id}`);
+    }
+
+    testData.user2 = users2.user_id;
 
     // Create test warehouse for Org 1
     const { data: wh1 } = await supabase
@@ -614,8 +740,49 @@ async function runAllTests() {
   process.exit(passed === total ? 0 : 1);
 }
 
-// Run tests
-runAllTests().catch(error => {
-  logError(`Fatal error: ${error.message}`);
-  cleanup().then(() => process.exit(1));
+// Jest test wrapper
+describe('Multi-Tenant Data Isolation Tests', () => {
+  beforeAll(async () => {
+    const setupSuccess = await setupTestOrganizations();
+    if (!setupSuccess) {
+      throw new Error('Setup failed');
+    }
+  }, 30000);
+
+  afterAll(async () => {
+    await cleanup();
+  }, 30000);
+
+  test('Test 1: Product data is properly isolated between organizations', async () => {
+    const result = await test1_ProductIsolation();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 2: Warehouse data is properly isolated between organizations', async () => {
+    const result = await test2_WarehouseIsolation();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 3: Client data is properly isolated between organizations', async () => {
+    const result = await test3_ClientIsolation();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 4: Stock movements are properly isolated between organizations', async () => {
+    const result = await test4_StockMovementIsolation();
+    expect(result).toBe(true);
+  }, 30000);
+
+  test('Test 5: Orders are properly isolated between organizations', async () => {
+    const result = await test5_OrderIsolation();
+    expect(result).toBe(true);
+  }, 30000);
 });
+
+// Keep standalone execution for manual testing (but not when running through Jest)
+if (require.main === module && !process.env.JEST_WORKER_ID) {
+  runAllTests().catch(error => {
+    logError(`Fatal error: ${error.message}`);
+    cleanup().then(() => process.exit(1));
+  });
+}

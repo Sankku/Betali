@@ -1,4 +1,24 @@
 import { httpClient } from "../http/httpClient";
+import { supabase } from "../../lib/supabase";
+
+// Helper to get auth headers for PDF requests
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+
+  const headers: HeadersInit = {};
+
+  if (session) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const currentOrganizationId = localStorage.getItem('currentOrganizationId');
+  if (currentOrganizationId) {
+    headers['x-organization-id'] = currentOrganizationId;
+  }
+
+  return headers;
+}
 
 export interface Order {
   order_id: string;
@@ -190,6 +210,100 @@ export const orderService = {
   // Complete order
   async completeOrder(orderId: string): Promise<Order> {
     return httpClient.post(`${BASE_URL}/${orderId}/complete`);
+  },
+
+  // Download order as PDF
+  async downloadPdf(orderId: string): Promise<void> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf`, {
+      headers
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('PDF download error:', response.status, errorText);
+      throw new Error(`Error al descargar el PDF de la orden: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orden-${orderId.substring(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  // Get PDF blob for preview (single order)
+  async getPdfBlob(orderId: string): Promise<Blob> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf`, {
+      headers
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('PDF download error:', response.status, errorText);
+      throw new Error(`Error al obtener el PDF de la orden: ${response.status}`);
+    }
+
+    return response.blob();
+  },
+
+  // Download batch PDF for multiple orders
+  async downloadBatchPdf(orderIds: string[]): Promise<void> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/batch-pdf`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderIds })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Batch PDF download error:', response.status, errorText);
+      throw new Error(`Error al descargar el PDF: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ordenes-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  // Get batch PDF blob for preview
+  async getBatchPdfBlob(orderIds: string[]): Promise<Blob> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/batch-pdf`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderIds })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Batch PDF error:', response.status, errorText);
+      throw new Error(`Error al obtener el PDF: ${response.status}`);
+    }
+
+    return response.blob();
   }
 };
 
