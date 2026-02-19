@@ -42,7 +42,7 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.error('Error loading date format preferences:', error);
+      // Error loading preferences, using defaults
     }
     return {
       datePattern: 'DD/MM/YYYY',
@@ -57,7 +57,7 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
     } catch (error) {
-      console.error('Error saving date format preferences:', error);
+      // Error saving preferences
     }
   }, [preferences]);
 
@@ -146,7 +146,6 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
 
       return formatted;
     } catch (error) {
-      console.error('Error formatting date:', error);
       return dateObj.toLocaleDateString();
     }
   };
@@ -173,7 +172,6 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
 
       return `${datePart} ${timePart}`;
     } catch (error) {
-      console.error('Error formatting date-time:', error);
       return dateObj.toLocaleString();
     }
   };

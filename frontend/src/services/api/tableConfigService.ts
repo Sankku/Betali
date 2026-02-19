@@ -94,7 +94,6 @@ export class TableConfigService {
           const config = await this.getTableConfig(tableId);
           return { tableId, config };
         } catch (error) {
-          console.warn(`Failed to load config for table ${tableId}:`, error);
           return null;
         }
       });
@@ -229,7 +228,6 @@ export class TableConfigService {
       });
       return response.ok;
     } catch (error) {
-      console.warn('API health check failed:', error);
       return false;
     }
   }
@@ -245,9 +243,7 @@ export class TableConfigService {
     userId: string, 
     customConfig: Partial<TableConfig>
   ): Promise<void> {
-    // For now, this just logs since user-specific configs aren't implemented yet
-    console.log('User-specific table config would be saved:', { tableId, userId, customConfig });
-    console.warn('User-specific configurations not yet implemented in backend');
+    // User-specific configurations not yet implemented in backend
   }
 
   /**
@@ -255,8 +251,7 @@ export class TableConfigService {
    * Gets user-specific table configuration
    */
   static async getUserTableConfig(tableId: string, userId: string): Promise<Partial<TableConfig> | null> {
-    // For now, return null since user-specific configs aren't implemented yet
-    console.warn('User-specific configurations not yet implemented in backend');
+    // User-specific configurations not yet implemented in backend
     return null;
   }
 }

@@ -87,16 +87,6 @@ export function useStockMovementForm({
       const newReference = initialData.reference || "";
       const newMovementDate = initialData.movement_date || new Date().toISOString().split('T')[0];
 
-      console.log('Loading initial data:', { 
-        newMovementType,
-        newQuantity,
-        newProductId,
-        newWarehouseId,
-        newReference,
-        newMovementDate,
-        initialData 
-      });
-
       if (
         currentValues.movement_type !== newMovementType ||
         currentValues.quantity !== newQuantity ||

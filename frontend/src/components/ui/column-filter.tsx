@@ -104,29 +104,23 @@ export function ColumnFilter({
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    console.log('[ColumnFilter] handleDateChange called with:', date);
     setDateValue(date);
     if (date) {
       const isoValue = date.toISOString();
-      console.log('[ColumnFilter] Calling onChange with ISO:', isoValue);
       onChange(isoValue);
     } else {
-      console.log('[ColumnFilter] Calling onChange with empty string');
       onChange('');
     }
     setIsOpen(false);
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
-    console.log('[ColumnFilter] handleDateRangeChange called with:', range);
     if (range && range.from && range.to) {
       setDateRangeValue(range);
       const filterValue = `${range.from.toISOString()}|${range.to.toISOString()}`;
-      console.log('[ColumnFilter] Calling onChange with range:', filterValue);
       onChange(filterValue);
     } else {
       setDateRangeValue({ from: undefined, to: undefined });
-      console.log('[ColumnFilter] Calling onChange with empty string');
       onChange('');
     }
     setIsOpen(false);

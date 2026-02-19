@@ -4,7 +4,10 @@ const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { createLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
+const { Logger } = require('../utils/Logger');
+const orderPdfService = require('../services/OrderPdfService');
 
+const logger = new Logger('PurchaseOrderRoutes');
 const router = express.Router();
 
 // Get purchase order controller from service factory
@@ -12,7 +15,7 @@ const getPurchaseOrderController = () => {
   try {
     return ServiceFactory.createPurchaseOrderController();
   } catch (error) {
-    console.error('Error creating PurchaseOrderController:', error.message);
+    logger.error('Error creating PurchaseOrderController:', { error: error.message });
     throw error;
   }
 };
@@ -20,6 +23,46 @@ const getPurchaseOrderController = () => {
 // Apply authentication and organization context to all routes
 router.use(authenticateUser);
 router.use(requireOrganizationContext);
+
+/**
+ * POST /api/purchase-orders/batch-pdf
+ * Generate combined PDF for multiple purchase orders
+ */
+router.post(
+  '/batch-pdf',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_READ || PERMISSIONS.PRODUCTS_READ),
+  createLimiter,
+  async (req, res, next) => {
+    try {
+      const { orderIds } = req.body;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization context required' });
+      }
+
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ error: 'orderIds array is required' });
+      }
+
+      if (orderIds.length > 50) {
+        return res.status(400).json({ error: 'Maximum 50 orders per batch' });
+      }
+
+      const pdfBuffer = await orderPdfService.generateBatchPurchaseOrderPdf(orderIds, organizationId);
+
+      const fileName = `ordenes-compra-${new Date().toISOString().split('T')[0]}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Batch PDF generation error:', error);
+      next(error);
+    }
+  }
+);
 
 /**
  * GET /api/purchase-orders
@@ -102,6 +145,37 @@ router.delete(
       const controller = getPurchaseOrderController();
       await controller.deletePurchaseOrder(req, res, next);
     } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/purchase-orders/:id/pdf
+ * Download purchase order as PDF
+ */
+router.get(
+  '/:id/pdf',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_READ || PERMISSIONS.PRODUCTS_READ),
+  async (req, res, next) => {
+    try {
+      const purchaseOrderId = req.params.id;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization context required' });
+      }
+
+      const pdfBuffer = await orderPdfService.generatePurchaseOrderPdf(purchaseOrderId, organizationId);
+
+      const fileName = `orden-compra-${purchaseOrderId.substring(0, 8)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('PDF generation error:', error);
       next(error);
     }
   }

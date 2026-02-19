@@ -96,8 +96,6 @@ export default function Register() {
         throw new Error(signupResult.message || 'Signup failed');
       }
 
-      console.log('✅ Signup completed successfully:', signupResult.data);
-
       // Success! Redirect to dashboard
       navigate('/dashboard?welcome=true');
       

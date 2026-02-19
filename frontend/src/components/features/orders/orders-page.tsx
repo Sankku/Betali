@@ -11,6 +11,7 @@ import {
   Truck,
   CheckCircle,
   AlertCircle,
+  FileDown,
 } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
   ModalDescription,
   ModalFooter,
 } from '@/components/ui/modal';
+import { PdfPreviewModal, PdfOrderItem } from '@/components/ui/pdf-preview-modal';
 import { OrderModal } from './order-modal';
 import { OrderStatusBadge } from './order-status-badge';
 import {
@@ -47,7 +49,7 @@ import {
   getValidStatusTransitions,
 } from '@/hooks/useOrders';
 import { useClients } from '@/hooks/useClients';
-import { Order, OrderQueryParams } from '@/services/api/orderService';
+import { Order, OrderQueryParams, orderService } from '@/services/api/orderService';
 
 interface ModalState {
   isOpen: boolean;
@@ -65,6 +67,10 @@ export function OrdersPage() {
     isOpen: false,
     action: '' as 'process' | 'fulfill' | 'complete' | 'delete' | '',
     orders: [] as Order[],
+  });
+  const [pdfPreviewState, setPdfPreviewState] = useState({
+    isOpen: false,
+    orders: [] as PdfOrderItem[],
   });
 
   // Build query parameters
@@ -204,6 +210,25 @@ export function OrdersPage() {
         getValidItems: orders => orders.filter(o => o.status === 'shipped'),
       },
       {
+        key: 'download-pdf',
+        label: 'PDF',
+        icon: FileDown,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-indigo-300',
+          text: 'text-indigo-700',
+          hoverBg: 'hover:bg-indigo-50',
+        },
+        onClick: orders => {
+          const pdfOrders: PdfOrderItem[] = orders.map(order => ({
+            id: order.order_id,
+            label: `#${order.order_id.slice(-8).toUpperCase()} - ${order.clients?.name || 'Sin cliente'}`,
+          }));
+          setPdfPreviewState({ isOpen: true, orders: pdfOrders });
+        },
+        alwaysShow: true,
+      },
+      {
         key: 'duplicate',
         label: 'Duplicate',
         icon: Copy,
@@ -286,19 +311,14 @@ export function OrdersPage() {
           <div className="text-sm tabular-nums">{formatDate(row.original.order_date)}</div>
         ),
         filterFn: (row: any, columnId: string, filterValue: string) => {
-          console.log('[OrdersPage] filterFn called with filterValue:', filterValue);
-
           if (!filterValue) {
-            console.log('[OrdersPage] No filter value, returning true');
             return true;
           }
 
           const orderDate = new Date(row.original.order_date);
-          console.log('[OrdersPage] Order date:', orderDate, 'Raw:', row.original.order_date);
 
           // Check if it's a date range (contains |)
           if (filterValue.includes('|')) {
-            console.log('[OrdersPage] Date range filter detected');
             const [fromStr, toStr] = filterValue.split('|');
             const from = new Date(fromStr);
             const to = new Date(toStr);
@@ -309,17 +329,14 @@ export function OrdersPage() {
             const toDateOnly = new Date(to.getFullYear(), to.getMonth(), to.getDate());
 
             const result = orderDateOnly >= fromDateOnly && orderDateOnly <= toDateOnly;
-            console.log('[OrdersPage] Range comparison:', { orderDateOnly, fromDateOnly, toDateOnly, result });
             return result;
           } else {
-            console.log('[OrdersPage] Single date filter detected');
             // Single date filter
             const filterDate = new Date(filterValue);
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
 
             const result = orderDateOnly.getTime() === filterDateOnly.getTime();
-            console.log('[OrdersPage] Single date comparison:', { orderDateOnly, filterDateOnly, result });
             return result;
           }
         },
@@ -597,6 +614,16 @@ export function OrdersPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewState.isOpen}
+        onClose={() => setPdfPreviewState({ isOpen: false, orders: [] })}
+        orders={pdfPreviewState.orders}
+        title="Vista Previa - Ordenes de Venta"
+        getBatchPdfBlob={orderService.getBatchPdfBlob}
+        downloadBatchPdf={orderService.downloadBatchPdf}
+      />
     </>
   );
 }

@@ -30,6 +30,7 @@ import Settings from "./pages/Dashboard/Settings";
 import Help from "./pages/Dashboard/Help";
 import Pricing from "./pages/Dashboard/Pricing";
 import SubscriptionManagement from "./pages/Dashboard/SubscriptionManagement";
+import PaymentHistory from "./pages/Dashboard/PaymentHistory";
 import PaymentSuccess from "./pages/Dashboard/PaymentSuccess";
 import PaymentFailure from "./pages/Dashboard/PaymentFailure";
 import PaymentPending from "./pages/Dashboard/PaymentPending";
@@ -168,6 +169,14 @@ function AppContent() {
                     element={
                       <ProtectedRoute>
                         <SubscriptionManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/payments"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentHistory />
                       </ProtectedRoute>
                     }
                   />

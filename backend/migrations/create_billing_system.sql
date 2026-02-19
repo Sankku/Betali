@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   -- Billing dates
   activated_at TIMESTAMP,
   next_billing_date TIMESTAMP,
-  cancelled_at TIMESTAMP,
+  canceled_at TIMESTAMP,
   expires_at TIMESTAMP,
 
   -- Trial

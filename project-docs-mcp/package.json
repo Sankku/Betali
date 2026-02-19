@@ -14,9 +14,9 @@
   "license": "ISC",
   "description": "MCP server for project documentation and development automation",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0",
-    "typescript": "^5.0.0",
-    "glob": "^10.0.0"
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "glob": "^13.0.0",
+    "typescript": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

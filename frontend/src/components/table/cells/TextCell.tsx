@@ -17,7 +17,7 @@ export const TextCell: React.FC<TextCellProps> = ({ value, config = {} }) => {
     suffix = '',
   } = config;
 
-  let processedValue = String(value);
+  const processedValue = String(value);
   const shouldTruncate = truncate && processedValue.length > truncate;
 
   const weightClasses: Record<typeof weight, string> = {

@@ -60,13 +60,6 @@ export function useWarehouseForm({
       const newLocation = initialData.location || "";
       const newIsActive = initialData.is_active ?? true;
 
-      console.log('Loading initial data:', { 
-        newName, 
-        newLocation, 
-        newIsActive, 
-        initialData 
-      });
-
       if (
         currentValues.name !== newName ||
         currentValues.location !== newLocation ||

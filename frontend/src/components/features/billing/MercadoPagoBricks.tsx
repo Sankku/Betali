@@ -67,9 +67,6 @@ export function MercadoPagoBricks({
         const settings = {
           initialization: {
             amount: amount,
-            payer: {
-              email: '', // Will be filled by user in the form
-            }
           },
           customization: {
             visual: {
@@ -78,21 +75,16 @@ export function MercadoPagoBricks({
               }
             },
             paymentMethods: {
-              types: {
-                included: ['credit_card', 'debit_card']
-              },
-              maxInstallments: 12,
-              minInstallments: 1
+              creditCard: 'all',
+              debitCard: 'all',
+              maxInstallments: 12
             }
           },
           callbacks: {
             onReady: () => {
-              console.log('Payment Brick ready');
               setIsLoading(false);
             },
             onSubmit: async (formData: any) => {
-              console.log('Payment submitted:', formData);
-
               try {
                 setIsLoading(true);
 

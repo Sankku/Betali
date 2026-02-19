@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, X } from 'lucide-react';
 import { subscriptionService } from '../../services/api/subscriptionService';
-import { mercadoPagoService } from '../../services/api/mercadoPagoService';
 import { PricingCard } from '../../components/features/billing/PricingCard';
 import { PaymentModal } from '../../components/features/billing/PaymentModal';
 import { Button } from '../../components/ui/button';
@@ -15,9 +14,10 @@ export default function Pricing() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
+  const [pendingPaymentAmount, setPendingPaymentAmount] = useState<number | null>(null);
+
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Fetch all plans
   const { data: plans, isLoading: isLoadingPlans } = useQuery({
@@ -31,9 +31,20 @@ export default function Pricing() {
     queryFn: () => subscriptionService.getCurrentSubscription(),
   });
 
+  // Auto-open payment modal if there's a pending payment subscription
+  useEffect(() => {
+    const subscription = currentSubscription?.subscription;
+    if (subscription?.status === 'pending_payment' && plans) {
+      setSelectedPlanId(subscription.plan_id);
+      setCurrentSubscriptionId(subscription.subscription_id);
+      setPendingPaymentAmount(subscription.amount);
+      setPaymentModalOpen(true);
+    }
+  }, [currentSubscription, plans]);
+
   // Create pending subscription before opening payment modal
   const { mutate: createPendingSubscription, isPending: isCreatingSubscription } = useMutation({
-    mutationFn: async ({ planId, currency }: { planId: string; currency: string }) => {
+    mutationFn: async ({ planId, currency }: { planId: string; currency: 'ARS' | 'USD' }) => {
       // Create pending subscription first
       const subscription = await subscriptionService.requestPlanChange({
         planId,
@@ -41,7 +52,7 @@ export default function Pricing() {
       });
       return { subscription, planId };
     },
-    onSuccess: ({ subscription, planId }) => {
+    onSuccess: ({ subscription }) => {
       // Store the subscription ID and open payment modal
       setCurrentSubscriptionId(subscription.subscription_id);
       setPaymentModalOpen(true);
@@ -72,11 +83,21 @@ export default function Pricing() {
       return;
     }
 
+    // If there's already a pending payment for this plan, just open the modal
+    const subscription = currentSubscription?.subscription;
+    if (subscription?.status === 'pending_payment' && subscription?.plan_id === planId) {
+      setSelectedPlanId(planId);
+      setCurrentSubscriptionId(subscription.subscription_id);
+      setPendingPaymentAmount(subscription.amount);
+      setPaymentModalOpen(true);
+      return;
+    }
+
     // Create pending subscription (will trigger payment flow via CheckoutButton)
     setSelectedPlanId(planId);
     createPendingSubscription({
       planId,
-      currency: 'ARS' // Cambiar a 'USD' si prefieres
+      currency: 'ARS'
     });
   };
 
@@ -141,6 +162,8 @@ export default function Pricing() {
           <div className="mt-12 grid gap-8 lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
             {plans?.map((plan) => {
               const isLoadingThisPlan = isCreatingSubscription && selectedPlanId === plan.plan_id;
+              const isPendingPaymentPlan = currentSubscription?.subscription?.status === 'pending_payment'
+                && currentSubscription?.subscription?.plan_id === plan.plan_id;
 
               return (
                 <PricingCard
@@ -151,6 +174,8 @@ export default function Pricing() {
                   billingCycle={billingCycle}
                   onSelectPlan={handleSelectPlan}
                   isLoading={isLoadingThisPlan}
+                  hasActiveSubscription={!!currentSubscription?.subscription}
+                  hasPendingPayment={isPendingPaymentPlan}
                 />
               );
             })}
@@ -164,14 +189,17 @@ export default function Pricing() {
                 setPaymentModalOpen(false);
                 setCurrentSubscriptionId(null);
                 setSelectedPlanId(null);
+                setPendingPaymentAmount(null);
               }}
               subscriptionId={currentSubscriptionId}
               planId={selectedPlanId}
               planName={plans?.find(p => p.plan_id === selectedPlanId)?.display_name || ''}
               amount={
-                billingCycle === 'monthly'
-                  ? plans?.find(p => p.plan_id === selectedPlanId)?.price_monthly || 0
-                  : plans?.find(p => p.plan_id === selectedPlanId)?.price_yearly || 0
+                pendingPaymentAmount !== null
+                  ? pendingPaymentAmount
+                  : billingCycle === 'monthly'
+                    ? plans?.find(p => p.plan_id === selectedPlanId)?.price_monthly || 0
+                    : plans?.find(p => p.plan_id === selectedPlanId)?.price_yearly || 0
               }
               billingCycle={billingCycle}
               currency="ARS"

@@ -29,7 +29,6 @@ class HttpClient {
       }
     } catch (e) {
       // Ignore localStorage errors
-      console.warn('Could not read organization context from localStorage:', e);
     }
 
     return headers;

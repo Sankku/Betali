@@ -12,6 +12,7 @@ import {
   FileText,
   Clock,
   Truck,
+  FileDown,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ import {
   ModalFooter,
 } from '@/components/ui/modal';
 import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
+import { PdfPreviewModal, PdfOrderItem } from '@/components/ui/pdf-preview-modal';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
 import { formatDate } from '@/lib/utils';
 import {
@@ -53,6 +55,7 @@ import {
   STATUS_LABELS,
   getAvailableStatusTransitions,
 } from '@/types/purchaseOrders';
+import { purchaseOrdersService } from '@/services/api/purchaseOrdersService';
 
 interface ModalState {
   isOpen: boolean;
@@ -78,6 +81,10 @@ export function PurchaseOrdersPage() {
     isOpen: false,
     action: '',
     purchaseOrders: [],
+  });
+  const [pdfPreviewState, setPdfPreviewState] = useState({
+    isOpen: false,
+    orders: [] as PdfOrderItem[],
   });
 
   // Build filters
@@ -210,6 +217,25 @@ export function PurchaseOrdersPage() {
         onClick: (orders) =>
           setBatchActionModalState({ isOpen: true, action: 'receive', purchaseOrders: orders }),
         getValidItems: (orders) => orders.filter((o) => o.status === 'approved'),
+      },
+      {
+        key: 'download-pdf',
+        label: 'PDF',
+        icon: FileDown,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-indigo-300',
+          text: 'text-indigo-700',
+          hoverBg: 'hover:bg-indigo-50',
+        },
+        onClick: (orders) => {
+          const pdfOrders: PdfOrderItem[] = orders.map((order) => ({
+            id: order.purchase_order_id,
+            label: `${order.purchase_order_number} - ${order.suppliers?.name || 'Sin proveedor'}`,
+          }));
+          setPdfPreviewState({ isOpen: true, orders: pdfOrders });
+        },
+        alwaysShow: true,
       },
       {
         key: 'cancel',
@@ -511,6 +537,16 @@ export function PurchaseOrdersPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewState.isOpen}
+        onClose={() => setPdfPreviewState({ isOpen: false, orders: [] })}
+        orders={pdfPreviewState.orders}
+        title="Vista Previa - Ordenes de Compra"
+        getBatchPdfBlob={purchaseOrdersService.getBatchPdfBlob}
+        downloadBatchPdf={purchaseOrdersService.downloadBatchPdf}
+      />
     </>
   );
 }
