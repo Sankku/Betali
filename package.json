@@ -10,10 +10,22 @@
     "scripts": {
         "front": "cd frontend && bun run dev",
         "back": "cd backend && bun run start",
+        "back:dev": "cd backend && bun run dev",
         "build:front": "cd frontend && bun run build",
+        "build:back": "cd backend && bun run build",
         "build": "bun run build:front",
+        "build:all": "bun run build:front && bun run build:back",
         "preview:front": "cd frontend && bun run preview",
-        "serve:front": "bun run preview:front"
+        "serve:front": "bun run preview:front",
+        "test": "bun run test:back && bun run test:front",
+        "test:back": "cd backend && bun run test",
+        "test:front": "cd frontend && bun run test",
+        "test:watch": "cd backend && bun run test:watch",
+        "lint": "bun run lint:front && bun run lint:back",
+        "lint:front": "cd frontend && bun run lint",
+        "lint:back": "cd backend && bun run lint",
+        "health": "cd backend && bun run health",
+        "db:test": "cd backend && bun run db:test"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.1.1",
@@ -31,5 +43,13 @@
         "ts-node": "^10.9.2",
         "typescript": "^5.9.2",
         "zod": "^3.25.64"
+    },
+    "resolutions": {
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3"
+    },
+    "overrides": {
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3"
     }
 }

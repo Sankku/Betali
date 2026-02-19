@@ -31,6 +31,7 @@ const discountRuleRoutes = require('./routes/discountRules');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlans');
 const subscriptionRoutes = require('./routes/subscriptions');
 const mercadoPagoRoutes = require('./routes/mercadopago');
+const cronRoutes = require('./routes/cron');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
 const inventoryAlertRoutes = require('./routes/inventoryAlerts');
@@ -207,6 +208,7 @@ class Application {
     this.app.use('/api/mercadopago', mercadoPagoRoutes);
     this.app.use('/api', mercadoPagoRoutes); // For webhook route /api/webhooks/mercadopago
     this.app.use('/api/alerts', inventoryAlertRoutes);
+    this.app.use('/api/cron', cronRoutes);
 
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mercadoPagoController = require('../controllers/MercadoPagoController');
 const { authenticateUser } = require('../middleware/auth');
+const { verifyMercadoPagoWebhook } = require('../middleware/mercadoPagoWebhook');
 
 /**
  * MercadoPago Routes
@@ -19,10 +20,15 @@ const { authenticateUser } = require('../middleware/auth');
  *
  * This endpoint is called by Mercado Pago when payment status changes
  * Must be publicly accessible (no auth middleware)
+ *
+ * Security:
+ * - Verifies x-signature header using HMAC-SHA256
+ * - Requires MERCADOPAGO_WEBHOOK_SECRET env var in production
  */
 router.post(
   '/webhooks/mercadopago',
   express.json(),
+  verifyMercadoPagoWebhook,
   (req, res, next) => mercadoPagoController.handleWebhook(req, res, next)
 );
 
@@ -31,7 +37,12 @@ router.post(
  * GET /api/mercadopago/payment-methods/:countryCode
  */
 router.get(
-  '/payment-methods/:countryCode?',
+  '/payment-methods',
+  (req, res, next) => mercadoPagoController.getPaymentMethods(req, res, next)
+);
+
+router.get(
+  '/payment-methods/:countryCode',
   (req, res, next) => mercadoPagoController.getPaymentMethods(req, res, next)
 );
 
@@ -117,6 +128,17 @@ router.post(
 router.post(
   '/process-payment',
   (req, res, next) => mercadoPagoController.processPayment(req, res, next)
+);
+
+/**
+ * Download payment receipt as PDF
+ * GET /api/mercadopago/payment/:paymentId/receipt
+ *
+ * Returns PDF file
+ */
+router.get(
+  '/payment/:paymentId/receipt',
+  (req, res, next) => mercadoPagoController.downloadReceipt(req, res, next)
 );
 
 module.exports = router;

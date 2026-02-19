@@ -1,4 +1,5 @@
 import { httpClient } from '../http/httpClient';
+import { supabase } from '../../lib/supabase';
 import {
   PurchaseOrder,
   PurchaseOrderListItem,
@@ -8,6 +9,25 @@ import {
   PurchaseOrderFilters,
   PurchaseOrderSummary,
 } from '../../types/purchaseOrders';
+
+// Helper to get auth headers for PDF requests
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+
+  const headers: HeadersInit = {};
+
+  if (session) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const currentOrganizationId = localStorage.getItem('currentOrganizationId');
+  if (currentOrganizationId) {
+    headers['x-organization-id'] = currentOrganizationId;
+  }
+
+  return headers;
+}
 
 /**
  * Service for managing purchase orders
@@ -234,5 +254,111 @@ export const purchaseOrdersService = {
    */
   async submit(id: string): Promise<PurchaseOrder> {
     return this.updateStatus(id, { status: 'pending' });
+  },
+
+  /**
+   * Download purchase order as PDF
+   * @param id - Purchase Order ID
+   */
+  async downloadPdf(id: string): Promise<void> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf`, {
+      headers
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('PDF download error:', response.status, errorText);
+      throw new Error(`Error al descargar el PDF de la orden de compra: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orden-compra-${id.substring(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  /**
+   * Get PDF blob for preview (single purchase order)
+   * @param id - Purchase Order ID
+   */
+  async getPdfBlob(id: string): Promise<Blob> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf`, {
+      headers
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('PDF download error:', response.status, errorText);
+      throw new Error(`Error al obtener el PDF: ${response.status}`);
+    }
+
+    return response.blob();
+  },
+
+  /**
+   * Download batch PDF for multiple purchase orders
+   * @param orderIds - Array of purchase order IDs
+   */
+  async downloadBatchPdf(orderIds: string[]): Promise<void> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/batch-pdf`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderIds })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Batch PDF download error:', response.status, errorText);
+      throw new Error(`Error al descargar el PDF: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ordenes-compra-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  /**
+   * Get batch PDF blob for preview
+   * @param orderIds - Array of purchase order IDs
+   */
+  async getBatchPdfBlob(orderIds: string[]): Promise<Blob> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/batch-pdf`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderIds })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Batch PDF error:', response.status, errorText);
+      throw new Error(`Error al obtener el PDF: ${response.status}`);
+    }
+
+    return response.blob();
   },
 };

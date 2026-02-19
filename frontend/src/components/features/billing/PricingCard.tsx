@@ -9,6 +9,8 @@ interface PricingCardProps {
   billingCycle: 'monthly' | 'yearly';
   onSelectPlan: (planId: string) => void;
   isLoading?: boolean;
+  hasActiveSubscription?: boolean;
+  hasPendingPayment?: boolean;
 }
 
 export function PricingCard({
@@ -17,7 +19,9 @@ export function PricingCard({
   isPopular = false,
   billingCycle,
   onSelectPlan,
-  isLoading = false
+  isLoading = false,
+  hasActiveSubscription = false,
+  hasPendingPayment = false
 }: PricingCardProps) {
   const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
   const displayPrice = billingCycle === 'monthly' ? price : price / 12;
@@ -71,8 +75,8 @@ export function PricingCard({
         transition-all duration-200 hover:shadow-md
       `}
     >
-      {/* Popular Badge */}
-      {isPopular && (
+      {/* Popular Badge - Hide if current plan to avoid clutter */}
+      {isPopular && !isCurrentPlan && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-1 text-sm font-semibold text-white shadow-lg">
             <Zap className="h-4 w-4" />
@@ -84,8 +88,12 @@ export function PricingCard({
       {/* Current Plan Badge */}
       {isCurrentPlan && (
         <div className="absolute -top-3 right-4">
-          <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-            Current Plan
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+            hasPendingPayment
+              ? 'bg-yellow-100 text-yellow-800'
+              : 'bg-blue-100 text-blue-800'
+          }`}>
+            {hasPendingPayment ? 'Pago Pendiente' : 'Current Plan'}
           </span>
         </div>
       )}
@@ -121,13 +129,15 @@ export function PricingCard({
       {/* CTA Button */}
       <Button
         onClick={() => onSelectPlan(plan.plan_id)}
-        disabled={isCurrentPlan || isLoading}
+        disabled={(isCurrentPlan && !hasPendingPayment) || isLoading}
         className={`
           mb-6 w-full
-          ${isPopular
+          ${isCurrentPlan && !hasPendingPayment
+            ? 'bg-gray-100 text-gray-500 cursor-not-allowed shadow-none hover:bg-gray-100'
+            : hasPendingPayment
+            ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white'
+            : isPopular
             ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
-            : isCurrentPlan
-            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
             : 'bg-gray-900 hover:bg-gray-800 text-white'
           }
         `}
@@ -137,8 +147,12 @@ export function PricingCard({
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             Processing...
           </span>
+        ) : hasPendingPayment ? (
+          'Completar Pago'
         ) : isCurrentPlan ? (
           'Current Plan'
+        ) : hasActiveSubscription ? (
+          'Switch Plan'
         ) : plan.price_monthly === 0 ? (
           'Get Started'
         ) : (

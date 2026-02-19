@@ -6,6 +6,7 @@ const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/saniti
 const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { ServiceFactory } = require('../config/container');
+const orderPdfService = require('../services/OrderPdfService');
 
 const {
   createOrderSchema,
@@ -39,6 +40,42 @@ function createOrderRoutes(container) {
       next(error);
     }
   });
+
+  // POST /api/orders/batch-pdf - Generate combined PDF for multiple orders
+  router.post(
+    '/batch-pdf',
+    createLimiter,
+    async (req, res, next) => {
+      try {
+        const { orderIds } = req.body;
+        const organizationId = req.user.currentOrganizationId;
+
+        if (!organizationId) {
+          return res.status(400).json({ error: 'Organization context required' });
+        }
+
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+          return res.status(400).json({ error: 'orderIds array is required' });
+        }
+
+        if (orderIds.length > 50) {
+          return res.status(400).json({ error: 'Maximum 50 orders per batch' });
+        }
+
+        const pdfBuffer = await orderPdfService.generateBatchSalesOrderPdf(orderIds, organizationId);
+
+        const fileName = `ordenes-${new Date().toISOString().split('T')[0]}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        res.send(pdfBuffer);
+      } catch (error) {
+        console.error('Batch PDF generation error:', error);
+        next(error);
+      }
+    }
+  );
 
   // POST /api/orders/calculate-pricing - Calculate order pricing preview
   router.post(
@@ -261,6 +298,34 @@ function createOrderRoutes(container) {
       try {
         await orderController.getOrderReservations(req, res, next);
       } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // GET /api/orders/:id/pdf - Download order as PDF
+  router.get(
+    '/:id/pdf',
+    validateRequest(orderIdSchema, 'params'),
+    async (req, res, next) => {
+      try {
+        const orderId = req.params.id;
+        const organizationId = req.user.currentOrganizationId;
+
+        if (!organizationId) {
+          return res.status(400).json({ error: 'Organization context required' });
+        }
+
+        const pdfBuffer = await orderPdfService.generateSalesOrderPdf(orderId, organizationId);
+
+        const fileName = `orden-${orderId.substring(0, 8)}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        res.send(pdfBuffer);
+      } catch (error) {
+        console.error('PDF generation error:', error);
         next(error);
       }
     }

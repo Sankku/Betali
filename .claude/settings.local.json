@@ -27,7 +27,8 @@
       "Bash(npm run build:*)",
       "Bash(bash:*)",
       "Bash(wc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

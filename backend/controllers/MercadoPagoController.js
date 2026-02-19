@@ -1,4 +1,7 @@
 const mercadoPagoService = require('../services/MercadoPagoService');
+const emailService = require('../services/EmailService');
+const webhookRetryService = require('../services/WebhookRetryService');
+const receiptService = require('../services/ReceiptService');
 const { Logger } = require('../utils/Logger');
 const supabase = require('../lib/supabaseClient');
 
@@ -199,6 +202,8 @@ class MercadoPagoController {
    * This endpoint receives payment notifications and processes them
    */
   async handleWebhook(req, res, next) {
+    let webhookLogId = null;
+
     try {
       const notification = req.body;
 
@@ -208,8 +213,8 @@ class MercadoPagoController {
         dataId: notification.data?.id
       });
 
-      // Log webhook to database for debugging
-      await this.logWebhook(notification, req.headers);
+      // Log webhook to database for debugging and get the log ID
+      webhookLogId = await this.logWebhook(notification, req.headers, req);
 
       // Process the notification
       const result = await mercadoPagoService.processWebhookNotification(notification);
@@ -225,8 +230,13 @@ class MercadoPagoController {
     } catch (error) {
       this.logger.error('Error processing webhook:', error);
 
-      // Still return 200 to prevent MP from retrying
-      // But log the error for manual review
+      // Mark webhook for retry if we have the log ID
+      if (webhookLogId) {
+        await webhookRetryService.markForRetry(webhookLogId, error);
+        this.logger.info('Webhook marked for retry:', { webhookLogId });
+      }
+
+      // Still return 200 to prevent MP from retrying (we handle retries ourselves)
       return res.status(200).json({
         success: false,
         error: error.message
@@ -236,24 +246,38 @@ class MercadoPagoController {
 
   /**
    * Log webhook notification to database for debugging
+   * @returns {string|null} The webhook log ID for retry tracking
    */
-  async logWebhook(notification, headers) {
+  async logWebhook(notification, headers, req) {
     try {
-      await supabase
+      const { data, error } = await supabase
         .from('webhook_logs')
         .insert({
           provider: 'mercadopago',
           event_type: notification.type,
           event_data: notification,
           headers: {
-            'x-signature': headers['x-signature'],
+            'x-signature': headers['x-signature'] ? '[PRESENT]' : '[MISSING]',
             'x-request-id': headers['x-request-id']
           },
+          ip_address: req?.ip || null,
+          signature_verified: true, // If we reach this point, signature was verified
           processed: true,
+          retry_count: 0,
           created_at: new Date().toISOString()
-        });
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        this.logger.error('Error logging webhook:', error);
+        return null;
+      }
+
+      return data?.id || null;
     } catch (error) {
       this.logger.error('Error logging webhook:', error);
+      return null;
       // Don't throw - logging failure shouldn't break webhook processing
     }
   }
@@ -485,9 +509,8 @@ class MercadoPagoController {
 
       // Record payment in database
       await supabase
-        .from('payments')
+        .from('manual_payments')
         .insert({
-          payment_id: payment.id.toString(),
           subscription_id: subscriptionId,
           organization_id: subscription.organization_id,
           amount: payment.transaction_amount,
@@ -496,7 +519,9 @@ class MercadoPagoController {
           status: payment.status === 'approved' ? 'confirmed' : payment.status,
           payment_date: new Date().toISOString(),
           confirmed_at: payment.status === 'approved' ? new Date().toISOString() : null,
-          reference_number: payment.id.toString()
+          reference_number: payment.id.toString(),
+          notes: `MercadoPago payment ID: ${payment.id}`,
+          recorded_by: req.user.id
         });
 
       // Update subscription if payment approved
@@ -544,6 +569,38 @@ class MercadoPagoController {
             }
           })
           .eq('subscription_id', subscriptionId);
+
+        // Send payment success email
+        try {
+          await emailService.sendPaymentSuccessEmail({
+            to: user.email,
+            userName: user.name || user.email.split('@')[0],
+            planName: plan.name || plan.display_name || 'Suscripción',
+            amount: payment.transaction_amount,
+            currency: payment.currency_id || currency,
+            nextBillingDate: periodEnd.toISOString()
+          });
+          this.logger.info('Payment success email sent:', { userId: user.id, email: user.email });
+        } catch (emailError) {
+          // Don't fail the payment if email fails
+          this.logger.error('Failed to send payment success email:', emailError);
+        }
+      } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
+        // Send payment failed email
+        try {
+          const plan = subscription.subscription_plans;
+          await emailService.sendPaymentFailedEmail({
+            to: user.email,
+            userName: user.name || user.email.split('@')[0],
+            planName: plan.name || plan.display_name || 'Suscripción',
+            amount: payment.transaction_amount || amount,
+            currency: payment.currency_id || currency,
+            reason: payment.status_detail || 'El pago fue rechazado'
+          });
+          this.logger.info('Payment failed email sent:', { userId: user.id, email: user.email });
+        } catch (emailError) {
+          this.logger.error('Failed to send payment failed email:', emailError);
+        }
       }
 
       return res.status(200).json({
@@ -557,6 +614,59 @@ class MercadoPagoController {
 
     } catch (error) {
       this.logger.error('Error processing payment:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Download payment receipt as PDF
+   * GET /api/mercadopago/payment/:paymentId/receipt
+   */
+  async downloadReceipt(req, res, next) {
+    try {
+      const { paymentId } = req.params;
+      const user = req.user;
+
+      // Verify the payment belongs to the user's organization
+      const { data: payment, error: paymentError } = await supabase
+        .from('manual_payments')
+        .select(`
+          *,
+          subscriptions!inner (
+            organization_id
+          )
+        `)
+        .eq('payment_id', paymentId)
+        .single();
+
+      if (paymentError || !payment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found'
+        });
+      }
+
+      // Check authorization
+      if (payment.subscriptions.organization_id !== user.currentOrganizationId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      // Generate PDF
+      const pdfBuffer = await receiptService.generateReceipt(paymentId);
+
+      // Set response headers for PDF download
+      const fileName = `recibo-${paymentId.substring(0, 8)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      return res.send(pdfBuffer);
+
+    } catch (error) {
+      this.logger.error('Error generating receipt:', error);
       next(error);
     }
   }

@@ -43,31 +43,43 @@ class SubscriptionService {
   }
 
   /**
-   * Request a plan change - creates a pending subscription
+   * Request a plan change
+   * - For active/trialing subscriptions: schedules change for end of period
+   * - For pending_payment subscriptions: returns existing to complete payment
+   * - For no subscription: creates new pending_payment subscription
    * @param {string} organizationId
    * @param {string} planId
    * @param {string} currency
    */
   async requestPlanChange(organizationId, planId, currency = 'ARS') {
     try {
+      // Get plan details to retrieve the price
+      const plan = await subscriptionPlanRepository.findById(planId);
+
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Use monthly price by default (billing_cycle is monthly)
+      const amount = plan.price_monthly || 0;
+
       // Check if there's already a subscription for this organization
       const existingSubscription = await this.subscriptionRepository.getCurrentByOrganizationId(organizationId);
 
       if (existingSubscription) {
-        // If subscription is pending payment, don't allow creating another one
+        // If subscription is pending payment, return it so they can complete payment
         if (existingSubscription.status === 'pending_payment') {
           this.logger.warn('Organization already has a pending payment subscription', {
             subscriptionId: existingSubscription.subscription_id,
             organizationId
           });
-          // Return the existing pending subscription so they can complete payment
           return existingSubscription;
         }
 
-        // If subscription is already trialing or active with same plan, return it
+        // If subscription is already active/trialing with same plan, return it
         if (existingSubscription.plan_id === planId &&
             (existingSubscription.status === 'trialing' || existingSubscription.status === 'active')) {
-          this.logger.info('Returning existing active subscription', {
+          this.logger.info('Returning existing active subscription (same plan)', {
             subscriptionId: existingSubscription.subscription_id,
             organizationId,
             planId
@@ -75,40 +87,56 @@ class SubscriptionService {
           return existingSubscription;
         }
 
-        // If there's a different subscription, cancel it first
-        this.logger.info('Canceling existing subscription before creating new one', {
-          oldSubscriptionId: existingSubscription.subscription_id,
-          oldPlanId: existingSubscription.plan_id,
-          newPlanId: planId
-        });
+        // For active/trialing subscriptions changing to a different plan:
+        // Schedule the change for the end of the current period (don't interrupt service)
+        if (existingSubscription.status === 'active' || existingSubscription.status === 'trialing') {
+          const updateData = {
+            updated_at: new Date().toISOString(),
+            metadata: {
+              ...existingSubscription.metadata,
+              scheduled_plan_change: {
+                new_plan_id: planId,
+                new_amount: amount,
+                new_currency: currency,
+                scheduled_at: new Date().toISOString(),
+                effective_date: existingSubscription.current_period_end
+              }
+            }
+          };
 
-        // Delete the old subscription to avoid unique constraint violation
-        await this.subscriptionRepository.delete(existingSubscription.subscription_id);
+          const subscription = await this.subscriptionRepository.update(
+            existingSubscription.subscription_id,
+            updateData
+          );
+
+          this.logger.info('Scheduled plan change for end of period', {
+            subscriptionId: subscription.subscription_id,
+            organizationId,
+            currentPlanId: existingSubscription.plan_id,
+            newPlanId: planId,
+            effectiveDate: existingSubscription.current_period_end
+          });
+
+          return {
+            ...subscription,
+            scheduled_change: true,
+            effective_date: existingSubscription.current_period_end
+          };
+        }
+
+        // For other statuses (cancelled, past_due, etc.), create new pending subscription
       }
 
-      // Get the subscription plan details directly from repository to get the amount
-      const plan = await subscriptionPlanRepository.findById(planId);
-
-      if (!plan) {
-        throw new Error('Subscription plan not found');
-      }
-
-      // Determine the amount based on currency
-      let amount = plan.price_monthly; // Default to monthly
-      if (currency === 'USD') {
-        amount = plan.price_monthly_usd || plan.price_monthly;
-      }
-
-      // Create a pending subscription - periods will be set after first payment
+      // No active subscription - create a pending subscription
       const subscriptionData = {
         organization_id: organizationId,
         plan_id: planId,
-        status: 'pending_payment', // Wait for payment before activating
-        billing_cycle: 'monthly', // Default, can be parameterized
+        status: 'pending_payment',
+        billing_cycle: 'monthly',
         currency: currency,
         amount: amount,
-        current_period_start: null, // Will be set when payment is confirmed
-        current_period_end: null, // Will be set when payment is confirmed
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date().toISOString(),
         payment_gateway: 'mercadopago',
         metadata: {
           pending_payment: true,
@@ -129,6 +157,106 @@ class SubscriptionService {
       return subscription;
     } catch (error) {
       this.logger.error('Error requesting plan change:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Apply scheduled plan change (called by webhook or cron at period end)
+   * @param {string} subscriptionId
+   */
+  async applyScheduledPlanChange(subscriptionId) {
+    try {
+      const subscription = await this.subscriptionRepository.findById(subscriptionId);
+
+      if (!subscription) {
+        throw new Error(`Subscription not found: ${subscriptionId}`);
+      }
+
+      const scheduledChange = subscription.metadata?.scheduled_plan_change;
+      if (!scheduledChange) {
+        this.logger.info('No scheduled plan change found', { subscriptionId });
+        return subscription;
+      }
+
+      const now = new Date();
+      const periodEnd = new Date(subscription.current_period_end);
+
+      // Calculate new period dates
+      const newPeriodStart = periodEnd;
+      const newPeriodEnd = new Date(periodEnd);
+      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+
+      const updateData = {
+        plan_id: scheduledChange.new_plan_id,
+        amount: scheduledChange.new_amount,
+        currency: scheduledChange.new_currency,
+        current_period_start: newPeriodStart.toISOString(),
+        current_period_end: newPeriodEnd.toISOString(),
+        updated_at: now.toISOString(),
+        metadata: {
+          ...subscription.metadata,
+          scheduled_plan_change: null,
+          last_plan_change: {
+            from_plan_id: subscription.plan_id,
+            to_plan_id: scheduledChange.new_plan_id,
+            applied_at: now.toISOString()
+          }
+        }
+      };
+
+      const updatedSubscription = await this.subscriptionRepository.update(subscriptionId, updateData);
+
+      this.logger.info('Applied scheduled plan change', {
+        subscriptionId,
+        fromPlanId: subscription.plan_id,
+        toPlanId: scheduledChange.new_plan_id
+      });
+
+      return updatedSubscription;
+    } catch (error) {
+      this.logger.error('Error applying scheduled plan change:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a scheduled plan change
+   * @param {string} organizationId
+   */
+  async cancelScheduledPlanChange(organizationId) {
+    try {
+      const subscription = await this.subscriptionRepository.getCurrentByOrganizationId(organizationId);
+
+      if (!subscription) {
+        throw new Error('No active subscription found');
+      }
+
+      if (!subscription.metadata?.scheduled_plan_change) {
+        throw new Error('No scheduled plan change to cancel');
+      }
+
+      const updateData = {
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...subscription.metadata,
+          scheduled_plan_change: null
+        }
+      };
+
+      const updatedSubscription = await this.subscriptionRepository.update(
+        subscription.subscription_id,
+        updateData
+      );
+
+      this.logger.info('Cancelled scheduled plan change', {
+        subscriptionId: subscription.subscription_id,
+        organizationId
+      });
+
+      return updatedSubscription;
+    } catch (error) {
+      this.logger.error('Error cancelling scheduled plan change:', error);
       throw error;
     }
   }

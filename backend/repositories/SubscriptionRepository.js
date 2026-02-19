@@ -20,9 +20,7 @@ class SubscriptionRepository extends BaseRepository {
           subscription_plans:plan_id (*)
         `)
         .eq('organization_id', organizationId)
-        .in('status', ['active', 'past_due', 'pending', 'trialing']) // Include pending and trialing
-        .is('canceled_at', null)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === 'PGRST116') return null; // Not found
@@ -39,6 +37,14 @@ class SubscriptionRepository extends BaseRepository {
   }
 
   /**
+   * Find subscription by ID
+   * @param {string} subscriptionId
+   */
+  async findById(subscriptionId) {
+    return super.findById(subscriptionId, 'subscription_id');
+  }
+
+  /**
    * Create a new subscription
    * @param {Object} subscriptionData
    */
@@ -52,7 +58,7 @@ class SubscriptionRepository extends BaseRepository {
    * @param {Object} updates
    */
   async update(id, updates) {
-    return super.update(id, updates);
+    return super.update(id, updates, 'subscription_id');
   }
 }
 

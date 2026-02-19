@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
   -- Constraints
   UNIQUE(organization_id),
-  CONSTRAINT valid_status CHECK (status IN ('trialing', 'active', 'past_due', 'canceled', 'paused')),
+  CONSTRAINT valid_status CHECK (status IN ('trialing', 'active', 'past_due', 'canceled', 'paused', 'pending_payment')),
   CONSTRAINT valid_billing_cycle CHECK (billing_cycle IN ('monthly', 'yearly'))
 );
 

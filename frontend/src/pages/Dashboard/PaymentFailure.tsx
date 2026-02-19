@@ -129,14 +129,14 @@ export default function PaymentFailure() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => navigate('/dashboard/pricing')}
                   className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Intentar Nuevamente
                 </Button>
                 <Button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/dashboard')}
                   variant="outline"
                   className="flex-1"
                 >

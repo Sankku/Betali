@@ -11,6 +11,7 @@ import {
   Truck,
   CheckCircle,
   AlertCircle,
+  FileDown,
 } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
   ModalDescription,
   ModalFooter,
 } from '@/components/ui/modal';
+import { PdfPreviewModal, PdfOrderItem } from '@/components/ui/pdf-preview-modal';
 import { OrderModal } from './order-modal';
 import { OrderStatusBadge } from './order-status-badge';
 import {
@@ -47,7 +49,7 @@ import {
   getValidStatusTransitions,
 } from '@/hooks/useOrders';
 import { useClients } from '@/hooks/useClients';
-import { Order, OrderQueryParams } from '@/services/api/orderService';
+import { Order, OrderQueryParams, orderService } from '@/services/api/orderService';
 
 interface ModalState {
   isOpen: boolean;
@@ -65,6 +67,10 @@ export function OrdersPage() {
     isOpen: false,
     action: '' as 'process' | 'fulfill' | 'complete' | 'delete' | '',
     orders: [] as Order[],
+  });
+  const [pdfPreviewState, setPdfPreviewState] = useState({
+    isOpen: false,
+    orders: [] as PdfOrderItem[],
   });
 
   // Build query parameters
@@ -202,6 +208,25 @@ export function OrdersPage() {
         },
         onClick: orders => setBatchActionModalState({ isOpen: true, action: 'complete', orders }),
         getValidItems: orders => orders.filter(o => o.status === 'shipped'),
+      },
+      {
+        key: 'download-pdf',
+        label: 'PDF',
+        icon: FileDown,
+        colorScheme: {
+          bg: 'bg-white',
+          border: 'border-indigo-300',
+          text: 'text-indigo-700',
+          hoverBg: 'hover:bg-indigo-50',
+        },
+        onClick: orders => {
+          const pdfOrders: PdfOrderItem[] = orders.map(order => ({
+            id: order.order_id,
+            label: `#${order.order_id.slice(-8).toUpperCase()} - ${order.clients?.name || 'Sin cliente'}`,
+          }));
+          setPdfPreviewState({ isOpen: true, orders: pdfOrders });
+        },
+        alwaysShow: true,
       },
       {
         key: 'duplicate',
@@ -589,6 +614,16 @@ export function OrdersPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewState.isOpen}
+        onClose={() => setPdfPreviewState({ isOpen: false, orders: [] })}
+        orders={pdfPreviewState.orders}
+        title="Vista Previa - Ordenes de Venta"
+        getBatchPdfBlob={orderService.getBatchPdfBlob}
+        downloadBatchPdf={orderService.downloadBatchPdf}
+      />
     </>
   );
 }

@@ -165,7 +165,7 @@ class SubscriptionService {
    */
   async getPublicPlans(): Promise<SubscriptionPlan[]> {
     const response = await httpClient.get<{ data: SubscriptionPlan[] }>(this.BASE_PATH);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -173,7 +173,7 @@ class SubscriptionService {
    */
   async getPlansComparison(): Promise<PlanComparison[]> {
     const response = await httpClient.get<{ data: PlanComparison[] }>(`${this.BASE_PATH}/comparison`);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -181,7 +181,7 @@ class SubscriptionService {
    */
   async getPlanById(planId: string): Promise<SubscriptionPlan> {
     const response = await httpClient.get<{ data: SubscriptionPlan }>(`${this.BASE_PATH}/${planId}`);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -189,7 +189,7 @@ class SubscriptionService {
    */
   async getPlanByName(planName: string): Promise<SubscriptionPlan> {
     const response = await httpClient.get<{ data: SubscriptionPlan }>(`${this.BASE_PATH}/name/${planName}`);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -197,7 +197,7 @@ class SubscriptionService {
    */
   async getPlanLimits(planName: string): Promise<PlanLimits> {
     const response = await httpClient.get<{ data: PlanLimits }>(`${this.BASE_PATH}/${planName}/limits`);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -207,7 +207,7 @@ class SubscriptionService {
     const response = await httpClient.get<{ data: { hasFeature: boolean } }>(
       `${this.BASE_PATH}/${planName}/features/${featureName}`
     );
-    return response.data.data.hasFeature;
+    return response.data.hasFeature;
   }
 
   /**
@@ -218,7 +218,7 @@ class SubscriptionService {
       currentPlan,
       targetPlan
     });
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -228,7 +228,7 @@ class SubscriptionService {
     const response = await httpClient.post<{ data: PlanRecommendation }>(`${this.BASE_PATH}/recommend`, {
       usage
     });
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -245,7 +245,7 @@ class SubscriptionService {
         newPlanName
       }
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -305,7 +305,7 @@ class SubscriptionService {
     const response = await httpClient.get<{ subscription: Subscription | null }>(
       `${this.SUBSCRIPTIONS_PATH}/current`
     );
-    return response.data;
+    return response;
   }
 
   /**
@@ -326,7 +326,7 @@ class SubscriptionService {
     const response = await httpClient.get<{ hasAccess: boolean }>(
       `${this.SUBSCRIPTIONS_PATH}/feature/${featureName}`
     );
-    return response.data.hasAccess;
+    return response.hasAccess;
   }
 
   // ============================================================================
@@ -340,7 +340,7 @@ class SubscriptionService {
     const response = await httpClient.get<{ subscriptions: Subscription[] }>(
       `${this.SUBSCRIPTIONS_PATH}/pending`
     );
-    return response.data.subscriptions;
+    return response.subscriptions;
   }
 
   /**
@@ -348,9 +348,10 @@ class SubscriptionService {
    */
   async activateSubscription(subscriptionId: string): Promise<Subscription> {
     const response = await httpClient.put<{ subscription: Subscription }>(
-      `${this.SUBSCRIPTIONS_PATH}/${subscriptionId}/activate`
+      `${this.SUBSCRIPTIONS_PATH}/${subscriptionId}/activate`,
+      {}
     );
-    return response.data.subscription;
+    return response.subscription;
   }
 
   /**
@@ -361,7 +362,7 @@ class SubscriptionService {
       `${this.SUBSCRIPTIONS_PATH}/payments`,
       data
     );
-    return response.data.payment;
+    return response.payment;
   }
 
   /**
@@ -369,9 +370,10 @@ class SubscriptionService {
    */
   async confirmPayment(paymentId: string): Promise<{ payment: ManualPayment; subscription: Subscription }> {
     const response = await httpClient.put<{ payment: ManualPayment; subscription: Subscription }>(
-      `${this.SUBSCRIPTIONS_PATH}/payments/${paymentId}/confirm`
+      `${this.SUBSCRIPTIONS_PATH}/payments/${paymentId}/confirm`,
+      {}
     );
-    return response.data;
+    return response;
   }
 }
 

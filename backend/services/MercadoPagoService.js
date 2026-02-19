@@ -1,6 +1,7 @@
 const mercadopago = require('mercadopago');
 const supabase = require('../lib/supabaseClient');
 const { Logger } = require('../utils/Logger');
+const emailService = require('./EmailService');
 
 /**
  * MercadoPagoService - Handle all Mercado Pago payment operations
@@ -312,7 +313,15 @@ class MercadoPagoService {
       // Get subscription to determine billing cycle
       const { data: subscription } = await supabase
         .from('subscriptions')
-        .select('*, subscription_plans(*)')
+        .select(`
+          *,
+          subscription_plans(*),
+          organizations!inner (
+            organization_id,
+            name,
+            owner_id
+          )
+        `)
         .eq('subscription_id', subscriptionId)
         .single();
 
@@ -392,10 +401,45 @@ class MercadoPagoService {
           changed_by: 'system_mercadopago'
         });
 
+      // Send payment success email to organization owner
+      try {
+        const ownerId = subscription.organizations?.owner_id;
+        if (ownerId) {
+          // Get owner's email from auth.users
+          const { data: ownerData } = await supabase
+            .from('users')
+            .select('email, name')
+            .eq('id', ownerId)
+            .single();
+
+          if (ownerData?.email) {
+            // Get payment amount from manual_payments
+            const { data: paymentData } = await supabase
+              .from('manual_payments')
+              .select('amount, currency')
+              .eq('payment_id', internalPaymentId)
+              .single();
+
+            await emailService.sendPaymentSuccessEmail({
+              to: ownerData.email,
+              userName: ownerData.name || ownerData.email.split('@')[0],
+              planName: plan.name || plan.display_name || 'Suscripción',
+              amount: paymentData?.amount || 0,
+              currency: paymentData?.currency || 'ARS',
+              nextBillingDate: periodEnd.toISOString()
+            });
+            this.logger.info('Payment success email sent via webhook:', { email: ownerData.email });
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the activation if email fails
+        this.logger.error('Failed to send payment success email via webhook:', emailError);
+      }
+
       this.logger.info('Subscription activated successfully:', {
         subscriptionId,
         mpPaymentId,
-        nextBillingDate
+        periodEnd: periodEnd.toISOString()
       });
 
       return {
@@ -415,20 +459,61 @@ class MercadoPagoService {
    */
   async rejectSubscription(subscriptionId, reason) {
     try {
+      // Get subscription with organization and plan details for email
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          subscription_plans(*),
+          organizations!inner (
+            organization_id,
+            name,
+            owner_id
+          )
+        `)
+        .eq('subscription_id', subscriptionId)
+        .single();
+
       await supabase
         .from('subscriptions')
         .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
+          status: 'canceled',
+          canceled_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('subscription_id', subscriptionId);
+
+      // Send payment failed email to organization owner
+      if (subscription?.organizations?.owner_id) {
+        try {
+          const { data: ownerData } = await supabase
+            .from('users')
+            .select('email, name')
+            .eq('id', subscription.organizations.owner_id)
+            .single();
+
+          if (ownerData?.email) {
+            const plan = subscription.subscription_plans;
+            await emailService.sendPaymentFailedEmail({
+              to: ownerData.email,
+              userName: ownerData.name || ownerData.email.split('@')[0],
+              planName: plan?.name || plan?.display_name || 'Suscripción',
+              amount: subscription.amount || 0,
+              currency: subscription.currency || 'ARS',
+              reason: reason || 'El pago fue rechazado'
+            });
+            this.logger.info('Payment failed email sent via webhook:', { email: ownerData.email });
+          }
+        } catch (emailError) {
+          this.logger.error('Failed to send payment failed email:', emailError);
+        }
+      }
 
       this.logger.info('Subscription rejected:', { subscriptionId, reason });
 
       return {
         success: true,
-        message: 'Subscription marked as cancelled due to payment rejection'
+        message: 'Subscription marked as canceled due to payment rejection'
       };
     } catch (error) {
       this.logger.error('Error rejecting subscription:', error);
@@ -491,8 +576,8 @@ class MercadoPagoService {
       const { data: subscription, error } = await supabase
         .from('subscriptions')
         .update({
-          status: 'cancelled',
-          cancelled_at: now.toISOString(),
+          status: 'canceled',
+          canceled_at: now.toISOString(),
           updated_at: now.toISOString()
         })
         .eq('subscription_id', subscriptionId)

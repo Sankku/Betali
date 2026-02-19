@@ -1,4 +1,5 @@
 import { httpClient } from '../http/httpClient';
+import { supabase } from '../../lib/supabase';
 
 export interface CreateCheckoutRequest {
   subscriptionId: string;
@@ -228,6 +229,54 @@ class MercadoPagoService {
   formatAmount(amount: number, currency: string): string {
     const symbol = this.getCurrencySymbol(currency);
     return `${symbol} ${amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  /**
+   * Download payment receipt as PDF
+   *
+   * @param paymentId Payment ID
+   */
+  async downloadReceipt(paymentId: string): Promise<void> {
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+
+    const headers: HeadersInit = {};
+    if (session) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const currentOrganizationId = localStorage.getItem('currentOrganizationId');
+    if (currentOrganizationId) {
+      headers['x-organization-id'] = currentOrganizationId;
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${this.BASE_PATH}/payment/${paymentId}/receipt`, {
+      headers
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al descargar el recibo');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recibo-${paymentId.substring(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  /**
+   * Get receipt download URL (for opening in new tab)
+   *
+   * @param paymentId Payment ID
+   * @returns Receipt URL
+   */
+  getReceiptUrl(paymentId: string): string {
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${this.BASE_PATH}/payment/${paymentId}/receipt`;
   }
 }
 
