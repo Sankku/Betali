@@ -83,10 +83,10 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
 
 
   // Use TanStack Query to fetch user organizations
-  const { 
-    data: userOrganizations = [], 
+  const {
+    data: userOrganizations = [],
     isLoading,
-    error 
+    error
   } = useQuery({
     queryKey: ['user-organizations'],
     queryFn: async () => {
@@ -99,7 +99,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       }
     },
     enabled: !!user, // Only fetch when user is authenticated
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    staleTime: 0, // Always consider data stale so fresh login always refetches
+    refetchOnMount: 'always', // Always refetch when component mounts
     retry: 2,
   });
 
@@ -107,79 +108,81 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   // Initialize organization context when data is available
   useEffect(() => {
     if (!user || isLoading) return;
-    
-    // Only run when we have organizations and haven't initialized yet
-    if (userOrganizations.length > 0 && !isInitializedRef.current) {
-      // Check if there's a stored organization context
-      const storedOrgId = localStorage.getItem('currentOrganizationId');
-      let selectedOrg = null;
-      
-      if (storedOrgId) {
-        selectedOrg = userOrganizations.find((org: UserOrganizationWithDetails) => 
-          org?.organization?.organization_id === storedOrgId
+
+    if (userOrganizations.length > 0) {
+      if (!isInitializedRef.current) {
+        // First time initialization: pick the best organization to set as current
+        const storedOrgId = localStorage.getItem('currentOrganizationId');
+        let selectedOrg: UserOrganizationWithDetails | null = null;
+
+        if (storedOrgId) {
+          selectedOrg = userOrganizations.find((org: UserOrganizationWithDetails) =>
+            org?.organization?.organization_id === storedOrgId
+          ) || null;
+        }
+
+        // If no stored context or stored org not found, use the first available
+        if (!selectedOrg) {
+          const firstOrg = userOrganizations[0];
+          if (firstOrg?.organization?.organization_id) {
+            selectedOrg = firstOrg;
+          }
+        }
+
+        if (selectedOrg && selectedOrg.organization && selectedOrg.organization.organization_id) {
+          setCurrentOrganization(selectedOrg.organization);
+          setCurrentUserRole(selectedOrg.userRole);
+          setCurrentPermissions(selectedOrg.userPermissions || []);
+
+          // Store the current organization
+          localStorage.setItem('currentOrganizationId', selectedOrg.organization.organization_id);
+          localStorage.setItem('currentOrganizationContext', JSON.stringify({
+            organization: selectedOrg.organization,
+            userRole: selectedOrg.userRole,
+            permissions: selectedOrg.userPermissions || []
+          }));
+
+          isInitializedRef.current = true;
+        }
+      } else if (currentOrganization) {
+        // Already initialized — check if the current org still exists (e.g. after deletion)
+        const currentOrgExists = userOrganizations.some(userOrg =>
+          userOrg?.organization?.organization_id === currentOrganization.organization_id
         );
-      }
-      
-      // If no stored context or organization not found, use the first available
-      if (!selectedOrg && userOrganizations.length > 0) {
-        const firstOrg = userOrganizations[0];
-        if (firstOrg?.organization?.organization_id) {
-          selectedOrg = firstOrg;
+
+        if (!currentOrgExists) {
+          // Current organization was deleted, switch to first available
+          const firstOrg = userOrganizations[0];
+          if (firstOrg?.organization?.organization_id) {
+            setCurrentOrganization(firstOrg.organization);
+            setCurrentUserRole(firstOrg.userRole);
+            setCurrentPermissions(firstOrg.userPermissions || []);
+
+            localStorage.setItem('currentOrganizationId', firstOrg.organization.organization_id);
+            localStorage.setItem('currentOrganizationContext', JSON.stringify({
+              organization: firstOrg.organization,
+              userRole: firstOrg.userRole,
+              permissions: firstOrg.userPermissions || []
+            }));
+          }
         }
       }
-      
-      if (selectedOrg && selectedOrg.organization && selectedOrg.organization.organization_id) {
-        setCurrentOrganization(selectedOrg.organization);
-        setCurrentUserRole(selectedOrg.userRole);
-        setCurrentPermissions(selectedOrg.userPermissions || []);
-        
-        // Store the current organization
-        localStorage.setItem('currentOrganizationId', selectedOrg.organization.organization_id);
-        localStorage.setItem('currentOrganizationContext', JSON.stringify({
-          organization: selectedOrg.organization,
-          userRole: selectedOrg.userRole,
-          permissions: selectedOrg.userPermissions || []
-        }));
+    } else if (userOrganizations.length === 0 && !isLoading) {
+      // Query finished with no organizations — clear context
+      // Note: only clear after loading is done (isLoading === false) to avoid
+      // clearing on intermediate empty states before data arrives
+      setCurrentOrganization(null);
+      setCurrentUserRole(null);
+      setCurrentPermissions([]);
 
-        isInitializedRef.current = true;
-      }
-    } else if (userOrganizations.length === 0) {
-      // Clear current organization context since user has no organizations
-      if (currentOrganization) {
-        setCurrentOrganization(null);
-        setCurrentUserRole(null);
-        setCurrentPermissions([]);
-      }
-      
       // Clean up localStorage
       localStorage.removeItem('currentOrganizationContext');
       localStorage.removeItem('currentOrganizationId');
-      isInitializedRef.current = true;
-    } else if (userOrganizations.length > 0 && currentOrganization) {
-      // Check if current organization still exists in user's organizations
-      const currentOrgExists = userOrganizations.some(userOrg => 
-        userOrg?.organization?.organization_id === currentOrganization.organization_id
-      );
 
-      if (!currentOrgExists) {
-        // Current organization was deleted, switch to first available
-        const firstOrg = userOrganizations[0];
-        if (firstOrg?.organization?.organization_id) {
-          setCurrentOrganization(firstOrg.organization);
-          setCurrentUserRole(firstOrg.userRole);
-          setCurrentPermissions(firstOrg.userPermissions || []);
-          
-          // Update localStorage
-          localStorage.setItem('currentOrganizationId', firstOrg.organization.organization_id);
-          localStorage.setItem('currentOrganizationContext', JSON.stringify({
-            organization: firstOrg.organization,
-            userRole: firstOrg.userRole,
-            permissions: firstOrg.userPermissions || []
-          }));
-        }
-      }
+      // Mark initialized so we don't retry unnecessarily, but allow re-init
+      // if orgs are added later (isInitializedRef stays false so next org creation works)
     }
-  }, [user, userOrganizations.length, isLoading]);
+  }, [user, userOrganizations, isLoading, currentOrganization]);
 
   // Reset initialization flag when user changes
   useEffect(() => {
@@ -256,7 +259,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       
       // Manually fetch the updated organizations to ensure we have the latest data
       try {
-        const updatedUserOrgs = await apiService.user.getOrganizations();
+        const updatedUserOrgs = await apiService.organizations.getUserOrganizations();
 
         // Find the newly created organization in the updated list
         const newOrgInList = updatedUserOrgs.find(org =>

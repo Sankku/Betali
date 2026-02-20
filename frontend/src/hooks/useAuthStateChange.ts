@@ -16,13 +16,20 @@ export function useAuthStateChange() {
       // Clear all cached data when auth state changes
       if (event === 'SIGNED_OUT') {
         queryClient.clear();
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      } else if (
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'USER_UPDATED' // fires after email confirmation
+      ) {
         // Invalidate user-related queries to force fresh data
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         queryClient.invalidateQueries({ queryKey: ['user-context'] });
         queryClient.invalidateQueries({ queryKey: ['organizations'] });
         queryClient.invalidateQueries({ queryKey: ['users'] });
-        
+        // Critical: remove the user-organizations cache so OrganizationContext
+        // always refetches fresh org data after login or email confirmation
+        queryClient.removeQueries({ queryKey: ['user-organizations'] });
+
         // Also clear these queries completely to ensure fresh fetch
         queryClient.removeQueries({ queryKey: ['currentUser'] });
         queryClient.removeQueries({ queryKey: ['user-context'] });
