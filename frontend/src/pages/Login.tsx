@@ -40,7 +40,11 @@ export default function Login() {
 
   useEffect(() => {
     const messageParam = query.get('message');
-    if (messageParam) {
+    const verifyParam = query.get('verify');
+    
+    if (verifyParam === 'true') {
+      setMessage('Registration successful! Please check your email and click the confirmation link to log in.');
+    } else if (messageParam) {
       setMessage(messageParam);
     }
   }, [query]);
@@ -80,12 +84,8 @@ export default function Login() {
         </div>
 
         {message && (
-          <div className="mb-4 rounded-md bg-green-50 p-4">
-            <div className="flex">
-              <div className="mb-4 rounded-md bg-success-50 p-4">
-                <div className="text-sm text-success-700">{message}</div>
-              </div>
-            </div>
+          <div className="mb-4 rounded-md bg-green-50 border border-green-200 p-4">
+            <div className="text-sm text-green-700">{message}</div>
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface OnboardingStep {
   id: string;
@@ -70,16 +71,29 @@ const defaultSteps: OnboardingStep[] = [
 ];
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { currentOrganization, loading: orgLoading } = useOrganization();
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<OnboardingStep[]>(defaultSteps);
 
-  // Only auto-start onboarding when the user is authenticated and hasn't completed it before
+  // Only auto-start onboarding when:
+  // 1. Auth is resolved and user is confirmed
+  // 2. Organization context is resolved and the user has an active organization
+  // 3. The onboarding hasn't been completed before
   useEffect(() => {
-    // Wait until auth is resolved and a user is confirmed
-    if (loading || !user) {
-      // If there's no user (logged out), make sure onboarding is hidden
+    // Wait until both auth and organization are resolved
+    if (authLoading || orgLoading) return;
+
+    // If no user (logged out), hide onboarding
+    if (!user) {
+      setIsOnboardingActive(false);
+      return;
+    }
+
+    // If user has no organization yet, don't show onboarding —
+    // they need to create/join one first
+    if (!currentOrganization) {
       setIsOnboardingActive(false);
       return;
     }
@@ -92,7 +106,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, loading]);
+  }, [user, authLoading, currentOrganization, orgLoading]);
 
   const startOnboarding = () => {
     setIsOnboardingActive(true);

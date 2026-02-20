@@ -96,8 +96,12 @@ export default function Register() {
         throw new Error(signupResult.message || 'Signup failed');
       }
 
-      // Success! Redirect to dashboard
-      navigate('/dashboard?welcome=true');
+      // Success! Redirect based on tokens (if missing, user needs to verify email)
+      if (signupResult.data?.tokens) {
+        navigate('/dashboard?welcome=true');
+      } else {
+        navigate('/login?verify=true');
+      }
       
     } catch (err: any) {
       setError(err.message || 'Registration error');

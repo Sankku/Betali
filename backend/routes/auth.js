@@ -6,6 +6,7 @@ const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/saniti
 const { completeSignupSchema } = require('../validations/authValidation');
 const { DatabaseConfig } = require('../config/database');
 const logger = require('../config/logger');
+const emailService = require('../services/EmailService');
 
 /**
  * Authentication routes for SaaS signup flow
@@ -106,10 +107,9 @@ router.post(
         }
       }
 
-      // Validate we have valid tokens
+      // If no session tokens, user might need to verify their email
       if (!session || !session.access_token) {
-        logger.warn(`No session tokens available | userId: ${authUser.id}`);
-        throw new Error('Failed to generate authentication tokens. Please try logging in.');
+        logger.warn(`No session tokens available | userId: ${authUser.id}. Proceeding to create organization (requires login/email verification).`);
       }
 
       // Step 2: Create user in public.users table
@@ -145,12 +145,12 @@ router.post(
                   name: user.name,
                   organization_id: user.organization_id
                 },
-                tokens: {
+                tokens: session ? {
                   access_token: session.access_token,
                   refresh_token: session.refresh_token,
                   token_type: session.token_type,
                   expires_in: session.expires_in
-                }
+                } : null
               }
             });
           }
@@ -223,17 +223,22 @@ router.post(
           permissions: relationshipData.permissions,
           joined_at: relationshipData.joined_at
         },
-        tokens: {
+        tokens: session ? {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
           token_type: session.token_type,
           expires_in: session.expires_in,
           expires_at: session.expires_at
-        },
-        message: 'Signup completed successfully! Welcome to Betali.'
+        } : null,
+        message: session ? 'Signup completed successfully! Welcome to Betali.' : 'Signup completed. Please verify your email to log in.'
       };
 
       logger.auth.signupSuccess(authUser.id, organization.organization_id);
+
+      // Send welcome email — fire-and-forget (don't block the response if it fails)
+      emailService.sendWelcomeEmail({ to: email, userName: name }).catch(err =>
+        logger.error(`Welcome email failed for ${email}: ${err.message}`)
+      );
 
       res.status(201).json({
         success: true,
@@ -242,7 +247,7 @@ router.post(
           signupCompleted: true,
           organizationCreated: true,
           userRole: 'super_admin',
-          tokensProvided: true
+          tokensProvided: !!session
         }
       });
 
