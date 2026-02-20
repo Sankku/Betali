@@ -161,15 +161,22 @@ class HttpClient {
 
     try {
       const errorData = await response.json();
-      // Extract error message from different possible formats
-      const errorMessage = errorData.error || errorData.message || `Error: ${response.status}`;
-      throw new Error(errorMessage);
-    } catch (e) {
+      // Prioritize message over error for a more descriptive message
+      const errorMessage = errorData.message || errorData.error || `Error: ${response.status}`;
+      
+      const enhancedError: any = new Error(errorMessage);
+      enhancedError.status = response.status;
+      enhancedError.code = errorData.code;
+      enhancedError.field = errorData.field;
+      enhancedError.data = errorData;
+      
+      throw enhancedError;
+    } catch (e: any) {
       // If JSON parsing fails, use status text
-      if (e instanceof Error && e.message !== `Error: ${response.statusText}`) {
-        throw e; // Re-throw if it's our custom error
+      if (e.message !== `Error: ${response.statusText}` && !e.status) {
+        throw new Error(`Error: ${response.statusText}`);
       }
-      throw new Error(`Error: ${response.statusText}`);
+      throw e;
     }
   }
 }

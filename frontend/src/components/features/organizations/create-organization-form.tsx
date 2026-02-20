@@ -36,9 +36,12 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
   const { register, formState: { errors }, watch, setValue } = form;
   const watchName = watch('name');
 
+  // Generate a steady random suffix for the lifetime of this form instance
+  const [randomSuffix] = React.useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+
   // Auto-generate slug from name
   React.useEffect(() => {
-    if (watchName) {
+    if (watchName && !form.formState.dirtyFields.slug) {
       const baseSlug = watchName
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
@@ -46,13 +49,11 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
         .replace(/-+/g, '-') // Replace multiple hyphens with single
         .trim();
       
-      // Add timestamp suffix to make it more unique
-      const timestamp = Date.now().toString().slice(-4); // Last 4 digits
-      const autoSlug = `${baseSlug}-${timestamp}`;
+      const autoSlug = baseSlug ? `${baseSlug}-${randomSuffix}` : '';
       
-      setValue('slug', autoSlug);
+      setValue('slug', autoSlug, { shouldValidate: true });
     }
-  }, [watchName, setValue]);
+  }, [watchName, setValue, randomSuffix, form.formState.dirtyFields.slug]);
 
   const onSubmit = async (data: CreateOrganizationFormData) => {
     try {
@@ -67,7 +68,7 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
       if (error?.code === 'DUPLICATE_SLUG' || error?.message?.includes('slug already exists')) {
         form.setError('slug', {
           type: 'manual',
-          message: 'This organization name is already taken. Please choose a different name.'
+          message: error?.message || 'This organization URL slug is already taken. Please choose a different one.'
         });
       } else if (error?.field === 'name') {
         form.setError('name', {
@@ -78,7 +79,7 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
         // Generic error handling
         form.setError('name', {
           type: 'manual',
-          message: 'Failed to create organization. Please try again.'
+          message: error?.message || 'Failed to create organization. Please try again.'
         });
       }
     }
