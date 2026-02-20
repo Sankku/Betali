@@ -52,17 +52,13 @@ class ProductService {
      */
     async getProductById(productId, organizationId) {
       try {
-        const product = await this.repository.findById(productId, 'product_id');
-        
+        // findById now enforces organization isolation at the repository level
+        const product = await this.repository.findById(productId, organizationId);
+
         if (!product) {
           throw new Error('Product not found');
         }
-  
-        // Validate organization access
-        if (product.organization_id !== organizationId) {
-          throw new Error('Access denied: Product does not belong to your organization');
-        }
-  
+
         return product;
       } catch (error) {
         this.logger.error(`Error fetching product by ID: ${error.message}`);

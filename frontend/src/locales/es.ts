@@ -61,6 +61,7 @@ export const es = {
     traceability: 'Trazabilidad',
     stockControl: 'Control de Stock',
     pricing: 'Planes y Precios',
+    subscription: 'Mi Suscripción',
     settings: 'Configuración',
     dashboard: 'Panel de Control',
     help: 'Ayuda',

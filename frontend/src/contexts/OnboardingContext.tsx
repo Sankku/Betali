@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 interface OnboardingStep {
   id: string;
@@ -69,12 +70,20 @@ const defaultSteps: OnboardingStep[] = [
 ];
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<OnboardingStep[]>(defaultSteps);
 
-  // Check if onboarding has been completed before
+  // Only auto-start onboarding when the user is authenticated and hasn't completed it before
   useEffect(() => {
+    // Wait until auth is resolved and a user is confirmed
+    if (loading || !user) {
+      // If there's no user (logged out), make sure onboarding is hidden
+      setIsOnboardingActive(false);
+      return;
+    }
+
     const hasCompleted = localStorage.getItem(STORAGE_KEY);
     if (!hasCompleted) {
       // Auto-start onboarding for new users after a short delay
@@ -83,7 +92,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user, loading]);
 
   const startOnboarding = () => {
     setIsOnboardingActive(true);

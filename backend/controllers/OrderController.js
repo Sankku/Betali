@@ -108,7 +108,7 @@ class OrderController {
   async createOrder(req, res, next) {
     try {
       const organizationId = req.user.currentOrganizationId;
-      const userId = req.userId;
+      const userId = req.user.id;
       const orderData = {
         ...req.body,
         user_id: userId
@@ -259,7 +259,7 @@ class OrderController {
     try {
       const { id: orderId } = req.params;
       const organizationId = req.user.currentOrganizationId;
-      const userId = req.userId;
+      const userId = req.user.id;
 
       this.logger.info('Duplicating order', { orderId, organizationId });
 
@@ -507,7 +507,7 @@ class OrderController {
     try {
       const { id: orderId } = req.params;
       const organizationId = req.user.currentOrganizationId;
-      const userId = req.user.userId;
+      const userId = req.user.id;
 
       this.logger.info('Reserving stock for order', { orderId, organizationId });
 

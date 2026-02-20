@@ -63,16 +63,21 @@ class WarehouseRepository extends BaseRepository {
   }
 
   /**
-   * Find warehouses by user ID (legacy method for backward compatibility)
+   * Find warehouses by user ID scoped to an organization (legacy method for backward compatibility)
    * @param {string} userId - User ID
+   * @param {string} organizationId - Organization ID (required for tenant isolation)
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
    */
-  async findByUserId(userId, options = {}) {
+  async findByUserId(userId, organizationId, options = {}) {
+    if (!organizationId) {
+      throw new Error('organizationId is required to ensure tenant data isolation');
+    }
     try {
       let query = this.client
         .from(this.table)
         .select('*')
+        .eq('organization_id', organizationId)
         .or(`owner_id.eq.${userId},user_id.eq.${userId}`);
 
       if (options.orderBy) {

@@ -63,6 +63,7 @@ export const en: TranslationKeys = {
     traceability: 'Traceability',
     stockControl: 'Stock Control',
     pricing: 'Pricing',
+    subscription: 'My Subscription',
     settings: 'Settings',
     dashboard: 'Dashboard',
     help: 'Help',

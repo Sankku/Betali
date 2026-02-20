@@ -9,12 +9,28 @@ class ProductRepository extends BaseRepository {
   }
 
   /**
-   * Find product by ID
+   * Find product by ID scoped to an organization
    * @param {string} id - Product ID
+   * @param {string} organizationId - Organization ID (required for tenant isolation)
    * @returns {Promise<Object|null>}
    */
-  async findById(id) {
-    return super.findById(id, 'product_id');
+  async findById(id, organizationId) {
+    if (!organizationId) {
+      throw new Error('organizationId is required to ensure tenant data isolation');
+    }
+    try {
+      const { data, error } = await this.client
+        .from(this.table)
+        .select('*')
+        .eq('product_id', id)
+        .eq('organization_id', organizationId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
+    } catch (error) {
+      throw new Error(`Error finding product by ID: ${error?.message || String(error)}`);
+    }
   }
 
   /**
@@ -59,35 +75,34 @@ class ProductRepository extends BaseRepository {
   /**
    * Find products by batch number within organization
    * @param {string} batchNumber - Batch number
-   * @param {string} organizationId - Organization ID (optional)
+   * @param {string} organizationId - Organization ID (required for tenant isolation)
    * @returns {Promise<Array>}
    */
-  async findByBatchNumber(batchNumber, organizationId = null) {
-    const filters = { batch_number: batchNumber };
-    if (organizationId) {
-      filters.organization_id = organizationId;
+  async findByBatchNumber(batchNumber, organizationId) {
+    if (!organizationId) {
+      throw new Error('organizationId is required to ensure tenant data isolation');
     }
+    const filters = { batch_number: batchNumber, organization_id: organizationId };
     return this.findAll(filters);
   }
 
   /**
    * Search products by name or description within organization
    * @param {string} searchTerm - Search term
-   * @param {string} organizationId - Organization ID (optional)
+   * @param {string} organizationId - Organization ID (required for tenant isolation)
    * @returns {Promise<Array>}
    */
-  async search(searchTerm, organizationId = null) {
+  async search(searchTerm, organizationId) {
+    if (!organizationId) {
+      throw new Error('organizationId is required to ensure tenant data isolation');
+    }
     try {
-      let query = this.client
+      const { data, error } = await this.client
         .from(this.table)
         .select('*')
+        .eq('organization_id', organizationId)
         .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
 
-      if (organizationId) {
-        query = query.eq('organization_id', organizationId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
 
       return data || [];
