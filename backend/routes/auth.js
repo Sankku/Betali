@@ -374,12 +374,22 @@ router.post(
       try {
         userProfile = await userService.getUserById(user.id);
       } catch (error) {
-        logger.warn(`User profile not found in database | userId: ${user.id}`);
-        userProfile = {
-          user_id: user.id,
-          email: user.email,
-          name: user.user_metadata?.name || user.email.split('@')[0]
-        };
+        logger.warn(`User profile not found in database, creating missing user | userId: ${user.id}`);
+        try {
+          // Re-create missing user in the database since they successfully logged in via Supabase auth (could happen if signup failed mid-way)
+          userProfile = await userService.createUserFromAuth({
+            user_id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.email.split('@')[0]
+          });
+        } catch (createError) {
+          logger.error(`Failed to recreate missing user profile | userId: ${user.id} | error: ${createError.message}`);
+          userProfile = {
+            user_id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.email.split('@')[0]
+          };
+        }
       }
 
       // Get user organizations
