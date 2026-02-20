@@ -98,9 +98,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         throw err;
       }
     },
-    enabled: !!user, // Only fetch when user is authenticated
-    staleTime: 0, // Always consider data stale so fresh login always refetches
-    refetchOnMount: 'always', // Always refetch when component mounts
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes — deduplicates with useOrganizationManagement hook
     retry: 2,
   });
 
@@ -226,8 +225,19 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         permissions: context.permissions
       }));
 
-      // Invalidate all queries to refetch with new organization context
-      await queryClient.invalidateQueries();
+      // Invalidate only queries that are scoped to the previous organization.
+      // Using a predicate avoids a flood of 40+ simultaneous refetches.
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          // Keep auth/user/org-level queries as-is; invalidate data queries
+          const preservedKeys = ['user-organizations', 'currentUser', 'user-context', 'all-organizations'];
+          if (Array.isArray(key) && typeof key[0] === 'string') {
+            return !preservedKeys.includes(key[0]);
+          }
+          return false;
+        },
+      });
       
       // Dispatch custom event for other parts of the app to listen to
       window.dispatchEvent(new CustomEvent('organizationChanged', { 
@@ -251,15 +261,13 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         throw new Error('Invalid organization created');
       }
 
-      // Invalidate and wait for the user organizations query to refetch
-      await queryClient.invalidateQueries({ queryKey: ['user-organizations'] });
-      
-      // Wait a bit for the query to refresh
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Manually fetch the updated organizations to ensure we have the latest data
+      // Refetch user organizations and wait for it to complete
+      await queryClient.refetchQueries({ queryKey: ['user-organizations'] });
+
+      // Read the now-fresh data from the cache
       try {
-        const updatedUserOrgs = await apiService.organizations.getUserOrganizations();
+        const updatedUserOrgs = queryClient.getQueryData<typeof userOrganizations>(['user-organizations'])
+          ?? await apiService.organizations.getUserOrganizations();
 
         // Find the newly created organization in the updated list
         const newOrgInList = updatedUserOrgs.find(org =>

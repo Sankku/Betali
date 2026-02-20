@@ -117,16 +117,10 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
       // Refresh session first
       await refreshSupabaseSession();
       
-      // Clear and invalidate user-related queries
-      queryClient.removeQueries({ queryKey: ['currentUser'] });
-      queryClient.removeQueries({ queryKey: ['user-context'] });
-      
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-context'] });
-      
-      // Wait a bit for queries to refetch
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Refetch user-related queries and wait for completion
+      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
+      await queryClient.refetchQueries({ queryKey: ['user-context'] });
+
       setLastSync(Date.now());
       addSyncEvent({ type: 'user_update', message: 'User data synchronized successfully' });
     } catch (error) {
@@ -145,18 +139,11 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
       // Refresh session first
       await refreshSupabaseSession();
       
-      // Clear role-related queries
-      queryClient.removeQueries({ queryKey: ['user-context'] });
-      queryClient.removeQueries({ queryKey: ['users'] });
-      queryClient.removeQueries({ queryKey: ['organizations'] });
-      
-      await queryClient.invalidateQueries({ queryKey: ['user-context'] });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      await queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      
-      // Wait for queries to refetch
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Refetch role-related queries and wait for completion
+      await queryClient.refetchQueries({ queryKey: ['user-context'] });
+      await queryClient.refetchQueries({ queryKey: ['users'] });
+      await queryClient.refetchQueries({ queryKey: ['organizations'] });
+
       setLastSync(Date.now());
       addSyncEvent({ type: 'role_change', message: 'Roles and permissions synchronized successfully' });
     } catch (error) {
@@ -175,18 +162,11 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
       // Refresh session first
       await refreshSupabaseSession();
       
-      // Clear organization-related queries
-      queryClient.removeQueries({ queryKey: ['organizations'] });
-      queryClient.removeQueries({ queryKey: ['user-context'] });
-      queryClient.removeQueries({ queryKey: ['users'] });
-      
-      await queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-context'] });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      
-      // Wait for queries to refetch
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Refetch organization-related queries and wait for completion
+      await queryClient.refetchQueries({ queryKey: ['organizations'] });
+      await queryClient.refetchQueries({ queryKey: ['user-context'] });
+      await queryClient.refetchQueries({ queryKey: ['users'] });
+
       setLastSync(Date.now());
       addSyncEvent({ type: 'organization_switch', message: 'Organization data synchronized successfully' });
     } catch (error) {
@@ -209,21 +189,14 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
         addSyncEvent({ type: 'auth_change', message: 'Supabase session refreshed' });
       }
       
-      // Clear all relevant queries
-      queryClient.removeQueries({ queryKey: ['currentUser'] });
-      queryClient.removeQueries({ queryKey: ['user-context'] });
-      queryClient.removeQueries({ queryKey: ['users'] });
-      queryClient.removeQueries({ queryKey: ['organizations'] });
-      
-      // Invalidate all queries to force fresh data
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-context'] });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      await queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      
-      // Wait for all queries to refetch
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // Refetch all critical queries concurrently and wait for completion
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['currentUser'] }),
+        queryClient.refetchQueries({ queryKey: ['user-context'] }),
+        queryClient.refetchQueries({ queryKey: ['users'] }),
+        queryClient.refetchQueries({ queryKey: ['organizations'] }),
+      ]);
+
       setLastSync(Date.now());
       addSyncEvent({ type: 'manual_sync', message: 'Full synchronization completed successfully' });
     } catch (error) {

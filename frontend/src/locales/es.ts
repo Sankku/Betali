@@ -395,6 +395,51 @@ export const es = {
     daysAgo: 'Hace {{days}} días',
   },
 
+  // Profile
+  profile: {
+    title: 'Perfil y Preferencias',
+    subtitle: 'Tu información de usuario, preferencias y permisos',
+    displayPreferences: 'Preferencias de Visualización',
+    displayPreferencesDesc: 'Personaliza cómo se muestran las fechas y horas en la aplicación.',
+    userInfo: 'Información de Usuario',
+    name: 'Nombre',
+    email: 'Correo',
+    role: 'Rol',
+    status: 'Estado',
+    currentOrg: 'Organización Actual',
+    availableOrgs: 'Organizaciones Disponibles',
+    noOrgSelected: 'Ninguna organización seleccionada',
+    permissionsOverview: 'Resumen de Permisos',
+    totalPermissions: 'Total de Permisos',
+    categories: 'Categorías',
+    viewAllPermissions: 'Ver todos los permisos',
+    edit: 'Editar',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    enterName: 'Ingresa tu nombre',
+    nameRequired: 'El nombre es obligatorio',
+    profileUpdated: 'Perfil actualizado exitosamente',
+    profileUpdateFailed: 'Error al actualizar el perfil.',
+    errorFileTooLarge: 'La imagen pesa más de 5 MB',
+    avatarUpdated: 'Foto de perfil actualizada',
+    avatarUpdateFailed: 'Hubo un error al actualizar la foto de perfil',
+    uploadAvatar: 'Cambiar imagen',
+    removeAvatar: 'Eliminar imagen',
+    uploading: 'Subiendo...',
+    categoryNames: {
+      products: 'Productos',
+      warehouses: 'Almacenes',
+      stock_movements: 'Movimientos de Stock',
+      dashboard: 'Panel Principal',
+      users: 'Usuarios',
+      organizations: 'Organizaciones',
+      clients: 'Clientes',
+      suppliers: 'Proveedores',
+      admin: 'Administración',
+      all: 'Todos los Permisos (Super Admin)',
+    },
+  },
+
   // Errors
   errors: {
     generic: 'Ocurrió un error. Por favor intenta de nuevo.',
@@ -410,6 +455,6 @@ export const es = {
     deleteMessage: '¿Estás seguro de que deseas eliminar este elemento?',
     unsavedChanges: 'Tienes cambios sin guardar. ¿Deseas continuar?',
   },
-} as const;
+};
 
 export type TranslationKeys = typeof es;

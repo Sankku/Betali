@@ -77,6 +77,33 @@ class HttpClient {
     }
   }
 
+  async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    const headers = await this.getHeaders();
+    
+    // Remove Content-Type so browser sets it to multipart/form-data with boundary
+    if ('Content-Type' in headers) {
+      delete (headers as Record<string, string>)['Content-Type'];
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error in POST (FormData) ${endpoint}:`, error);
+      throw error;
+    }
+  }
+
   async put<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
 

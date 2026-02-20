@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 type AuthContextType = {
@@ -39,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const getSession = async () => {
@@ -48,6 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      if (!session?.user) {
+        queryClient.clear();
+      }
       setLoading(false);
     };
 
@@ -58,6 +63,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Clear all cached react-query data and stale organization Contexts on logout
+      if (!session?.user) {
+        queryClient.clear();
+        localStorage.removeItem('currentOrganizationContext');
+        localStorage.removeItem('currentOrganizationId');
+        localStorage.removeItem('currentUserRole');
+        localStorage.removeItem('currentPermissions');
+      }
+      
       setLoading(false);
     });
 

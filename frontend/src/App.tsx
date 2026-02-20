@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryProvider } from "./lib/providers/query-provider";
@@ -13,28 +13,34 @@ import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// Eagerly loaded — needed immediately on cold start
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Products from "./pages/Dashboard/Products";
-import Warehouses from "./pages/Dashboard/Warehouse";
-import StockMovements from "./pages/Dashboard/StockMovements";
-import Users from "./pages/Dashboard/Users";
-import Organizations from "./pages/Dashboard/Organizations";
-import Clients from "./pages/Dashboard/Clients";
-import Suppliers from "./pages/Dashboard/Suppliers";
-import Orders from "./pages/Dashboard/Orders";
-import PurchaseOrders from "./pages/Dashboard/PurchaseOrders";
-import TaxManagement from "./pages/Dashboard/TaxManagement";
-import Settings from "./pages/Dashboard/Settings";
-import Help from "./pages/Dashboard/Help";
-import Pricing from "./pages/Dashboard/Pricing";
-import SubscriptionManagement from "./pages/Dashboard/SubscriptionManagement";
-import PaymentHistory from "./pages/Dashboard/PaymentHistory";
-import PaymentSuccess from "./pages/Dashboard/PaymentSuccess";
-import PaymentFailure from "./pages/Dashboard/PaymentFailure";
-import PaymentPending from "./pages/Dashboard/PaymentPending";
-import { OnboardingWizard } from "./components/features/help/OnboardingWizard";
+
+// Lazily loaded — only fetched when the user navigates to the route
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Products = lazy(() => import("./pages/Dashboard/Products"));
+const Warehouses = lazy(() => import("./pages/Dashboard/Warehouse"));
+const StockMovements = lazy(() => import("./pages/Dashboard/StockMovements"));
+const Users = lazy(() => import("./pages/Dashboard/Users"));
+const Organizations = lazy(() => import("./pages/Dashboard/Organizations"));
+const Clients = lazy(() => import("./pages/Dashboard/Clients"));
+const Suppliers = lazy(() => import("./pages/Dashboard/Suppliers"));
+const Orders = lazy(() => import("./pages/Dashboard/Orders"));
+const PurchaseOrders = lazy(() => import("./pages/Dashboard/PurchaseOrders"));
+const TaxManagement = lazy(() => import("./pages/Dashboard/TaxManagement"));
+const Settings = lazy(() => import("./pages/Dashboard/Settings"));
+const Help = lazy(() => import("./pages/Dashboard/Help"));
+const Pricing = lazy(() => import("./pages/Dashboard/Pricing"));
+const SubscriptionManagement = lazy(() => import("./pages/Dashboard/SubscriptionManagement"));
+const PaymentHistory = lazy(() => import("./pages/Dashboard/PaymentHistory"));
+const PaymentSuccess = lazy(() => import("./pages/Dashboard/PaymentSuccess"));
+const PaymentFailure = lazy(() => import("./pages/Dashboard/PaymentFailure"));
+const PaymentPending = lazy(() => import("./pages/Dashboard/PaymentPending"));
+const OnboardingWizard = lazy(() =>
+  import("./components/features/help/OnboardingWizard").then((m) => ({ default: m.OnboardingWizard }))
+);
 
 function AppContent() {
   useAuthStateChange();
@@ -49,6 +55,7 @@ function AppContent() {
                 <OnboardingProvider>
                   <HelmetProvider>
                     <BrowserRouter>
+                  <Suspense fallback={null}>
                   <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -206,9 +213,10 @@ function AppContent() {
                   />
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
+                  </Suspense>
                   </BrowserRouter>
                 </HelmetProvider>
-                <OnboardingWizard />
+                <Suspense fallback={null}><OnboardingWizard /></Suspense>
                 <GlobalLoading />
                 <ToastContainer />
                 </OnboardingProvider>

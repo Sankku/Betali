@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { Package, Warehouse, ShoppingBag, AlertTriangle, DollarSign } from 'lucide-react';
 import { productsService } from '../../../services/api/productsService';
+import { useOrganization } from '../../../context/OrganizationContext';
 
 interface StatCardProps {
   title: string;
@@ -43,53 +44,64 @@ export const StatCard: React.FC<StatCardProps> = ({
 );
 
 export function DashboardStats() {
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
+
   // Products Stats (Count, Value, Low Stock)
   const { data: productStats, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['dashboardProductStats'],
+    queryKey: ['dashboardProductStats', orgId],
     queryFn: async () => {
       const products = await productsService.getAll();
-      
+
       const stats = products.reduce((acc, product: any) => {
         const stock = product.current_stock || 0;
         const price = product.price || 0;
-        
+
         return {
           count: acc.count + 1,
           value: acc.value + (stock * price),
-          lowStock: acc.lowStock + (stock < 10 ? 1 : 0) // Threshold 10 for now
+          lowStock: acc.lowStock + (stock < 10 ? 1 : 0)
         };
       }, { count: 0, value: 0, lowStock: 0 });
 
       return stats;
     },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: warehousesCount, isLoading: isLoadingWarehouses } = useQuery({
-    queryKey: ['warehousesCount'],
+    queryKey: ['warehousesCount', orgId],
     queryFn: async () => {
       const { count, error } = await supabase
         .from('warehouse')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', orgId!);
 
       if (error) throw error;
       return count || 0;
     },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: monthlyOrders, isLoading: isLoadingOrders } = useQuery({
-    queryKey: ['monthlyOrdersCount'],
+    queryKey: ['monthlyOrdersCount', orgId],
     queryFn: async () => {
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      
+
       const { count, error } = await supabase
         .from('orders')
         .select('*', { count: 'exact', head: true })
+        .eq('organization_id', orgId!)
         .gte('created_at', firstDay);
 
       if (error) throw error;
       return count || 0;
     },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const formatCurrency = (amount: number) => {

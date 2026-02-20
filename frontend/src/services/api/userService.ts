@@ -16,6 +16,7 @@ export type UpdateUserData = {
   email?: string;
   password?: string;
   is_active?: boolean;
+  avatar_url?: string;
 };
 
 /**
@@ -82,6 +83,19 @@ export const userService = {
     }
   },
 
+  async uploadAvatar(file: File): Promise<{ avatar_url: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const response = await httpClient.postFormData<{ avatar_url: string }>('/api/users/profile/avatar', formData);
+      return response as any;
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      throw error;
+    }
+  },
+
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     try {
       await httpClient.put('/api/users/profile/password', {
@@ -116,7 +130,7 @@ export const userService = {
     hasOrganizationContext: boolean;
   }> {
     try {
-      const response = await httpClient.get('/api/users/me/context');
+      const response = await httpClient.get<any>('/api/users/me/context');
       return response.data;
     } catch (error) {
       console.error('Error fetching user context:', error);

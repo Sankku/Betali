@@ -11,12 +11,15 @@ const {
   queryParamsSchema,
   changePasswordSchema
 } = require('../validations/userValidation');
+const { createFileUpload } = require('../middleware/fileUpload');
 
 const router = express.Router();
 
 const userController = ServiceFactory.createUserController();
 
 router.use(authenticateUser);
+
+const uploadAvatar = createFileUpload({ allowedTypes: 'images', maxFiles: 1 });
 
 // Get all users (admin only)
 router.get(
@@ -98,6 +101,20 @@ router.put(
   async (req, res, next) => {
     try {
       await userController.updateCurrentUserProfile(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Upload current user avatar
+router.post(
+  '/profile/avatar',
+  createLimiter,
+  uploadAvatar,
+  async (req, res, next) => {
+    try {
+      await userController.uploadCurrentUserAvatar(req, res, next);
     } catch (error) {
       next(error);
     }

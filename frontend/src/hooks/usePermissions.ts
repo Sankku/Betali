@@ -20,16 +20,19 @@ export function usePermissions() {
 
   const hasPermission = (permission: string): boolean => {
     if (isLoading || !permissions) return false;
+    if (permissions.permissions.includes('*')) return true;
     return permissions.permissions.includes(permission);
   };
 
   const hasAnyPermission = (permissionsList: string[]): boolean => {
     if (isLoading || !permissions) return false;
+    if (permissions.permissions.includes('*')) return true;
     return permissionsList.some(permission => permissions.permissions.includes(permission));
   };
 
   const hasAllPermissions = (permissionsList: string[]): boolean => {
     if (isLoading || !permissions) return false;
+    if (permissions.permissions.includes('*')) return true;
     return permissionsList.every(permission => permissions.permissions.includes(permission));
   };
 

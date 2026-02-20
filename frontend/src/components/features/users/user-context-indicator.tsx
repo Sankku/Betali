@@ -1,19 +1,10 @@
-import React, { useState } from 'react';
-import { User, Shield, ChevronDown, Eye, AlertCircle, Building2, LogOut, Settings, RefreshCw, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { User, ChevronDown, AlertCircle, Building2, LogOut, Settings, RefreshCw, Plus } from 'lucide-react';
 import { useUserContext } from '@/hooks/useUsers';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useAuth } from '@/context/AuthContext';
 import { useGlobalSync } from '@/context/GlobalSyncContext';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getRoleDisplayName } from '@/utils/roleUtils';
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalDescription,
-} from '@/components/ui/modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CreateOrganizationForm } from '../organizations/create-organization-form';
-import { DateFormatSelector } from '../settings/date-format-selector';
-import { TimezoneSelector } from '../settings/timezone-selector';
-import { userService } from '@/services/api/userService';
-import { Input } from '@/components/ui/input';
-import { Check, X as XIcon } from 'lucide-react';
-import { toast } from '@/lib/toast';
+import { UserProfileModal } from './user-profile-modal';
 
 /**
  * Component to show current user context with role, permissions, and organization
@@ -47,41 +33,6 @@ export function UserContextIndicator() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOrgSwitching, setIsOrgSwitching] = useState(false);
   const [showCreateOrganizationModal, setShowCreateOrganizationModal] = useState(false);
-  
-  // Profile editing state
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileName, setProfileName] = useState('');
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-
-  // Initialize profile name when user data loads or modal opens
-  React.useEffect(() => {
-    if (userContext?.user?.name) {
-      setProfileName(userContext.user.name);
-    }
-  }, [userContext, isDetailsOpen]);
-
-  const handleSaveProfile = async () => {
-    if (!profileName.trim()) {
-    if (!profileName.trim()) {
-      toast.error("Name is required");
-      return;
-    }
-    }
-
-    setIsSavingProfile(true);
-    try {
-      await userService.updateCurrentProfile({ name: profileName });
-      await triggerFullSync('Profile updated');
-      setIsEditingProfile(false);
-      setIsEditingProfile(false);
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error("Failed to update profile. Please try again.");
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
 
   const handleRefreshContext = async () => {
     try {
@@ -109,7 +60,7 @@ export function UserContextIndicator() {
     );
   }
 
-  const { user, permissions, hasOrganizationContext } = userContext;
+  const { user } = userContext;
   
   const handleSwitchOrganization = async (orgId: string) => {
     if (orgId === currentOrganization?.organization_id) return;
@@ -136,32 +87,6 @@ export function UserContextIndicator() {
     setShowCreateOrganizationModal(false);
     // Trigger a context refresh to load the new organization
     handleRefreshContext();
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role?.toLowerCase()) {
-      case 'super_admin':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'admin':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'manager':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'employee':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'viewer':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getPermissionCategories = (permissionsList: string[]) => {
-    const categories = new Set<string>();
-    permissionsList.forEach(permission => {
-      const category = permission.split(':')[0];
-      categories.add(category);
-    });
-    return Array.from(categories);
   };
 
   return (
@@ -197,7 +122,7 @@ export function UserContextIndicator() {
                 {user.name || 'User'}
               </span>
               <span className="text-xs text-gray-500 font-medium capitalize">
-                {hasOrganizationContext && currentOrganization 
+                {currentOrganization 
                   ? currentOrganization.name 
                   : 'No Organization'}
               </span>
@@ -313,182 +238,14 @@ export function UserContextIndicator() {
       </DropdownMenu>
 
       {/* Details Modal */}
-      <Modal isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)}>
-        <ModalContent className="max-w-2xl">
-          <ModalHeader>
-            <ModalTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Profile & Preferences
-            </ModalTitle>
-            <ModalDescription>
-              Your user information, preferences, and permissions
-            </ModalDescription>
-          </ModalHeader>
-
-          <div className="space-y-6 p-6 max-h-[70vh] overflow-y-auto">
-            {/* Preferences Section */}
-            <div className="space-y-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-blue-600" />
-                Display Preferences
-              </h3>
-              <p className="text-sm text-gray-600">
-                Customize how dates and times are displayed across the application.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white rounded-lg p-4">
-                <DateFormatSelector />
-                <TimezoneSelector />
-              </div>
-            </div>
-
-            {/* User Information */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                User Information
-              </h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="flex items-center justify-between min-h-[40px]">
-                  <span className="text-sm font-medium text-gray-600">Name:</span>
-                  {isEditingProfile ? (
-                    <div className="flex items-center gap-2">
-                       <Input 
-                        value={profileName}
-                        onChange={(e) => setProfileName(e.target.value)}
-                        className="h-8 w-48"
-                        placeholder="Enter your name"
-                      />
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={handleSaveProfile}
-                        disabled={isSavingProfile}
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
-                        onClick={() => {
-                          setIsEditingProfile(false);
-                          setProfileName(user.name || '');
-                        }}
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-900">{user.name || 'Not set'}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-6 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => setIsEditingProfile(true)}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Email:</span>
-                  <span className="text-sm text-gray-900">{user.email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Role:</span>
-                  <Badge className={getRoleBadgeColor(permissions.role)}>
-                    <Shield className="w-3 h-3 mr-1" />
-                    {getRoleDisplayName(permissions.role as any)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Status:</span>
-                  <Badge variant={user.is_active ? "default" : "danger"}>
-                    {user.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Current Organization */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">Current Organization</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                {hasOrganizationContext && currentOrganization ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">Organization:</span>
-                      <span className="text-sm text-gray-900">{currentOrganization.name}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">Available Organizations:</span>
-                      <span className="text-sm text-gray-900">{userOrganizations.length}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-orange-600">
-                    <Eye className="w-4 h-4" />
-                    <span className="text-sm">No organization context selected</span>
-                    {userOrganizations.length > 0 && (
-                      <span className="text-xs text-gray-500">({userOrganizations.length} available)</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Permissions */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">Permissions Overview</h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Total Permissions:</span>
-                  <Badge variant="outline">
-                    {permissions.permissions.length}
-                  </Badge>
-                </div>
-                
-                <div>
-                  <span className="text-sm font-medium text-gray-600 block mb-2">Categories:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {getPermissionCategories(permissions.permissions).map((category) => (
-                      <Badge 
-                        key={category} 
-                        variant="outline" 
-                        className="text-xs"
-                      >
-                        {category}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <details className="mt-3">
-                  <summary className="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-800">
-                    View all permissions ({permissions.permissions.length})
-                  </summary>
-                  <div className="mt-2 max-h-32 overflow-y-auto">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
-                      {permissions.permissions.map((permission) => (
-                        <code 
-                          key={permission} 
-                          className="block bg-white px-2 py-1 rounded border text-gray-700"
-                        >
-                          {permission}
-                        </code>
-                      ))}
-                    </div>
-                  </div>
-                </details>
-              </div>
-            </div>
-          </div>
-        </ModalContent>
-      </Modal>
+      <UserProfileModal 
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        userContext={userContext}
+        userOrganizations={userOrganizations}
+        currentOrganization={currentOrganization}
+        onRefresh={handleRefreshContext}
+      />
 
       {/* Create Organization Modal */}
       <CreateOrganizationForm

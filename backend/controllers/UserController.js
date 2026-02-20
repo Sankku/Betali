@@ -335,7 +335,7 @@ class UserController {
       const userData = req.body;
 
       // Users can only update limited fields on their own profile
-      const allowedFields = ['name', 'email'];
+      const allowedFields = ['name', 'email', 'avatar_url'];
       const filteredData = {};
       
       allowedFields.forEach(field => {
@@ -380,6 +380,57 @@ class UserController {
         stack: error.stack,
         userId: req.user?.id
       });
+      next(error);
+    }
+  }
+
+  /**
+   * Upload user avatar using Supabase storage
+   * POST /api/users/profile/avatar
+   */
+  async uploadCurrentUserAvatar(req, res, next) {
+    try {
+      const userId = req.user.id;
+      
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No image file uploaded' });
+      }
+      
+      const file = req.files[0];
+      const { supabase } = require('../config/supabase');
+      
+      // Upload to Supabase Storage
+      const fileName = `${userId}_${Date.now()}${require('path').extname(file.originalname)}`;
+      
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true
+        });
+        
+      if (error) {
+        this.logger.error('Supabase storage error', error);
+        throw new Error('Failed to upload image to storage');
+      }
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+        
+      const avatar_url = publicUrlData.publicUrl;
+      
+      // Update user with new avatar URL
+      await this.userService.updateUser(userId, { avatar_url, updated_at: new Date().toISOString() });
+      
+      res.json({
+        success: true,
+        message: 'Avatar uploaded successfully',
+        avatar_url
+      });
+    } catch (error) {
+      this.logger.error('Error in uploadCurrentUserAvatar:', error.message);
       next(error);
     }
   }
@@ -538,8 +589,9 @@ class UserController {
       // Use organization ID from request context (middleware)
       const currentOrganizationId = req.user.currentOrganizationId;
 
-      // Get user permissions based on role
-      const userPermissions = getUserPermissions(user.role);
+      // Get user permissions based on role contextualized to the current org
+      const resolvedRole = req.user.currentOrganizationRole || req.user.role || user.role;
+      const userPermissions = getUserPermissions(resolvedRole);
       
       // Get current organization details if set
       let currentOrganization = null;

@@ -191,7 +191,33 @@ const authenticateUser = async (req, res, next) => {
           user.currentOrganizationId = null;
         }
       } else {
-        // If no profile found, assign default role
+        // If no profile found, try to self-heal by creating the user in public.users
+        logger.warn('User profile not found in database, attempting to self-heal', { userId: user.id });
+        try {
+          const { data: newUserInstance, error: createError } = await supabase
+            .from('users')
+            .insert({
+              user_id: user.id,
+              email: user.email,
+              name: user.user_metadata?.name || user.email.split('@')[0],
+              role: 'employee',
+              is_active: true,
+              password_hash: 'managed_by_supabase_auth' // Required by DB structure
+            })
+            .select()
+            .single();
+            
+          if (!createError && newUserInstance) {
+            logger.info('Self-healed missing user profile', { userId: user.id });
+            user.profile = newUserInstance;
+          } else {
+            logger.error('Failed to self-heal missing user profile', { userId: user.id, error: createError?.message });
+          }
+        } catch (healError) {
+          logger.error('Exception during user profile self-healing', { userId: user.id, error: healError.message });
+        }
+
+        // Assign default role fallback
         user.role = 'VIEWER';
         user.isActive = true;
         user.organizationRoles = [];
