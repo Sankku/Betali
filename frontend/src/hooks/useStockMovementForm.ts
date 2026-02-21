@@ -78,6 +78,9 @@ export function useStockMovementForm({
   }, [form]);
 
   useEffect(() => {
+    // Only reset when editing and the initialData actually changed (e.g. user opens
+    // a different movement). Never auto-reset in create mode — that would wipe the
+    // user's input on any re-render triggered by a failed submission.
     if (initialData && mode === "edit") {
       const currentValues = form.getValues();
       const newMovementType = initialData.movement_type || "";
@@ -104,8 +107,6 @@ export function useStockMovementForm({
           movement_date: newMovementDate,
         });
       }
-    } else if (mode === "create") {
-      resetForm();
     }
   }, [
     initialData?.movement_type,
@@ -116,20 +117,18 @@ export function useStockMovementForm({
     initialData?.movement_date,
     mode,
     form,
-    resetForm
   ]);
 
   const handleSubmit = useCallback(
     (event?: React.FormEvent) => {
       return form.handleSubmit(async (data) => {
-        try {
-          await onSubmit?.(data);
-          
-          if (mode === "create") {
-            resetForm();
-          }
-        } catch (error) {
-          console.error("Error in form submit:", error);
+        // Let the error propagate to the caller (page component) so it can
+        // show a toast/alert without losing the form values.
+        // Only reset on actual success.
+        await onSubmit?.(data);
+
+        if (mode === "create") {
+          resetForm();
         }
       })(event);
     },

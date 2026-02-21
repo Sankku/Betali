@@ -31,15 +31,33 @@ class StockMovementService {
       
       this.logger.info(`Found ${movements.length} stock movements for organization ${organizationId}`);
       
-      // Process the movements to ensure proper structure
-      return movements.map(movement => ({
-        ...movement,
-        // Ensure product and warehouse are properly structured from the nested objects
-        product_name: movement.product_id?.name || 'Unknown Product',
-        product_category: movement.product_id?.category || 'Unknown Category',
-        warehouse_name: movement.warehouse_id?.name || 'Unknown Warehouse',
-        warehouse_location: movement.warehouse_id?.location || 'Unknown Location'
-      }));
+      // Process the movements to ensure proper structure.
+      // Supabase returns nested FK objects under the column name (product_id, warehouse_id).
+      // We re-map them to `product` and `warehouse` so the frontend can access them as
+      // movement.product?.name and movement.warehouse?.name consistently.
+      return movements.map(movement => {
+        const productObj = movement.product_id && typeof movement.product_id === 'object'
+          ? movement.product_id
+          : null;
+        const warehouseObj = movement.warehouse_id && typeof movement.warehouse_id === 'object'
+          ? movement.warehouse_id
+          : null;
+
+        return {
+          ...movement,
+          // Restore scalar FK IDs (Supabase overwrites them with the nested object)
+          product_id: productObj?.product_id ?? movement.product_id,
+          warehouse_id: warehouseObj?.warehouse_id ?? movement.warehouse_id,
+          // Nested objects expected by the frontend
+          product: productObj,
+          warehouse: warehouseObj,
+          // Flat convenience fields kept for backwards compatibility
+          product_name: productObj?.name || 'Unknown Product',
+          product_category: productObj?.category || 'Unknown Category',
+          warehouse_name: warehouseObj?.name || 'Unknown Warehouse',
+          warehouse_location: warehouseObj?.location || 'Unknown Location',
+        };
+      });
       
     } catch (error) {
       this.logger.error(`Error fetching stock movements: ${error.message}`);
@@ -286,7 +304,7 @@ class StockMovementService {
    */
   async validateReferences(movementData, organizationId) {
     if (movementData.product_id) {
-      const product = await this.productRepository.findById(movementData.product_id, 'product_id');
+      const product = await this.productRepository.findById(movementData.product_id, organizationId);
       if (!product) {
         throw new Error('Product not found');
       }
@@ -294,9 +312,9 @@ class StockMovementService {
         throw new Error('Product does not belong to your organization');
       }
     }
-    
+
     if (movementData.warehouse_id) {
-      const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id, 'warehouse_id');
+      const warehouse = await this.warehouseRepository.findById(movementData.warehouse_id);
       if (!warehouse) {
         throw new Error('Warehouse not found');
       }

@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { Link } from 'react-router-dom';
+import { useOrganization } from '../../../context/OrganizationContext';
 
 interface ActivityItemProps {
   type: string;
@@ -65,8 +66,11 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
 };
 
 export function ActivityList() {
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
+
   const { data: recentActivity, isLoading } = useQuery({
-    queryKey: ['recentActivity'],
+    queryKey: ['recentActivity', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stock_movements')
@@ -80,12 +84,15 @@ export function ActivityList() {
           warehouse:warehouse_id(name)
         `
         )
+        .eq('organization_id', orgId!)
         .order('movement_date', { ascending: false })
         .limit(5);
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   return (

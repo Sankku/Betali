@@ -15,11 +15,10 @@ export function useStockMovements(options: UseStockMovementsOptions = {}) {
     queryKey: ["stockMovements", currentOrganization?.organization_id],
     queryFn: async () => {
       try {
-        const response = await stockMovementService.getAll();
-        return response?.data || response;
+        // stockMovementService.getAll() already unwraps response.data internally
+        return await stockMovementService.getAll();
       } catch (error) {
         console.error('Error fetching stock movements:', error);
-        // Return empty array on error to prevent UI break
         return [];
       }
     },
@@ -36,8 +35,8 @@ export function useStockMovement(id: string, enabled = true) {
   return useQuery({
     queryKey: ["stockMovement", id, currentOrganization?.organization_id],
     queryFn: async () => {
-      const response = await stockMovementService.getById(id);
-      return response?.data || response;
+      // stockMovementService.getById() already unwraps response.data internally
+      return await stockMovementService.getById(id);
     },
     enabled: enabled && !!id && !!currentOrganization,
     staleTime: 5 * 60 * 1000,

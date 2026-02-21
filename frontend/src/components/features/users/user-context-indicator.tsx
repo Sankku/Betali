@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, ChevronDown, AlertCircle, Building2, LogOut, Settings, RefreshCw, Plus } from 'lucide-react';
+import { User, ChevronDown, AlertCircle, Building2, LogOut, Settings, RefreshCw, Plus, Pin, PinOff } from 'lucide-react';
 import { useUserContext } from '@/hooks/useUsers';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useAuth } from '@/context/AuthContext';
@@ -22,11 +22,13 @@ import { UserProfileModal } from './user-profile-modal';
 export function UserContextIndicator() {
   const { data: userContext, isLoading, error } = useUserContext();
   const { triggerFullSync } = useGlobalSync();
-  const { 
-    currentOrganization, 
-    userOrganizations, 
-    switchOrganization, 
-    switching 
+  const {
+    currentOrganization,
+    userOrganizations,
+    switchOrganization,
+    switching,
+    defaultOrganizationId,
+    setDefaultOrganization,
   } = useOrganization();
   const { signOut } = useAuth();
   // const { toast } = useToast(); // Replaced by imported toast singleton
@@ -162,31 +164,59 @@ export function UserContextIndicator() {
             
             {userOrganizations.length > 0 ? (
               userOrganizations.map((userOrg) => {
-                const isSelected = userOrg.organization?.organization_id === currentOrganization?.organization_id;
+                const orgId = userOrg.organization?.organization_id || '';
+                const isSelected = orgId === currentOrganization?.organization_id;
+                const isDefault = orgId === defaultOrganizationId;
                 return (
-                  <DropdownMenuItem
-                    key={userOrg.organization?.organization_id}
-                    onClick={() => handleSwitchOrganization(userOrg.organization?.organization_id || '')}
-                    className={`cursor-pointer min-h-[3rem] ${
-                      isSelected ? 'bg-blue-50 text-blue-700' : ''
-                    }`}
-                    disabled={isOrgSwitching}
+                  <div
+                    key={orgId}
+                    className={`flex items-center group ${isSelected ? 'bg-blue-50' : ''}`}
                   >
-                    <Building2 className={`w-4 h-4 mr-2 flex-shrink-0 ${
-                      isSelected ? 'text-blue-600' : 'text-gray-400'
-                    }`} />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium flex items-center">
-                        {userOrg.organization?.name}
-                        {isSelected && (
-                          <span className="ml-2 text-xs text-blue-600">• Current</span>
-                        )}
+                    <DropdownMenuItem
+                      onClick={() => handleSwitchOrganization(orgId)}
+                      className={`cursor-pointer min-h-[3rem] flex-1 rounded-none ${
+                        isSelected ? 'bg-blue-50 text-blue-700 focus:bg-blue-100' : ''
+                      }`}
+                      disabled={isOrgSwitching}
+                    >
+                      <Building2 className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                        isSelected ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium flex items-center gap-1">
+                          {userOrg.organization?.name}
+                          {isDefault && (
+                            <Pin className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          )}
+                          {isSelected && (
+                            <span className="text-xs text-blue-600">• Current</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 capitalize">
+                          {userOrg.role} access
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500 capitalize">
-                        {userOrg.role} access
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
+                    {/* Pin / Unpin button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDefaultOrganization(isDefault ? null : orgId);
+                      }}
+                      title={isDefault ? 'Remove default' : 'Set as default'}
+                      className={`px-2 py-1 mr-1 rounded transition-opacity ${
+                        isDefault
+                          ? 'opacity-100 text-amber-500'
+                          : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-amber-500'
+                      }`}
+                    >
+                      {isDefault ? (
+                        <PinOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Pin className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 );
               })
             ) : (

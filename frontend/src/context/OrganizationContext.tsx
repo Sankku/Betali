@@ -15,18 +15,23 @@ interface OrganizationContextState {
   currentOrganization: Organization | null;
   currentUserRole: UserRole | null;
   currentPermissions: string[];
-  
+
   // All user organizations
   userOrganizations: UserOrganizationWithDetails[];
-  
+
+  // Default org preference
+  defaultOrganizationId: string | null;
+
   // Loading states
   loading: boolean;
   switching: boolean;
-  
+
   // Actions
   switchOrganization: (organizationId: string) => Promise<void>;
   createOrganization: (data: { name: string; slug: string }) => Promise<Organization>;
-  
+  setDefaultOrganization: (organizationId: string | null) => void;
+
+
   // Utility functions
   hasPermission: (permission: string) => boolean;
   canAccessUsersSection: boolean;
@@ -54,6 +59,9 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
   const [switching, setSwitching] = useState(false);
+  const [defaultOrganizationId, setDefaultOrganizationIdState] = useState<string | null>(
+    () => localStorage.getItem('defaultOrganizationId')
+  );
   const isInitializedRef = useRef(false);
 
   // Clean up potentially corrupted localStorage on mount
@@ -110,17 +118,24 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
 
     if (userOrganizations.length > 0) {
       if (!isInitializedRef.current) {
-        // First time initialization: pick the best organization to set as current
-        const storedOrgId = localStorage.getItem('currentOrganizationId');
+        // Priority order for selecting the initial organization:
+        // 1. defaultOrganizationId — explicitly pinned by the user
+        // 2. currentOrganizationId — last used session
+        // 3. First org in the list — fallback
+        const defaultOrgId = localStorage.getItem('defaultOrganizationId');
+        const lastUsedOrgId = localStorage.getItem('currentOrganizationId');
         let selectedOrg: UserOrganizationWithDetails | null = null;
 
-        if (storedOrgId) {
-          selectedOrg = userOrganizations.find((org: UserOrganizationWithDetails) =>
-            org?.organization?.organization_id === storedOrgId
-          ) || null;
+        for (const candidateId of [defaultOrgId, lastUsedOrgId]) {
+          if (candidateId) {
+            selectedOrg = userOrganizations.find((org: UserOrganizationWithDetails) =>
+              org?.organization?.organization_id === candidateId
+            ) || null;
+            if (selectedOrg) break;
+          }
         }
 
-        // If no stored context or stored org not found, use the first available
+        // Fallback: first available org
         if (!selectedOrg) {
           const firstOrg = userOrganizations[0];
           if (firstOrg?.organization?.organization_id) {
@@ -317,19 +332,30 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     if (currentPermissions.includes('*')) {
       return true; // Super admin has all permissions
     }
-    
+
     return currentPermissions.includes(permission);
   }, [currentPermissions]);
+
+  const setDefaultOrganization = useCallback((organizationId: string | null) => {
+    if (organizationId) {
+      localStorage.setItem('defaultOrganizationId', organizationId);
+    } else {
+      localStorage.removeItem('defaultOrganizationId');
+    }
+    setDefaultOrganizationIdState(organizationId);
+  }, []);
 
   const value: OrganizationContextState = useMemo(() => ({
     currentOrganization,
     currentUserRole,
     currentPermissions,
     userOrganizations,
+    defaultOrganizationId,
     loading: isLoading,
     switching,
     switchOrganization,
     createOrganization,
+    setDefaultOrganization,
     hasPermission,
     canAccessUsersSection,
   }), [
@@ -337,10 +363,12 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     currentUserRole,
     currentPermissions,
     userOrganizations,
+    defaultOrganizationId,
     isLoading,
     switching,
     switchOrganization,
     createOrganization,
+    setDefaultOrganization,
     hasPermission,
     canAccessUsersSection,
   ]);
