@@ -126,12 +126,14 @@ class Application {
       crossOriginEmbedderPolicy: false // Allow for API usage
     }));
 
-    // Apply rate limiting early in the middleware stack
-    // Skip rate limiting in development if DISABLE_RATE_LIMIT is set
-    if (process.env.NODE_ENV !== 'development' || !process.env.DISABLE_RATE_LIMIT) {
-      this.app.use(generalLimiter);
-      this.app.use(speedLimiter);
-      this.logger.info('Rate limiting enabled');
+    // NOTE: generalLimiter and speedLimiter are NOT applied globally here
+    // because at this point req.user is not yet populated (auth middleware
+    // runs per-route). Applying them here would key by IP, which breaks
+    // in hosted environments where all users share the same proxy IP.
+    // Instead, searchLimiter and createLimiter are applied per-route
+    // AFTER the auth middleware, so they correctly key by user ID.
+    if (process.env.NODE_ENV === 'production') {
+      this.logger.info('Rate limiting enabled (per-route, user-aware)');
     } else {
       this.logger.warn('Rate limiting disabled for development');
     }
