@@ -13,10 +13,16 @@ import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Eagerly loaded — needed immediately on cold start
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import NotFound from "./pages/NotFound";
 
 // Lazily loaded — only fetched when the user navigates to the route
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -44,7 +50,7 @@ const OnboardingWizard = lazy(() =>
 
 function AppContent() {
   useAuthStateChange();
-  
+
   return (
     <AuthProvider>
       <GlobalSyncProvider>
@@ -55,170 +61,177 @@ function AppContent() {
                 <OnboardingProvider>
                   <HelmetProvider>
                     <BrowserRouter>
-                  <Suspense fallback={null}>
-                  <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/products"
-                    element={
-                      <ProtectedRoute>
-                        <Products />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/warehouse"
-                    element={
-                      <ProtectedRoute>
-                        <Warehouses />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/stock-movements"
-                    element={
-                      <ProtectedRoute>
-                        <StockMovements />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/users"
-                    element={
-                      <ProtectedRoute>
-                        <Users />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/organizations"
-                    element={
-                      <ProtectedRoute>
-                        <Organizations />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/clients"
-                    element={
-                      <ProtectedRoute>
-                        <Clients />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/suppliers"
-                    element={
-                      <ProtectedRoute>
-                        <Suppliers />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/orders"
-                    element={
-                      <ProtectedRoute>
-                        <Orders />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/purchase-orders"
-                    element={
-                      <ProtectedRoute>
-                        <PurchaseOrders />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/taxes"
-                    element={
-                      <ProtectedRoute>
-                        <TaxManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/settings"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/help"
-                    element={
-                      <ProtectedRoute>
-                        <Help />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/pricing"
-                    element={
-                      <ProtectedRoute>
-                        <Pricing />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/subscription"
-                    element={
-                      <ProtectedRoute>
-                        <SubscriptionManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/payments"
-                    element={
-                      <ProtectedRoute>
-                        <PaymentHistory />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/payment/success"
-                    element={
-                      <ProtectedRoute>
-                        <PaymentSuccess />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/payment/failure"
-                    element={
-                      <ProtectedRoute>
-                        <PaymentFailure />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/payment/pending"
-                    element={
-                      <ProtectedRoute>
-                        <PaymentPending />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-                  </Suspense>
-                  </BrowserRouter>
-                </HelmetProvider>
-                <Suspense fallback={null}><OnboardingWizard /></Suspense>
-                <GlobalLoading />
-                <ToastContainer />
+                      <ErrorBoundary>
+                        <Suspense fallback={null}>
+                          <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/terms" element={<TermsOfService />} />
+                            <Route path="/privacy" element={<PrivacyPolicy />} />
+                            <Route
+                              path="/dashboard"
+                              element={
+                                <ProtectedRoute>
+                                  <Dashboard />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/products"
+                              element={
+                                <ProtectedRoute>
+                                  <Products />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/warehouse"
+                              element={
+                                <ProtectedRoute>
+                                  <Warehouses />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/stock-movements"
+                              element={
+                                <ProtectedRoute>
+                                  <StockMovements />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/users"
+                              element={
+                                <ProtectedRoute>
+                                  <Users />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/organizations"
+                              element={
+                                <ProtectedRoute>
+                                  <Organizations />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/clients"
+                              element={
+                                <ProtectedRoute>
+                                  <Clients />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/suppliers"
+                              element={
+                                <ProtectedRoute>
+                                  <Suppliers />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/orders"
+                              element={
+                                <ProtectedRoute>
+                                  <Orders />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/purchase-orders"
+                              element={
+                                <ProtectedRoute>
+                                  <PurchaseOrders />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/taxes"
+                              element={
+                                <ProtectedRoute>
+                                  <TaxManagement />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/settings"
+                              element={
+                                <ProtectedRoute>
+                                  <Settings />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/help"
+                              element={
+                                <ProtectedRoute>
+                                  <Help />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/pricing"
+                              element={
+                                <ProtectedRoute>
+                                  <Pricing />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/subscription"
+                              element={
+                                <ProtectedRoute>
+                                  <SubscriptionManagement />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/dashboard/payments"
+                              element={
+                                <ProtectedRoute>
+                                  <PaymentHistory />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/payment/success"
+                              element={
+                                <ProtectedRoute>
+                                  <PaymentSuccess />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/payment/failure"
+                              element={
+                                <ProtectedRoute>
+                                  <PaymentFailure />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/payment/pending"
+                              element={
+                                <ProtectedRoute>
+                                  <PaymentPending />
+                                </ProtectedRoute>
+                              }
+                            />
+                            {/* 404 — must be last */}
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Suspense>
+                      </ErrorBoundary>
+                    </BrowserRouter>
+                  </HelmetProvider>
+                  <Suspense fallback={null}><OnboardingWizard /></Suspense>
+                  <GlobalLoading />
+                  <ToastContainer />
                 </OnboardingProvider>
               </DateFormatProvider>
             </LanguageProvider>
@@ -232,7 +245,9 @@ function AppContent() {
 function App() {
   return (
     <QueryProvider>
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </QueryProvider>
   );
 }

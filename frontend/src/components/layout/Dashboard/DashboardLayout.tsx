@@ -20,6 +20,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
+import { BetaliLogo } from '../../ui/BetaliLogo';
 import { useOrganization } from '../../../context/OrganizationContext';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { SidebarItem } from '../Sidebar/SidebarItem';
@@ -154,10 +155,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className="hidden md:flex md:flex-col w-72 bg-white border-r border-gray-200">
         <div className="p-4 border-b border-gray-200 h-16 flex items-center">
           <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
-            <div className="h-8 w-8 rounded-lg bg-green-600 flex items-center justify-center shadow-sm">
-              <Package className="h-5 w-5 text-white" />
-            </div>
-            <h1 className="ml-3 text-xl font-bold text-gray-900 tracking-tight">Betali</h1>
+            <BetaliLogo variant="full" size="md" />
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -224,10 +222,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity" onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-white" />
-                    </div>
-                    <h1 className="ml-3 text-xl font-semibold text-gray-900">Betali</h1>
+                    <BetaliLogo variant="full" size="md" />
                   </Link>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}

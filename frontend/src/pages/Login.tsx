@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowRight, Eye, EyeOff, Package } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
+import { BetaliLogo } from '../components/ui/BetaliLogo';
 import {
   Card,
   CardContent,
@@ -73,12 +74,8 @@ export default function Login() {
       </div>
 
       <div className="w-full max-w-md z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-md mb-4">
-            <div className="rounded-full bg-gradient-to-br from-primary-400 to-primary-600 p-3">
-              <Package className="h-10 w-10 text-white" />
-            </div>
-          </div>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <BetaliLogo variant="icon" size="xl" className="mb-4" />
           <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
           <p className="text-gray-500 mt-1">Business inventory management</p>
         </div>
@@ -184,15 +181,18 @@ export default function Login() {
           <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
               Don't have an account?
+              <span className="ml-1"></span>
               <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
                 Create account
               </Link>
             </div>
             <div className="text-center text-xs text-gray-500">
               By signing in, you accept our
+              <span className="ml-1"></span>
               <Link to="/terms" className="underline hover:text-gray-700">
                 Terms of service
               </Link>
+              <span className="ml-1"></span>
               <Link to="/privacy" className="underline hover:text-gray-700">
                 Privacy policy
               </Link>

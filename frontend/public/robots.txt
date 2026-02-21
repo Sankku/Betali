@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Don't index auth or legal pages in search results
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard/
+
+Sitemap: https://betali.app/sitemap.xml

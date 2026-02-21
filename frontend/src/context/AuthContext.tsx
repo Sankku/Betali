@@ -24,6 +24,9 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  verifyPasswordOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,6 +131,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const sendPasswordResetEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
+    }
+  };
+
+  const verifyPasswordOtp = async (email: string, token: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'recovery',
+      });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -137,6 +173,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     refreshSession,
     getAccessToken,
+    sendPasswordResetEmail,
+    updatePassword,
+    verifyPasswordOtp,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
