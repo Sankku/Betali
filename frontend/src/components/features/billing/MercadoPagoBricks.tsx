@@ -150,8 +150,12 @@ export function MercadoPagoBricks({
             },
 
             onError: (error: any) => {
-              // onError fires only for non-recoverable SDK/init errors
               console.error('Payment Brick SDK error:', error);
+              // MP Brick sends non_critical errors for validation issues
+              // (e.g. unknown BIN, missing payment info). These are handled
+              // inline by the Brick itself — don't replace the form.
+              if (error?.type === 'non_critical') return;
+              // Only truly unrecoverable errors reach here
               setFatalError('Error al cargar el formulario de pago. Por favor, recargá la página.');
             },
           },
