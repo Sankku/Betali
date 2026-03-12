@@ -1,8 +1,13 @@
-import { ShoppingCart, Loader2, Info, Calendar } from 'lucide-react';
+import { ShoppingCart, Loader2, Info, Calendar, X } from 'lucide-react';
+
+// Brand color constants for Recharts (can't use Tailwind classes in SVG attributes)
+const CHART_PRIMARY = 'oklch(0.50 0.20 206)';   // primary-500
+const CHART_SUCCESS = 'oklch(0.36 0.30 142)';   // success-500
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { orderService } from '../../../services/api/orderService';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Bar } from 'recharts';
 import { DateRangePicker, DateRange } from '@/components/ui/date-range-picker';
 import { Button } from '@/components/ui/button';
@@ -16,6 +21,7 @@ interface OrderData {
 type DateRangeType = 'today' | 'week' | 'month' | 'year' | 'custom';
 
 export function TrendChart() {
+  const { t } = useTranslation();
   const [showInfo, setShowInfo] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeType>('week');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
@@ -58,31 +64,24 @@ export function TrendChart() {
 
   const { data: orderTrends, isLoading } = useQuery({
     queryKey: ['orderTrends', dateRange, customDateRange?.from, customDateRange?.to],
+    enabled: dateRange !== 'custom' || (!!customDateRange?.from && !!customDateRange?.to),
     queryFn: async (): Promise<OrderData[]> => {
-
-      // Fetch orders using the API service
       const response = await orderService.getOrders({
-        page: 1,
-        limit: 200, // Maximum allowed by backend
-        sortBy: 'created_at',
-        sortOrder: 'desc',
+        date_from: startDate.toISOString(),
+        date_to: endDate.toISOString(),
+        sortBy: 'order_date',
+        sortOrder: 'asc',
       });
 
       const orders = response.data || [];
 
-      // Filter orders by selected date range (using order_date instead of created_at)
-      const filteredOrders = orders.filter((order: any) => {
-        const orderDate = new Date(order.order_date || order.created_at);
-        return orderDate >= startDate && orderDate <= endDate;
-      });
-
       // Group by date
       const grouped: Record<string, { orders: number; total: number }> = {};
 
-      filteredOrders.forEach((order: any) => {
-        const date = new Date(order.order_date || order.created_at).toLocaleDateString('es-ES', {
+      orders.forEach((order: any) => {
+        const date = new Date(order.order_date || order.created_at).toLocaleDateString(undefined, {
           month: 'short',
-          day: 'numeric'
+          day: 'numeric',
         });
 
         if (!grouped[date]) {
@@ -96,7 +95,7 @@ export function TrendChart() {
       return Object.entries(grouped).map(([date, values]) => ({
         date,
         orders: values.orders,
-        total: Math.round(values.total * 100) / 100 // Round to 2 decimals
+        total: Math.round(values.total * 100) / 100,
       }));
     },
   });
@@ -104,13 +103,13 @@ export function TrendChart() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Órdenes Recientes</h3>
+        <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+          <h3 className="text-lg font-medium leading-6 text-neutral-900">{t('trendChart.title')}</h3>
         </div>
         <div className="px-4 py-5 sm:p-6 flex items-center justify-center h-64">
           <div className="text-center">
-            <Loader2 className="mx-auto h-8 w-8 text-gray-400 animate-spin" />
-            <p className="mt-2 text-sm text-gray-500">Cargando datos...</p>
+            <Loader2 className="mx-auto h-8 w-8 text-neutral-400 animate-spin" />
+            <p className="mt-2 text-sm text-neutral-500">{t('trendChart.loadingData')}</p>
           </div>
         </div>
       </div>
@@ -122,53 +121,50 @@ export function TrendChart() {
   const getRangeLabel = () => {
     switch (dateRange) {
       case 'today':
-        return 'Hoy';
+        return t('trendChart.labelToday');
       case 'week':
-        return 'Últimos 7 días';
+        return t('trendChart.labelWeek');
       case 'month':
-        return 'Último mes';
+        return t('trendChart.labelMonth');
       case 'year':
-        return 'Último año';
+        return t('trendChart.labelYear');
       case 'custom':
         if (customDateRange?.from && customDateRange?.to) {
-          return `${customDateRange.from.toLocaleDateString('es-ES')} - ${customDateRange.to.toLocaleDateString('es-ES')}`;
+          return `${customDateRange.from.toLocaleDateString()} - ${customDateRange.to.toLocaleDateString()}`;
         }
-        return 'Rango personalizado';
+        return t('trendChart.labelCustomRange');
       default:
-        return 'Últimos 7 días';
+        return t('trendChart.labelWeek');
     }
   };
 
   return (
     <div className="bg-white shadow rounded-lg">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+      <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Órdenes Recientes</h3>
+            <h3 className="text-lg font-medium leading-6 text-neutral-900">{t('trendChart.title')}</h3>
             <div className="relative">
               <button
                 onClick={() => setShowInfo(!showInfo)}
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Información del gráfico"
+                className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                aria-label={t('trendChart.chartInfoAriaLabel')}
               >
-                <Info className="h-4 w-4 text-gray-500" />
+                <Info className="h-4 w-4 text-neutral-500" />
               </button>
               {showInfo && (
-                <div className="absolute left-0 top-8 z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+                <div className="absolute left-0 top-8 z-50 w-80 bg-white border border-neutral-200 rounded-lg shadow-lg p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-sm">Acerca de este gráfico</h4>
+                    <h4 className="font-semibold text-sm">{t('trendChart.aboutChartTitle')}</h4>
                     <button
                       onClick={() => setShowInfo(false)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Este gráfico muestra el número de órdenes creadas (barras azules) y el revenue total generado (línea verde) durante el período seleccionado.
-                    Útil para identificar tendencias de ventas y días de mayor actividad.
+                  <p className="text-sm text-neutral-600 leading-relaxed">
+                    {t('trendChart.aboutChartDesc')}
                   </p>
                 </div>
               )}
@@ -176,9 +172,9 @@ export function TrendChart() {
           </div>
           <Link
             to="/dashboard/orders"
-            className="text-sm text-green-600 hover:text-green-700 font-medium"
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
-            Ver todas
+            {t('trendChart.viewAll')}
           </Link>
         </div>
 
@@ -189,41 +185,41 @@ export function TrendChart() {
               onClick={() => { setDateRange('today'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'today'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
-              Hoy
+              {t('trendChart.rangeToday')}
             </button>
             <button
               onClick={() => { setDateRange('week'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'week'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
-              Semana
+              {t('trendChart.rangeWeek')}
             </button>
             <button
               onClick={() => { setDateRange('month'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'month'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
-              Mes
+              {t('trendChart.rangeMonth')}
             </button>
             <button
               onClick={() => { setDateRange('year'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'year'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
-              Año
+              {t('trendChart.rangeYear')}
             </button>
             <button
               onClick={() => {
@@ -232,29 +228,29 @@ export function TrendChart() {
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
                 dateRange === 'custom'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
               <Calendar className="w-3 h-3" />
-              Personalizado
+              {t('trendChart.rangeCustom')}
             </button>
           </div>
-          <span className="text-xs text-gray-500 ml-2">{getRangeLabel()}</span>
+          <span className="text-xs text-neutral-500 ml-2">{getRangeLabel()}</span>
         </div>
 
         {/* Custom Date Picker */}
         {showCustomDatePicker && dateRange === 'custom' && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <div className="mt-3 p-3 bg-neutral-50 rounded-md border border-neutral-200">
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Selecciona rango de fechas
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  {t('trendChart.selectDateRange')}
                 </label>
                 <DateRangePicker
                   value={pendingCustomDateRange}
                   onChange={setPendingCustomDateRange}
-                  placeholder="Selecciona fechas..."
+                  placeholder={t('trendChart.selectDateRangePlaceholder')}
                   className="w-full"
                 />
               </div>
@@ -264,9 +260,9 @@ export function TrendChart() {
                     setCustomDateRange(pendingCustomDateRange);
                   }}
                   disabled={!pendingCustomDateRange?.from || !pendingCustomDateRange?.to}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-primary-600 hover:bg-primary-700 text-white"
                 >
-                  Aplicar filtro
+                  {t('trendChart.applyFilter')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -276,9 +272,9 @@ export function TrendChart() {
                     setShowCustomDatePicker(false);
                   }}
                   variant="outline"
-                  className="border-gray-300"
+                  className="border-neutral-300"
                 >
-                  Limpiar
+                  {t('trendChart.clear')}
                 </Button>
               </div>
             </div>
@@ -291,25 +287,25 @@ export function TrendChart() {
             <div className="text-center">
               {dateRange === 'custom' && (!customDateRange?.from || !customDateRange?.to) ? (
                 <>
-                  <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Selecciona un rango de fechas</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Usa el selector de fechas arriba y haz clic en "Aplicar filtro" para ver las estadísticas
+                  <Calendar className="mx-auto h-12 w-12 text-neutral-400" />
+                  <h3 className="mt-2 text-sm font-medium text-neutral-900">{t('trendChart.selectDateRange')}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {t('trendChart.selectRangeHint')}
                   </p>
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin órdenes</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    No hay órdenes registradas en el período seleccionado
+                  <ShoppingCart className="mx-auto h-12 w-12 text-neutral-400" />
+                  <h3 className="mt-2 text-sm font-medium text-neutral-900">{t('trendChart.noOrders')}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {t('trendChart.noOrdersDesc')}
                   </p>
                   <div className="mt-6">
                     <Link
                       to="/dashboard/orders"
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
                     >
-                      Crear orden
+                      {t('trendChart.createOrder')}
                     </Link>
                   </div>
                 </>
@@ -341,20 +337,20 @@ export function TrendChart() {
             <Tooltip
               contentStyle={{
                 backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
+                border: '1px solid oklch(0.92 0.00 0)',
                 borderRadius: '6px',
                 fontSize: '12px'
               }}
-              labelStyle={{ color: '#374151', fontWeight: 'medium' }}
+              labelStyle={{ color: 'oklch(0.27 0.01 286)', fontWeight: 'medium' }}
               formatter={(value, name) => [
-                name === 'orders' ? `${value} órdenes` : `$${Number(value).toFixed(2)}`,
-                name === 'orders' ? 'Cantidad de órdenes' : 'Revenue total'
+                name === 'orders' ? `${value} ${t('trendChart.tooltipOrders')}` : `$${Number(value).toFixed(2)}`,
+                name === 'orders' ? t('trendChart.tooltipOrdersLabel') : t('trendChart.tooltipRevenueLabel')
               ]}
             />
             <Bar
               yAxisId="left"
               dataKey="orders"
-              fill="#3b82f6"
+              fill={CHART_PRIMARY}
               name="orders"
               radius={[4, 4, 0, 0]}
             />
@@ -362,22 +358,22 @@ export function TrendChart() {
               yAxisId="right"
               type="monotone"
               dataKey="total"
-              stroke="#10b981"
+              stroke={CHART_SUCCESS}
               strokeWidth={2}
               name="total"
-              dot={{ fill: '#10b981', r: 4 }}
+              dot={{ fill: CHART_SUCCESS, r: 4 }}
               activeDot={{ r: 6 }}
             />
           </ComposedChart>
         </ResponsiveContainer>
         <div className="mt-4 flex justify-center space-x-6 text-sm">
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-            <span className="text-gray-600">Número de órdenes</span>
+            <div className="w-3 h-3 bg-primary-500 rounded mr-2"></div>
+            <span className="text-neutral-600">{t('trendChart.legendOrders')}</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-            <span className="text-gray-600">Revenue total</span>
+            <div className="w-3 h-3 bg-success-500 rounded mr-2"></div>
+            <span className="text-neutral-600">{t('trendChart.legendRevenue')}</span>
           </div>
         </div>
           </>

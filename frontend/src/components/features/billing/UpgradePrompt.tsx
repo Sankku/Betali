@@ -59,10 +59,10 @@ export function UpgradePrompt({
             <Button
               onClick={() => navigate('/pricing')}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary-600 hover:bg-primary-700 text-white"
             >
               Upgrade Now
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 h-4 w-4 text-white" />
             </Button>
           </div>
         </div>
@@ -157,10 +157,10 @@ export function UpgradePrompt({
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={() => navigate('/pricing')}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+            className="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white"
           >
             View Plans
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4 text-white" />
           </Button>
           <Button
             onClick={() => navigate('/contact')}

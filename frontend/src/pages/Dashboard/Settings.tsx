@@ -4,6 +4,7 @@ import { Settings as SettingsIcon } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/Dashboard/DashboardLayout';
 import { DateFormatSettings } from '../../components/features/settings/date-format-settings';
 import { LanguageSettings } from '../../components/features/settings/language-settings';
+import { ThemeSettings } from '../../components/features/settings/theme-settings';
 import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function Settings() {
@@ -32,6 +33,7 @@ export default function Settings() {
         {/* Settings Sections */}
         <div className="space-y-6">
           <LanguageSettings />
+          <ThemeSettings />
           <DateFormatSettings />
         </div>
       </div>

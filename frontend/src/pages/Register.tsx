@@ -277,7 +277,7 @@ export default function Register() {
                 ) : (
                   <>
                     Create account
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4 text-white" />
                   </>
                 )}
               </Button>

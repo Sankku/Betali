@@ -2,6 +2,7 @@ import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Package, Calendar, Globe, DollarSign, Percent, AlertTriangle, Bell } from 'lucide-react';
 import { Input } from '../../ui/input';
+import { DatePicker } from '../../ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Label } from '../../ui/label';
 import { TooltipHelp } from '../../ui/tooltip-help';
@@ -223,15 +224,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
             icon={<Calendar className="inline h-4 w-4 mr-2" />}
           />
         ) : (
-          <Input
-            {...register('expiration_date')}
-            type="date"
-            label="Expiry/Best Before Date"
-            icon={<Calendar className="h-4 w-4" />}
-            disabled={isLoading}
-            error={errors.expiration_date?.message}
-            required
-          />
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-neutral-800 flex items-center">
+              <span className="text-neutral-600 mr-2"><Calendar className="h-4 w-4" /></span>
+              Expiry/Best Before Date
+              <span className="text-red-500 ml-1">*</span>
+            </label>
+            <DatePicker
+              value={watch('expiration_date') ? new Date(`${watch('expiration_date')}T00:00:00`) : undefined}
+              onChange={(date) => {
+                setValue('expiration_date', date ? date.toISOString().split('T')[0] : '', { shouldValidate: true });
+              }}
+              disabled={isLoading}
+              className={`w-full h-[48px] rounded-lg border-2 border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-900 shadow-sm ${errors.expiration_date ? 'border-red-500' : ''}`}
+            />
+            {errors.expiration_date?.message && <p className="text-sm text-red-600 font-medium">{errors.expiration_date.message}</p>}
+          </div>
         )}
 
         {/* Inventory Alerts Configuration */}

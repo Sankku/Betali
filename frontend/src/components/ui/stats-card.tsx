@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Card } from './card';
 
@@ -99,17 +99,15 @@ const StatsCard: React.FC<StatsCardProps> = ({
           <div className="flex items-center justify-center space-x-2">
             <div
               className={cn(
-                'flex items-center px-3 py-1.5 rounded-full text-xs font-bold',
+                'flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold',
                 trend.direction === 'up' && 'bg-success-100 text-success-700',
                 trend.direction === 'down' && 'bg-danger-100 text-danger-700',
                 trend.direction === 'neutral' && 'bg-neutral-100 text-neutral-700'
               )}
             >
-              <span className="mr-1">
-                {trend.direction === 'up' && '↗'}
-                {trend.direction === 'down' && '↘'}
-                {trend.direction === 'neutral' && '→'}
-              </span>
+              {trend.direction === 'up' && <TrendingUp className="w-3 h-3" />}
+              {trend.direction === 'down' && <TrendingDown className="w-3 h-3" />}
+              {trend.direction === 'neutral' && <Minus className="w-3 h-3" />}
               {trend.value}%
             </div>
             <span className="text-xs text-neutral-500 font-medium">{trend.label}</span>

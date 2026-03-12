@@ -212,17 +212,17 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleActive(row.original)}
-            className={row.original.is_active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"}
+            className={row.original.is_active ? "text-danger-600 hover:text-danger-800" : "text-success-600 hover:text-success-800"}
           >
-            {row.original.is_active ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+            {row.original.is_active ? <ToggleLeft className="w-4 h-4 text-danger-600" /> : <ToggleRight className="w-4 h-4 text-success-600" />}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-red-600 hover:text-red-900"
+            className="text-danger-600 hover:text-danger-800"
           >
-            <Trash className="w-4 h-4" />
+            <Trash className="w-4 h-4 text-danger-600" />
           </Button>
         </div>
       ),

@@ -157,7 +157,7 @@ export function DataTable<TData>({
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-                style={{ accentColor: 'rgb(14 116 144)' }}
+                style={{ accentColor: 'oklch(0.50 0.20 206)' }}
                 checked={row.getIsSelected()}
                 onChange={handleCheckboxChange}
                 onClick={(e) => e.stopPropagation()}
@@ -307,9 +307,9 @@ export function DataTable<TData>({
 
   return (
     <div className={cn('relative', className)}>
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-neutral-200/50 shadow-2xl shadow-neutral-900/10 overflow-hidden">
+      <div className="bg-white backdrop-blur-xl rounded-2xl border border-neutral-200/50 shadow-2xl shadow-neutral-900/10 overflow-hidden">
         {(searchable || enableColumnVisibility) && (
-          <div className="border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50/50 to-white/70 px-6 py-4">
+          <div className="border-b border-neutral-200/50 bg-neutral-50 px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-1 items-center space-x-3">
                 {searchable && (
@@ -339,7 +339,7 @@ export function DataTable<TData>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 text-neutral-700 hover:text-neutral-900 transition-all duration-200"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 transition-all duration-200"
                 >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Columns
@@ -352,11 +352,11 @@ export function DataTable<TData>({
 
         <div className="relative">
           {loading && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/85 backdrop-blur-sm">
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-neutral-200/60 shadow-xl px-6 py-4">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white backdrop-blur-sm">
+              <div className="bg-white backdrop-blur-md rounded-2xl border border-neutral-200/60 shadow-xl px-6 py-4">
                 <div className="flex items-center space-x-3">
                   <Loading size="sm" className="text-primary-600" />
-                  <span className="text-sm font-medium text-neutral-800">Loading data...</span>
+                  <span className="text-sm font-medium text-neutral-800">Cargando datos...</span>
                 </div>
               </div>
             </div>
@@ -370,7 +370,7 @@ export function DataTable<TData>({
                       key={headerGroup.id}
                       className={cn(
                         'border-b border-neutral-200/60',
-                        index === 0 && 'bg-gradient-to-r from-neutral-100/60 to-white/40'
+                        index === 0 && 'bg-neutral-100'
                       )}
                     >
                       {headerGroup.headers.map((header, index) => {
@@ -449,11 +449,11 @@ export function DataTable<TData>({
                           </div>
                           <div className="space-y-2">
                             <p className="text-lg font-semibold text-neutral-800">
-                              {loading ? 'Loading data...' : 'No data available'}
+                              {loading ? 'Cargando datos...' : 'Sin resultados'}
                             </p>
                             <p className="text-sm text-neutral-600 max-w-md">
                               {loading
-                                ? 'Please wait while we load the information.'
+                                ? 'Por favor espera mientras cargamos la información.'
                                 : emptyMessage}
                             </p>
                           </div>
@@ -468,12 +468,12 @@ export function DataTable<TData>({
                         key={row.id}
                         onClick={e => handleRowClick(row, e)}
                         onDoubleClick={e => handleRowDoubleClick(row, e)}
-                        style={isSelected ? { boxShadow: 'inset 4px 0 0 0 rgb(14 116 144)' } : undefined}
+                        style={isSelected ? { boxShadow: 'inset 4px 0 0 0 oklch(0.50 0.20 206)' } : undefined}
                         className={cn(
                           'transition-all duration-200 group',
                           (onRowClick || onRowDoubleClick || enableRowSelection) && 'cursor-pointer',
                           isSelected
-                            ? 'bg-teal-50/70 hover:bg-teal-50'
+                            ? 'bg-primary-50/70 hover:bg-primary-50'
                             : cn(
                                 'hover:bg-primary-50/40 hover:backdrop-blur-sm',
                                 index % 2 === 0 ? 'bg-white/30' : 'bg-white/15'
@@ -501,14 +501,14 @@ export function DataTable<TData>({
           </div>
         </div>
         {pagination && (
-          <div className="border-t border-neutral-200/60 bg-gradient-to-r from-neutral-100/50 to-white/60 px-6 py-4">
+          <div className="border-t border-neutral-200/60 bg-neutral-100 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-neutral-700">
-                Showing{' '}
+                Mostrando{' '}
                 <span className="font-semibold text-neutral-900">
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
                 </span>
-                {' to '}
+                {' a '}
                 <span className="font-semibold text-neutral-900">
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) *
@@ -516,11 +516,11 @@ export function DataTable<TData>({
                     table.getFilteredRowModel().rows.length
                   )}
                 </span>
-                {' of '}
+                {' de '}
                 <span className="font-semibold text-neutral-900">
                   {table.getFilteredRowModel().rows.length}
                 </span>
-                {' results'}
+                {' resultados'}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -529,7 +529,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </Button>
@@ -539,17 +539,17 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white/70 backdrop-blur-sm rounded-lg border border-neutral-300/60">
-                  <span className="text-sm text-neutral-700">Page</span>
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-neutral-300/60">
+                  <span className="text-sm text-neutral-700">Página</span>
                   <span className="text-sm font-semibold text-neutral-900">
                     {table.getState().pagination.pageIndex + 1}
                   </span>
-                  <span className="text-sm text-neutral-700">of</span>
+                  <span className="text-sm text-neutral-700">de</span>
                   <span className="text-sm font-semibold text-neutral-900">
                     {table.getPageCount()}
                   </span>
@@ -560,7 +560,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -570,7 +570,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white/70 backdrop-blur-sm border-neutral-300/60 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronsRight className="h-4 w-4" />
                 </Button>

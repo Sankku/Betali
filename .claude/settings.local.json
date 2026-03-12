@@ -28,7 +28,8 @@
       "Bash(bash:*)",
       "Bash(wc:*)",
       "Bash(ls:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"SaaS business inventory management dashboard analytics\" --design-system -p \"Betali\" -f markdown 2>&1)"
     ],
     "deny": []
   }

@@ -12,30 +12,25 @@ interface Toast {
 const getToastIcon = (type: Toast['type']) => {
   switch (type) {
     case 'success':
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
+      return <CheckCircle className="h-5 w-5 text-success-600" />;
     case 'error':
-      return <AlertCircle className="h-5 w-5 text-red-500" />;
+      return <AlertCircle className="h-5 w-5 text-danger-600" />;
     case 'warning':
-      return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      return <AlertTriangle className="h-5 w-5 text-warning-600" />;
     case 'info':
-      return <Info className="h-5 w-5 text-blue-500" />;
+      return <Info className="h-5 w-5 text-primary-600" />;
     default:
-      return <Info className="h-5 w-5 text-gray-500" />;
+      return <Info className="h-5 w-5 text-neutral-500" />;
   }
 };
 
-const getToastStyles = (type: Toast['type']) => {
+const getToastAccent = (type: Toast['type']) => {
   switch (type) {
-    case 'success':
-      return 'bg-green-50 border-green-200 text-green-800';
-    case 'error':
-      return 'bg-red-50 border-red-200 text-red-800';
-    case 'warning':
-      return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-    case 'info':
-      return 'bg-blue-50 border-blue-200 text-blue-800';
-    default:
-      return 'bg-gray-50 border-gray-200 text-gray-800';
+    case 'success': return 'border-l-4 border-l-success-500';
+    case 'error':   return 'border-l-4 border-l-danger-500';
+    case 'warning': return 'border-l-4 border-l-warning-500';
+    case 'info':    return 'border-l-4 border-l-primary-500';
+    default:        return 'border-l-4 border-l-neutral-400';
   }
 };
 
@@ -45,25 +40,21 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
 }) => {
   return (
     <div
-      className={`max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-in-out ${getToastStyles(
-        toastItem.type
-      )}`}
+      className={`max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto border border-neutral-200/80 overflow-hidden transition-all duration-300 ease-in-out ${getToastAccent(toastItem.type)}`}
     >
       <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">{getToastIcon(toastItem.type)}</div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium">{toastItem.message}</p>
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">{getToastIcon(toastItem.type)}</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-neutral-900">{toastItem.message}</p>
           </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              onClick={() => onRemove(toastItem.id)}
-            >
-              <span className="sr-only">Close</span>
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          <button
+            className="flex-shrink-0 rounded-md p-0.5 text-neutral-400 hover:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 transition-colors duration-150 cursor-pointer"
+            onClick={() => onRemove(toastItem.id)}
+          >
+            <span className="sr-only">Cerrar</span>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

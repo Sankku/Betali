@@ -39,7 +39,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           >
             {icon && <span className="text-neutral-600 mr-2">{icon}</span>}
             {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
+            {props.required && <span className="text-danger-500 ml-1">*</span>}
           </label>
         )}
 
@@ -51,21 +51,21 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900',
               'placeholder:text-neutral-500',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
               'hover:border-neutral-400 hover:bg-neutral-50',
               'disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100',
               'shadow-sm',
               'transition-all duration-200',
-              'selection:bg-blue-200 selection:text-blue-900',
+              'selection:bg-primary-200 selection:text-primary-900',
               'autofill:bg-white autofill:text-neutral-900',
               'autofill:shadow-[inset_0_0_0px_1000px_white]',
               'autofill:[-webkit-text-fill-color:theme(colors.neutral.900)]',
-              'autofill:selection:bg-blue-200 autofill:selection:text-blue-900',
+              'autofill:selection:bg-primary-200 autofill:selection:text-primary-900',
               variant === 'filled' && 'bg-neutral-50 border-neutral-200',
               variant === 'filled' &&
                 'autofill:shadow-[inset_0_0_0px_1000px_theme(colors.neutral.50)]',
               rightIcon && 'pr-10',
-              error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+              error && 'border-danger-500 focus:border-danger-500 focus:ring-danger-500',
               className
             )}
             ref={ref}
@@ -81,7 +81,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+        {error && <p className="text-sm text-danger-600 font-medium">{error}</p>}
 
         {helpText && !error && <p className="text-xs text-neutral-500">{helpText}</p>}
       </div>

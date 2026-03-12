@@ -30,56 +30,56 @@ export function ExpiringProducts() {
 
   if (isLoading) return (
     <div className="bg-white shadow rounded-lg p-6 h-full flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-warning-500"></div>
     </div>
   );
 
   const hasProducts = expiringProducts && expiringProducts.length > 0;
 
   return (
-    <div className="bg-white shadow rounded-lg h-full flex flex-col border-l-4 border-orange-400">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="text-lg font-medium leading-6 text-gray-900 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-500" />
+    <div className="bg-white shadow rounded-lg h-full flex flex-col border-l-4 border-warning-400">
+      <div className="px-4 py-5 sm:px-6 border-b border-neutral-100 flex justify-between items-center">
+        <h3 className="text-lg font-medium leading-6 text-neutral-900 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-warning-500" />
           Próximos a Vencer
         </h3>
-        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800">
+        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-warning-100 text-warning-800">
           30 días
         </span>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-2">
         {!hasProducts ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500">
-            <Calendar className="h-10 w-10 mb-2 text-gray-300" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neutral-500">
+            <Calendar className="h-10 w-10 mb-2 text-neutral-300" />
             <p className="text-sm">No hay productos próximos a vencer</p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {expiringProducts.map((product: any) => {
               const daysLeft = differenceInDays(parseISO(product.expiration_date), new Date());
               const isUrgent = daysLeft <= 7;
-              
+
               return (
-                <li key={product.product_id} className="p-3 hover:bg-gray-50 rounded-md transition-colors">
+                <li key={product.product_id} className="p-3 hover:bg-neutral-50 rounded-md transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-neutral-900 truncate">
                         {product.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-neutral-500">
                         Lote: {product.batch_number || 'N/A'}
                       </p>
                     </div>
                     <div className="text-right ml-4 flex-shrink-0">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        isUrgent 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                        isUrgent
+                          ? 'bg-danger-100 text-danger-800'
+                          : 'bg-warning-100 text-warning-800'
                       }`}>
                         {daysLeft} días
                       </span>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-neutral-400 mt-1">
                         {format(parseISO(product.expiration_date), 'dd MMM', { locale: es })}
                       </p>
                     </div>
@@ -90,11 +90,11 @@ export function ExpiringProducts() {
           </ul>
         )}
       </div>
-      
-      <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-lg">
-        <Link 
-          to="/dashboard/products" 
-          className="text-sm font-medium text-orange-600 hover:text-orange-700 flex items-center justify-center sm:justify-start transition-colors"
+
+      <div className="p-4 border-t border-neutral-100 bg-neutral-50 rounded-b-lg">
+        <Link
+          to="/dashboard/products"
+          className="text-sm font-medium text-warning-600 hover:text-warning-700 flex items-center justify-center sm:justify-start transition-colors duration-150"
         >
           Gestionar inventario <ArrowRight className="h-4 w-4 ml-1" />
         </Link>

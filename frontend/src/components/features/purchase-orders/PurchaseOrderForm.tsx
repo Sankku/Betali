@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TooltipHelp } from '@/components/ui/tooltip-help';
@@ -59,8 +60,8 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load data for dropdowns
-  const { data: suppliers } = useSuppliers({ searchOptions: { active_only: true } });
-  const { data: warehouses } = useWarehouses({ enabled: true });
+  const { data: suppliers, refetch: refetchSuppliers } = useSuppliers({ searchOptions: { active_only: true } });
+  const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ enabled: true });
   const { data: products } = useProducts();
 
   const { watch, setValue, register } = form;
@@ -72,6 +73,11 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
   // Initialize items from form data
   useEffect(() => {
+    if (isCreateMode) {
+      refetchSuppliers();
+      refetchWarehouses();
+    }
+
     if (watchedValues.items && watchedValues.items.length > 0) {
       const itemsInSync =
         items.length === watchedValues.items.length &&
@@ -233,12 +239,14 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
               position="right"
             />
           </div>
-          <Input
-            id="expected_delivery_date"
-            type="date"
-            min={getMinDeliveryDate()}
-            {...register('expected_delivery_date')}
+          <DatePicker
+            value={watchedValues.expected_delivery_date ? new Date(`${watchedValues.expected_delivery_date}T00:00:00`) : undefined}
+            onChange={(date) => {
+              setValue('expected_delivery_date', date ? date.toISOString().split('T')[0] : '', { shouldValidate: true });
+            }}
+            minDate={new Date(getMinDeliveryDate() + 'T00:00:00')}
             disabled={isViewMode}
+            placeholder="Seleccionar fecha"
           />
         </div>
 
@@ -347,7 +355,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                   {/* Line Total */}
                   <div className="md:col-span-2">
                     <Label>Total</Label>
-                    <div className="h-10 flex items-center font-semibold text-foreground">
+                    <div className="h-10 flex items-center font-semibold text-neutral-900">
                       ${calculateLineTotal(item.quantity, item.unit_price).toFixed(2)}
                     </div>
                   </div>
@@ -456,29 +464,29 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             <div className="space-y-2">
               <div className="border rounded-lg p-4 bg-muted/30">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Subtotal:</span>
-                  <span className="font-semibold text-foreground">${subtotal.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-neutral-800">Subtotal:</span>
+                  <span className="font-semibold text-neutral-900">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Descuento:</span>
-                  <span className="font-semibold text-green-700 dark:text-green-500">
+                  <span className="text-sm font-medium text-neutral-800">Descuento:</span>
+                  <span className="font-semibold text-green-600">
                     -${(watchedValues.discount_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Impuestos:</span>
-                  <span className="font-semibold text-foreground">${(watchedValues.tax_amount || 0).toFixed(2)}</span>
+                  <span className="text-sm font-medium text-neutral-800">Impuestos:</span>
+                  <span className="font-semibold text-neutral-900">${(watchedValues.tax_amount || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Envío:</span>
-                  <span className="font-semibold text-foreground">
+                  <span className="text-sm font-medium text-neutral-800">Envío:</span>
+                  <span className="font-semibold text-neutral-900">
                     ${(watchedValues.shipping_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-foreground">TOTAL:</span>
-                    <span className="font-bold text-lg text-foreground">${total.toFixed(2)}</span>
+                    <span className="font-bold text-neutral-900">TOTAL:</span>
+                    <span className="font-bold text-lg text-neutral-900">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

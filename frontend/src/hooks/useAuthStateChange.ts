@@ -1,38 +1,50 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 /**
  * Hook to handle authentication state changes and clear cached data
- * when user logs in/out or switches accounts
+ * when user logs in/out or switches accounts.
+ *
+ * We track the last known userId so that repeated SIGNED_IN / TOKEN_REFRESHED
+ * events fired by Supabase on tab focus do NOT wipe the cache unnecessarily.
+ * Cache is only cleared on a genuine user change or USER_UPDATED.
  */
 export function useAuthStateChange() {
   const queryClient = useQueryClient();
+  const lastUserIdRef = useRef<string | null>(undefined as unknown as null);
 
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Clear all cached data when auth state changes
       if (event === 'SIGNED_OUT') {
         queryClient.clear();
-      } else if (
-        event === 'SIGNED_IN' ||
-        event === 'TOKEN_REFRESHED' ||
-        event === 'USER_UPDATED' // fires after email confirmation
-      ) {
-        // Invalidate user-related queries to force fresh data
+        lastUserIdRef.current = null;
+        return;
+      }
+
+      if (event === 'USER_UPDATED') {
+        // Profile/email changed for current user — refresh user data only
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         queryClient.invalidateQueries({ queryKey: ['user-context'] });
-        queryClient.invalidateQueries({ queryKey: ['organizations'] });
-        queryClient.invalidateQueries({ queryKey: ['users'] });
-        // Critical: remove the user-organizations cache so OrganizationContext
-        // always refetches fresh org data after login or email confirmation
-        queryClient.removeQueries({ queryKey: ['user-organizations'] });
+        return;
+      }
 
-        // Also clear these queries completely to ensure fresh fetch
+      if (event === 'SIGNED_IN') {
+        const incomingUserId = session?.user?.id ?? null;
+
+        // Skip if it's the same user session re-emitted (tab focus, token refresh, etc.)
+        if (incomingUserId === lastUserIdRef.current) return;
+
+        // Genuine new login — clear all cached data so fresh data is loaded
+        queryClient.removeQueries({ queryKey: ['user-organizations'] });
         queryClient.removeQueries({ queryKey: ['currentUser'] });
         queryClient.removeQueries({ queryKey: ['user-context'] });
+        queryClient.invalidateQueries({ queryKey: ['organizations'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+
+        lastUserIdRef.current = incomingUserId;
       }
     });
 

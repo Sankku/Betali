@@ -56,7 +56,7 @@ export function BetaliLogo({ variant = 'full', size = 'md', className = '' }: Be
         fontFamily="'Inter', 'Segoe UI', sans-serif"
         fontSize="18"
         fontWeight="700"
-        fill="#0F172A"
+        fill="currentColor"
         letterSpacing="-0.5"
       >
         betali

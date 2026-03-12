@@ -13,6 +13,7 @@ interface StatCardProps {
   icon: React.ReactNode;
   to: string;
   color: string;
+  loading?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -22,26 +23,46 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   to,
   color,
-}) => (
-  <Link to={to} className="block group">
-    <div className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-all duration-200 border border-transparent group-hover:border-gray-200">
-      <div className="p-5">
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 rounded-md p-3 ${color} shadow-sm`}>{icon}</div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-              <dd>
-                <div className="text-lg font-bold text-gray-900">{value}</div>
-              </dd>
-              {description && <dd className="mt-1 text-sm text-gray-500 truncate">{description}</dd>}
-            </dl>
+  loading,
+}) => {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow overflow-hidden border border-neutral-100">
+        <div className="p-5 animate-pulse">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 rounded-md w-12 h-12 bg-neutral-200" />
+            <div className="ml-5 flex-1 space-y-2">
+              <div className="h-3 bg-neutral-200 rounded w-3/4" />
+              <div className="h-5 bg-neutral-300 rounded w-1/2" />
+              <div className="h-3 bg-neutral-200 rounded w-2/3" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </Link>
-);
+    );
+  }
+
+  return (
+    <Link to={to} className="block group cursor-pointer">
+      <div className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-all duration-200 border border-transparent group-hover:border-neutral-200">
+        <div className="p-5">
+          <div className="flex items-center">
+            <div className={`flex-shrink-0 rounded-md p-3 ${color} shadow-sm`}>{icon}</div>
+            <div className="ml-5 w-0 flex-1">
+              <dl>
+                <dt className="text-sm font-medium text-neutral-500 truncate">{title}</dt>
+                <dd>
+                  <div className="text-lg font-bold text-neutral-900">{value}</div>
+                </dd>
+                {description && <dd className="mt-1 text-sm text-neutral-500 truncate">{description}</dd>}
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
 
 export function DashboardStats() {
   const { currentOrganization } = useOrganization();
@@ -116,38 +137,42 @@ export function DashboardStats() {
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Valor de Inventario"
-        value={isLoadingProducts ? '...' : formatCurrency(productStats?.value || 0)}
+        value={formatCurrency(productStats?.value || 0)}
         description={`${productStats?.count || 0} productos total`}
         icon={<DollarSign className="h-6 w-6 text-white" />}
         to="/dashboard/products"
-        color="bg-emerald-500"
+        color="bg-success-500"
+        loading={isLoadingProducts}
       />
-      
+
       <StatCard
         title="Órdenes del Mes"
-        value={isLoadingOrders ? '...' : monthlyOrders}
+        value={monthlyOrders}
         description="Ventas este mes"
         icon={<ShoppingBag className="h-6 w-6 text-white" />}
         to="/dashboard/orders"
-        color="bg-blue-500"
+        color="bg-primary-500"
+        loading={isLoadingOrders}
       />
 
       <StatCard
         title="Almacenes Activos"
-        value={isLoadingWarehouses ? '...' : warehousesCount}
+        value={warehousesCount}
         description="Depósitos registrados"
         icon={<Warehouse className="h-6 w-6 text-white" />}
         to="/dashboard/warehouse"
-        color="bg-indigo-500"
+        color="bg-primary-700"
+        loading={isLoadingWarehouses}
       />
 
       <StatCard
         title="Alertas de Stock"
-        value={isLoadingProducts ? '...' : productStats?.lowStock || 0}
+        value={productStats?.lowStock || 0}
         description="Productos stock bajo (<10)"
         icon={<AlertTriangle className="h-6 w-6 text-white" />}
-        to="/dashboard/products" 
-        color="bg-amber-500"
+        to="/dashboard/products"
+        color="bg-warning-500"
+        loading={isLoadingProducts}
       />
     </div>
   );

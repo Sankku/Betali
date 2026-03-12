@@ -162,42 +162,42 @@
 
   /* Sobrescribir colores de texto de Tailwind para mejor contraste */
   .text-gray-600 {
-    color: oklch(0.32 0 0) !important; /* Más oscuro que el original gray-600 */
+    color: oklch(0.32 0 0); /* Más oscuro que el original gray-600 */
   }
 
   .text-gray-500 {
-    color: oklch(0.40 0 0) !important; /* Más oscuro que el original gray-500 */
+    color: oklch(0.40 0 0); /* Más oscuro que el original gray-500 */
   }
 
   .text-gray-400 {
-    color: oklch(0.50 0 0) !important; /* Más oscuro que el original gray-400 */
+    color: oklch(0.50 0 0); /* Más oscuro que el original gray-400 */
   }
 
   .text-gray-700 {
-    color: oklch(0.25 0 0) !important; /* Asegurar buen contraste */
+    color: oklch(0.25 0 0); /* Asegurar buen contraste */
   }
 
   .text-gray-800 {
-    color: oklch(0.15 0 0) !important; /* Muy oscuro para máximo contraste */
+    color: oklch(0.15 0 0); /* Muy oscuro para máximo contraste */
   }
 
   .text-gray-900 {
-    color: oklch(0.09 0 0) !important; /* Negro casi puro */
+    color: oklch(0.09 0 0); /* Negro casi puro */
   }
 
   /* Actualizar text-sm para usar mejor color por defecto */
   .text-sm {
-    color: oklch(0.25 0 0); /* Usar gray-700 mejorado por defecto */
+    color: light-dark(oklch(0.25 0 0), oklch(0.76 0 0));
   }
 
   /* Font-medium debería ser más visible */
   .font-medium {
-    color: oklch(0.15 0 0); /* Usar gray-800 mejorado */
+    color: light-dark(oklch(0.15 0 0), oklch(0.86 0 0));
   }
 
   /* Estilos base para elementos HTML de texto */
   h1, h2, h3, h4, h5, h6 {
-    color: oklch(0.09 0 0); /* Negro casi puro para títulos */
+    color: light-dark(oklch(0.09 0 0), oklch(0.93 0 0));
     font-weight: 600;
     line-height: 1.2;
   }
@@ -228,35 +228,35 @@
   }
 
   p {
-    color: oklch(0.25 0 0); /* Gray-700 mejorado por defecto */
+    color: light-dark(oklch(0.25 0 0), oklch(0.76 0 0));
     line-height: 1.5;
   }
 
-  /* Estilos para iconos - color más oscuro por defecto */
+  /* Estilos para iconos - respeta dark mode */
   svg {
-    color: oklch(0.15 0 0); /* Gray-800 mejorado por defecto */
+    color: light-dark(oklch(0.15 0 0), oklch(0.93 0 0));
   }
 
   /* Mejorar contraste de labels */
   label {
-    color: oklch(0.15 0 0); /* Gray-800 mejorado */
+    color: light-dark(oklch(0.15 0 0), oklch(0.76 0 0));
     font-weight: 500;
   }
 
   /* Strong y bold más oscuros */
   strong, b {
-    color: oklch(0.09 0 0); /* Negro casi puro */
+    color: light-dark(oklch(0.09 0 0), oklch(0.93 0 0));
     font-weight: 600;
   }
 
   /* Links con mejor contraste */
   a {
-    color: oklch(0.45 0.18 206); /* Primary-600 */
+    color: light-dark(oklch(0.45 0.18 206), oklch(0.65 0.18 206));
     text-decoration: none;
   }
 
   a:hover {
-    color: oklch(0.35 0.14 206); /* Primary-700 */
+    color: light-dark(oklch(0.35 0.14 206), oklch(0.75 0.14 206));
     text-decoration: underline;
   }
 
@@ -420,6 +420,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --shadow-strength: 0.3;
   }
 }
@@ -429,6 +430,7 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
   --shadow-strength: 0.1;
 }
 
@@ -542,4 +544,241 @@
 
 .badge-danger {
   @apply bg-red-100 text-red-800 hover:bg-red-200;
+}
+
+/* =======================================================================
+   Dark Mode — Utility Class Overrides
+   Applied on [data-theme="dark"] (explicit) and via @media for system.
+   Placed outside @layer so these rules always win over layered utilities.
+   ======================================================================= */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  & .bg-white          { background-color: oklch(0.16 0 0); }
+  & .bg-neutral-50     { background-color: oklch(0.08 0 0); }
+  & .bg-neutral-100    { background-color: oklch(0.18 0 0); }
+  & .bg-neutral-200    { background-color: oklch(0.22 0 0); }
+  & .bg-neutral-300    { background-color: oklch(0.26 0 0); }
+  & .bg-gray-50        { background-color: oklch(0.08 0 0); }
+  & .bg-gray-100       { background-color: oklch(0.18 0 0); }
+  & .bg-gray-200       { background-color: oklch(0.22 0 0); }
+
+  /* Hover backgrounds */
+  & .hover\:bg-white\/50:hover   { background-color: oklch(0.18 0 0 / 0.5); }
+  & .hover\:bg-neutral-50:hover  { background-color: oklch(0.13 0 0); }
+  & .hover\:bg-neutral-100:hover { background-color: oklch(0.17 0 0); }
+  & .hover\:bg-neutral-200:hover { background-color: oklch(0.21 0 0); }
+  & .hover\:bg-gray-50:hover     { background-color: oklch(0.13 0 0); }
+  & .hover\:bg-gray-100:hover    { background-color: oklch(0.17 0 0); }
+  & .hover\:bg-gray-200:hover    { background-color: oklch(0.21 0 0); }
+
+  /* Text */
+  & .text-neutral-900 { color: oklch(0.93 0 0); }
+  & .text-neutral-800 { color: oklch(0.86 0 0); }
+  & .text-neutral-700 { color: oklch(0.76 0 0); }
+  & .text-neutral-600 { color: oklch(0.66 0 0); }
+  & .text-neutral-500 { color: oklch(0.56 0 0); }
+  & .text-neutral-400 { color: oklch(0.50 0 0); }
+  & .text-gray-900    { color: oklch(0.93 0 0) !important; }
+  & .text-gray-800    { color: oklch(0.86 0 0) !important; }
+  & .text-gray-700    { color: oklch(0.76 0 0) !important; }
+  & .text-gray-600    { color: oklch(0.66 0 0) !important; }
+  & .text-gray-500    { color: oklch(0.56 0 0) !important; }
+  & .text-gray-400    { color: oklch(0.50 0 0) !important; }
+
+  /* Hover text */
+  & .hover\:text-neutral-900:hover { color: oklch(0.98 0 0); }
+  & .hover\:text-neutral-600:hover { color: oklch(0.80 0 0); }
+  & .hover\:text-gray-900:hover    { color: oklch(0.98 0 0); }
+
+  /* Borders */
+  & .border-neutral-100 { border-color: oklch(0.22 0 0); }
+  & .border-neutral-200 { border-color: oklch(0.28 0 0); }
+  & .border-neutral-300 { border-color: oklch(0.34 0 0); }
+  & .border-gray-200    { border-color: oklch(0.28 0 0); }
+  & .border-gray-300    { border-color: oklch(0.34 0 0); }
+  & .hover\:border-neutral-200:hover { border-color: oklch(0.32 0 0); }
+  & .hover\:border-primary-300:hover { border-color: oklch(0.60 0.12 206); }
+
+  /* Ring / focus */
+  & .ring-2 { --tw-ring-opacity: 0.25; }
+
+  /* Divide */
+  & .divide-neutral-200 > * + * { border-color: oklch(0.21 0 0); }
+
+  /* Inputs */
+  & input:not([type="checkbox"]):not([type="radio"]),
+  & textarea,
+  & select {
+    background-color: oklch(0.15 0 0);
+    border-color: oklch(0.24 0 0);
+    color: oklch(0.93 0 0);
+    &::placeholder { color: oklch(0.46 0 0); }
+  }
+
+  /* Tables */
+  & table { color: oklch(0.86 0 0); }
+  & thead th { background-color: oklch(0.13 0 0); color: oklch(0.70 0 0); border-color: oklch(0.21 0 0); }
+  & tbody tr { border-color: oklch(0.18 0 0); }
+  & tbody tr:hover { background-color: oklch(0.14 0 0); }
+
+  /* Skeleton loading placeholders */
+  & .bg-neutral-200.animate-pulse,
+  & .bg-gray-200.animate-pulse { background-color: oklch(0.19 0 0); }
+
+  /* White opacity variants — data-table container, login card, overlays */
+  & .bg-white\/15  { background-color: oklch(0.13 0 0); }
+  & .bg-white\/30  { background-color: oklch(0.15 0 0); }
+  & .bg-white\/50  { background-color: oklch(0.14 0 0); }
+  & .bg-white\/70  { background-color: oklch(0.14 0 0); }
+  & .bg-white\/80  { background-color: oklch(0.13 0 0); }
+  & .bg-white\/85  { background-color: oklch(0.13 0 0 / 0.9); }
+  & .bg-white\/90  { background-color: oklch(0.13 0 0); }
+  & .bg-white\/95  { background-color: oklch(0.13 0 0); }
+
+  /* Gray/neutral opacity variants — modal sidebar, footers */
+  & .bg-gray-50\/50     { background-color: oklch(0.09 0 0); }
+  & .bg-gray-100\/50    { background-color: oklch(0.13 0 0); }
+  & .bg-gray-200\/50    { background-color: oklch(0.17 0 0); }
+  & .hover\:bg-gray-200\/50:hover { background-color: oklch(0.17 0 0); }
+  & .bg-neutral-50\/50  { background-color: oklch(0.09 0 0); }
+  & .bg-neutral-100\/50 { background-color: oklch(0.13 0 0); }
+  & .bg-neutral-100\/60 { background-color: oklch(0.13 0 0); }
+  & .bg-neutral-200\/50 { background-color: oklch(0.17 0 0); }
+
+  /* Border opacity variants */
+  & .border-neutral-200\/50 { border-color: oklch(0.28 0 0); }
+  & .border-neutral-200\/60 { border-color: oklch(0.28 0 0); }
+  & .border-neutral-300\/60 { border-color: oklch(0.32 0 0); }
+  & .border-gray-100         { border-color: oklch(0.22 0 0); }
+  & .divide-neutral-200\/60 > * + * { border-color: oklch(0.28 0 0); }
+
+  /* Blue accent — dropdown selected org, focus states */
+  & .bg-blue-50  { background-color: oklch(0.18 0.02 250); }
+  & .bg-blue-100 { background-color: oklch(0.22 0.03 250); }
+  & .hover\:bg-blue-50:hover   { background-color: oklch(0.20 0.02 250); }
+  & .focus\:bg-blue-100:focus  { background-color: oklch(0.24 0.04 250); }
+  & .text-blue-600 { color: oklch(0.72 0.14 250); }
+  & .text-blue-700 { color: oklch(0.67 0.14 250); }
+  & .group:hover .group-hover\:text-blue-700 { color: oklch(0.86 0.06 250); }
+
+  /* Primary selected states — table rows, active items */
+  & .bg-primary-50         { background-color: oklch(0.17 0.03 206); }
+  & .bg-primary-50\/70     { background-color: oklch(0.17 0.03 206 / 0.7); }
+  & .hover\:bg-primary-50:hover     { background-color: oklch(0.19 0.03 206); }
+  & .hover\:bg-primary-50\/40:hover { background-color: oklch(0.15 0.02 206 / 0.4); }
+
+  /* Sidebar active item — bg-primary-100 + text-primary-700 */
+  & .bg-primary-100  { background-color: oklch(0.24 0.06 206); }
+  & .text-primary-700 { color: oklch(0.76 0.12 206); }
+
+  /* Profile modal display tab containers */
+  & .bg-blue-50\/50   { background-color: oklch(0.16 0.02 250); }
+  & .bg-purple-50\/50 { background-color: oklch(0.16 0.02 300); }
+  & .border-blue-100  { border-color: oklch(0.26 0.03 250); }
+  & .border-purple-100 { border-color: oklch(0.26 0.03 300); }
+
+  /* Orange/warning accent — no-org fallback card, warning states */
+  & .bg-orange-50  { background-color: oklch(0.17 0.03 55); }
+  & .bg-orange-100 { background-color: oklch(0.21 0.04 55); }
+  & .border-orange-200 { border-color: oklch(0.30 0.05 55); }
+  & .text-orange-600 { color: oklch(0.72 0.16 55); }
+
+  /* Amber — user-form Organization Roles warning box */
+  & .bg-amber-50   { background-color: oklch(0.17 0.03 60); }
+  & .bg-amber-100  { background-color: oklch(0.21 0.04 60); }
+  & .border-amber-200 { border-color: oklch(0.30 0.05 60); }
+  & .text-amber-600 { color: oklch(0.72 0.16 60); }
+  & .text-amber-700 { color: oklch(0.78 0.14 60); }
+  & .text-amber-800 { color: oklch(0.82 0.12 60); }
+
+  /* Slate — role-selector Available Roles box */
+  & .bg-slate-50  { background-color: oklch(0.08 0 0); }
+  & .bg-slate-100 { background-color: oklch(0.15 0 0); }
+
+  /* Sky — role-selector text & borders */
+  & .border-sky-200 { border-color: oklch(0.30 0.04 220); }
+  & .text-sky-400  { color: oklch(0.72 0.10 220); }
+  & .text-sky-600  { color: oklch(0.76 0.10 220); }
+  & .text-sky-700  { color: oklch(0.80 0.10 220); }
+
+  /* Blue deep — role info box selected text */
+  & .text-blue-900 { color: oklch(0.86 0.06 250); }
+  & .text-blue-800 { color: oklch(0.82 0.06 250); }
+
+  /* Radix Select — highlighted & checked items
+     Targeting data attributes directly since data-[highlighted]:bg-blue-50
+     generates a different CSS class than .bg-blue-50 */
+  & [role="option"][data-highlighted] {
+    background-color: oklch(0.22 0.02 250);
+    color: oklch(0.93 0 0);
+  }
+  & [role="option"][data-state="checked"] {
+    color: oklch(0.72 0.14 206);
+  }
+  & [role="option"][data-highlighted][data-state="checked"] {
+    background-color: oklch(0.24 0.04 206);
+    color: oklch(0.93 0 0);
+  }
+
+  /* NOTE: h*, p, svg, label, strong, b, .text-sm, .font-medium use light-dark() in @layer base */
+
+  /* Gradient stop overrides — login/register page background */
+  & .from-neutral-50  { --tw-gradient-from: oklch(0.07 0 0); }
+  & .from-neutral-100 { --tw-gradient-from: oklch(0.11 0 0); }
+  & .to-neutral-100   { --tw-gradient-to:   oklch(0.11 0 0); }
+  & .to-neutral-50    { --tw-gradient-to:   oklch(0.07 0 0); }
+}
+
+/* System preference fallback — applies when OS is dark and no explicit theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    & .bg-white       { background-color: oklch(0.11 0 0); }
+    & .bg-neutral-50  { background-color: oklch(0.07 0 0); }
+    & .bg-neutral-100 { background-color: oklch(0.15 0 0); }
+    & .bg-neutral-200 { background-color: oklch(0.19 0 0); }
+    & .bg-gray-50     { background-color: oklch(0.07 0 0); }
+    & .bg-gray-100    { background-color: oklch(0.15 0 0); }
+    & .text-neutral-900 { color: oklch(0.93 0 0); }
+    & .text-neutral-700 { color: oklch(0.76 0 0); }
+    & .text-neutral-600 { color: oklch(0.66 0 0); }
+    & .text-neutral-500 { color: oklch(0.56 0 0); }
+    & .text-gray-900    { color: oklch(0.93 0 0) !important; }
+    & .text-gray-800    { color: oklch(0.86 0 0) !important; }
+    & .text-gray-700    { color: oklch(0.76 0 0) !important; }
+    & .text-gray-600    { color: oklch(0.66 0 0) !important; }
+    & .text-gray-500    { color: oklch(0.56 0 0) !important; }
+    & .from-neutral-50 { --tw-gradient-from: oklch(0.07 0 0); }
+    & .to-neutral-100  { --tw-gradient-to:   oklch(0.11 0 0); }
+    & .border-neutral-200 { border-color: oklch(0.21 0 0); }
+    & .border-gray-200    { border-color: oklch(0.21 0 0); }
+    & input:not([type="checkbox"]):not([type="radio"]),
+    & textarea,
+    & select {
+      background-color: oklch(0.15 0 0);
+      border-color: oklch(0.24 0 0);
+      color: oklch(0.93 0 0);
+    }
+
+    /* White opacity variants */
+    & .bg-white\/90 { background-color: oklch(0.13 0 0); }
+    & .bg-white\/85 { background-color: oklch(0.13 0 0); }
+    & .bg-white\/70 { background-color: oklch(0.14 0 0); }
+    & .bg-white\/30 { background-color: oklch(0.15 0 0); }
+    & .bg-white\/15 { background-color: oklch(0.13 0 0); }
+
+    /* Gray/neutral opacity variants */
+    & .bg-gray-50\/50     { background-color: oklch(0.09 0 0); }
+    & .bg-gray-100\/50    { background-color: oklch(0.13 0 0); }
+    & .bg-neutral-50\/50  { background-color: oklch(0.09 0 0); }
+    & .bg-neutral-100\/60 { background-color: oklch(0.13 0 0); }
+
+    /* Border opacity variants */
+    & .border-neutral-200\/50 { border-color: oklch(0.21 0 0); }
+
+    /* Blue accent */
+    & .bg-blue-50 { background-color: oklch(0.18 0.02 250); }
+  }
 }

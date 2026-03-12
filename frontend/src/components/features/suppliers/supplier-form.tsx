@@ -91,7 +91,7 @@ export function SupplierForm({
       website: '',
       payment_terms: '',
       tax_category: '',
-      credit_limit: undefined,
+      credit_limit: 0,
       is_preferred: false,
       notes: ''
     }
@@ -133,7 +133,7 @@ export function SupplierForm({
         website: supplier.website || '',
         payment_terms: findMatchingOption(supplier.payment_terms, paymentTermsOptions),
         tax_category: supplier.tax_category || '',
-        credit_limit: supplier.credit_limit || undefined,
+        credit_limit: supplier.credit_limit || 0,
         is_preferred: supplier.is_preferred || false,
         notes: supplier.notes || ''
       });
@@ -338,7 +338,7 @@ export function SupplierForm({
           />
 
           <Input
-            {...register('credit_limit', { valueAsNumber: true })}
+            {...register('credit_limit')}
             label="Límite de Crédito"
             type="number"
             step="0.01"

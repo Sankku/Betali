@@ -152,7 +152,7 @@ export function UserProfileModal({
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalContent className="max-w-4xl p-0 overflow-hidden rounded-2xl bg-gray-50 flex flex-col md:flex-row min-h-[600px]">
         {/* Left Sidebar */}
-        <div className="w-full md:w-[280px] bg-gray-100/50 border-r border-gray-200 flex flex-col pt-6 pb-4">
+        <div className="w-full md:w-[280px] bg-gray-100 border-r border-gray-200 flex flex-col pt-6 pb-4">
           <div className="px-4 mb-4">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('profile.title')}</h2>
           </div>

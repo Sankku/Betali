@@ -455,6 +455,77 @@ export const es = {
     deleteMessage: '¿Estás seguro de que deseas eliminar este elemento?',
     unsavedChanges: 'Tienes cambios sin guardar. ¿Deseas continuar?',
   },
+
+  // Inventory Alerts Widget
+  alerts: {
+    title: 'Alertas de Inventario',
+    allClear: '¡Todo en orden!',
+    noAlerts: 'No hay alertas de inventario activas en este momento',
+    dismissAriaLabel: 'Descartar alerta',
+    dismissSuccess: 'Alerta descartada correctamente',
+    dismissError: 'No se pudo descartar la alerta',
+    viewAll: 'Ver todas las alertas',
+    viewAllSoon: 'Página de alertas próximamente',
+    moreAlerts: '+{{count}} alertas más',
+    types: {
+      low_stock: 'Stock Bajo',
+      out_of_stock: 'Sin Stock',
+      overstock: 'Sobrestock',
+      expiring_soon: 'Por Vencer',
+    },
+  },
+
+  // Global Sync / Loading
+  globalSync: {
+    synchronizing: 'Sincronizando',
+    lastSync: 'Última sync:',
+  },
+
+  // Theme Settings
+  theme: {
+    title: 'Apariencia',
+    description: 'Elige cómo se ve la interfaz de la aplicación',
+    light: 'Claro',
+    lightDesc: 'Siempre usar tema claro',
+    dark: 'Oscuro',
+    darkDesc: 'Siempre usar tema oscuro',
+    system: 'Sistema',
+    systemDesc: 'Seguir las preferencias del sistema operativo',
+    note: 'El tema se aplica en toda la interfaz de la aplicación.',
+  },
+
+  // Trend Chart (dashboard)
+  trendChart: {
+    title: 'Órdenes Recientes',
+    viewAll: 'Ver todas',
+    aboutChartTitle: 'Acerca de este gráfico',
+    aboutChartDesc: 'Este gráfico muestra el número de órdenes creadas (barras) y el revenue total generado (línea) durante el período seleccionado. Útil para identificar tendencias de ventas y días de mayor actividad.',
+    rangeToday: 'Hoy',
+    rangeWeek: 'Semana',
+    rangeMonth: 'Mes',
+    rangeYear: 'Año',
+    rangeCustom: 'Personalizado',
+    labelToday: 'Hoy',
+    labelWeek: 'Últimos 7 días',
+    labelMonth: 'Último mes',
+    labelYear: 'Último año',
+    labelCustomRange: 'Rango personalizado',
+    selectDateRange: 'Selecciona rango de fechas',
+    selectDateRangePlaceholder: 'Selecciona fechas...',
+    applyFilter: 'Aplicar filtro',
+    clear: 'Limpiar',
+    noOrders: 'Sin órdenes',
+    noOrdersDesc: 'No hay órdenes registradas en el período seleccionado',
+    selectRangeHint: 'Usa el selector de fechas arriba y haz clic en "Aplicar filtro" para ver las estadísticas',
+    createOrder: 'Crear orden',
+    loadingData: 'Cargando datos...',
+    legendOrders: 'Número de órdenes',
+    legendRevenue: 'Revenue total',
+    tooltipOrders: 'órdenes',
+    tooltipOrdersLabel: 'Cantidad de órdenes',
+    tooltipRevenueLabel: 'Revenue total',
+    chartInfoAriaLabel: 'Información del gráfico',
+  },
 };
 
 export type TranslationKeys = typeof es;

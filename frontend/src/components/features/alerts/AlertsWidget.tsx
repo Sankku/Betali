@@ -4,6 +4,10 @@ import { alertService, AlertWithDetails } from '../../../services/alertService';
 import { Card } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { toast } from '../../../lib/toast';
+import { useTranslation } from '../../../contexts/LanguageContext';
+
+// Severity and type lookups are now keys into the translation map
+// (used below via t())
 
 const SEVERITY_COLORS = {
   critical: 'bg-red-100 text-red-800 border-red-200',
@@ -19,12 +23,6 @@ const SEVERITY_ICONS = {
   low: AlertTriangle,
 };
 
-const ALERT_TYPE_LABELS = {
-  low_stock: 'Low Stock',
-  out_of_stock: 'Out of Stock',
-  overstock: 'Overstock',
-  expiring_soon: 'Expiring Soon',
-};
 
 interface AlertsWidgetProps {
   maxAlerts?: number;
@@ -37,13 +35,15 @@ export function AlertsWidget({
   showDismissButton = true,
   className = ''
 }: AlertsWidgetProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Fetch active alerts
   const { data: alerts = [], isLoading, error } = useQuery<AlertWithDetails[]>({
     queryKey: ['alerts', 'active'],
     queryFn: () => alertService.getActiveAlerts(),
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   });
 
   // Dismiss alert mutation
@@ -51,10 +51,10 @@ export function AlertsWidget({
     mutationFn: (alertId: string) => alertService.dismissAlert(alertId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      toast.success('Alert dismissed successfully');
+      toast.success(t('alerts.dismissSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to dismiss alert');
+      toast.error(error.message || t('alerts.dismissError'));
     },
   });
 
@@ -67,7 +67,7 @@ export function AlertsWidget({
     return (
       <Card className={`p-6 ${className}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Inventory Alerts</h3>
+          <h3 className="text-lg font-semibold">{t('alerts.title')}</h3>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -86,7 +86,7 @@ export function AlertsWidget({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-red-600">
             <AlertTriangle className="inline w-5 h-5 mr-2" />
-            Error Loading Alerts
+            {t('common.error')}
           </h3>
         </div>
         <p className="text-sm text-gray-600">
@@ -104,7 +104,7 @@ export function AlertsWidget({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-600" />
-          <h3 className="text-lg font-semibold">Inventory Alerts</h3>
+          <h3 className="text-lg font-semibold">{t('alerts.title')}</h3>
           {alerts.length > 0 && (
             <span className="px-2 py-1 text-xs font-semibold text-white bg-red-600 rounded-full">
               {alerts.length}
@@ -116,9 +116,9 @@ export function AlertsWidget({
       {alerts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <CheckCircle className="w-12 h-12 mb-3 text-green-500" />
-          <p className="text-sm font-medium text-gray-700">All Clear!</p>
+          <p className="text-sm font-medium text-gray-700">{t('alerts.allClear')}</p>
           <p className="text-xs text-gray-500 mt-1">
-            No active inventory alerts at this time
+            {t('alerts.noAlerts')}
           </p>
         </div>
       ) : (
@@ -139,7 +139,7 @@ export function AlertsWidget({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-semibold uppercase tracking-wide">
-                          {ALERT_TYPE_LABELS[alert.alert_type]}
+                          {t(`alerts.types.${alert.alert_type}` as any)}
                         </span>
                         <span className="text-xs opacity-75">
                           {alert.severity}
@@ -183,6 +183,7 @@ export function AlertsWidget({
                       onClick={(e) => handleDismiss(alert.alert_id, e)}
                       disabled={dismissMutation.isPending}
                       className="flex-shrink-0 hover:bg-white/50"
+                      aria-label={t('alerts.dismissAriaLabel')}
                     >
                       <XCircle className="w-4 h-4" />
                     </Button>
@@ -195,18 +196,17 @@ export function AlertsWidget({
           {hasMoreAlerts && (
             <div className="pt-2 text-center border-t">
               <p className="text-xs text-gray-600">
-                +{alerts.length - maxAlerts} more alert{alerts.length - maxAlerts > 1 ? 's' : ''}
+                {t('alerts.moreAlerts', { count: alerts.length - maxAlerts })}
               </p>
               <Button
                 variant="link"
                 size="sm"
                 className="text-xs mt-1"
                 onClick={() => {
-                  // TODO: Navigate to full alerts page
-                  toast.info('Full alerts page coming soon!');
+                  toast.info(t('alerts.viewAllSoon'));
                 }}
               >
-                View All Alerts
+                {t('alerts.viewAll')}
               </Button>
             </div>
           )}

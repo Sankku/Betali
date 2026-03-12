@@ -357,7 +357,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           <CardTitle className="text-lg text-gray-900">Order Items</CardTitle>
           {!isViewMode && (
             <Button type="button" onClick={addItem} size="sm" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 text-white" />
               Add Item
             </Button>
           )}

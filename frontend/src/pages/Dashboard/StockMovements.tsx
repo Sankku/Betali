@@ -224,9 +224,9 @@ export default function StockMovementsPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-red-600 hover:text-red-900"
+            className="text-danger-600 hover:text-danger-800"
           >
-            <Trash className="w-4 h-4" />
+            <Trash className="w-4 h-4 text-danger-600" />
           </Button>
         </div>
       ),

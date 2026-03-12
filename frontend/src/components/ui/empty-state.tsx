@@ -26,14 +26,14 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       className={cn('flex flex-col items-center justify-center py-12 px-4 text-center', className)}
     >
       {Icon && (
-        <div className="mx-auto w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-          <Icon className="w-6 h-6 text-neutral-400" />
+        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl border border-primary-200/60 flex items-center justify-center mb-5">
+          <Icon className="w-7 h-7 text-primary-500" />
         </div>
       )}
 
-      <h3 className="text-lg font-medium text-neutral-900 mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-neutral-900 mb-2">{title}</h3>
 
-      {description && <p className="text-neutral-600 mb-4 max-w-sm">{description}</p>}
+      {description && <p className="text-neutral-500 mb-5 max-w-sm leading-relaxed">{description}</p>}
 
       {action && <Button onClick={action.onClick}>{action.label}</Button>}
     </div>

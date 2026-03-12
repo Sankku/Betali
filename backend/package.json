@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "health": "curl -f http://localhost:4000/health || exit 1",
     "db:test": "node scripts/test-connection.js",
+    "plans": "node scripts/test-plans.js",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
     "docs": "node scripts/generate-docs.js",

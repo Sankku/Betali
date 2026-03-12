@@ -8,12 +8,14 @@ import { OrganizationProvider } from "./context/OrganizationContext";
 import { GlobalSyncProvider } from "./context/GlobalSyncContext";
 import { DateFormatProvider } from "./contexts/DateFormatContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { GlobalLoading } from "./components/ui/global-loading";
 import { ToastContainer } from "./components/ui/toast";
 import { useAuthStateChange } from "./hooks/useAuthStateChange";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Analytics } from "@vercel/analytics/react";
 
 // Eagerly loaded — needed immediately on cold start
 import Login from "./pages/Login";
@@ -23,6 +25,7 @@ import ResetPassword from "./pages/ResetPassword";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import Welcome from "./pages/Welcome";
 
 // Lazily loaded — only fetched when the user navigates to the route
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -57,6 +60,7 @@ function AppContent() {
         <OrganizationProvider>
           <UserContextSwitcherProvider>
             <LanguageProvider>
+              <ThemeProvider>
               <DateFormatProvider>
                 <OnboardingProvider>
                   <HelmetProvider>
@@ -64,6 +68,7 @@ function AppContent() {
                       <ErrorBoundary>
                         <Suspense fallback={null}>
                           <Routes>
+                            <Route path="/" element={<Welcome />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -234,6 +239,7 @@ function AppContent() {
                   <ToastContainer />
                 </OnboardingProvider>
               </DateFormatProvider>
+              </ThemeProvider>
             </LanguageProvider>
           </UserContextSwitcherProvider>
         </OrganizationProvider>
@@ -247,6 +253,7 @@ function App() {
     <QueryProvider>
       <ErrorBoundary>
         <AppContent />
+        <Analytics />
       </ErrorBoundary>
     </QueryProvider>
   );

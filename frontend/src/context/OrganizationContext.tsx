@@ -51,35 +51,59 @@ interface OrganizationProviderProps {
   children: React.ReactNode;
 }
 
+// Synchronously reads a valid OrganizationContext from localStorage.
+// Returns null if the stored data is missing or corrupt (and cleans up in that case).
+function readStoredOrgContext(): {
+  organization: Organization;
+  userRole: UserRole;
+  permissions: string[];
+} | null {
+  try {
+    const stored = localStorage.getItem('currentOrganizationContext');
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (!parsed?.organization?.organization_id) {
+      // Corrupt entry — clean up both keys
+      localStorage.removeItem('currentOrganizationContext');
+      localStorage.removeItem('currentOrganizationId');
+      return null;
+    }
+    // Keep localStorage in sync (context may have been set without the plain ID key)
+    localStorage.setItem('currentOrganizationId', parsed.organization.organization_id);
+    return parsed as { organization: Organization; userRole: UserRole; permissions: string[] };
+  } catch {
+    localStorage.removeItem('currentOrganizationContext');
+    localStorage.removeItem('currentOrganizationId');
+    return null;
+  }
+}
+
 export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { showLoading, hideLoading } = useGlobalSync();
-  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
-  const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
+
+  // Initialise synchronously from localStorage so the org ID is available
+  // in httpClient.getHeaders() before the first async fetch completes.
+  // We call readStoredOrgContext() once and cache the result in a ref so the
+  // three useState lazy-initializers share the same parsed object.
+  const storedCtxRef = useRef(readStoredOrgContext());
+  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(
+    () => storedCtxRef.current?.organization ?? null
+  );
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(
+    () => storedCtxRef.current?.userRole ?? null
+  );
+  const [currentPermissions, setCurrentPermissions] = useState<string[]>(
+    () => storedCtxRef.current?.permissions ?? []
+  );
   const [switching, setSwitching] = useState(false);
   const [defaultOrganizationId, setDefaultOrganizationIdState] = useState<string | null>(
     () => localStorage.getItem('defaultOrganizationId')
   );
-  const isInitializedRef = useRef(false);
-
-  // Clean up potentially corrupted localStorage on mount
-  React.useEffect(() => {
-    try {
-      const stored = localStorage.getItem('currentOrganizationContext');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (!parsed?.organization?.organization_id) {
-          localStorage.removeItem('currentOrganizationContext');
-          localStorage.removeItem('currentOrganizationId');
-        }
-      }
-    } catch (e) {
-      localStorage.removeItem('currentOrganizationContext');
-      localStorage.removeItem('currentOrganizationId');
-    }
-  }, []);
+  // If we restored a valid context from localStorage, mark as already initialised
+  // synchronously so the init effect below doesn't override it before the fetch completes.
+  const isInitializedRef = useRef(storedCtxRef.current !== null);
 
   // Check if current user can access users section based on their role
   const canAccessUsersSection = useMemo(() => 

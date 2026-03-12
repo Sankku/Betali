@@ -457,4 +457,75 @@ export const en: TranslationKeys = {
     deleteMessage: 'Are you sure you want to delete this item?',
     unsavedChanges: 'You have unsaved changes. Do you want to continue?',
   },
+
+  // Inventory Alerts Widget
+  alerts: {
+    title: 'Inventory Alerts',
+    allClear: 'All Clear!',
+    noAlerts: 'No active inventory alerts at this time',
+    dismissAriaLabel: 'Dismiss alert',
+    dismissSuccess: 'Alert dismissed successfully',
+    dismissError: 'Failed to dismiss alert',
+    viewAll: 'View All Alerts',
+    viewAllSoon: 'Full alerts page coming soon!',
+    moreAlerts: '+{{count}} more alerts',
+    types: {
+      low_stock: 'Low Stock',
+      out_of_stock: 'Out of Stock',
+      overstock: 'Overstock',
+      expiring_soon: 'Expiring Soon',
+    },
+  },
+
+  // Global Sync / Loading
+  globalSync: {
+    synchronizing: 'Synchronizing',
+    lastSync: 'Last sync:',
+  },
+
+  // Theme Settings
+  theme: {
+    title: 'Appearance',
+    description: 'Choose how the application interface looks',
+    light: 'Light',
+    lightDesc: 'Always use light theme',
+    dark: 'Dark',
+    darkDesc: 'Always use dark theme',
+    system: 'System',
+    systemDesc: 'Follow the operating system preference',
+    note: 'The theme is applied throughout the application interface.',
+  },
+
+  // Trend Chart (dashboard)
+  trendChart: {
+    title: 'Recent Orders',
+    viewAll: 'View all',
+    aboutChartTitle: 'About this chart',
+    aboutChartDesc: 'This chart shows the number of orders created (bars) and total revenue generated (line) during the selected period. Useful for identifying sales trends and peak activity days.',
+    rangeToday: 'Today',
+    rangeWeek: 'Week',
+    rangeMonth: 'Month',
+    rangeYear: 'Year',
+    rangeCustom: 'Custom',
+    labelToday: 'Today',
+    labelWeek: 'Last 7 days',
+    labelMonth: 'Last month',
+    labelYear: 'Last year',
+    labelCustomRange: 'Custom range',
+    selectDateRange: 'Select date range',
+    selectDateRangePlaceholder: 'Select dates...',
+    applyFilter: 'Apply filter',
+    clear: 'Clear',
+    noOrders: 'No orders',
+    noOrdersDesc: 'No orders recorded in the selected period',
+    selectRangeHint: 'Use the date picker above and click "Apply filter" to see statistics',
+    createOrder: 'Create order',
+    loadingData: 'Loading data...',
+    legendOrders: 'Number of orders',
+    legendRevenue: 'Total revenue',
+    tooltipOrders: 'orders',
+    tooltipOrdersLabel: 'Order count',
+    tooltipRevenueLabel: 'Total revenue',
+    chartInfoAriaLabel: 'Chart information',
+  },
 } as const;

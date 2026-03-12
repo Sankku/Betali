@@ -154,7 +154,7 @@ const SelectItem = React.forwardRef<
       'hover:bg-blue-50 hover:text-blue-900',
       'focus:bg-blue-50 focus:text-blue-900',
       'data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900',
-      'data-[state=checked]:bg-blue-100 data-[state=checked]:text-blue-900',
+      'data-[state=checked]:text-primary-600 data-[state=checked]:font-semibold',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       'transition-colors duration-150',
       className
@@ -163,7 +163,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-3 flex h-4 w-4 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-blue-600" />
+        <Check className="h-4 w-4 text-primary-600" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText className="flex-1">{children}</SelectPrimitive.ItemText>

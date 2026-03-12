@@ -72,8 +72,8 @@ export default function DashboardPage() {
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Resumen</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-lg font-medium text-neutral-900">Resumen</h2>
+              <p className="mt-1 text-sm text-neutral-500">
                 Vista general del sistema de gestión de stock
               </p>
             </div>

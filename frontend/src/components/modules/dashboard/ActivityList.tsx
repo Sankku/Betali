@@ -25,11 +25,11 @@ const getTypeLabel = (type: string) => {
 
 const getTypeColor = (type: string) => {
   switch (type) {
-    case 'entry': return 'bg-blue-100 text-blue-800';
-    case 'exit': return 'bg-orange-100 text-orange-800';
-    case 'adjustment': return 'bg-purple-100 text-purple-800';
-    case 'transfer': return 'bg-indigo-100 text-indigo-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'entry':      return 'bg-primary-100 text-primary-800';
+    case 'exit':       return 'bg-warning-100 text-warning-800';
+    case 'adjustment': return 'bg-primary-200 text-primary-900';
+    case 'transfer':   return 'bg-primary-100 text-primary-700';
+    default:           return 'bg-neutral-100 text-neutral-800';
   }
 };
 
@@ -52,10 +52,10 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">
+          <p className="text-sm font-medium text-neutral-900 truncate">
             {product || 'Producto desconocido'}
           </p>
-          <p className="text-sm text-gray-500 truncate">
+          <p className="text-sm text-neutral-500 truncate">
             {warehouse && <span>{warehouse} • </span>}
             {date}
           </p>
@@ -97,16 +97,16 @@ export function ActivityList() {
 
   return (
     <div className="bg-white shadow rounded-lg flex flex-col h-full">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <h3 className="text-lg font-medium leading-6 text-gray-900">Movimientos Recientes</h3>
+      <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+        <h3 className="text-lg font-medium leading-6 text-neutral-900">Movimientos Recientes</h3>
       </div>
       <div className="px-4 py-3 sm:px-6 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center py-4">
-             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
           </div>
         ) : recentActivity && recentActivity.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-neutral-200">
             {recentActivity.map((movement: any) => (
               <ActivityItem
                 key={movement.movement_id}
@@ -118,16 +118,16 @@ export function ActivityList() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500 text-sm text-center py-4">No hay actividad reciente</p>
+          <p className="text-neutral-500 text-sm text-center py-4">No hay actividad reciente</p>
         )}
       </div>
-      <div className="px-4 py-4 sm:px-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+      <div className="px-4 py-4 sm:px-6 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
         <Link
           to="/dashboard/stock-movements"
-          className="text-sm font-medium text-green-600 hover:text-green-500 flex items-center justify-center sm:justify-start"
+          className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center justify-center sm:justify-start transition-colors duration-150"
         >
           Ver todos los movimientos
-          <span aria-hidden="true" className="ml-1"> &rarr;</span>
+          <span aria-hidden="true" className="ml-1">&rarr;</span>
         </Link>
       </div>
     </div>

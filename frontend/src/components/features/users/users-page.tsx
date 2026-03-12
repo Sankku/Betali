@@ -21,6 +21,7 @@ import {
   useUpdateUser,
   useDeleteUser,
   useToggleUserStatus,
+  useUserContext,
   CreateUserData,
 } from '@/hooks/useUsers';
 
@@ -47,6 +48,8 @@ export function UsersPage() {
   });
 
   const { data: users = [], isLoading, error } = useUserManagement();
+  const { data: userContext } = useUserContext();
+  const currentUserId = userContext?.user?.id;
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
@@ -134,28 +137,36 @@ export function UsersPage() {
       text: 'text-red-700',
       hoverBg: 'hover:bg-red-50'
     },
-    onClick: (users) => handleDelete(users),
+    onClick: (users) => handleDelete(users.filter(u => u.user_id !== currentUserId)),
     alwaysShow: true,
-  }], []);
+  }], [currentUserId]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
       header: 'User',
-      cell: ({ row }: any) => (
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <UserIcon className="h-5 w-5 text-blue-600" />
+      cell: ({ row }: any) => {
+        const isSelf = row.original.user_id === currentUserId;
+        return (
+          <div className="flex items-center">
+            <div className="flex-shrink-0 h-10 w-10">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <UserIcon className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+            <div className="ml-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-900">{row.original.name}</span>
+                {isSelf && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-medium">Tú</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">{row.original.email}</div>
             </div>
           </div>
-          <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
-            <div className="text-sm text-gray-500">{row.original.email}</div>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: 'role',
@@ -184,44 +195,53 @@ export function UsersPage() {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }: any) => (
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openModal('view', row.original)}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openModal('edit', row.original)}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToggleStatus(row.original)}
-            className={row.original.is_active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"}
-          >
-            {row.original.is_active ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete([row.original])}
-            className="text-red-600 hover:text-red-900"
-          >
-            <Trash className="w-4 h-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }: any) => {
+        const isSelf = row.original.user_id === currentUserId;
+        return (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openModal('view', row.original)}
+              className="text-blue-600 hover:text-blue-900"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openModal('edit', row.original)}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <span title={isSelf ? 'No puedes desactivar tu propia cuenta' : undefined}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleToggleStatus(row.original)}
+                disabled={isSelf}
+                className={row.original.is_active ? "text-danger-600 hover:text-danger-800" : "text-success-600 hover:text-success-800"}
+              >
+                {row.original.is_active ? <ToggleLeft className="w-4 h-4 text-danger-600" /> : <ToggleRight className="w-4 h-4 text-success-600" />}
+              </Button>
+            </span>
+            <span title={isSelf ? 'No puedes eliminar tu propia cuenta' : undefined}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete([row.original])}
+                disabled={isSelf}
+                className="text-danger-600 hover:text-danger-800"
+              >
+                <Trash className="w-4 h-4 text-danger-600" />
+              </Button>
+            </span>
+          </div>
+        );
+      },
     },
-  ], []);
+  ], [currentUserId]);
 
   return (
     <>

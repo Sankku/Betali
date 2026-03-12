@@ -12,6 +12,7 @@ interface DatePickerProps {
   minDate?: Date;
   maxDate?: Date;
   className?: string;
+  disabled?: boolean;
 }
 
 export function DatePicker({
@@ -21,6 +22,7 @@ export function DatePicker({
   minDate,
   maxDate,
   className,
+  disabled = false,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(value);
@@ -228,10 +230,13 @@ export function DatePicker({
   return (
     <>
       <button
+        type="button"
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
         className={cn(
-          'flex items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-md hover:border-gray-400 transition-colors bg-white',
+          'flex items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-md transition-colors bg-white',
+          disabled ? 'opacity-50 cursor-not-allowed bg-neutral-50' : 'hover:border-gray-400',
           className
         )}
       >
@@ -239,9 +244,9 @@ export function DatePicker({
           <CalendarIcon className="h-4 w-4" />
           {formatDisplayDate(selectedDate)}
         </span>
-        {selectedDate && (
+        {selectedDate && !disabled && (
           <X
-            className="h-4 w-4 text-gray-400 hover:text-gray-600"
+            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer"
             onClick={handleClear}
           />
         )}

@@ -7,6 +7,7 @@ import { useWarehouses } from '../../../hooks/useWarehouse';
 import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Textarea } from '../../ui/textarea';
+import { DatePicker } from '../../ui/date-picker';
 
 interface StockMovementFormProps {
   onSubmit: (data: StockMovementFormData) => void | Promise<void>;
@@ -260,11 +261,13 @@ export function StockMovementForm({
           required
           error={getFieldError('movement_date')}
         >
-          <input
-            {...register('movement_date')}
-            type="date"
+          <DatePicker
+            value={watchedValues.movement_date ? new Date(`${watchedValues.movement_date}T00:00:00`) : undefined}
+            onChange={(date) => {
+              setValue('movement_date', date ? date.toISOString().split('T')[0] : '', { shouldValidate: true });
+            }}
             disabled={isLoading}
-            className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
+            className="w-full h-[48px] rounded-lg border-2 border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-900 shadow-sm"
           />
         </FormField>
       </div>

@@ -118,7 +118,7 @@ export default function Login() {
                   placeholder="example@example.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
+                  className="h-11 border-neutral-200 focus:ring-primary-500"
                   required
                 />
               </div>
@@ -141,7 +141,7 @@ export default function Login() {
                     placeholder="••••••••"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
+                    className="h-11 border-neutral-200 focus:ring-primary-500"
                     required
                   />
                   <button
@@ -174,11 +174,11 @@ export default function Login() {
                 className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
               >
                 {loading ? 'Loading...' : 'Sign In'}{' '}
-                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {!loading && <ArrowRight className="ml-2 h-4 w-4 text-white" />}
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg pt-6">
+          <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
               Don't have an account?
               <span className="ml-1"></span>

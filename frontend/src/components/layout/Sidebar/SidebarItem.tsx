@@ -15,10 +15,10 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
 }) => (
   <Link
     to={to}
-    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 cursor-pointer ${
       isActive
-        ? "bg-green-100 text-green-700 font-medium"
-        : "text-gray-600 hover:bg-gray-100"
+        ? "bg-primary-100 text-primary-700 font-medium"
+        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
     }`}
   >
     <div className="w-5 h-5">{icon}</div>
