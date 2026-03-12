@@ -43,7 +43,8 @@ class MercadoPagoService {
       });
 
       this.initialized = true;
-      this.logger.info('MercadoPago client initialized successfully');
+      const env = accessToken.startsWith('APP-') ? 'PRODUCTION' : 'TEST';
+      this.logger.info(`MercadoPago client initialized successfully [mode: ${env}]`);
     } catch (error) {
       this.logger.error('Failed to initialize MercadoPago client:', error);
       throw error;
