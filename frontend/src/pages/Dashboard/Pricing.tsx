@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, X } from 'lucide-react';
 import { subscriptionService } from '../../services/api/subscriptionService';
@@ -18,6 +18,9 @@ export default function Pricing() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const INACTIVE_STATUSES = ['canceled', 'cancelled', 'expired'];
 
   // Fetch all plans
   const { data: plans, isLoading: isLoadingPlans } = useQuery({
@@ -53,10 +56,9 @@ export default function Pricing() {
       return { subscription, planId };
     },
     onSuccess: ({ subscription }) => {
-      // Store the subscription ID and open payment modal
       setCurrentSubscriptionId(subscription.subscription_id);
       setPaymentModalOpen(true);
-
+      queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
       toast({
         title: 'Suscripción creada',
         description: 'Completa el pago para activar tu plan',
@@ -77,9 +79,21 @@ export default function Pricing() {
     const plan = plans?.find((p) => p.plan_id === planId);
     if (!plan) return;
 
-    // If it's the free plan, just redirect to signup/register
+    // Free plan: if user has an active subscription, cancel it (downgrade to free)
     if (plan.price_monthly === 0) {
-      navigate('/register');
+      const activeSub = currentSubscription?.subscription;
+      const hasActive = activeSub && !INACTIVE_STATUSES.includes(activeSub.status);
+      if (!hasActive) {
+        toast({ title: 'Ya estás en el plan gratuito', variant: 'default' });
+        return;
+      }
+      // Navigate to subscription management to cancel
+      navigate('/dashboard/subscription');
+      toast({
+        title: 'Cancelá tu plan actual',
+        description: 'En "Mi Suscripción" podés cancelar para volver al plan gratuito',
+        variant: 'default',
+      });
       return;
     }
 
@@ -93,15 +107,17 @@ export default function Pricing() {
       return;
     }
 
-    // Create pending subscription (will trigger payment flow via CheckoutButton)
+    // Create pending subscription (will trigger payment flow)
     setSelectedPlanId(planId);
-    createPendingSubscription({
-      planId,
-      currency: 'ARS'
-    });
+    createPendingSubscription({ planId, currency: 'ARS' });
   };
 
-  const currentPlanId = currentSubscription?.subscription?.plan_id;
+  // Only mark a plan as "current" when the subscription is actually active/trialing
+  const activeStatuses = ['active', 'trialing', 'pending_payment'];
+  const activeSub = currentSubscription?.subscription;
+  const currentPlanId = activeSub && activeStatuses.includes(activeSub.status)
+    ? activeSub.plan_id
+    : null;
 
   return (
     <DashboardLayout>

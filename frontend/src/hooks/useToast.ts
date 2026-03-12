@@ -1,5 +1,4 @@
-// Simple toast hook using native browser notifications
-// In a production app, you'd use a library like react-hot-toast or sonner
+import { toast as toastManager } from '../lib/toast';
 
 export interface ToastOptions {
   title: string;
@@ -10,19 +9,16 @@ export interface ToastOptions {
 
 export function useToast() {
   const toast = (options: ToastOptions) => {
-    // TODO: Replace with proper toast UI component
     const message = options.description
-      ? `${options.title}\n${options.description}`
+      ? `${options.title}: ${options.description}`
       : options.title;
 
     if (options.variant === 'destructive') {
-      // You can use a toast library here
-      alert(`Error: ${message}`);
+      toastManager.error(message, options.duration);
     } else if (options.variant === 'success') {
-      // You can use a toast library here
-      alert(`Success: ${message}`);
+      toastManager.success(message, options.duration);
     } else {
-      alert(message);
+      toastManager.info(message, options.duration);
     }
   };
 

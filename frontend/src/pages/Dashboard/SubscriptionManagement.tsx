@@ -68,8 +68,13 @@ export default function SubscriptionManagement() {
     },
   });
 
-  const subscription = currentSubscription?.subscription;
-  const plan = currentSubscription?.plan;
+  const rawSubscription = currentSubscription?.subscription;
+  // Treat canceled/expired subscriptions as "no active plan" so we show the free state
+  const INACTIVE_STATUSES = ['canceled', 'cancelled', 'expired'];
+  const subscription = rawSubscription && !INACTIVE_STATUSES.includes(rawSubscription.status)
+    ? rawSubscription
+    : null;
+  const plan = subscription ? currentSubscription?.plan : null;
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { icon: any; color: string; bg: string; text: string }> = {

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { mercadoPagoService, Payment } from '@/services/api/mercadoPagoService';
 import { subscriptionService } from '@/services/api/subscriptionService';
+import { toast } from '@/lib/toast';
 
 const PaymentHistory: React.FC = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const PaymentHistory: React.FC = () => {
       await mercadoPagoService.downloadReceipt(paymentId);
     } catch (error) {
       console.error('Error downloading receipt:', error);
-      alert('Error al descargar el recibo. Por favor intenta de nuevo.');
+      toast.error('Error al descargar el recibo. Por favor intenta de nuevo.');
     }
   };
 
