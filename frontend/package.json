@@ -39,6 +39,11 @@
     "tailwindcss": "^4.1.18",
     "yup": "^1.7.1"
   },
+  "pnpm": {
+    "overrides": {
+      "serialize-javascript": "^7.0.4"
+    }
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/react": "^19.2.9",
