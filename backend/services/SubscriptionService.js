@@ -124,10 +124,42 @@ class SubscriptionService {
           };
         }
 
-        // For other statuses (cancelled, past_due, etc.), create new pending subscription
+        // For other statuses (cancelled, expired, past_due, etc.):
+        // UPDATE the existing row instead of inserting — the table has a unique
+        // constraint on organization_id (one row per org, ever).
+        const subscriptionData = {
+          plan_id: planId,
+          status: 'pending_payment',
+          billing_cycle: 'monthly',
+          currency: currency,
+          amount: amount,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date().toISOString(),
+          payment_gateway: 'mercadopago',
+          updated_at: new Date().toISOString(),
+          metadata: {
+            pending_payment: true,
+            created_via: 'request_plan_change',
+            reactivated_from: existingSubscription.status
+          }
+        };
+
+        const subscription = await this.subscriptionRepository.update(
+          existingSubscription.subscription_id,
+          subscriptionData
+        );
+
+        this.logger.info('Reactivated existing subscription row to pending_payment', {
+          subscriptionId: subscription.subscription_id,
+          organizationId,
+          planId,
+          previousStatus: existingSubscription.status
+        });
+
+        return subscription;
       }
 
-      // No active subscription - create a pending subscription
+      // Truly no subscription row exists yet — create one
       const subscriptionData = {
         organization_id: organizationId,
         plan_id: planId,
