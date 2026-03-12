@@ -126,12 +126,20 @@ export function MercadoPagoBricks({
                 });
 
                 if (result.success && result.data.status === 'approved') {
+                  // Payment confirmed — activate subscription and go to success page
                   onSuccessRef.current(result.data.paymentId);
                 } else if (
                   result.data.status === 'in_process' ||
                   result.data.status === 'pending'
                 ) {
-                  onSuccessRef.current(result.data.paymentId);
+                  // Cash / bank-transfer payments: submitted but not yet credited.
+                  // The subscription stays pending_payment until the webhook confirms it.
+                  // Do NOT call onPaymentSuccess — the user is NOT subscribed yet.
+                  setIsLoading(false);
+                  setPaymentError(
+                    'Tu pago fue recibido y está siendo procesado. ' +
+                    'Recibirás un email cuando se acredite y tu suscripción se active.'
+                  );
                 } else if (result.data.status === 'rejected') {
                   // Non-fatal: show inline banner + reinit brick so user can correct and retry
                   const msg = getRejectionMessage(result.data.statusDetail);

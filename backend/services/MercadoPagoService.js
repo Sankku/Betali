@@ -261,32 +261,65 @@ class MercadoPagoService {
         throw new Error('Subscription not found');
       }
 
-      // Record payment in manual_payments table
-      const { data: payment, error: paymentError } = await supabase
+      // Check if this payment was already recorded by the synchronous processPayment endpoint.
+      // When the Brick processes an approved payment, the controller records it immediately and
+      // activates the subscription. The webhook firing afterward must not duplicate the record.
+      const { data: existingPayment } = await supabase
         .from('manual_payments')
-        .insert({
-          subscription_id: subscriptionId,
-          organization_id: subscription.organization_id,
-          amount,
-          currency,
-          payment_method: paymentMethod,
-          status: this.mapPaymentStatus(status),
-          payment_date: new Date().toISOString(),
-          reference_number: paymentId,
-          notes: `MercadoPago payment - Status: ${status} - Detail: ${statusDetail}`,
-          recorded_by: 'system_mercadopago'
-        })
-        .select()
-        .single();
+        .select('payment_id, status')
+        .eq('reference_number', paymentId.toString())
+        .maybeSingle();
 
-      if (paymentError) {
-        this.logger.error('Error recording payment:', paymentError);
-        throw paymentError;
+      let internalPaymentId;
+
+      if (existingPayment) {
+        // Payment already recorded synchronously — just update the status if needed
+        this.logger.info('Payment already recorded by processPayment endpoint, updating status only:', {
+          paymentId,
+          existingStatus: existingPayment.status,
+          webhookStatus: status
+        });
+
+        await supabase
+          .from('manual_payments')
+          .update({
+            status: this.mapPaymentStatus(status),
+            confirmed_at: status === 'approved' ? new Date().toISOString() : null,
+            confirmed_by: status === 'approved' ? 'system_mercadopago_webhook' : null
+          })
+          .eq('reference_number', paymentId.toString());
+
+        internalPaymentId = existingPayment.payment_id;
+      } else {
+        // First time we're seeing this payment — insert it
+        const { data: payment, error: paymentError } = await supabase
+          .from('manual_payments')
+          .insert({
+            subscription_id: subscriptionId,
+            organization_id: subscription.organization_id,
+            amount,
+            currency,
+            payment_method: paymentMethod,
+            status: this.mapPaymentStatus(status),
+            payment_date: new Date().toISOString(),
+            reference_number: paymentId.toString(),
+            notes: `MercadoPago payment - Status: ${status} - Detail: ${statusDetail}`,
+            recorded_by: 'system_mercadopago'
+          })
+          .select()
+          .single();
+
+        if (paymentError) {
+          this.logger.error('Error recording payment:', paymentError);
+          throw paymentError;
+        }
+
+        internalPaymentId = payment.payment_id;
       }
 
       // Update subscription based on payment status
       if (status === 'approved') {
-        return await this.activateSubscription(subscriptionId, paymentId, payment.payment_id);
+        return await this.activateSubscription(subscriptionId, paymentId, internalPaymentId);
       } else if (status === 'rejected' || status === 'cancelled') {
         return await this.rejectSubscription(subscriptionId, statusDetail);
       } else if (status === 'pending' || status === 'in_process') {
@@ -457,6 +490,11 @@ class MercadoPagoService {
 
   /**
    * Handle rejected payment
+   *
+   * IMPORTANT: We do NOT change the subscription status to 'canceled' here.
+   * A rejected payment means "this attempt failed, please try another card".
+   * The subscription must stay 'pending_payment' so the user can retry.
+   * Only explicit user cancellation (cancelSubscription) sets status to 'canceled'.
    */
   async rejectSubscription(subscriptionId, reason) {
     try {
@@ -475,12 +513,17 @@ class MercadoPagoService {
         .eq('subscription_id', subscriptionId)
         .single();
 
+      // Keep subscription as pending_payment — user can retry with another card.
+      // Just record the rejection in metadata for auditing.
       await supabase
         .from('subscriptions')
         .update({
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          metadata: {
+            ...subscription?.metadata,
+            last_rejection_reason: reason,
+            last_rejected_at: new Date().toISOString()
+          }
         })
         .eq('subscription_id', subscriptionId);
 
@@ -510,11 +553,14 @@ class MercadoPagoService {
         }
       }
 
-      this.logger.info('Subscription rejected:', { subscriptionId, reason });
+      this.logger.info('Payment rejected — subscription kept as pending_payment for retry:', {
+        subscriptionId,
+        reason
+      });
 
       return {
         success: true,
-        message: 'Subscription marked as canceled due to payment rejection'
+        message: 'Payment rejected; subscription remains pending_payment so user can retry'
       };
     } catch (error) {
       this.logger.error('Error rejecting subscription:', error);

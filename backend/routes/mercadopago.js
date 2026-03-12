@@ -15,11 +15,24 @@ const { verifyMercadoPagoWebhook } = require('../middleware/mercadoPagoWebhook')
 // ============================================================================
 
 /**
+ * Webhook URL verification endpoint
+ * GET /api/webhooks/mercadopago
+ *
+ * Mercado Pago sends a GET request to verify the webhook URL is reachable
+ * before activating it in the developer dashboard. Must return 200.
+ */
+router.get(
+  '/webhooks/mercadopago',
+  (req, res) => res.status(200).json({ status: 'ok', service: 'mercadopago-webhook' })
+);
+
+/**
  * Webhook endpoint - receives payment notifications from Mercado Pago
  * POST /api/webhooks/mercadopago
  *
- * This endpoint is called by Mercado Pago when payment status changes
- * Must be publicly accessible (no auth middleware)
+ * This endpoint is called by Mercado Pago when payment status changes.
+ * Must be publicly accessible (no auth middleware).
+ * Body is already parsed by the global express.json() in server.js.
  *
  * Security:
  * - Verifies x-signature header using HMAC-SHA256
@@ -27,7 +40,6 @@ const { verifyMercadoPagoWebhook } = require('../middleware/mercadoPagoWebhook')
  */
 router.post(
   '/webhooks/mercadopago',
-  express.json(),
   verifyMercadoPagoWebhook,
   (req, res, next) => mercadoPagoController.handleWebhook(req, res, next)
 );
