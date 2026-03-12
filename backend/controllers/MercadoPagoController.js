@@ -449,7 +449,6 @@ class MercadoPagoController {
           subscription_plans!inner (
             plan_id,
             name,
-            trial_period_days,
             price_monthly,
             price_yearly
           )
