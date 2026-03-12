@@ -593,6 +593,13 @@
   & .hover\:text-neutral-600:hover { color: oklch(0.80 0 0); }
   & .hover\:text-gray-900:hover    { color: oklch(0.98 0 0); }
 
+  /* Modal card — slightly lighter background + visible border to separate from page */
+  & .modal-card {
+    background-color: oklch(0.20 0 0);
+    border-color: oklch(0.36 0 0);
+    box-shadow: 0 0 0 1px oklch(0.36 0 0), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  }
+
   /* Borders */
   & .border-neutral-100 { border-color: oklch(0.22 0 0); }
   & .border-neutral-200 { border-color: oklch(0.28 0 0); }
@@ -735,6 +742,11 @@
 /* System preference fallback — applies when OS is dark and no explicit theme */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    & .modal-card {
+      background-color: oklch(0.20 0 0);
+      border-color: oklch(0.36 0 0);
+      box-shadow: 0 0 0 1px oklch(0.36 0 0), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
     & .bg-white       { background-color: oklch(0.11 0 0); }
     & .bg-neutral-50  { background-color: oklch(0.07 0 0); }
     & .bg-neutral-100 { background-color: oklch(0.15 0 0); }

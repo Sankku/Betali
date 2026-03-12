@@ -56,6 +56,9 @@ export function MercadoPagoBricks({
 
     const initializeBrick = async () => {
       try {
+        // Detect current theme to match the MP Brick to the app's color scheme
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+
         // Initialize Mercado Pago instance
         const mp = new window.MercadoPago(publicKey, {
           locale: 'es-AR'
@@ -71,7 +74,7 @@ export function MercadoPagoBricks({
           customization: {
             visual: {
               style: {
-                theme: 'default'
+                theme: isDarkMode ? 'dark' : 'default'
               }
             },
             paymentMethods: {

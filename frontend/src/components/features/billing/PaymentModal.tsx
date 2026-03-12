@@ -70,7 +70,7 @@ export function PaymentModal({
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl">
+        <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-neutral-200 modal-card">
           {/* Header */}
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
