@@ -506,15 +506,17 @@ class MercadoPagoController {
         status: payment.status
       });
 
-      // Record payment in database
-      await supabase
+      // Record payment in database.
+      // NOTE: errors here are logged but do NOT abort the response — the payment
+      // already happened in MP and we must not leave the subscription stuck.
+      const { error: paymentInsertError } = await supabase
         .from('manual_payments')
         .insert({
           subscription_id: subscriptionId,
           organization_id: subscription.organization_id,
-          amount: payment.transaction_amount,
-          currency: payment.currency_id,
-          payment_method: payment.payment_method_id,
+          amount: payment.transaction_amount ?? amount,
+          currency: payment.currency_id ?? currency,
+          payment_method: payment.payment_method_id ?? null,
           status: payment.status === 'approved' ? 'confirmed' : payment.status,
           payment_date: new Date().toISOString(),
           confirmed_at: payment.status === 'approved' ? new Date().toISOString() : null,
@@ -522,6 +524,16 @@ class MercadoPagoController {
           notes: `MercadoPago payment ID: ${payment.id}`,
           recorded_by: req.user.id
         });
+
+      if (paymentInsertError) {
+        // Log but continue — subscription activation is more important than the audit record.
+        // The webhook will attempt to record it again when it arrives.
+        this.logger.error('Failed to record payment in manual_payments (non-fatal):', {
+          paymentId: payment.id,
+          subscriptionId,
+          error: paymentInsertError
+        });
+      }
 
       // Update subscription if payment approved
       if (payment.status === 'approved') {
@@ -552,7 +564,7 @@ class MercadoPagoController {
           periodEnd: periodEnd.toISOString()
         });
 
-        await supabase
+        const { error: activationError } = await supabase
           .from('subscriptions')
           .update({
             status: newStatus,
@@ -568,6 +580,17 @@ class MercadoPagoController {
             }
           })
           .eq('subscription_id', subscriptionId);
+
+        if (activationError) {
+          this.logger.error('CRITICAL: Failed to activate subscription after approved payment:', {
+            subscriptionId,
+            paymentId: payment.id,
+            error: activationError
+          });
+          // Re-throw so the catch block returns a 500 and the frontend doesn't navigate
+          // to the success page with a still-pending subscription
+          throw new Error(`Subscription activation failed: ${activationError.message}`);
+        }
 
         // Send payment success email
         try {
