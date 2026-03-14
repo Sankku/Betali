@@ -23,7 +23,17 @@ const errorHandler = (err, req, res, _next) => {
   } else if (err.message.includes('Access denied') || err.message.includes('Unauthorized')) {
     statusCode = 403;
     message = err.message;
-  } else if (err.message.includes('required') || err.message.includes('Invalid')) {
+  } else if (
+    err.message.includes('required') ||
+    err.message.includes('Invalid') ||
+    err.message.includes('Cannot deactivate') ||
+    err.message.includes('Cannot delete') ||
+    err.message.includes('cannot be empty') ||
+    err.message.includes('has associated') ||
+    err.message.includes('has stock movements') ||
+    err.message.includes('Reassign') ||
+    err.message.includes('limit')
+  ) {
     statusCode = 400;
     message = err.message;
   } else if (err.message.includes('already exists')) {

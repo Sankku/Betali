@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -56,6 +56,29 @@ interface DataTableProps<TData> {
   onPaginationChange?: (pagination: PaginationState) => void;
   onSortingChange?: (sorting: SortingState) => void;
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+}
+
+// `indeterminate` is a DOM property, not an HTML attribute — must be set via ref.
+// Passing indeterminate={boolean} directly to <input> causes a React 19 warning.
+function IndeterminateCheckbox({
+  indeterminate,
+  ...rest
+}: React.InputHTMLAttributes<HTMLInputElement> & { indeterminate?: boolean }) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = indeterminate ?? false;
+    }
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+      style={{ accentColor: 'rgb(14 116 144)' }}
+      {...rest}
+    />
+  );
 }
 
 export function DataTable<TData>({
@@ -118,14 +141,11 @@ export function DataTable<TData>({
         id: 'select',
         header: ({ table }: any) => (
           <div onClick={(e) => e.stopPropagation()}>
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-              style={{ accentColor: 'rgb(14 116 144)' }}
+            <IndeterminateCheckbox
               checked={table.getIsAllPageRowsSelected()}
               indeterminate={table.getIsSomePageRowsSelected()}
               onChange={table.getToggleAllPageRowsSelectedHandler()}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             />
           </div>
         ),
@@ -190,7 +210,10 @@ export function DataTable<TData>({
     enableRowSelection: enableRowSelection,
     getRowId: getRowId,
     manualPagination,
-    pageCount: pageCount ?? -1,
+    // Only set pageCount explicitly for server-side (manual) pagination.
+    // For client-side pagination, leave it undefined so TanStack Table
+    // calculates it automatically from the filtered data rows.
+    ...(manualPagination ? { pageCount: pageCount ?? -1 } : {}),
     state: {
       sorting,
       globalFilter,
@@ -501,7 +524,7 @@ export function DataTable<TData>({
           </div>
         </div>
         {pagination && (
-          <div className="border-t border-neutral-200/60 bg-neutral-100 px-6 py-4">
+          <div className="border-t border-neutral-200/60 bg-neutral-50 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-neutral-700">
                 Mostrando{' '}
@@ -509,7 +532,7 @@ export function DataTable<TData>({
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
                 </span>
                 {' a '}
-                <span className="font-semibold text-neutral-900">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) *
                       table.getState().pagination.pageSize,
@@ -517,7 +540,7 @@ export function DataTable<TData>({
                   )}
                 </span>
                 {' de '}
-                <span className="font-semibold text-neutral-900">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                   {table.getFilteredRowModel().rows.length}
                 </span>
                 {' resultados'}
@@ -529,7 +552,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </Button>
@@ -539,18 +562,18 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-neutral-300/60">
-                  <span className="text-sm text-neutral-700">Página</span>
-                  <span className="text-sm font-semibold text-neutral-900">
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-300/60 dark:border-neutral-600/60">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">Página</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                     {table.getState().pagination.pageIndex + 1}
                   </span>
-                  <span className="text-sm text-neutral-700">de</span>
-                  <span className="text-sm font-semibold text-neutral-900">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">de</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                     {table.getPageCount()}
                   </span>
                 </div>
@@ -560,7 +583,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -570,7 +593,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
                 >
                   <ChevronsRight className="h-4 w-4" />
                 </Button>

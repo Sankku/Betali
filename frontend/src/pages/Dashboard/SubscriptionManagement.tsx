@@ -74,32 +74,32 @@ export default function SubscriptionManagement() {
   const subscription = rawSubscription && !INACTIVE_STATUSES.includes(rawSubscription.status)
     ? rawSubscription
     : null;
-  const plan = subscription ? currentSubscription?.plan : null;
+  const plan = subscription ? (subscription as any).subscription_plans ?? null : null;
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { icon: any; color: string; bg: string; text: string }> = {
       active: {
         icon: CheckCircle,
-        color: 'text-green-700',
-        bg: 'bg-green-100',
+        color: 'text-green-700 dark:text-green-300',
+        bg: 'bg-green-100 dark:bg-green-900/40',
         text: 'Activa',
       },
       trialing: {
         icon: Clock,
-        color: 'text-blue-700',
-        bg: 'bg-blue-100',
+        color: 'text-blue-700 dark:text-blue-300',
+        bg: 'bg-blue-100 dark:bg-blue-900/40',
         text: 'Período de Prueba',
       },
       pending_payment: {
         icon: AlertCircle,
-        color: 'text-yellow-700',
-        bg: 'bg-yellow-100',
+        color: 'text-yellow-700 dark:text-yellow-300',
+        bg: 'bg-yellow-100 dark:bg-yellow-900/40',
         text: 'Pago Pendiente',
       },
       past_due: {
         icon: AlertCircle,
-        color: 'text-red-700',
-        bg: 'bg-red-100',
+        color: 'text-red-700 dark:text-red-300',
+        bg: 'bg-red-100 dark:bg-red-900/40',
         text: 'Pago Vencido',
       },
       canceled: {
@@ -156,7 +156,7 @@ export default function SubscriptionManagement() {
         <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
           <div className="text-center">
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
-            <p className="mt-4 text-lg text-gray-600">Cargando suscripción...</p>
+            <p className="mt-4 text-lg text-gray-600 dark:text-neutral-400">Cargando suscripción...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -167,12 +167,12 @@ export default function SubscriptionManagement() {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto py-12 px-4">
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-lg p-12 text-center">
+            <AlertCircle className="h-16 w-16 text-gray-400 dark:text-neutral-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-neutral-100 mb-2">
               No tienes una suscripción activa
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 dark:text-neutral-400 mb-8">
               Selecciona un plan para comenzar a usar todas las funcionalidades
             </p>
             <Button
@@ -192,14 +192,14 @@ export default function SubscriptionManagement() {
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Mi Suscripción</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-neutral-100">Mi Suscripción</h1>
+          <p className="mt-2 text-gray-600 dark:text-neutral-400">
             Gestiona tu plan y revisa tu historial de pagos
           </p>
         </div>
 
         {/* Current Subscription Card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-lg dark:shadow-neutral-950/50 overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
@@ -220,11 +220,11 @@ export default function SubscriptionManagement() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Period Info */}
               <div>
-                <div className="flex items-center text-sm text-gray-600 mb-2">
+                <div className="flex items-center text-sm text-gray-600 dark:text-neutral-400 mb-2">
                   <Calendar className="h-4 w-4 mr-2" />
                   Período Actual
                 </div>
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">
                   {formatDate(subscription.current_period_start)} - {formatDate(subscription.current_period_end)}
                 </div>
               </div>
@@ -232,11 +232,11 @@ export default function SubscriptionManagement() {
               {/* Trial Info */}
               {subscription.status === 'trialing' && subscription.trial_end && (
                 <div>
-                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-neutral-400 mb-2">
                     <Clock className="h-4 w-4 mr-2" />
                     Prueba Termina
                   </div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">
                     {formatDate(subscription.trial_end)}
                   </div>
                 </div>
@@ -245,11 +245,11 @@ export default function SubscriptionManagement() {
               {/* Next Billing */}
               {subscription.status === 'active' && (
                 <div>
-                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-neutral-400 mb-2">
                     <CreditCard className="h-4 w-4 mr-2" />
                     Próximo Pago
                   </div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">
                     {formatDate(subscription.current_period_end)}
                   </div>
                 </div>
@@ -257,11 +257,11 @@ export default function SubscriptionManagement() {
 
               {/* Payment Gateway */}
               <div>
-                <div className="flex items-center text-sm text-gray-600 mb-2">
+                <div className="flex items-center text-sm text-gray-600 dark:text-neutral-400 mb-2">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Método de Pago
                 </div>
-                <div className="text-sm font-medium text-gray-900 capitalize">
+                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100 capitalize">
                   {subscription.payment_gateway || 'MercadoPago'}
                 </div>
               </div>
@@ -310,9 +310,9 @@ export default function SubscriptionManagement() {
         </div>
 
         {/* Payment History */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-900">Historial de Pagos</h3>
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-lg dark:shadow-neutral-950/50 overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-200 dark:border-neutral-700 flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-neutral-100">Historial de Pagos</h3>
             <Button
               variant="outline"
               size="sm"
@@ -325,56 +325,56 @@ export default function SubscriptionManagement() {
           {isLoadingPayments ? (
             <div className="px-8 py-12 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">Cargando pagos...</p>
+              <p className="text-sm text-gray-600 dark:text-neutral-400">Cargando pagos...</p>
             </div>
           ) : payments && payments.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                       Monto
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                       Método
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                       Referencia
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-neutral-700">
                   {payments.map((payment: any) => (
                     <tr key={payment.payment_id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-neutral-100">
                         {formatDate(payment.payment_date)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-neutral-100">
                         {formatCurrency(payment.amount, payment.currency)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-neutral-400 capitalize">
                         {payment.payment_method || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             payment.status === 'confirmed'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
                               : payment.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
+                              : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300'
                           }`}
                         >
                           {payment.status === 'confirmed' ? 'Confirmado' : payment.status === 'pending' ? 'Pendiente' : 'Rechazado'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-neutral-400 font-mono">
                         {payment.reference_number || 'N/A'}
                       </td>
                     </tr>
@@ -384,8 +384,8 @@ export default function SubscriptionManagement() {
             </div>
           ) : (
             <div className="px-8 py-12 text-center">
-              <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">No hay pagos registrados</p>
+              <CreditCard className="h-12 w-12 text-gray-300 dark:text-neutral-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-600 dark:text-neutral-400">No hay pagos registrados</p>
             </div>
           )}
         </div>
@@ -393,22 +393,22 @@ export default function SubscriptionManagement() {
         {/* Cancel Dialog */}
         {showCancelDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full p-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-neutral-100 mb-4">
                 ¿Cancelar Suscripción?
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-neutral-400 mb-6">
                 Tu suscripción permanecerá activa hasta el final del período actual ({formatDate(subscription.current_period_end)}).
               </p>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                   Cuéntanos por qué cancelas (opcional)
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500"
                   rows={3}
                   placeholder="Tu feedback nos ayuda a mejorar..."
                 />

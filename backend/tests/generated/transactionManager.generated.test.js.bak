@@ -1,0 +1,83 @@
+Based on the provided source code, it seems the error might be due to the mock of the logger. Here's the updated code without any changes to the logger:
+
+```javascript
+const { TransactionManager } = require('../../utils/transactionManager');
+
+jest.mock('../../utils/Logger');
+
+describe('TransactionManager', () => {
+  let transactionManager;
+  const mockOperation = jest.fn(() => Promise.resolve('mockResult'));
+  const mockRollbackOperation = jest.fn(() => Promise.resolve());
+
+  beforeEach(() => {
+    transactionManager = new TransactionManager();
+  });
+
+  it('should correctly require the target file', () => {
+    expect(transactionManager).toBeInstanceOf(TransactionManager);
+  });
+
+  describe('execute', () => {
+    it('should execute an operation and track it for potential rollback', async () => {
+      const result = await transactionManager.execute('testOperation', mockOperation, mockRollbackOperation);
+      expect(result).toBe('mockResult');
+      expect(mockOperation).toHaveBeenCalled();
+      expect(mockRollbackOperation).not.toHaveBeenCalled();
+      expect(transactionManager.operations).toHaveLength(1);
+    });
+
+    it('should throw an error if executed after commit', async () => {
+      await transactionManager.commit();
+      await expect(transactionManager.execute('testOperation', mockOperation, mockRollbackOperation)).rejects.toThrow('Cannot execute operation after transaction commit');
+    });
+
+    it('should throw an error if executed after rollback', async () => {
+      await transactionManager.rollback();
+      await expect(transactionManager.execute('testOperation', mockOperation, mockRollbackOperation)).rejects<｜begin▁of▁sentence｜>.toThrow('Cannot execute operation after transaction rollback');
+    });
+  });
+
+  describe('commit', () => {
+    it('should mark the transaction as successful', async () => {
+      await transactionManager.commit();
+      expect(transactionManager.committed).toBe(true);
+    });
+
+    it('should not execute any further operations after commit', async () => {
+      await transactionManager.execute('testOperation', mockOperation, mockRollbackOperation);
+      await transactionManager.commit();
+      await expect(transactionManager.execute('anotherOperation', () => Promise.resolve('anotherResult'), () => Promise.resolve())).rejects.toThrow('Cannot execute operation after transaction commit');
+    });
+  });
+
+  describe('rollback', () => {
+    it('should rollback all completed operations in reverse order', async () => {
+      await transactionManager.execute('testOperation', mockOperation, mockRollbackOperation);
+      await transactionManager.rollback();
+      expect(mockRollbackOperation).toHaveBeenCalledTimes(1);
+      expect(transactionManager.rolledBack).toBe(true);
+    });
+
+    it('should not execute any further operations after rollback', async () => {
+      await transactionManager.execute('testOperation', mockOperation, mockRollbackOperation);
+      await transactionManager.rollback();
+      await expect(transactionManager.execute('anotherOperation', () => Promise.resolve('anotherResult'), () => Promise.resolve())).rejects.toThrow('Cannot execute operation after transaction rollback');
+    });
+  });
+
+  describe('getStatus', () => {
+    it('should return the current status of the transaction', () => {
+      expect(transactionManager.getStatus()).toEqual({
+        transactionId: expect.any(String),
+        operations: 0,
+        committed: false,
+        rolledBack: false,
+        context: {}
+      });
+    });
+  });
+});
+```
+
+The error is likely due to the fact that the TransactionManager class is mocked, which means all its methods return Promises that resolve to undefined or null. This might cause issues with the tests. To fix the issue, the TransactionManager class should be spied on or the mock should be adjusted to return expected values instead of promises.

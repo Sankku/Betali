@@ -147,6 +147,10 @@ const ROLES = {
       PERMISSIONS.DASHBOARD_READ
     ]
   },
+  ORGANIZATION_ADMIN: {
+    name: 'Organization Administrator',
+    permissions: Object.values(PERMISSIONS)
+  },
   VIEWER: {
     name: 'Viewer',
     permissions: [

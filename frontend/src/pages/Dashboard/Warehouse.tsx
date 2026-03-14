@@ -196,7 +196,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => openModal('view', row.original)}
-            className="text-blue-600 hover:text-blue-900"
+            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40"
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -204,7 +204,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => openModal('edit', row.original)}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -212,17 +212,22 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleActive(row.original)}
-            className={row.original.is_active ? "text-danger-600 hover:text-danger-800" : "text-success-600 hover:text-success-800"}
+            title={row.original.is_active ? 'Deactivate warehouse' : 'Activate warehouse'}
+            className={row.original.is_active
+              ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+              : "text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"}
           >
-            {row.original.is_active ? <ToggleLeft className="w-4 h-4 text-danger-600" /> : <ToggleRight className="w-4 h-4 text-success-600" />}
+            {row.original.is_active
+              ? <ToggleRight className="w-5 h-5" />
+              : <ToggleLeft className="w-5 h-5" />}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-danger-600 hover:text-danger-800"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
           >
-            <Trash className="w-4 h-4 text-danger-600" />
+            <Trash className="w-4 h-4" />
           </Button>
         </div>
       ),

@@ -5,81 +5,106 @@
  */
 
 import { test, expect } from '../../helpers/fixtures';
-import { generateUniqueEmail, generateUniqueOrgName } from '../../helpers/testData';
+import { testData } from '../../helpers/testData';
 
 test.describe('Multi-Tenant Data Isolation', () => {
-  test('should isolate data between different organizations', async ({ page, authHelper, context }) => {
-    // Create first organization
-    const org1Email = generateUniqueEmail('org1');
-    const org1Name = generateUniqueOrgName('Org 1');
+  test('should isolate data between different organizations', async ({ page, authHelper }) => {
+    // Uses two pre-seeded users in separate orgs to avoid email verification issues
+    // admin@betali-test.com → Betali Test Org
+    // user@betali-test.com  → Betali Test Org 2
 
-    await authHelper.signup(org1Email, 'Password123!', 'User', 'One', org1Name);
+    // Skip onboarding wizard for all page loads in this test (prevents z-40 overlay blocking clicks)
+    await page.addInitScript(() => {
+      window.localStorage.setItem('betali_onboarding_completed', 'true');
+      window.localStorage.setItem('betali_tutorial_skipped', 'true');
+    });
 
-    // Verify org1 dashboard is visible
+    // Helper to create a product in the current org's products page
+    const createProduct = async (productName: string, sku: string) => {
+      await page.goto('/dashboard/products');
+      await page.waitForLoadState('networkidle');
+      // Wait for any loading overlays (e.g., onboarding wizard backdrop z-40) to disappear
+      await page.waitForSelector('div.fixed.inset-0.z-40', { state: 'detached', timeout: 5000 }).catch(() => {});
+      await page.click('#create-product-button, button:has-text("Add Product"), button:has-text("Agregar Producto")');
+      await page.waitForSelector('input[name="name"]', { timeout: 5000 });
+
+      await page.fill('input[name="name"]', productName);
+      await page.fill('input[name="batch_number"]', sku);
+      await page.fill('input[name="price"]', '99.99');
+      await page.fill('input[name="origin_country"]', 'Test Supplier');
+
+      // Set expiration date — open DatePicker, click day using z-[9999] container selector
+      const datePickerBtn = page.locator('button[class*="h-\\[48px\\]"]').first();
+      if (await datePickerBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await datePickerBtn.click();
+        await page.waitForTimeout(400);
+
+        // Navigate to next month then click day 15 (always safe, no timezone/month-end issues)
+        await page.evaluate(() => {
+          const cal = Array.from(document.querySelectorAll('div')).find((d: any) =>
+            d.style && d.style.width === '320px' && d.style.top
+          ) as HTMLElement | undefined;
+          if (!cal) return;
+          const btns = cal.querySelectorAll('button[type="button"]') as NodeListOf<HTMLButtonElement>;
+          if (btns[1]) btns[1].click(); // next month arrow
+        });
+        await page.waitForTimeout(300);
+        await page.evaluate(() => {
+          const cal = Array.from(document.querySelectorAll('div')).find((d: any) =>
+            d.style && d.style.width === '320px' && d.style.top
+          ) as HTMLElement | undefined;
+          if (!cal) return;
+          const dayBtn = Array.from(cal.querySelectorAll('button[type="button"]') as NodeListOf<HTMLButtonElement>)
+            .find(b => b.textContent?.trim() === '15' && !b.disabled);
+          if (dayBtn) dayBtn.click();
+        });
+        await page.waitForTimeout(500);
+      }
+
+      await page.waitForTimeout(300);
+      await page.click('button[type="submit"]');
+      await page.waitForSelector('.border-l-success-500, [class*="border-l-success"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
+    };
+
+    // --- ORG 1: login as admin test user ---
+    await authHelper.login(testData.users.admin.email, testData.users.admin.password);
     await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.locator(`text=${org1Name}`).first()).toBeVisible({ timeout: 10000 });
 
-    // Create a product for org1
-    await page.goto('/products');
-    await page.click('button:has-text("New Product"), button:has-text("Add Product"), a[href*="products/new"]');
+    const org1ProductName = `Org1-Product-${Date.now()}`;
+    await createProduct(org1ProductName, `ORG1-SKU-${Date.now()}`);
 
-    const org1ProductName = `Org1 Product ${Date.now()}`;
-    await page.fill('input[name="name"]', org1ProductName);
-    await page.fill('input[name="sku"]', `ORG1-SKU-${Date.now()}`);
-    await page.fill('input[name="unit_price"]', '99.99');
-    await page.click('button[type="submit"]');
+    // Logout: clear Supabase auth tokens
+    await page.evaluate(() => {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('sb-') || k === 'betali_current_org')
+        .forEach(k => localStorage.removeItem(k));
+    });
 
-    // Wait for product creation
-    await expect(
-      page.locator('text=/success|created/i').first()
-    ).toBeVisible({ timeout: 10000 });
-
-    // Logout from org1
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-
-    // Create second organization in a new session
-    const org2Email = generateUniqueEmail('org2');
-    const org2Name = generateUniqueOrgName('Org 2');
-
-    await authHelper.signup(org2Email, 'Password123!', 'User', 'Two', org2Name);
-
-    // Verify org2 dashboard is visible
+    // --- ORG 2: login as second pre-seeded user (different org) ---
+    await authHelper.login(testData.users.user.email, testData.users.user.password);
     await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.locator(`text=${org2Name}`).first()).toBeVisible({ timeout: 10000 });
 
-    // Navigate to products page for org2
-    await page.goto('/products');
-
-    // Verify org1's product is NOT visible to org2
-    const org1ProductVisible = await page.locator(`text=${org1ProductName}`).first().isVisible({ timeout: 3000 }).catch(() => false);
+    // Verify org2 cannot see org1's product
+    await page.goto('/dashboard/products');
+    await page.waitForLoadState('networkidle');
+    const org1ProductVisible = await page.locator(`text=${org1ProductName}`).first().isVisible().catch(() => false);
     expect(org1ProductVisible).toBe(false);
 
-    // Create a product for org2
-    await page.click('button:has-text("New Product"), button:has-text("Add Product"), a[href*="products/new"]');
+    const org2ProductName = `Org2-Product-${Date.now()}`;
+    await createProduct(org2ProductName, `ORG2-SKU-${Date.now()}`);
 
-    const org2ProductName = `Org2 Product ${Date.now()}`;
-    await page.fill('input[name="name"]', org2ProductName);
-    await page.fill('input[name="sku"]', `ORG2-SKU-${Date.now()}`);
-    await page.fill('input[name="unit_price"]', '149.99');
-    await page.click('button[type="submit"]');
-
-    // Wait for product creation
-    await expect(
-      page.locator('text=/success|created/i').first()
-    ).toBeVisible({ timeout: 10000 });
-
-    // Go back to products list
-    await page.goto('/products');
-
-    // Verify org2 can see their own product
+    // Verify org2 sees their own product but not org1's
+    await page.goto('/dashboard/products');
+    await page.waitForLoadState('networkidle');
     await expect(page.locator(`text=${org2ProductName}`).first()).toBeVisible({ timeout: 10000 });
 
-    // But still cannot see org1's product
-    const org1ProductStillVisible = await page.locator(`text=${org1ProductName}`).first().isVisible({ timeout: 3000 }).catch(() => false);
+    const org1ProductStillVisible = await page.locator(`text=${org1ProductName}`).first().isVisible().catch(() => false);
     expect(org1ProductStillVisible).toBe(false);
 
-    console.log('✅ Data isolation test passed: Organizations cannot see each other\'s data');
+    console.log("✅ Data isolation test passed: Organizations cannot see each other's data");
   });
 
   test('should switch organization context correctly', async ({ page, authHelper }) => {

@@ -1,0 +1,275 @@
+{
+  "startedAt": "2026-03-14T02:17:25.879Z",
+  "config": {
+    "baseURL": "http://localhost:3000",
+    "ollamaURL": "http://localhost:11434/api/generate",
+    "model": "qwen2.5-coder:7b",
+    "maxSteps": 15,
+    "startPath": "/dashboard",
+    "reportFile": "./explorer-report.json",
+    "headless": true,
+    "email": "admin@betali-test.com",
+    "password": "TestPassword123!",
+    "screenshotDir": "./explorer-screenshots"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "page": "/dashboard",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "Productos",
+        "path": "/dashboard/products",
+        "field": "",
+        "value": "",
+        "reason": "To explore the Products page for potential issues.",
+        "aiResponse": "{\n  \"action\": \"navigate\",\n  \"selector\": \"\",\n  \"label\": \"Productos\",\n  \"path\": \"/dashboard/products\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"To explore the Products page for potential issues.\"\n}"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-01.png"
+    },
+    {
+      "step": 2,
+      "page": "/dashboard/products",
+      "action": {
+        "action": "navigate",
+        "selector": "a[href='/dashboard/warehouse']",
+        "label": "Almacenes",
+        "path": "/dashboard/warehouse",
+        "reason": "Explore deeper flows and test the warehouse management section.",
+        "aiResponse": "```json\n{\n  \"action\": \"navigate\",\n  \"selector\": \"a[href='/dashboard/warehouse']\",\n  \"label\": \"Almacenes\",\n  \"path\": \"/dashboard/warehouse\",\n  \"reason\": \"Explore deeper flows and test the warehouse man"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-02.png"
+    },
+    {
+      "step": 3,
+      "page": "/dashboard/warehouse",
+      "action": {
+        "action": "navigate",
+        "selector": "a[href='/dashboard/stock-movements']",
+        "label": "Movimientos",
+        "path": "/dashboard/stock-movements",
+        "field": "",
+        "value": "",
+        "reason": "Explore a different page for additional functionality.",
+        "aiResponse": "{\n  \"action\": \"navigate\",\n  \"selector\": \"a[href='/dashboard/stock-movements']\",\n  \"label\": \"Movimientos\",\n  \"path\": \"/dashboard/stock-movements\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"Explore a d"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-03.png"
+    },
+    {
+      "step": 4,
+      "page": "/dashboard/stock-movements",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "New Movement",
+        "path": "/dashboard/stock-movements/new",
+        "field": "",
+        "value": "",
+        "reason": "To test the creation of a new stock movement.",
+        "aiResponse": "```json\n{\n  \"action\": \"navigate\",\n  \"selector\": \"\",\n  \"label\": \"New Movement\",\n  \"path\": \"/dashboard/stock-movements/new\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"To test the creation of a new stoc"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-04.png"
+    },
+    {
+      "step": 5,
+      "page": "/dashboard/stock-movements/new",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "Dashboard",
+        "path": "/dashboard",
+        "field": "",
+        "value": "",
+        "reason": "To explore deeper flows and avoid revisiting visited pages.",
+        "aiResponse": "```json\n{\n  \"action\": \"navigate\",\n  \"selector\": \"\",\n  \"label\": \"Dashboard\",\n  \"path\": \"/dashboard\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"To explore deeper flows and avoid revisiting visited page"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-05.png"
+    },
+    {
+      "step": 6,
+      "page": "/dashboard",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "Nueva VentaCrear orden de venta",
+        "path": "/dashboard/orders?action=new",
+        "field": "",
+        "value": "",
+        "reason": "To test the order creation flow",
+        "aiResponse": "```json\n{\"action\":\"navigate\",\"selector\":\"\",\"label\":\"Nueva VentaCrear orden de venta\",\"path\":\"/dashboard/orders?action=new\",\"field\":\"\",\"value\":\"\",\"reason\":\"To test the order creation flow\"}\n```"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-06.png"
+    },
+    {
+      "step": 7,
+      "page": "/dashboard/orders",
+      "action": {
+        "action": "navigate",
+        "selector": "a[href='/dashboard/products']",
+        "label": "Productos",
+        "path": "/dashboard/products",
+        "reason": "Explore a different section to find potential bugs and issues.",
+        "aiResponse": "```json\n{\n  \"action\": \"navigate\",\n  \"selector\": \"a[href='/dashboard/products']\",\n  \"label\": \"Productos\",\n  \"path\": \"/dashboard/products\",\n  \"reason\": \"Explore a different section to find potential bug"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-07.png"
+    },
+    {
+      "step": 8,
+      "page": "/dashboard/products",
+      "action": {
+        "action": "navigate",
+        "selector": "a[href='/dashboard/warehouse']",
+        "label": "Almacenes",
+        "path": "/dashboard/warehouse",
+        "reason": "Explore deeper flows by visiting the warehouse page.",
+        "aiResponse": "{\n  \"action\": \"navigate\",\n  \"selector\": \"a[href='/dashboard/warehouse']\",\n  \"label\": \"Almacenes\",\n  \"path\": \"/dashboard/warehouse\",\n  \"reason\": \"Explore deeper flows by visiting the warehouse page.\"\n}"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-08.png"
+    },
+    {
+      "step": 9,
+      "page": "/dashboard/warehouse",
+      "action": {
+        "action": "click",
+        "selector": "[button=\"New Warehouse\"]",
+        "label": "New Warehouse",
+        "path": "/dashboard/warehouse/new",
+        "field": "",
+        "value": "",
+        "reason": "To test the creation of a new warehouse.",
+        "aiResponse": "```json\n{\n  \"action\": \"click\",\n  \"selector\": \"[button=\\\"New Warehouse\\\"]\",\n  \"label\": \"New Warehouse\",\n  \"path\": \"/dashboard/warehouse/new\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"To test the crea"
+      },
+      "success": false,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-09.png"
+    },
+    {
+      "step": 10,
+      "page": "/dashboard/warehouse",
+      "action": {
+        "action": "click",
+        "selector": ".button",
+        "label": "New Warehouse",
+        "path": "",
+        "field": "",
+        "value": "",
+        "reason": "Create a new warehouse to test form and validation",
+        "aiResponse": "```json\n{\n  \"action\": \"click\",\n  \"selector\": \".button\",\n  \"label\": \"New Warehouse\",\n  \"path\": \"\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"Create a new warehouse to test form and validation\"\n}\n```"
+      },
+      "success": false,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-10.png"
+    },
+    {
+      "step": 11,
+      "page": "/dashboard/warehouse",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "Compras",
+        "path": "/dashboard/purchase-orders",
+        "reason": "To explore the purchase orders page and find potential bugs or issues.",
+        "aiResponse": "```json\n{\"action\":\"navigate\",\"selector\":\"\",\"label\":\"Compras\",\"path\":\"/dashboard/purchase-orders\",\"reason\":\"To explore the purchase orders page and find potential bugs or issues.\"}\n```"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-11.png"
+    },
+    {
+      "step": 12,
+      "page": "/dashboard/purchase-orders",
+      "action": {
+        "action": "click",
+        "selector": "a[href='/dashboard/suppliers']",
+        "label": "Proveedores",
+        "path": "/dashboard/suppliers",
+        "reason": "Navigate to a page not yet visited.",
+        "aiResponse": "```json\n{\n  \"action\": \"click\",\n  \"selector\": \"a[href='/dashboard/suppliers']\",\n  \"label\": \"Proveedores\",\n  \"path\": \"/dashboard/suppliers\",\n  \"reason\": \"Navigate to a page not yet visited.\"\n}\n```"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-12.png"
+    },
+    {
+      "step": 13,
+      "page": "/dashboard/suppliers",
+      "action": {
+        "action": "navigate",
+        "selector": "",
+        "label": "Gestión de Impuestos",
+        "path": "/dashboard/taxes",
+        "reason": "To explore a new page that is not yet visited",
+        "aiResponse": "```json\n{\"action\":\"navigate\",\"selector\":\"\",\"label\":\"Gestión de Impuestos\",\"path\":\"/dashboard/taxes\",\"reason\":\"To explore a new page that is not yet visited\"}\n```"
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-13.png"
+    },
+    {
+      "step": 14,
+      "page": "/dashboard/taxes",
+      "action": {
+        "action": "click",
+        "selector": "a[href='/dashboard/stock-movements']",
+        "label": "Control de Stock",
+        "path": "/dashboard/stock-movements",
+        "reason": "To explore a different section of the app.",
+        "aiResponse": "```json\n{\n  \"action\": \"click\",\n  \"selector\": \"a[href='/dashboard/stock-movements']\",\n  \"label\": \"Control de Stock\",\n  \"path\": \"/dashboard/stock-movements\",\n  \"reason\": \"To explore a different section "
+      },
+      "success": true,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-14.png"
+    },
+    {
+      "step": 15,
+      "page": "/dashboard/stock-movements",
+      "action": {
+        "action": "click",
+        "selector": "button:contains('New Movement')",
+        "label": "New Movement",
+        "path": "/dashboard/stock-movements/new",
+        "field": "",
+        "value": "",
+        "reason": "To test the creation of a new stock movement",
+        "aiResponse": "```json\n{\n  \"action\": \"click\",\n  \"selector\": \"button:contains('New Movement')\",\n  \"label\": \"New Movement\",\n  \"path\": \"/dashboard/stock-movements/new\",\n  \"field\": \"\",\n  \"value\": \"\",\n  \"reason\": \"To tes"
+      },
+      "success": false,
+      "issues": [],
+      "screenshot": "./explorer-screenshots/step-15.png"
+    }
+  ],
+  "issues": [],
+  "summary": {
+    "stepsRun": 15,
+    "issuesFound": 0,
+    "pagesVisited": [
+      "/dashboard",
+      "/dashboard/products",
+      "/dashboard/warehouse",
+      "/dashboard/stock-movements",
+      "/dashboard/stock-movements/new",
+      "/dashboard/orders",
+      "/dashboard/purchase-orders",
+      "/dashboard/suppliers",
+      "/dashboard/taxes"
+    ]
+  },
+  "finishedAt": "2026-03-14T02:19:41.094Z"
+}

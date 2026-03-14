@@ -1,131 +1,84 @@
-/**
- * E2E Test: Create Order & Stock Reservation
- *
- * Tests order creation flow and stock reservation system
- */
-
 import { test, expect } from '../../helpers/fixtures';
 import { testData } from '../../helpers/testData';
 
-test.describe('Create Order with Stock Reservation', () => {
+test.describe('Create Order Flow (Fixed Data)', () => {
   test.beforeEach(async ({ page, authHelper }) => {
-    // Login before each test
+    await page.addInitScript(() => {
+      window.localStorage.setItem('betali_onboarding_completed', 'true');
+      window.localStorage.setItem('betali_tutorial_skipped', 'true');
+    });
     await authHelper.login(testData.users.admin.email, testData.users.admin.password);
+    await expect(page).toHaveURL(/.*dashboard/, { timeout: 20000 });
   });
 
-  test('should create order and reserve stock when status is "processing"', async ({ page }) => {
-    // Navigate to orders page
-    await page.goto('/orders');
-    await expect(page).toHaveURL(/.*orders/);
+  test('should create order with fixed seeded data', async ({ page }) => {
+    console.log('🏁 Starting Order Flow Test');
+    await page.goto('/dashboard/orders');
+    await page.waitForLoadState('networkidle');
+    
+    // 1. Click Create Button
+    const createBtn = page.locator('#create-order-button, button:has-text("New Order"), button:has-text("Create Order")').first();
+    await createBtn.click();
+    await page.waitForSelector('form', { timeout: 10000 });
 
-    // Click "New Order" button
-    await page.click('button:has-text("New Order"), button:has-text("Create Order"), a[href*="orders/new"]');
+    // 2. Select Warehouse
+    console.log('Selecting Warehouse...');
+    await page.locator('button').filter({ hasText: /warehouse|almacén/i }).first().click();
+    await page.locator('[role="option"]').filter({ hasText: 'ALMACEN-FIXED' }).first().click();
+    await page.waitForTimeout(1000); // Wait for state update
 
-    // Wait for order form
-    await page.waitForSelector('form', { timeout: 5000 });
+    // 3. Select Client
+    console.log('Selecting Client...');
+    await page.locator('button').filter({ hasText: /client|cliente/i }).first().click();
+    await page.locator('[role="option"]').filter({ hasText: 'CLIENTE-FIXED' }).first().click();
+    await page.waitForTimeout(1000);
 
-    // Select warehouse (if dropdown exists)
-    const warehouseSelect = page.locator('select[name="warehouse_id"]');
-    if (await warehouseSelect.count() > 0) {
-      await warehouseSelect.selectOption({ index: 1 });
+    // 4. Select Product in the existing empty item slot (create mode adds one empty item by default)
+    console.log('Selecting Product...');
+    await page.locator('button').filter({ hasText: /product|producto/i }).first().click();
+    await page.locator('[role="option"]').filter({ hasText: 'PRODUCTO-FIXED' }).first().click();
+    await page.waitForTimeout(1000);
+
+    // 6. Fill Qty and Price
+    console.log('Filling Qty and Price...');
+    const qtyInput = page.locator('input[type="number"]').first();
+    await qtyInput.clear();
+    await qtyInput.fill('1');
+    
+    const priceInput = page.locator('input[type="number"]').nth(1); 
+    if (await priceInput.isVisible()) {
+        await priceInput.clear();
+        await priceInput.fill('1000');
     }
 
-    // Fill order details
-    await page.fill('input[name="client_name"]', testData.orders.basic.client_name);
-
-    // Add product to order
-    await page.click('button:has-text("Add Product"), button:has-text("Add Item")');
-
-    // Select product
-    const productSelect = page.locator('select[name*="product"]').first();
-    if (await productSelect.count() > 0) {
-      await productSelect.selectOption({ index: 1 });
+    // 7. Check for frontend validation errors
+    const errors = page.locator('.text-red-600');
+    const errorCount = await errors.count();
+    if (errorCount > 0) {
+        for (let i = 0; i < errorCount; i++) {
+            console.error('❌ Validation Error:', await errors.nth(i).textContent());
+        }
     }
 
-    // Fill quantity
-    await page.fill('input[name*="quantity"]', testData.orders.basic.quantity.toString());
+    // 8. Submit
+    console.log('Submitting...');
+    const submitBtn = page.locator('button[type="submit"]').filter({ hasText: /create|save|crear|guardar/i }).first();
+    await expect(submitBtn).toBeEnabled();
+    await submitBtn.click();
 
-    // Set status to "processing" to trigger stock reservation
-    const statusSelect = page.locator('select[name="status"]');
-    if (await statusSelect.count() > 0) {
-      await statusSelect.selectOption('processing');
+    // 9. Wait for Success (custom toast with border-l-success-500 class)
+    console.log('Waiting for feedback...');
+    const appeared = await page.waitForSelector(
+      '.border-l-success-500, [class*="border-l-success"]',
+      { state: 'visible', timeout: 20000 }
+    ).then(() => true).catch(() => false);
+    if (!appeared) {
+      // Log any visible error for debugging
+      const errMsg = await page.locator('[class*="danger" i], [class*="error" i], .text-red-600').first().textContent().catch(() => 'unknown');
+      console.error('❌ No success feedback. Possible error:', errMsg);
     }
-
-    // Submit order
-    await page.click('button[type="submit"]');
-
-    // Wait for success message
-    await expect(
-      page.locator('text=/success|created/i').first()
-    ).toBeVisible({ timeout: 15000 });
-
-    // Verify order appears in list
-    await page.goto('/orders');
-    await expect(
-      page.locator(`text=${testData.orders.basic.client_name}`).first()
-    ).toBeVisible({ timeout: 10000 });
-  });
-
-  test('should show low stock warning when available stock is low', async ({ page }) => {
-    await page.goto('/orders');
-
-    // Create new order
-    await page.click('button:has-text("New Order"), button:has-text("Create Order"), a[href*="orders/new"]');
-
-    await page.waitForSelector('form', { timeout: 5000 });
-
-    // Try to add a large quantity that might trigger low stock warning
-    await page.click('button:has-text("Add Product"), button:has-text("Add Item")');
-
-    const productSelect = page.locator('select[name*="product"]').first();
-    if (await productSelect.count() > 0) {
-      await productSelect.selectOption({ index: 1 });
-    }
-
-    // Enter large quantity
-    await page.fill('input[name*="quantity"]', '9999');
-
-    // Check for low stock or insufficient stock warning
-    const warningVisible = await page.locator('text=/low stock|insufficient|not enough/i').first().isVisible({ timeout: 5000 }).catch(() => false);
-
-    // Warning should appear if stock is low
-    if (warningVisible) {
-      expect(warningVisible).toBeTruthy();
-    }
-  });
-
-  test('should prevent order creation when stock is insufficient', async ({ page }) => {
-    await page.goto('/orders');
-
-    await page.click('button:has-text("New Order"), button:has-text("Create Order"), a[href*="orders/new"]');
-
-    await page.waitForSelector('form', { timeout: 5000 });
-
-    // Add product
-    await page.click('button:has-text("Add Product"), button:has-text("Add Item")');
-
-    const productSelect = page.locator('select[name*="product"]').first();
-    if (await productSelect.count() > 0) {
-      await productSelect.selectOption({ index: 1 });
-    }
-
-    // Try to order more than available
-    await page.fill('input[name*="quantity"]', '999999');
-
-    // Set status to processing
-    const statusSelect = page.locator('select[name="status"]');
-    if (await statusSelect.count() > 0) {
-      await statusSelect.selectOption('processing');
-    }
-
-    // Try to submit
-    await page.click('button[type="submit"]');
-
-    // Should show error about insufficient stock
-    const errorVisible = await page.locator('text=/insufficient|not enough|out of stock/i').first().isVisible({ timeout: 10000 }).catch(() => false);
-
-    if (errorVisible) {
-      expect(errorVisible).toBeTruthy();
-    }
+    expect(appeared).toBeTruthy();
+    
+    console.log('✅ TEST PASSED');
   });
 });

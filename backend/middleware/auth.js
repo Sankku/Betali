@@ -137,7 +137,7 @@ const authenticateUser = async (req, res, next) => {
 
           if (!orgError && userOrgs && userOrgs.length > 0) {
             // Assign highest role (for global permissions)
-            const roleHierarchy = ['viewer', 'employee', 'manager', 'admin', 'super_admin', 'owner'];
+            const roleHierarchy = ['viewer', 'employee', 'manager', 'admin', 'organization_admin', 'super_admin', 'owner'];
             const highestRole = userOrgs.reduce((highest, org) => {
               const currentRoleIndex = roleHierarchy.indexOf(org.role.toLowerCase());
               const highestRoleIndex = roleHierarchy.indexOf(highest.toLowerCase());

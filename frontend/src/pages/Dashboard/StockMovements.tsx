@@ -143,7 +143,7 @@ export default function StockMovementsPage() {
             )}
             <Badge
               variant="outline"
-              className={isEntry ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
+              className={isEntry ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700" : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-200 dark:border-red-700"}
             >
               {isEntry ? 'Entry' : 'Exit'}
             </Badge>
@@ -208,7 +208,7 @@ export default function StockMovementsPage() {
             variant="ghost"
             size="sm"
             onClick={() => openModal('view', row.original)}
-            className="text-blue-600 hover:text-blue-900"
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/40"
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -216,7 +216,7 @@ export default function StockMovementsPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(row.original)}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -224,9 +224,9 @@ export default function StockMovementsPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-danger-600 hover:text-danger-800"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
           >
-            <Trash className="w-4 h-4 text-danger-600" />
+            <Trash className="w-4 h-4" />
           </Button>
         </div>
       ),

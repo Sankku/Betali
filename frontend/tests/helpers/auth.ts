@@ -15,18 +15,19 @@ export class AuthHelper {
   async signup(email: string, password: string, firstName: string, lastName: string, organizationName: string) {
     await this.page.goto('/register');
 
-    // Fill signup form
-    await this.page.fill('input[name="email"]', email);
-    await this.page.fill('input[name="password"]', password);
-    await this.page.fill('input[name="firstName"]', firstName);
-    await this.page.fill('input[name="lastName"]', lastName);
-    await this.page.fill('input[name="organizationName"]', organizationName);
+    // Fill signup form (Register.tsx uses id attributes, single 'name' field)
+    await this.page.fill('#email', email);
+    await this.page.fill('#name', `${firstName} ${lastName}`);
+    await this.page.fill('#organizationName', organizationName);
+    await this.page.fill('#password', password);
+    await this.page.fill('#confirmPassword', password);
+    await this.page.locator('label[for="terms"]').first().click();
 
     // Submit form
     await this.page.click('button[type="submit"]');
 
-    // Wait for redirect to dashboard
-    await this.page.waitForURL('/dashboard', { timeout: 10000 });
+    // Wait for redirect to dashboard (may include query params like ?welcome=true)
+    await this.page.waitForURL(/.*dashboard/, { timeout: 15000 });
   }
 
   /**
@@ -36,14 +37,14 @@ export class AuthHelper {
     await this.page.goto('/login');
 
     // Fill login form
-    await this.page.fill('input[name="email"]', email);
-    await this.page.fill('input[name="password"]', password);
+    await this.page.fill('#email', email);
+    await this.page.fill('#password', password);
 
     // Submit form
     await this.page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard
-    await this.page.waitForURL('/dashboard', { timeout: 10000 });
+    await this.page.waitForURL(/.*dashboard/, { timeout: 15000 });
   }
 
   /**
@@ -73,7 +74,10 @@ export class AuthHelper {
    */
   async getAuthToken(): Promise<string | null> {
     return await this.page.evaluate(() => {
-      const authData = localStorage.getItem('sb-auth-token');
+      // Supabase stores token with dynamic key: sb-<project-ref>-auth-token
+      const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!key) return null;
+      const authData = localStorage.getItem(key);
       if (authData) {
         try {
           const parsed = JSON.parse(authData);

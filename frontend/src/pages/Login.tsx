@@ -67,17 +67,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-950 flex items-center justify-center p-4">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-250px] left-[-100px] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-success-200/20 to-success-300/20 blur-3xl" />
-        <div className="absolute bottom-[-350px] right-[-100px] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-primary-200/20 to-primary-300/20 blur-3xl" />
+        <div className="absolute top-[-250px] left-[-100px] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-success-200/20 to-success-300/20 dark:from-emerald-500/10 dark:to-teal-500/10 blur-3xl" />
+        <div className="absolute bottom-[-350px] right-[-100px] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-primary-200/20 to-primary-300/20 dark:from-blue-500/10 dark:to-primary-500/10 blur-3xl" />
       </div>
 
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <BetaliLogo variant="icon" size="xl" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
-          <p className="text-gray-500 mt-1">Business inventory management</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">Betali</h1>
+          <p className="text-gray-500 dark:text-neutral-400 mt-1">Business inventory management</p>
         </div>
 
         {message && (
@@ -86,12 +86,12 @@ export default function Login() {
           </div>
         )}
 
-        <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
+        <Card className="bg-white/90 dark:bg-neutral-800/90 backdrop-blur-xl border border-neutral-200/50 dark:border-neutral-700/60 shadow-xl dark:shadow-neutral-950/50">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
+            <CardTitle className="text-2xl font-semibold text-center text-neutral-900 dark:text-neutral-100">
               Sign In
             </CardTitle>
-            <CardDescription className="text-center text-neutral-600">
+            <CardDescription className="text-center text-neutral-600 dark:text-neutral-400">
               Enter your credentials to access the panel
             </CardDescription>
           </CardHeader>
@@ -178,7 +178,7 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50 rounded-b-lg pt-6">
+          <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 dark:border-neutral-700/60 bg-gray-50 dark:bg-neutral-900/50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
               Don't have an account?
               <span className="ml-1"></span>

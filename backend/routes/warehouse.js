@@ -2,6 +2,7 @@ const express = require('express');
 const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 const { validateRequest, validateQuery } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
 const { 
@@ -70,6 +71,7 @@ router.get(
 
 router.post(
   '/',
+  checkOrganizationLimit('warehouses'),
   validateRequest(createWarehouseSchema),
   async (req, res, next) => {
     try {

@@ -181,12 +181,12 @@ const ProductsPage: React.FC = () => {
       cell: ({ row }: { row: any }) => {
         const product = row.original as Product;
         return (
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => openModal('view', product)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/40"
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -194,7 +194,7 @@ const ProductsPage: React.FC = () => {
               size="sm"
               variant="ghost"
               onClick={() => openModal('edit', product)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700"
             >
               <Edit className="h-4 w-4" />
             </Button>

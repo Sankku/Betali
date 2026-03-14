@@ -47,7 +47,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       origin_country: product?.origin_country || '',
       description: product?.description || '',
       external_product_id: product?.external_product_id || '',
-      price: product?.price || 0
+      price: product?.price || 0,
+      min_stock: 0,
+      max_stock: undefined,
+      alert_enabled: true,
+      tax_rate_id: '',
     },
   });
 
@@ -94,7 +98,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           expiration_date: '',
           description: '',
           external_product_id: '',
-          price: 0
+          price: 0,
+          min_stock: 0,
+          max_stock: undefined,
+          alert_enabled: true,
+          tax_rate_id: '',
         });
       } else if (product && (mode === 'edit' || mode === 'view')) {
         form.reset({
@@ -108,7 +116,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         });
       }
     }
-  }, [isOpen, mode, product, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, product]);
 
   return (
     <ModalForm

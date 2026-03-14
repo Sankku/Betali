@@ -1,14 +1,19 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { productsService } from '../../../services/api/productsService';
+import { useOrganization } from '../../../context/OrganizationContext';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Calendar, ArrowRight } from 'lucide-react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function ExpiringProducts() {
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
+
   const { data: expiringProducts, isLoading } = useQuery({
-    queryKey: ['expiringProducts'],
+    queryKey: ['expiringProducts', orgId],
+    enabled: !!orgId,
     queryFn: async () => {
       const products = await productsService.getAll();
       const today = new Date();

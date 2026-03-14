@@ -61,6 +61,7 @@ export const createProductSchema = yup.object({
   // Inventory alert fields
   min_stock: yup
     .number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue == null) ? null : value)
     .integer('Minimum stock must be a whole number')
     .min(0, 'Minimum stock cannot be negative')
     .optional()
@@ -69,6 +70,7 @@ export const createProductSchema = yup.object({
 
   max_stock: yup
     .number()
+    .transform((value, originalValue) => (originalValue === '' || originalValue == null) ? null : value)
     .integer('Maximum stock must be a whole number')
     .min(0, 'Maximum stock cannot be negative')
     .optional()
@@ -181,10 +183,9 @@ export const productFormSchema = createProductSchema.shape({
     })
     .test('future-date', 'Expiration date cannot be in the past', (value) => {
       if (!value) return false;
-      const date = new Date(value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return date >= today;
+      // Compare as local date strings to avoid UTC parsing timezone issues
+      const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+      return value >= todayLocal;
     })
 });
 

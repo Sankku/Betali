@@ -6,6 +6,7 @@ const CHART_SUCCESS = 'oklch(0.36 0.30 142)';   // success-500
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useOrganization } from '../../../context/OrganizationContext';
 import { orderService } from '../../../services/api/orderService';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Bar } from 'recharts';
@@ -22,6 +23,8 @@ type DateRangeType = 'today' | 'week' | 'month' | 'year' | 'custom';
 
 export function TrendChart() {
   const { t } = useTranslation();
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
   const [showInfo, setShowInfo] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeType>('week');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
@@ -63,8 +66,8 @@ export function TrendChart() {
   const { startDate, endDate } = getDateRange();
 
   const { data: orderTrends, isLoading } = useQuery({
-    queryKey: ['orderTrends', dateRange, customDateRange?.from, customDateRange?.to],
-    enabled: dateRange !== 'custom' || (!!customDateRange?.from && !!customDateRange?.to),
+    queryKey: ['orderTrends', orgId, dateRange, customDateRange?.from, customDateRange?.to],
+    enabled: !!orgId && (dateRange !== 'custom' || (!!customDateRange?.from && !!customDateRange?.to)),
     queryFn: async (): Promise<OrderData[]> => {
       const response = await orderService.getOrders({
         date_from: startDate.toISOString(),

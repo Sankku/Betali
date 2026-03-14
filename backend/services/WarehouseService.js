@@ -151,7 +151,7 @@ class WarehouseService {
       if (updateData.is_active === false && existingWarehouse.is_active === true) {
         const hasMovements = await this.hasStockMovements(warehouseId);
         if (hasMovements) {
-          throw new Error('Cannot deactivate a warehouse with associated stock movements');
+          throw new Error('Cannot deactivate a warehouse that has stock movements or products. Please reassign all movements before deactivating.');
         }
       }
 
@@ -179,7 +179,7 @@ class WarehouseService {
       // Check for stock movements
       const hasMovements = await this.hasStockMovements(warehouseId);
       if (hasMovements) {
-        throw new Error('Cannot delete a warehouse with stock movements. Consider deactivating instead.');
+        throw new Error('Cannot deactivate this warehouse because it has associated stock movements. Reassign or archive the movements first.');
       }
 
       const deactivatedWarehouse = await this.warehouseRepository.update(
@@ -299,7 +299,9 @@ class WarehouseService {
       return count > 0;
     } catch (error) {
       this.logger.warn(`Error checking stock movements: ${error.message}`);
-      return false;
+      // Return true on error as a safe default — if we can't verify,
+      // assume movements exist to prevent accidental data integrity issues
+      return true;
     }
   }
 

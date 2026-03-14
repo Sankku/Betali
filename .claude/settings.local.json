@@ -33,7 +33,25 @@
       "Bash(pnpm install)",
       "Bash(pnpm why serialize-javascript)",
       "Bash(bun install)",
-      "Bash(git add frontend/package.json frontend/pnpm-lock.yaml bun.lockb frontend/bun.lockb)"
+      "Bash(git add frontend/package.json frontend/pnpm-lock.yaml bun.lockb frontend/bun.lockb)",
+      "Bash(pnpm list react)",
+      "Bash(pnpm list react react-dom)",
+      "Bash(pnpm install --force)",
+      "Bash(pnpm why react@18.3.1)",
+      "Bash(pnpm why react)",
+      "Bash(pnpm list --depth=5)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in [''peerDependencies'',''dependencies'']}, indent=2\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''pnpm''\\), indent=2\\)\\)\")",
+      "Bash(pnpm store prune)",
+      "Bash(python3 /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/.claude/skills/ui-ux-pro-max/scripts/search.py \"dark SaaS modal overlay payment form\" --design-system -p \"Betali\")",
+      "Bash(pnpm run build)",
+      "Bash(chmod +x /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/scripts/quality-gate.sh /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/scripts/setup-hooks.sh /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/scripts/smoke-prod.js /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/scripts/ai-explorer.js)",
+      "Bash(npx playwright:*)",
+      "Skill(gsd:new-project)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,'''':'''',v\\) for k,v in d.get\\(''''scripts'''',{}\\).items\\(\\)]\")",
+      "Bash(node -e \":*)",
+      "Bash(python3 /Users/santiagoalaniz/Dev/Personal/SaasRestaurant/.claude/skills/ui-ux-pro-max/scripts/search.py \"dark mode SaaS dashboard action buttons contrast accessibility\" --design-system -p \"Betali\")",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ],
     "deny": []
   }

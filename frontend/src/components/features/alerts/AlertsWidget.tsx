@@ -5,6 +5,7 @@ import { Card } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { toast } from '../../../lib/toast';
 import { useTranslation } from '../../../contexts/LanguageContext';
+import { useOrganization } from '../../../context/OrganizationContext';
 
 // Severity and type lookups are now keys into the translation map
 // (used below via t())
@@ -37,11 +38,14 @@ export function AlertsWidget({
 }: AlertsWidgetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
 
   // Fetch active alerts
   const { data: alerts = [], isLoading, error } = useQuery<AlertWithDetails[]>({
-    queryKey: ['alerts', 'active'],
+    queryKey: ['alerts', 'active', orgId],
     queryFn: () => alertService.getActiveAlerts(),
+    enabled: !!orgId,
     refetchInterval: 60000,
     refetchIntervalInBackground: false,
   });

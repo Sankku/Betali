@@ -1,0 +1,37 @@
+The error message is indicating that the 'chai' module cannot be found. This is because the chai and sinon related code is not being used. In fact, the code is using Jest instead of chai and sinon. 
+
+Here is the corrected code:
+
+```javascript
+const OrderService = require('../../services/order');
+const OrderController = require('../order');
+
+describe('OrderController', function() {
+  let orderService;
+  let orderController;
+
+  beforeEach(() => {
+    orderService = {
+      getOrderById: jest.fn().mockReturnValue(Promise.resolve({}))
+    };
+    orderController = new OrderController(orderService);
+  });
+
+  describe('getOrderById', function() {
+    it('should call orderService.getOrderById with correct parameters', async function() {
+      const req = { params: { id: '123' }, user: { currentOrganization: 'abc' } };
+      const res = { json: jest.fn() };
+
+      await orderController.getOrderById(req, res);
+
+      expect(orderService.getOrderById).toHaveBeenCalledTimes(1);
+      expect(orderService.getOrderById).toHaveBeenCalledWith('123', 'abc');
+      expect(res.json).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // Add more tests for other methods like createOrder, updateOrder, etc.
+});
+```
+
+This code now uses Jest for mocking and spying on methods, which are included by default with Jest and do not require an external library like chai or sinon.

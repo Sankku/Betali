@@ -1,0 +1,36 @@
+It appears there is a missing parameter in the `new ClientController(clientServiceMock)` constructor call. The `clientServiceMock` should be passed as a parameter. The corrected code should look like this:
+
+```javascript
+const ClientController = require('./ClientController');
+const clientServiceMock = require('./clientServiceMock');
+
+jest.mock('./clientServiceMock');
+
+let controller;
+
+beforeEach(() => {
+  clientServiceMock.mockClear();
+  controller = new ClientController(clientServiceMock);
+});
+
+describe('ClientController', () => {
+  describe('getClients', () => {
+    it('should return 400 if no organization context', async () => {
+      const req = { user: {} };
+      const res = { status: jest<｜begin▁of▁sentence｜>.fn().mockReturnThis(), json: jest.fn() };
+
+      await controller.getClients(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'No organization context found. Please select an organization.',
+      });
+    });
+
+    // more tests...
+  });
+
+  // more test suites...
+});
+```
+Please note that I have used the `s` function instead of `fn()` in the res.status assertion. As the `status` method is a function that returns an object, you should use the `fn()` method to mock it and return the object. But to set a return value, you should use `mockReturnValue` or `mockReturnThis()` methods.
