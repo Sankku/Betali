@@ -260,13 +260,11 @@ class MercadoPagoController {
             'x-signature': headers['x-signature'] ? '[PRESENT]' : '[MISSING]',
             'x-request-id': headers['x-request-id']
           },
-          ip_address: req?.ip || null,
-          signature_verified: true, // If we reach this point, signature was verified
           processed: true,
           retry_count: 0,
           created_at: new Date().toISOString()
         })
-        .select('id')
+        .select('webhook_log_id')
         .single();
 
       if (error) {
@@ -274,7 +272,7 @@ class MercadoPagoController {
         return null;
       }
 
-      return data?.id || null;
+      return data?.webhook_log_id || null;
     } catch (error) {
       this.logger.error('Error logging webhook:', error);
       return null;
@@ -490,14 +488,30 @@ class MercadoPagoController {
 
       this.logger.info('Extracted payment data:', actualPaymentData);
 
+      const plan = subscription.subscription_plans;
+      const billingCycle = subscription.billing_cycle || 'monthly';
+      const planPrice = billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly;
+
       // Process payment with MercadoPago
       const payment = await mercadoPagoService.processPayment({
         ...actualPaymentData,
-        description: `Suscripción ${subscription.plan_id}`,
+        description: `Betali - Plan ${plan.name} (${billingCycle === 'yearly' ? 'Anual' : 'Mensual'})`,
         external_reference: subscriptionId,
         metadata: {
           subscription_id: subscriptionId,
           organization_id: subscription.organization_id
+        },
+        additional_info: {
+          items: [
+            {
+              id: plan.plan_id,
+              title: `Betali - Plan ${plan.name}`,
+              description: `Suscripción ${billingCycle === 'yearly' ? 'anual' : 'mensual'} al plan ${plan.name} de Betali`,
+              category_id: 'services',
+              quantity: 1,
+              unit_price: amount ?? planPrice
+            }
+          ]
         }
       });
 
@@ -520,7 +534,7 @@ class MercadoPagoController {
           status: payment.status === 'approved' ? 'confirmed' : payment.status,
           payment_date: new Date().toISOString(),
           confirmed_at: payment.status === 'approved' ? new Date().toISOString() : null,
-          reference_number: payment.id.toString(),
+          transaction_reference: payment.id.toString(),
           notes: `MercadoPago payment ID: ${payment.id}`,
           recorded_by: req.user.id
         });

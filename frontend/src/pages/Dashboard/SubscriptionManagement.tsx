@@ -69,11 +69,19 @@ export default function SubscriptionManagement() {
   });
 
   const rawSubscription = currentSubscription?.subscription;
-  // Treat canceled/expired subscriptions as "no active plan" so we show the free state
-  const INACTIVE_STATUSES = ['canceled', 'cancelled', 'expired'];
-  const subscription = rawSubscription && !INACTIVE_STATUSES.includes(rawSubscription.status)
-    ? rawSubscription
-    : null;
+
+  // A canceled subscription is still "active" until current_period_end passes
+  const isCanceledButActive =
+    rawSubscription &&
+    (rawSubscription.status === 'canceled' || rawSubscription.status === 'cancelled') &&
+    rawSubscription.current_period_end &&
+    new Date(rawSubscription.current_period_end) > new Date();
+
+  // Only treat as no-plan when truly expired or canceled past the period end
+  const subscription =
+    rawSubscription && (rawSubscription.status !== 'expired') && (isCanceledButActive || !['canceled', 'cancelled'].includes(rawSubscription.status))
+      ? rawSubscription
+      : null;
   const plan = subscription ? (subscription as any).subscription_plans ?? null : null;
 
   const getStatusBadge = (status: string) => {
@@ -198,6 +206,30 @@ export default function SubscriptionManagement() {
           </p>
         </div>
 
+        {/* Canceled-but-active banner */}
+        {isCanceledButActive && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                Tu suscripción está cancelada
+              </p>
+              <p className="mt-0.5 text-sm text-amber-700">
+                Aún puedes usar todas las funcionalidades del plan{' '}
+                <span className="font-medium">{plan?.display_name || plan?.name}</span> hasta el{' '}
+                <span className="font-medium">{formatDate(subscription!.current_period_end)}</span>.
+                Después de esa fecha, tu cuenta pasará al plan gratuito.
+              </p>
+              <button
+                onClick={() => navigate('/dashboard/pricing')}
+                className="mt-2 text-sm font-medium text-amber-800 underline hover:text-amber-900"
+              >
+                Volver a suscribirte →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Current Subscription Card */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
@@ -242,8 +274,18 @@ export default function SubscriptionManagement() {
                 </div>
               )}
 
-              {/* Next Billing */}
-              {subscription.status === 'active' && (
+              {/* Next Billing / Access until */}
+              {isCanceledButActive ? (
+                <div>
+                  <div className="flex items-center text-sm text-amber-600 mb-2">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Acceso hasta
+                  </div>
+                  <div className="text-sm font-medium text-amber-700">
+                    {formatDate(subscription.current_period_end)}
+                  </div>
+                </div>
+              ) : subscription.status === 'active' && (
                 <div>
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <CreditCard className="h-4 w-4 mr-2" />
@@ -278,7 +320,7 @@ export default function SubscriptionManagement() {
                 Cambiar Plan
               </Button>
 
-              {(subscription.status === 'active' || subscription.status === 'trialing') && (
+              {(subscription.status === 'active' || subscription.status === 'trialing') && !isCanceledButActive && (
                 <Button
                   onClick={handleCancelClick}
                   variant="outline"

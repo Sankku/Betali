@@ -90,8 +90,9 @@ class MercadoPagoService {
         items: [
           {
             id: planId,
-            title: `Betali - ${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Subscription`,
-            description: `Subscription for ${organizationName}`,
+            title: `Betali - Plan ${billingCycle === 'yearly' ? 'Anual' : 'Mensual'}`,
+            description: `Suscripción ${billingCycle === 'yearly' ? 'anual' : 'mensual'} al plan de Betali para ${organizationName}`,
+            category_id: 'services',
             quantity: 1,
             unit_price: amount,
             currency_id: currency
@@ -267,7 +268,7 @@ class MercadoPagoService {
       const { data: existingPayment } = await supabase
         .from('manual_payments')
         .select('payment_id, status')
-        .eq('reference_number', paymentId.toString())
+        .eq('transaction_reference', paymentId.toString())
         .maybeSingle();
 
       let internalPaymentId;
@@ -285,9 +286,9 @@ class MercadoPagoService {
           .update({
             status: this.mapPaymentStatus(status),
             confirmed_at: status === 'approved' ? new Date().toISOString() : null,
-            confirmed_by: status === 'approved' ? 'system_mercadopago_webhook' : null
+            confirmed_by: null
           })
-          .eq('reference_number', paymentId.toString());
+          .eq('transaction_reference', paymentId.toString());
 
         internalPaymentId = existingPayment.payment_id;
       } else {
@@ -302,9 +303,8 @@ class MercadoPagoService {
             payment_method: paymentMethod,
             status: this.mapPaymentStatus(status),
             payment_date: new Date().toISOString(),
-            reference_number: paymentId.toString(),
-            notes: `MercadoPago payment - Status: ${status} - Detail: ${statusDetail}`,
-            recorded_by: 'system_mercadopago'
+            transaction_reference: paymentId.toString(),
+            notes: `MercadoPago payment - Status: ${status} - Detail: ${statusDetail}`
           })
           .select()
           .single();
