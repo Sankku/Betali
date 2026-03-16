@@ -114,12 +114,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
     },
     {
-      path: '/dashboard/control-stock',
-      icon: <BarChart3 className="w-5 h-5" />,
-      label: t('nav.stockControl'),
-      requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
-    },
-    {
       path: '/dashboard/pricing',
       icon: <CreditCard className="w-5 h-5" />,
       label: t('nav.pricing'),
@@ -175,7 +169,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
         <div className="p-4 border-t border-neutral-200 bg-neutral-50">
-          <div className="text-xs font-medium text-neutral-400 text-center">{t('layout.version')}</div>
+          <div className="text-xs font-medium text-neutral-400 text-center">
+            {t('layout.version')}
+          </div>
         </div>
       </aside>
 
@@ -196,7 +192,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               </div>
               <div className="hidden md:block">
-                <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{getPageTitle()}</h1>
+                <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">
+                  {getPageTitle()}
+                </h1>
               </div>
               <div className="flex items-center">
                 <UserContextIndicator />
@@ -215,7 +213,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
               <div className="p-4 border-b border-neutral-200">
                 <div className="flex items-center justify-between">
-                  <Link to="/dashboard" className="flex items-center hover:opacity-80 transition-opacity" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center hover:opacity-80 transition-opacity"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     <BetaliLogo variant="full" size="md" />
                   </Link>
                   <button

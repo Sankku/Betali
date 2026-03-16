@@ -737,6 +737,35 @@
   & .from-neutral-100 { --tw-gradient-from: oklch(0.11 0 0); }
   & .to-neutral-100   { --tw-gradient-to:   oklch(0.11 0 0); }
   & .to-neutral-50    { --tw-gradient-to:   oklch(0.07 0 0); }
+
+  /* Stats-card gradient variants — primary/success/warning/danger */
+  & .from-primary-50\/50  { --tw-gradient-from: oklch(0.17 0.03 206 / 0.5); }
+  & .to-primary-100\/80   { --tw-gradient-to:   oklch(0.22 0.05 206 / 0.8); }
+  & .from-success-50\/50  { --tw-gradient-from: oklch(0.17 0.04 142 / 0.5); }
+  & .to-success-100\/80   { --tw-gradient-to:   oklch(0.22 0.06 142 / 0.8); }
+  & .from-warning-50\/50  { --tw-gradient-from: oklch(0.17 0.03 55 / 0.5); }
+  & .to-warning-100\/80   { --tw-gradient-to:   oklch(0.22 0.05 55 / 0.8); }
+  & .from-danger-50\/50   { --tw-gradient-from: oklch(0.17 0.03 15 / 0.5); }
+  & .to-danger-100\/80    { --tw-gradient-to:   oklch(0.22 0.05 15 / 0.8); }
+
+  /* Stats-card border variants */
+  & .border-primary-200\/60 { border-color: oklch(0.38 0.08 206 / 0.6); }
+  & .border-success-200\/60 { border-color: oklch(0.38 0.08 142 / 0.6); }
+  & .border-warning-200\/60 { border-color: oklch(0.38 0.08 55  / 0.6); }
+  & .border-danger-200\/60  { border-color: oklch(0.38 0.08 15  / 0.6); }
+
+  /* Stats-card text variants */
+  & .text-primary-800 { color: oklch(0.78 0.12 206); }
+  & .text-success-700 { color: oklch(0.74 0.14 142); }
+  & .text-success-800 { color: oklch(0.80 0.12 142); }
+  & .text-warning-700 { color: oklch(0.74 0.14 55);  }
+  & .text-warning-800 { color: oklch(0.80 0.12 55);  }
+  & .text-danger-700  { color: oklch(0.74 0.14 15);  }
+  & .text-danger-800  { color: oklch(0.80 0.12 15);  }
+
+  /* Stats-card trend badge backgrounds */
+  & .bg-success-100 { background-color: oklch(0.22 0.06 142); }
+  & .bg-danger-100  { background-color: oklch(0.22 0.06 15);  }
 }
 
 /* System preference fallback — applies when OS is dark and no explicit theme */

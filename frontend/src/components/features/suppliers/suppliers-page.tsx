@@ -360,7 +360,7 @@ export function SuppliersPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleView(row.original)}
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/40"
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -368,7 +368,7 @@ export function SuppliersPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(row.original)}
-            className="text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700"
+            className="text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -378,8 +378,8 @@ export function SuppliersPage() {
             onClick={() => handleToggleActive(row.original)}
             title={row.original.is_active ? 'Deactivate supplier' : 'Activate supplier'}
             className={row.original.is_active
-              ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"}
+              ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"
+              : "text-red-400 hover:text-red-600 hover:bg-red-50"}
           >
             {row.original.is_active
               ? <ToggleRight className="w-5 h-5" />
@@ -390,7 +390,7 @@ export function SuppliersPage() {
             size="sm"
             onClick={() => handleTogglePreferred(row.original)}
             title={row.original.is_preferred ? 'Remove from preferred' : 'Mark as preferred'}
-            className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+            className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
           >
             <Star className={`w-4 h-4 ${row.original.is_preferred ? 'fill-current' : ''}`} />
           </Button>
@@ -398,7 +398,7 @@ export function SuppliersPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
           >
             <Trash className="w-4 h-4" />
           </Button>

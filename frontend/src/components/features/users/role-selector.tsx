@@ -151,18 +151,18 @@ export function RoleSelector({
       </Select>
 
       {selectedRole && showDescription && (
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
           <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <p className="text-sm font-medium text-blue-900">
                 {selectedRole.label} Permissions
               </p>
-              <div className="text-xs text-blue-700 dark:text-blue-200">
+              <div className="text-xs text-blue-700">
                 <ul className="space-y-0.5">
                   {selectedRole.permissions.map((permission, index) => (
                     <li key={index} className="flex items-center gap-1">
-                      <span className="text-green-600 dark:text-green-400">•</span>
+                      <span className="text-green-600">•</span>
                       {permission}
                     </li>
                   ))}

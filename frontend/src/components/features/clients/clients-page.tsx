@@ -187,7 +187,7 @@ export function ClientsPage() {
               variant="ghost"
               size="sm"
               onClick={() => openModal('view', client)}
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/40"
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -195,7 +195,7 @@ export function ClientsPage() {
               variant="ghost"
               size="sm"
               onClick={() => openModal('edit', client)}
-              className="text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700"
+              className="text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100"
             >
               <Edit className="w-4 h-4" />
             </Button>

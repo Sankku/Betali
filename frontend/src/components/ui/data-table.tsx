@@ -532,7 +532,7 @@ export function DataTable<TData>({
                   {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
                 </span>
                 {' a '}
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                <span className="font-semibold text-neutral-900">
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) *
                       table.getState().pagination.pageSize,
@@ -540,7 +540,7 @@ export function DataTable<TData>({
                   )}
                 </span>
                 {' de '}
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                <span className="font-semibold text-neutral-900">
                   {table.getFilteredRowModel().rows.length}
                 </span>
                 {' resultados'}
@@ -552,7 +552,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </Button>
@@ -562,18 +562,18 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-300/60 dark:border-neutral-600/60">
-                  <span className="text-sm text-neutral-700 dark:text-neutral-300">Página</span>
-                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-neutral-300/60">
+                  <span className="text-sm text-neutral-700">Página</span>
+                  <span className="text-sm font-semibold text-neutral-900">
                     {table.getState().pagination.pageIndex + 1}
                   </span>
-                  <span className="text-sm text-neutral-700 dark:text-neutral-300">de</span>
-                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  <span className="text-sm text-neutral-700">de</span>
+                  <span className="text-sm font-semibold text-neutral-900">
                     {table.getPageCount()}
                   </span>
                 </div>
@@ -583,7 +583,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -593,7 +593,7 @@ export function DataTable<TData>({
                   size="icon-sm"
                   onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
-                  className="bg-white dark:bg-neutral-800 border-neutral-300/60 dark:border-neutral-600/60 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
                 >
                   <ChevronsRight className="h-4 w-4" />
                 </Button>

@@ -196,7 +196,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => openModal('view', row.original)}
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -204,7 +204,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => openModal('edit', row.original)}
-            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700"
+            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -214,8 +214,8 @@ const WarehousesPage: React.FC = () => {
             onClick={() => handleToggleActive(row.original)}
             title={row.original.is_active ? 'Deactivate warehouse' : 'Activate warehouse'}
             className={row.original.is_active
-              ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"}
+              ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"
+              : "text-red-400 hover:text-red-600 hover:bg-red-50"}
           >
             {row.original.is_active
               ? <ToggleRight className="w-5 h-5" />
@@ -225,7 +225,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleDelete([row.original])}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
           >
             <Trash className="w-4 h-4" />
           </Button>
