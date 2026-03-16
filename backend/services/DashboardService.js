@@ -101,42 +101,33 @@ class DashboardService {
     try {
       const movements = await this.stockMovementRepository.findAll(
         { organization_id: organizationId },
-        {
-          limit,
-          orderBy: { column: 'movement_date', ascending: false }
-        }
+        { limit, orderBy: { column: 'movement_date', ascending: false } }
       );
 
-      // Enrich movements with product and warehouse information
-      const enrichedMovements = await Promise.all(
-        movements.map(async (movement) => {
-          const enrichedMovement = { ...movement };
+      if (movements.length === 0) return [];
 
-          if (movement.product_id) {
-            try {
-              const product = await this.productRepository.findById(movement.product_id, 'product_id');
-              enrichedMovement.product_name = product?.name || 'Unknown Product';
-            } catch (error) {
-              this.logger.warn(`Could not fetch product for movement: ${error.message}`);
-              enrichedMovement.product_name = 'Unknown Product';
-            }
-          }
+      const productIds = [...new Set(movements.map(m => m.product_id).filter(Boolean))];
+      const warehouseIds = [...new Set(movements.map(m => m.warehouse_id).filter(Boolean))];
 
-          if (movement.warehouse_id) {
-            try {
-              const warehouse = await this.warehouseRepository.findById(movement.warehouse_id, 'warehouse_id');
-              enrichedMovement.warehouse_name = warehouse?.name || 'Unknown Warehouse';
-            } catch (error) {
-              this.logger.warn(`Could not fetch warehouse for movement: ${error.message}`);
-              enrichedMovement.warehouse_name = 'Unknown Warehouse';
-            }
-          }
+      const [products, warehouses] = await Promise.all([
+        productIds.length > 0
+          ? this.productRepository.findAll({ organization_id: organizationId }, { limit: productIds.length + 10 })
+              .then(all => all.filter(p => productIds.includes(p.product_id)))
+          : Promise.resolve([]),
+        warehouseIds.length > 0
+          ? this.warehouseRepository.findAll({ organization_id: organizationId }, { limit: warehouseIds.length + 10 })
+              .then(all => all.filter(w => warehouseIds.includes(w.warehouse_id)))
+          : Promise.resolve([]),
+      ]);
 
-          return enrichedMovement;
-        })
-      );
+      const productMap = new Map(products.map(p => [p.product_id, p.name]));
+      const warehouseMap = new Map(warehouses.map(w => [w.warehouse_id, w.name]));
 
-      return enrichedMovements;
+      return movements.map(movement => ({
+        ...movement,
+        product_name: productMap.get(movement.product_id) || 'Unknown Product',
+        warehouse_name: warehouseMap.get(movement.warehouse_id) || 'Unknown Warehouse',
+      }));
     } catch (error) {
       this.logger.error(`Error fetching recent activity: ${error.message}`);
       throw error;
