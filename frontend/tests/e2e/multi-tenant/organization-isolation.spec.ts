@@ -96,9 +96,16 @@ test.describe('Multi-Tenant Data Isolation', () => {
     const org2ProductName = `Org2-Product-${Date.now()}`;
     await createProduct(org2ProductName, `ORG2-SKU-${Date.now()}`);
 
-    // Verify org2 sees their own product but not org1's
+    // Verify org2 sees their own product but not org1's.
+    // Use waitForResponse instead of networkidle: the products query is enabled only after
+    // OrganizationContext loads, so networkidle can fire between sequential async fetches
+    // (auth → org → products) before the products request even starts.
+    const productsLoaded = page.waitForResponse(
+      r => r.url().includes('/api/products') && r.status() === 200,
+      { timeout: 15000 }
+    );
     await page.goto('/dashboard/products');
-    await page.waitForLoadState('networkidle');
+    await productsLoaded;
     await expect(page.locator(`text=${org2ProductName}`).first()).toBeVisible({ timeout: 10000 });
 
     const org1ProductStillVisible = await page.locator(`text=${org1ProductName}`).first().isVisible().catch(() => false);
