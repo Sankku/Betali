@@ -74,8 +74,9 @@ test.describe('Create Product', () => {
     expect(successVisible).toBeTruthy();
 
     // Verify product appears in the list
-    await page.goto('/dashboard/products');
-    await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 10000 });
+    // waitUntil: 'networkidle' ensures async data fetches complete before asserting
+    await page.goto('/dashboard/products', { waitUntil: 'networkidle' });
+    await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('should show validation errors for empty product form', async ({ page }) => {
