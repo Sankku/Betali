@@ -102,6 +102,7 @@ export function useCreateTaxRate() {
 // Update tax rate
 export function useUpdateTaxRate() {
   const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
 
   return useMutation({
     mutationFn: async ({ taxRateId, taxRateData }: { taxRateId: string; taxRateData: UpdateTaxRateData }) => {
