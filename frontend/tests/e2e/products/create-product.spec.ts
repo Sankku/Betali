@@ -11,6 +11,8 @@ test.describe('Create Product', () => {
   test.beforeEach(async ({ page, authHelper }) => {
     // Login before each test
     await authHelper.login(testData.users.admin.email, testData.users.admin.password);
+    // Ensure the user has an organization (creates one if missing)
+    await authHelper.ensureOrganization(testData.users.admin.organizationName);
   });
 
   test('should create a new product successfully', async ({ page }) => {
@@ -73,10 +75,18 @@ test.describe('Create Product', () => {
     ).then(() => true).catch(() => false);
     expect(successVisible).toBeTruthy();
 
-    // Verify product appears in the list
-    // waitUntil: 'networkidle' ensures async data fetches complete before asserting
-    await page.goto('/dashboard/products', { waitUntil: 'networkidle' });
-    await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 15000 });
+    // Verify product appears in the list (use search to avoid pagination)
+    await page.goto('/dashboard/products');
+    await page.waitForSelector('table', { timeout: 10000 });
+    // Dismiss any onboarding tour that may appear after new org creation
+    const skipTour = page.locator('button:has-text("Omitir"), button:has-text("Skip"), button:has-text("Omitir tour")');
+    if (await skipTour.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await skipTour.click();
+    }
+    // Search for the product to find it across pages
+    await page.fill('input[placeholder="Search..."]', productName);
+    await page.waitForTimeout(500);
+    await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show validation errors for empty product form', async ({ page }) => {

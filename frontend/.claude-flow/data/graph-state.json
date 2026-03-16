@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "updatedAt": 1773683919768,
+  "nodeCount": 3,
+  "nodes": {
+    "mem-MEMORY-architecture": {
+      "id": "mem-MEMORY-architecture",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1773683919767
+    },
+    "mem-MEMORY-key-performance-patterns-appli": {
+      "id": "mem-MEMORY-key-performance-patterns-appli",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1773683919767
+    },
+    "mem-MEMORY-file-locations": {
+      "id": "mem-MEMORY-file-locations",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1773683919767
+    }
+  },
+  "edges": [
+    {
+      "sourceId": "mem-MEMORY-architecture",
+      "targetId": "mem-MEMORY-key-performance-patterns-appli",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-key-performance-patterns-appli",
+      "targetId": "mem-MEMORY-file-locations",
+      "type": "temporal",
+      "weight": 0.5
+    }
+  ],
+  "pageRanks": {
+    "mem-MEMORY-architecture": 0.18441687554671382,
+    "mem-MEMORY-key-performance-patterns-appli": 0.34117100648207443,
+    "mem-MEMORY-file-locations": 0.4744121179712115
+  }
+}

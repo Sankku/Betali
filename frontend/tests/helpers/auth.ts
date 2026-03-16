@@ -91,6 +91,50 @@ export class AuthHelper {
   }
 
   /**
+   * Ensure the logged-in user has an organization.
+   * If "No Organization Selected" is showing, creates one with the given name.
+   */
+  /**
+   * Ensures the logged-in user has at least one organization by calling the backend API directly.
+   * Falls back to UI interaction if the API call fails.
+   */
+  async ensureOrganization(orgName: string) {
+    // Wait specifically for the "No Organization Selected" heading.
+    // If it appears, the user has no org. If it doesn't (timeout), the user has an org.
+    const noOrgVisible = await this.page.locator('h1:has-text("No Organization Selected")')
+      .waitFor({ state: 'visible', timeout: 8000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!noOrgVisible) return;
+
+    // Use browser-side fetch (has Supabase auth token in localStorage) to call the backend API
+    const created = await this.page.evaluate(async (name: string) => {
+      const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!key) return false;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+        const token = parsed.access_token;
+        if (!token) return false;
+
+        const slug = `e2e-${Date.now()}`;
+        const res = await fetch('http://localhost:4000/api/organizations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name, slug }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }, orgName);
+
+    if (created) {
+      // Reload to pick up the new organization in the app context
+      await this.page.reload({ waitUntil: 'networkidle' });
+    }
+  }
+
+  /**
    * Set authentication token in localStorage (for faster test setup)
    */
   async setAuthToken(token: string) {

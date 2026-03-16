@@ -3,7 +3,6 @@ import { UseFormReturn } from 'react-hook-form';
 import { Package, Calendar, Globe, DollarSign, Percent, AlertTriangle, Bell } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { DatePicker } from '../../ui/date-picker';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Label } from '../../ui/label';
 import { TooltipHelp } from '../../ui/tooltip-help';
 import { useTaxRates, formatTaxRate } from '../../../hooks/useTaxRates';
@@ -137,41 +136,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
               <Percent className="h-4 w-4" />
               Tax Rate
             </Label>
-            <Select
-              value={currentTaxRateId}
-              onValueChange={(value) => setValue('tax_rate_id', value === 'none' ? '' : value)}
+            <select
+              id="tax_rate_id"
+              value={currentTaxRateId || ''}
+              onChange={(e) => setValue('tax_rate_id', e.target.value, { shouldValidate: true })}
               disabled={isLoading || taxRatesLoading}
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-neutral-50 disabled:text-neutral-400"
             >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  taxRatesLoading ? "Loading tax rates..." : 
-                  "Select tax rate (optional)"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <span className="text-gray-500 italic">No tax rate</span>
-                </SelectItem>
-                {taxRates?.data && taxRates.data.length > 0 ? (
-                  taxRates.data.map((taxRate) => (
-                    <SelectItem key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900">{taxRate.name}</span>
-                        <span className="text-sm text-gray-600">
-                          {formatTaxRate(taxRate.rate)} • {taxRate.is_inclusive ? 'Tax Inclusive' : 'Tax Exclusive'}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))
-                ) : (
-                  !taxRatesLoading && (
-                    <SelectItem value="no-tax-rates" disabled>
-                      <span className="text-gray-500 italic">No tax rates configured</span>
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+              <option value="">
+                {taxRatesLoading ? 'Loading tax rates...' : 'Select tax rate (optional)'}
+              </option>
+              {taxRates?.data && taxRates.data.map((taxRate) => (
+                <option key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
+                  {taxRate.name} ({formatTaxRate(taxRate.rate)} • {taxRate.is_inclusive ? 'Tax Inclusive' : 'Tax Exclusive'})
+                </option>
+              ))}
+            </select>
             {errors.tax_rate_id && (
               <p className="text-sm text-red-600">{errors.tax_rate_id.message}</p>
             )}

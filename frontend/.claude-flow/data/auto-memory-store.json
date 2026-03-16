@@ -1,0 +1,41 @@
+[
+  {
+    "id": "mem-MEMORY-architecture",
+    "key": "architecture",
+    "content": "- Full-stack monorepo: React 18 + Vite (port 3000) / Node.js + Express + Supabase (port 4000)\n- Package manager: Bun\n- See `/docs/architecture/SAAS_ARCHITECTURE.md` for SaaS multi-tenant spec",
+    "summary": "Architecture",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/santiagoalaniz/.claude/projects/-Users-santiagoalaniz-Dev-Personal-SaasRestaurant/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1773683919767
+  },
+  {
+    "id": "mem-MEMORY-key-performance-patterns-appli",
+    "key": "key-performance-patterns-applied-2026-02-20-",
+    "content": "### React Query Configuration\n- `user-organizations` staleTime = 5 min in **both** OrganizationContext AND useOrganizationManagement hook — this deduplicates the query\n- Dashboard stats queries MUST include `organizationId` in queryKey for proper cache isolation per org\n- All useQuery on data entities should have `enabled: !!orgId` guard\n\n### invalidateQueries Rules\n- **NEVER** call `queryClient.invalidateQueries()` without arguments — causes 40+ simultaneous refetches\n- On org switch: use predi",
+    "summary": "Key Performance Patterns Applied (2026-02-20)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/santiagoalaniz/.claude/projects/-Users-santiagoalaniz-Dev-Personal-SaasRestaurant/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1773683919767
+  },
+  {
+    "id": "mem-MEMORY-file-locations",
+    "key": "file-locations",
+    "content": "- OrganizationContext: `frontend/src/context/OrganizationContext.tsx`\n- GlobalSyncContext: `frontend/src/context/GlobalSyncContext.tsx`\n- DashboardStats: `frontend/src/components/modules/dashboard/DashboardStats.tsx`\n- App router: `frontend/src/App.tsx`\n- Hooks: `frontend/src/hooks/use*.ts`",
+    "summary": "File Locations",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/santiagoalaniz/.claude/projects/-Users-santiagoalaniz-Dev-Personal-SaasRestaurant/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1773683919767
+  }
+]

@@ -46,3 +46,7 @@ next-env.d.ts
 
 # MCP tools (development only)
 /project-docs-mcp
+
+# AI agent exploration artifacts
+/explorer-report.json
+/explorer-screenshots/
