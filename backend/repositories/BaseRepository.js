@@ -53,11 +53,10 @@ class BaseRepository {
           query = query.order(column, { ascending });
         }
   
-        if (options.limit) {
-          query = query.limit(options.limit);
-        }
+        const limit = options.limit ?? 500;
+        query = query.limit(limit);
         if (options.offset) {
-          query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+          query = query.range(options.offset, options.offset + limit - 1);
         }
   
         const { data, error } = await query;
