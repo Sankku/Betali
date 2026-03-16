@@ -417,7 +417,7 @@ export default function SubscriptionManagement() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                        {payment.reference_number || 'N/A'}
+                        {payment.transaction_reference || 'N/A'}
                       </td>
                     </tr>
                   ))}

@@ -663,15 +663,12 @@ class MercadoPagoController {
       const { paymentId } = req.params;
       const user = req.user;
 
-      // Verify the payment belongs to the user's organization
+      // Verify the payment exists and belongs to the user's organization
+      // Avoid !inner join — PostgREST schema cache issues can make it return null
+      // even when the payment exists. Use organization_id directly on manual_payments.
       const { data: payment, error: paymentError } = await supabase
         .from('manual_payments')
-        .select(`
-          *,
-          subscriptions!inner (
-            organization_id
-          )
-        `)
+        .select('*')
         .eq('payment_id', paymentId)
         .single();
 
@@ -682,8 +679,8 @@ class MercadoPagoController {
         });
       }
 
-      // Check authorization
-      if (payment.subscriptions.organization_id !== user.currentOrganizationId) {
+      // Check authorization via organization_id stored on the payment record itself
+      if (payment.organization_id !== user.currentOrganizationId) {
         return res.status(403).json({
           success: false,
           error: 'Unauthorized'

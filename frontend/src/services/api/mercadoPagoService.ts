@@ -41,7 +41,7 @@ export interface Payment {
   status: 'pending' | 'confirmed' | 'failed';
   payment_date: string;
   confirmed_at?: string;
-  reference_number?: string;
+  transaction_reference?: string;
   notes?: string;
 }
 

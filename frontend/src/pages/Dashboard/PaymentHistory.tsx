@@ -217,8 +217,8 @@ const PaymentHistory: React.FC = () => {
                     {/* Method */}
                     <div className="hidden sm:block">
                       <p className="text-sm text-gray-900">{getPaymentMethodLabel(payment.payment_method)}</p>
-                      {payment.reference_number && (
-                        <p className="text-xs text-gray-500">Ref: {payment.reference_number}</p>
+                      {payment.transaction_reference && (
+                        <p className="text-xs text-gray-500">Ref: {payment.transaction_reference}</p>
                       )}
                     </div>
 
