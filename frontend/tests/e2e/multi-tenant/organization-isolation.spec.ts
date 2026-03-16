@@ -106,6 +106,16 @@ test.describe('Multi-Tenant Data Isolation', () => {
     );
     await page.goto('/dashboard/products');
     await productsLoaded;
+
+    // The table uses client-side pagination (pageSize=10). If this org has accumulated
+    // >10 products from prior test runs, the new product lands on page 2+.
+    // Search by name to collapse the list to exactly 1 row, making the assertion reliable.
+    const searchInput = page.locator('input[placeholder*="Search"]').first();
+    if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await searchInput.fill(org2ProductName);
+      await page.waitForTimeout(400); // let debounce / filter settle
+    }
+
     await expect(page.locator(`text=${org2ProductName}`).first()).toBeVisible({ timeout: 10000 });
 
     const org1ProductStillVisible = await page.locator(`text=${org1ProductName}`).first().isVisible().catch(() => false);
