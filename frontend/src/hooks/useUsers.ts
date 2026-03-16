@@ -25,7 +25,7 @@ export function useUserManagement(options: UseUsersOptions = {}) {
         return [];
       }
     },
-    enabled: options.enabled !== false,
+    enabled: options.enabled !== false && !!currentOrganization,
     refetchInterval: options.refetchInterval,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
