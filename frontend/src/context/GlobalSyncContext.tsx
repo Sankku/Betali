@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
@@ -207,7 +207,7 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
     }
   }, [showLoading, hideLoading, addSyncEvent, queryClient, refreshSupabaseSession]);
 
-  const value = {
+  const value = useMemo(() => ({
     isLoading,
     loadingMessage,
     lastSync,
@@ -220,7 +220,20 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
     triggerFullSync,
     addSyncEvent,
     clearSyncEvents,
-  };
+  }), [
+    isLoading,
+    loadingMessage,
+    lastSync,
+    syncEvents,
+    showLoading,
+    hideLoading,
+    triggerUserDataSync,
+    triggerRoleSync,
+    triggerOrganizationSync,
+    triggerFullSync,
+    addSyncEvent,
+    clearSyncEvents,
+  ]);
 
   return (
     <GlobalSyncContext.Provider value={value}>
