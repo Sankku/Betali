@@ -208,9 +208,9 @@ class Application {
     this.app.use('/api/discount-rules', discountRuleRoutes);
     this.app.use('/api/subscription-plans', subscriptionPlanRoutes);
     this.app.use('/api/subscriptions', subscriptionRoutes);
+    this.app.use('/api/webhooks', authEmailHookRoutes); // Supabase Auth Hook — must be before /api catch-all
     this.app.use('/api/mercadopago', mercadoPagoRoutes);
     this.app.use('/api', mercadoPagoRoutes); // For webhook route /api/webhooks/mercadopago
-    this.app.use('/api/webhooks', authEmailHookRoutes); // Supabase Auth Hook — no auth middleware
     this.app.use('/api/alerts', inventoryAlertRoutes);
     this.app.use('/api/cron', cronRoutes);
 
