@@ -42,7 +42,9 @@ test.describe('User Signup', () => {
       const isInfrastructureError =
         lowerError.includes('rate limit') ||
         lowerError.includes('hook requires authorization') ||
-        lowerError.includes('unexpected_failure');
+        lowerError.includes('unexpected_failure') ||
+        lowerError.includes('unexpected status code') ||
+        lowerError.includes('hook:');
       if (isInfrastructureError) {
         test.skip(true, `Supabase infrastructure error — skipping signup test: ${errorText.trim()}`);
         return;
