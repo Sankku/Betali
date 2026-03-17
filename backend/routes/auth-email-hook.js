@@ -1,5 +1,5 @@
 const express = require('express');
-const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 const emailService = require('../services/EmailService');
 const logger = require('../config/logger');
@@ -7,24 +7,16 @@ const logger = require('../config/logger');
 /**
  * Verify Supabase auth hook request.
  *
- * Supabase signs the hook request with a JWT (HS256) using the secret key.
- * Secret format: "v1,whsec_<base64-encoded-key>" — we extract the raw key bytes
- * and verify the HMAC-SHA256 signature of the JWT without any external deps.
+ * Supabase signs the hook request with a JWT (HS256).
+ * Secret format: "v1,whsec_<base64-encoded-key>" — we extract the raw key bytes.
  */
-function b64urlToBuffer(str) {
-  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = b64 + '=='.slice(0, (4 - b64.length % 4) % 4);
-  return Buffer.from(padded, 'base64');
-}
-
 function verifyHookJwt(authHeader, hookSecret) {
-  const jwt = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!jwt) return false;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) {
+    logger.warn('Supabase auth hook: no Bearer token in Authorization header', { authHeader: authHeader?.slice(0, 30) });
+    return false;
+  }
 
-  const parts = jwt.split('.');
-  if (parts.length !== 3) return false;
-
-  // Extract raw signing key from "v1,whsec_<base64>" or plain secret
   let signingKey;
   if (hookSecret.startsWith('v1,whsec_')) {
     signingKey = Buffer.from(hookSecret.slice('v1,whsec_'.length), 'base64');
@@ -32,19 +24,11 @@ function verifyHookJwt(authHeader, hookSecret) {
     signingKey = Buffer.from(hookSecret, 'utf8');
   }
 
-  // Recompute HMAC-SHA256 over "header.payload"
-  const expectedSigBuf = crypto
-    .createHmac('sha256', signingKey)
-    .update(`${parts[0]}.${parts[1]}`)
-    .digest();
-
-  // Decode the actual signature from base64url
-  const actualSigBuf = b64urlToBuffer(parts[2]);
-
   try {
-    if (actualSigBuf.length !== expectedSigBuf.length) return false;
-    return crypto.timingSafeEqual(actualSigBuf, expectedSigBuf);
-  } catch {
+    jwt.verify(token, signingKey, { algorithms: ['HS256'] });
+    return true;
+  } catch (err) {
+    logger.warn('Supabase auth hook: JWT verification failed', { error: err.message, tokenPrefix: token.slice(0, 20) });
     return false;
   }
 }
@@ -80,10 +64,6 @@ router.post('/supabase-auth', async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const valid = verifyHookJwt(authHeader, hookSecret);
     if (!valid) {
-      logger.warn('Supabase auth hook: invalid JWT signature', {
-        hasAuthHeader: !!authHeader,
-        authHeaderPrefix: authHeader.slice(0, 20) || '(empty)'
-      });
       return res.status(401).json({ error: { message: 'Unauthorized', http_code: 401 } });
     }
   } else {
