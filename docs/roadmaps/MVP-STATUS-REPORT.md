@@ -8,7 +8,7 @@
 
 ## 🎯 Objetivo del MVP
 
-Lanzar un SaaS de gestión de inventario multi-tenant para restaurantes y negocios pequeños con funcionalidades core completas y probadas.
+Lanzar un SaaS de gestión de inventario multi-tenant para negocios de todo tipo (comercios, distribuidoras, pequeñas manufacturas, etc.) con funcionalidades core completas y probadas.
 
 ---
 

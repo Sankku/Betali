@@ -4,7 +4,6 @@ import {
   Warehouse,
   RefreshCw,
   FileSpreadsheet,
-  BarChart3,
   Users,
   Building2,
   UserCheck,

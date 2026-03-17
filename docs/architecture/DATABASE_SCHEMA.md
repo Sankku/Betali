@@ -73,16 +73,19 @@
 ### 📦 **Inventory Management Tables**
 
 #### `products`
-**Purpose:** Product catalog with SENASA integration
+**Purpose:** Product/item catalog for any type of business (goods, raw materials, finished goods, services)
 ```sql
 - product_id (UUID, PK)
-- senasa_product_id (VARCHAR 50, UNIQUE, NULLABLE)
+- name (VARCHAR 100, NOT NULL)
+- description (TEXT, NULLABLE)
+- category (VARCHAR 100, NULLABLE)
+- unit (VARCHAR 50, NULLABLE)             -- e.g. kg, units, liters
+- product_type (VARCHAR 20, NULLABLE)     -- standard | raw_material | finished_good
 - batch_number (VARCHAR 50, NOT NULL)
 - expiration_date (DATE, NOT NULL)
 - origin_country (VARCHAR 100, NOT NULL)
 - destination_id (UUID, NULLABLE)
-- name (VARCHAR 100, NOT NULL)
-- description (TEXT, NULLABLE)
+- senasa_product_id (VARCHAR 50, UNIQUE, NULLABLE)  -- legacy: Argentine agro compliance field
 - created_at (TIMESTAMP)
 - updated_at (TIMESTAMP)
 - owner_id (UUID, DEFAULT gen_random_uuid())
@@ -111,7 +114,7 @@
 - movement_id (UUID, PK)
 - product_id (UUID, FK → products.product_id, CASCADE)
 - warehouse_id (UUID, FK → warehouse.warehouse_id, CASCADE)
-- movement_type (VARCHAR 20, CHECK: entry|exit|adjustment|senasa)
+- movement_type (VARCHAR 20, CHECK: entry|exit|adjustment|production|senasa)
 - quantity (INTEGER, > 0)
 - movement_date (TIMESTAMP, DEFAULT now())
 - reference (VARCHAR 255, NULLABLE)
@@ -180,10 +183,24 @@
 - created_at (TIMESTAMP)
 ```
 
-### 🌾 **SENASA Integration**
+### 🏭 **Manufacturing / Production** *(planned feature)*
+
+#### `product_formulas` *(not yet implemented — planned)*
+**Purpose:** Bill of Materials (BOM) — defines which raw materials are needed to produce a finished good
+```sql
+- formula_id (UUID, PK)
+- finished_product_id (UUID, FK → products.product_id)   -- the product being manufactured
+- raw_material_id (UUID, FK → products.product_id)        -- each input ingredient/component
+- quantity_required (NUMERIC 10,4, NOT NULL)              -- quantity consumed per unit produced
+- organization_id (UUID, FK → organizations.organization_id)
+- created_at (TIMESTAMP)
+```
+
+### 🔗 **Legacy / Domain-Specific Integration**
+> These tables exist from an earlier version targeting Argentine agro/SENASA compliance. They are preserved for backwards compatibility but are not part of the generic SaaS product.
 
 #### `senasa_products`
-**Purpose:** Official SENASA product catalog
+**Purpose:** [Legacy] Official SENASA (Argentine agricultural authority) product catalog
 ```sql
 - senasa_product_id (VARCHAR 50, PK)
 - reg_senasa (VARCHAR 50, NULLABLE)
@@ -197,7 +214,7 @@
 ```
 
 #### `senasa_transactions`
-**Purpose:** Log of SENASA API interactions
+**Purpose:** [Legacy] Log of SENASA API interactions for agricultural compliance
 ```sql
 - transaction_id (UUID, PK)
 - transaction_date (TIMESTAMP, DEFAULT now())

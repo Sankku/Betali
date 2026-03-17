@@ -158,8 +158,8 @@ export default function ForgotPassword() {
               <CardContent>
                 <form onSubmit={handleSend} className="space-y-4">
                   {error && (
-                    <div className="rounded-md bg-danger-50 p-4">
-                      <p className="text-sm text-danger-700">{error}</p>
+                    <div className="rounded-md border border-danger-500/30 bg-danger-500/10 p-4">
+                      <p className="text-sm text-danger-500">{error}</p>
                     </div>
                   )}
                   <div className="space-y-2">
@@ -223,12 +223,12 @@ export default function ForgotPassword() {
                 </div>
 
                 {/* Option B: enter the code */}
-                <div className="rounded-xl border border-primary-100 bg-primary-50/40 p-4 flex gap-3 items-start">
-                  <div className="rounded-full bg-primary-100 p-2 shrink-0 mt-0.5">
-                    <KeyRound className="h-4 w-4 text-primary-600" />
+                <div className="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4 flex gap-3 items-start">
+                  <div className="rounded-full bg-primary-500/20 p-2 shrink-0 mt-0.5">
+                    <KeyRound className="h-4 w-4 text-primary-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-neutral-900">Enter the 6-digit code</p>
+                    <p className="text-sm font-medium">Enter the 6-digit code</p>
                     <p className="text-xs text-neutral-500 mt-0.5">
                       The email also includes a one-time code you can type here directly.
                     </p>
@@ -265,8 +265,8 @@ export default function ForgotPassword() {
               </CardHeader>
               <CardContent className="space-y-5">
                 {error && (
-                  <div className="rounded-md bg-danger-50 p-3">
-                    <p className="text-sm text-danger-700">{error}</p>
+                  <div className="rounded-md border border-danger-500/30 bg-danger-500/10 p-3">
+                    <p className="text-sm text-danger-500">{error}</p>
                   </div>
                 )}
 

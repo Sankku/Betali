@@ -213,18 +213,18 @@ organizations           # Root tenant entity
 
 #### Agricultural Inventory
 ```sql
-products               # Agricultural products
-├── stock_movements    # Inventory movements
+products               # Product/item catalog (any business type)
+├── stock_movements    # Inventory movements (entry, exit, adjustment, production)
 ├── warehouse          # Storage locations
 ├── orders             # Sales orders
 ├── order_details      # Order line items
 └── clients            # Customers
 ```
 
-#### SENASA Integration
+#### Legacy Domain Tables *(Argentine agro compliance — preserved for backwards compatibility)*
 ```sql
-senasa_products        # SENASA product registry
-└── senasa_transactions # API transaction log
+senasa_products        # [Legacy] SENASA product registry
+└── senasa_transactions # [Legacy] Argentine agricultural API transaction log
 ```
 
 ### Key Relationships
@@ -335,7 +335,7 @@ cd backend && bun run test      # Jest tests
 - Supabase connection configuration
 - JWT secret for authentication
 - Database URL and credentials
-- SENASA API credentials (for agricultural compliance)
+- SENASA API credentials (optional — only needed for Argentine agro compliance features)
 
 ## Multi-Tenant Features
 
@@ -353,10 +353,10 @@ cd backend && bun run test      # Jest tests
 
 ## Key Integration Points
 
-### SENASA Integration
-- Agricultural product compliance tracking
+### Legacy Integration: SENASA *(Argentine agro compliance)*
+- Agricultural product compliance tracking (domain-specific, not part of generic SaaS)
 - Transaction logging for audit trails
-- API integration for regulatory requirements
+- API integration for Argentine regulatory requirements (SENASA)
 
 ### Dynamic Table System
 - Backend-configured table definitions

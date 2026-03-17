@@ -97,13 +97,9 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 rounded-md bg-danger-50 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-danger-800">Error</h3>
-                    <div className="mt-1 text-sm text-danger-700">{error}</div>
-                  </div>
-                </div>
+              <div className="mb-4 rounded-md border border-danger-500/30 bg-danger-500/10 p-4">
+                <h3 className="text-sm font-semibold text-danger-600">Error</h3>
+                <div className="mt-1 text-sm text-danger-500">{error}</div>
               </div>
             )}
 
