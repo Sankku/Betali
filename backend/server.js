@@ -31,6 +31,7 @@ const discountRuleRoutes = require('./routes/discountRules');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlans');
 const subscriptionRoutes = require('./routes/subscriptions');
 const mercadoPagoRoutes = require('./routes/mercadopago');
+const authEmailHookRoutes = require('./routes/auth-email-hook');
 const cronRoutes = require('./routes/cron');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
@@ -209,6 +210,7 @@ class Application {
     this.app.use('/api/subscriptions', subscriptionRoutes);
     this.app.use('/api/mercadopago', mercadoPagoRoutes);
     this.app.use('/api', mercadoPagoRoutes); // For webhook route /api/webhooks/mercadopago
+    this.app.use('/api/webhooks', authEmailHookRoutes); // Supabase Auth Hook — no auth middleware
     this.app.use('/api/alerts', inventoryAlertRoutes);
     this.app.use('/api/cron', cronRoutes);
 
