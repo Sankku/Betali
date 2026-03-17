@@ -619,6 +619,129 @@ class EmailService {
   }
 
   /**
+   * Auth hook emails — called by the Supabase "Send Email" hook
+   * @param {string} email - Recipient email address
+   * @param {string} actionUrl - Full Supabase verify magic link
+   * @param {string} token - 6-digit OTP (shown as fallback)
+   */
+
+  async sendConfirmSignupEmail(email, actionUrl, token) {
+    const bodyContent = `
+      <p>¡Gracias por registrarte en <strong>Betali</strong>! Para activar tu cuenta hacé clic en el botón de abajo.</p>
+
+      <div class="cta-wrapper">
+        <a href="${actionUrl}" class="cta-button">Confirmar cuenta</a>
+      </div>
+
+      <p style="margin-top:24px; font-size:13px; color:#6B7280;">
+        Si el botón no funciona, ingresá este código en la pantalla de verificación:
+      </p>
+      <div class="alert-box alert-info" style="text-align:center; font-size:28px; letter-spacing:8px; font-weight:700;">
+        ${token}
+      </div>
+      <p style="font-size:12px; color:#9CA3AF; margin-top:12px;">Este enlace expira en 24 horas. Si no creaste una cuenta, ignorá este email.</p>
+    `;
+
+    const html = this.baseLayout({
+      previewText: 'Confirmá tu cuenta en Betali',
+      headerColor: 'linear-gradient(135deg, #10B981, #059669)',
+      headerIcon: '✉️',
+      headerTitle: 'Confirmá tu cuenta',
+      headerSubtitle: 'Betali · Gestión de inventario',
+      bodyContent,
+    });
+
+    return this.sendEmail({ to: email, subject: 'Confirmá tu cuenta en Betali', html });
+  }
+
+  async sendPasswordResetEmail(email, actionUrl, token) {
+    const bodyContent = `
+      <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Hacé clic en el botón de abajo para continuar.</p>
+
+      <div class="cta-wrapper">
+        <a href="${actionUrl}" class="cta-button">Restablecer contraseña</a>
+      </div>
+
+      <p style="margin-top:24px; font-size:13px; color:#6B7280;">
+        Si el botón no funciona, ingresá este código en la pantalla de recuperación:
+      </p>
+      <div class="alert-box alert-info" style="text-align:center; font-size:28px; letter-spacing:8px; font-weight:700;">
+        ${token}
+      </div>
+      <p style="font-size:12px; color:#9CA3AF; margin-top:12px;">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignorá este email — tu contraseña no será modificada.</p>
+    `;
+
+    const html = this.baseLayout({
+      previewText: 'Restablecé tu contraseña en Betali',
+      headerColor: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+      headerIcon: '🔐',
+      headerTitle: 'Restablecer contraseña',
+      headerSubtitle: 'Betali · Gestión de inventario',
+      bodyContent,
+    });
+
+    return this.sendEmail({ to: email, subject: 'Restablecé tu contraseña · Betali', html });
+  }
+
+  async sendMagicLinkEmail(email, actionUrl, token) {
+    const bodyContent = `
+      <p>Solicitaste un enlace de acceso para entrar a Betali sin contraseña. Hacé clic en el botón de abajo.</p>
+
+      <div class="cta-wrapper">
+        <a href="${actionUrl}" class="cta-button">Ingresar a Betali</a>
+      </div>
+
+      <p style="margin-top:24px; font-size:13px; color:#6B7280;">
+        O ingresá este código en la pantalla de inicio:
+      </p>
+      <div class="alert-box alert-info" style="text-align:center; font-size:28px; letter-spacing:8px; font-weight:700;">
+        ${token}
+      </div>
+      <p style="font-size:12px; color:#9CA3AF; margin-top:12px;">Este enlace es de un solo uso y expira en 1 hora. Si no lo solicitaste, ignorá este email.</p>
+    `;
+
+    const html = this.baseLayout({
+      previewText: 'Tu enlace de acceso a Betali',
+      headerColor: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+      headerIcon: '🔗',
+      headerTitle: 'Enlace de acceso',
+      headerSubtitle: 'Betali · Gestión de inventario',
+      bodyContent,
+    });
+
+    return this.sendEmail({ to: email, subject: 'Tu enlace de acceso · Betali', html });
+  }
+
+  async sendEmailChangeEmail(email, actionUrl, token) {
+    const bodyContent = `
+      <p>Recibimos una solicitud para cambiar el email de tu cuenta en Betali. Hacé clic en el botón para confirmar.</p>
+
+      <div class="cta-wrapper">
+        <a href="${actionUrl}" class="cta-button">Confirmar nuevo email</a>
+      </div>
+
+      <p style="margin-top:24px; font-size:13px; color:#6B7280;">
+        O ingresá este código de confirmación:
+      </p>
+      <div class="alert-box alert-info" style="text-align:center; font-size:28px; letter-spacing:8px; font-weight:700;">
+        ${token}
+      </div>
+      <p style="font-size:12px; color:#9CA3AF; margin-top:12px;">Si no solicitaste este cambio, contactanos de inmediato respondiendo este email.</p>
+    `;
+
+    const html = this.baseLayout({
+      previewText: 'Confirmá el cambio de email en Betali',
+      headerColor: 'linear-gradient(135deg, #F59E0B, #D97706)',
+      headerIcon: '📧',
+      headerTitle: 'Cambio de email',
+      headerSubtitle: 'Betali · Gestión de inventario',
+      bodyContent,
+    });
+
+    return this.sendEmail({ to: email, subject: 'Confirmá tu nuevo email · Betali', html });
+  }
+
+  /**
    * Strip HTML tags to generate plain text fallback
    */
   stripHtml(html) {

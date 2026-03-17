@@ -58,17 +58,6 @@ function verifyHookJwt(authHeader, hookSecret) {
  * On error we return { error: { message, http_code } } as per the hook spec.
  */
 router.post('/supabase-auth', async (req, res) => {
-  // Temporary debug: log all incoming headers to diagnose auth header stripping
-  logger.info('Supabase auth hook: incoming headers', {
-    headers: Object.fromEntries(
-      Object.entries(req.headers).map(([k, v]) =>
-        k.toLowerCase().includes('authorization') || k.toLowerCase().includes('secret') || k.toLowerCase().includes('token')
-          ? [k, v?.slice(0, 30) + '...']
-          : [k, v]
-      )
-    )
-  });
-
   // Verify JWT signed with hook secret
   const hookSecret = process.env.SUPABASE_HOOK_SECRET;
   if (hookSecret) {
@@ -88,11 +77,24 @@ router.post('/supabase-auth', async (req, res) => {
   }
 
   const { email } = user;
-  const { token, redirect_to, email_action_type, site_url } = email_data;
+  const { token, token_hash, redirect_to, email_action_type, site_url } = email_data;
 
-  // Build the action URL that Supabase embeds in the default email
-  // redirect_to already contains the full confirm/reset link when available
-  const actionUrl = redirect_to || site_url || process.env.FRONTEND_URL || 'https://app.betali.com';
+  // Construct Supabase verify magic link using token_hash
+  // Format: {SUPABASE_URL}/auth/v1/verify?token={token_hash}&type={type}&redirect_to={redirect_to}
+  const buildActionUrl = (type) => {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const redirectTo = redirect_to || site_url || process.env.FRONTEND_URL;
+    if (token_hash && supabaseUrl) {
+      const params = new URLSearchParams({ token: token_hash, type, redirect_to: redirectTo });
+      return `${supabaseUrl}/auth/v1/verify?${params}`;
+    }
+    return redirectTo || process.env.FRONTEND_URL;
+  };
+
+  const verifyType = (email_action_type === 'email_change_new' || email_action_type === 'email_change_current')
+    ? 'email_change'
+    : email_action_type;
+  const actionUrl = buildActionUrl(verifyType);
 
   try {
     switch (email_action_type) {
