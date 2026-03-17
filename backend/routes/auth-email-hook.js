@@ -58,6 +58,17 @@ function verifyHookJwt(authHeader, hookSecret) {
  * On error we return { error: { message, http_code } } as per the hook spec.
  */
 router.post('/supabase-auth', async (req, res) => {
+  // Temporary debug: log all incoming headers to diagnose auth header stripping
+  logger.info('Supabase auth hook: incoming headers', {
+    headers: Object.fromEntries(
+      Object.entries(req.headers).map(([k, v]) =>
+        k.toLowerCase().includes('authorization') || k.toLowerCase().includes('secret') || k.toLowerCase().includes('token')
+          ? [k, v?.slice(0, 30) + '...']
+          : [k, v]
+      )
+    )
+  });
+
   // Verify JWT signed with hook secret
   const hookSecret = process.env.SUPABASE_HOOK_SECRET;
   if (hookSecret) {
