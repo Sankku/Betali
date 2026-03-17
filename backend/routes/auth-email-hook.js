@@ -25,7 +25,7 @@ function verifyHookJwt(authHeader, hookSecret) {
   }
 
   try {
-    jwt.verify(token, signingKey, { algorithms: ['HS256'] });
+    jwt.verify(token, signingKey, { algorithms: ['HS256'], ignoreExpiration: true });
     return true;
   } catch (err) {
     logger.warn('Supabase auth hook: JWT verification failed', { error: err.message, tokenPrefix: token.slice(0, 20) });
