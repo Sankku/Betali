@@ -77,15 +77,20 @@ test.describe('Create Product', () => {
 
     // Verify product appears in the list (use search to avoid pagination)
     await page.goto('/dashboard/products');
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
     await page.waitForSelector('table', { timeout: 10000 });
-    // Dismiss any onboarding tour that may appear after new org creation
-    const skipTour = page.locator('button:has-text("Omitir"), button:has-text("Skip"), button:has-text("Omitir tour")');
-    if (await skipTour.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // Dismiss onboarding tour — wait up to 3s for it to appear, then click if visible
+    const skipTour = page.locator('button:has-text("Omitir tour guiado"), button:has-text("Omitir tour"), button:has-text("Skip tour")');
+    await skipTour.waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    if (await skipTour.isVisible().catch(() => false)) {
       await skipTour.click();
+      await page.waitForTimeout(300);
     }
     // Search for the product to find it across pages
-    await page.fill('input[placeholder="Search..."]', productName);
-    await page.waitForTimeout(500);
+    const searchInput = page.locator('input[placeholder="Search..."]');
+    await searchInput.waitFor({ state: 'visible', timeout: 5000 });
+    await searchInput.fill(productName);
+    await page.waitForTimeout(700);
     await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 10000 });
   });
 

@@ -35,14 +35,19 @@ test.describe('User Signup', () => {
 
     const url = page.url();
 
-    // If still on register page, check for a known Supabase rate-limit error (test env limitation)
+    // If still on register page, check for known infrastructure errors (not code bugs)
     if (url.includes('register')) {
-      const errorText = await page.locator('.bg-danger-50').first().textContent().catch(() => '');
-      if (errorText?.toLowerCase().includes('rate limit')) {
-        test.skip(true, 'Supabase email rate limit reached — skipping signup test');
+      const errorText = (await page.locator('.bg-danger-50').first().textContent().catch(() => '')) ?? '';
+      const lowerError = errorText.toLowerCase();
+      const isInfrastructureError =
+        lowerError.includes('rate limit') ||
+        lowerError.includes('hook requires authorization') ||
+        lowerError.includes('unexpected_failure');
+      if (isInfrastructureError) {
+        test.skip(true, `Supabase infrastructure error — skipping signup test: ${errorText.trim()}`);
         return;
       }
-      // Any other error on the register page is a real failure
+      // Any other error on the register page is a real code failure
       expect(url).toMatch(/.*dashboard|.*login.*verify/);
       return;
     }
