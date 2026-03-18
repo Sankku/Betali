@@ -62,9 +62,9 @@ class PurchaseOrderDetailRepository extends BaseRepository {
           products!purchase_order_details_product_id_fkey(
             product_id,
             name,
-            sku,
-            unit_price,
-            cost_price
+            batch_number,
+            description,
+            expiration_date
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)
@@ -226,8 +226,9 @@ class PurchaseOrderDetailRepository extends BaseRepository {
           products!purchase_order_details_product_id_fkey(
             product_id,
             name,
-            sku,
-            unit_price
+            batch_number,
+            description,
+            expiration_date
           )
         `)
         .eq('detail_id', detailId)

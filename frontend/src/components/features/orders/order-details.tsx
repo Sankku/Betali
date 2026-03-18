@@ -7,6 +7,8 @@ import { Copy, Edit, Package, User, MapPin, Calendar, FileText } from 'lucide-re
 import { Order } from '@/services/api/orderService';
 import { getOrderStatusColor } from '@/hooks/useOrders';
 import { useDuplicateOrder } from '@/hooks/useOrders';
+import { useTranslation } from '@/contexts/LanguageContext';
+import { OrderStatusBadge } from '@/components/features/orders/order-status-badge';
 
 interface OrderDetailsProps {
   order: Order;
@@ -15,13 +17,14 @@ interface OrderDetailsProps {
 }
 
 export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
+  const { t, language } = useTranslation();
   const duplicateOrderMutation = useDuplicateOrder();
 
   // Guard clause - if no order, show error
   if (!order) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error: Order data not available</p>
+        <p className="text-red-600">{t('orders.details.errorNotAvailable')}</p>
       </div>
     );
   }
@@ -35,8 +38,10 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
     }
   };
 
+  const locale = language === 'en' ? 'en-US' : 'es-AR';
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -58,20 +63,14 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
       <div className="flex items-start justify-between ">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-gray-800">
-            Order #{order.order_id?.slice(-8).toUpperCase() || 'N/A'}
+            {t('orders.modal.viewTitle', { id: order.order_id?.slice(-8).toUpperCase() || 'N/A' })}
           </h2>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1 ">
               <Calendar className="h-4 w-4" />
               <span>{formatDate(order.order_date)}</span>
             </div>
-            <Badge
-              className={`bg-${statusColor}-100 text-${statusColor}-800 border-${statusColor}-200`}
-            >
-              {order.status
-                ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
-                : 'Unknown'}
-            </Badge>
+            <OrderStatusBadge status={order.status} />
           </div>
         </div>
 
@@ -79,7 +78,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
           {onEdit && (
             <Button onClick={onEdit} size="sm" className="flex items-center gap-2 text-gray-800">
               <Edit className="h-4 w-4" />
-              Edit
+              {t('common.edit')}
             </Button>
           )}
           <Button
@@ -90,7 +89,9 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
             className="flex items-center gap-2"
           >
             <Copy className="h-4 w-4" />
-            {duplicateOrderMutation.isPending ? 'Duplicating...' : 'Duplicate'}
+            {duplicateOrderMutation.isPending
+              ? t('orders.details.duplicating')
+              : t('orders.details.duplicate')}
           </Button>
         </div>
       </div>
@@ -104,27 +105,27 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Customer Information
+                  {t('orders.details.customerTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {order.clients ? (
                   <>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="text-xs text-gray-500 mb-1">{t('orders.details.nameLabel')}</p>
                       <p className="font-medium">{order.clients.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Email</p>
+                      <p className="text-xs text-gray-500 mb-1">{t('orders.details.emailLabel')}</p>
                       <p className="text-sm break-all">{order.clients.email}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Phone</p>
+                      <p className="text-xs text-gray-500 mb-1">{t('orders.details.phoneLabel')}</p>
                       <p className="text-sm">{order.clients.phone}</p>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500">No customer assigned</p>
+                  <p className="text-sm text-gray-500">{t('orders.details.noCustomer')}</p>
                 )}
               </CardContent>
             </Card>
@@ -133,23 +134,23 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Warehouse
+                  {t('orders.details.warehouseTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {order.warehouse ? (
                   <>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="text-xs text-gray-500 mb-1">{t('orders.details.nameLabel')}</p>
                       <p className="font-medium">{order.warehouse.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Location</p>
+                      <p className="text-xs text-gray-500 mb-1">{t('orders.details.locationLabel')}</p>
                       <p className="text-sm">{order.warehouse.location}</p>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500">No warehouse assigned</p>
+                  <p className="text-sm text-gray-500">{t('orders.details.noWarehouse')}</p>
                 )}
               </CardContent>
             </Card>
@@ -160,7 +161,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
             <CardHeader className="pb-4">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Order Items
+                {t('orders.details.itemsTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -172,7 +173,9 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-base mb-2">{item.products?.name}</div>
-                      <div className="text-sm text-gray-600 mb-1">SKU: {item.products?.sku}</div>
+                      {item.products?.batch_number && (
+                        <div className="text-sm text-gray-600 mb-1">Lote: {item.products.batch_number}</div>
+                      )}
                       {item.products?.description && (
                         <div className="text-sm text-gray-500 mt-2 line-clamp-2">
                           {item.products.description}
@@ -189,7 +192,9 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                     </div>
                   </div>
                 )) || (
-                  <p className="text-sm text-gray-500 py-8 text-center">No items in this order</p>
+                  <p className="text-sm text-gray-500 py-8 text-center">
+                    {t('orders.details.noItems')}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -201,7 +206,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  Notes
+                  {t('orders.details.notesTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -215,21 +220,25 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
         <div className="space-y-6">
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Order Summary</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                {t('orders.details.summaryTitle')}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm">Subtotal:</span>
+                  <span className="text-sm">{t('orders.details.subtotal')}</span>
                   <span className="text-base font-medium">${(order.subtotal ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm">Tax:</span>
+                  <span className="text-sm">{t('orders.details.tax')}</span>
                   <span className="text-base font-medium">${displayTax.toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-base font-semibold text-gray-500">Total:</span>
+                  <span className="text-base font-semibold text-gray-500">
+                    {t('orders.details.total')}
+                  </span>
                   <span className="text-xl font-bold text-green-600">
                     ${displayTotal.toFixed(2)}
                   </span>
@@ -240,14 +249,16 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
 
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">Order Timeline</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                {t('orders.details.timelineTitle')}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="w-2.5 h-2.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold mb-1">Order Created</p>
+                    <p className="text-sm font-semibold mb-1">{t('orders.details.orderCreated')}</p>
                     <p className="text-xs">{formatDate(order.created_at)}</p>
                   </div>
                 </div>
@@ -256,7 +267,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                   <div className="flex items-start gap-3">
                     <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold mb-1">Last Updated</p>
+                      <p className="text-sm font-semibold mb-1">{t('orders.details.lastUpdated')}</p>
                       <p className="text-xs">{formatDate(order.updated_at)}</p>
                     </div>
                   </div>
@@ -267,8 +278,12 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                     className={`w-2.5 h-2.5 bg-${statusColor}-500 rounded-full mt-1.5 flex-shrink-0`}
                   ></div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold mb-1">Current Status</p>
-                    <p className="text-xs capitalize">{order.status || 'Unknown'}</p>
+                    <p className="text-sm font-semibold mb-1">{t('orders.details.currentStatus')}</p>
+                    <p className="text-xs capitalize">
+                      {order.status
+                        ? t(`orders.status.${order.status}`)
+                        : t('orders.details.unknown')}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -280,7 +295,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
       {/* Close Button */}
       <div className="flex justify-end pt-4 border-t">
         <Button onClick={onClose} variant="outline">
-          Close
+          {t('common.close')}
         </Button>
       </div>
     </div>

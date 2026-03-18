@@ -113,7 +113,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             unit_price: item.unit_price ?? 0,
             notes: item.notes,
             product_name: product?.name,
-            product_sku: product?.sku,
+            product_sku: product?.batch_number,
           };
         });
         setItems(purchaseOrderItems);
@@ -176,8 +176,8 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
       const product = products?.data?.find((p) => p.product_id === value);
       if (product) {
         newItems[index].product_name = product.name;
-        newItems[index].product_sku = product.sku;
-        newItems[index].unit_price = product.cost_price || product.unit_price || 0;
+        newItems[index].product_sku = product.batch_number;
+        newItems[index].unit_price = product.price || 0;
       }
     }
 
@@ -344,7 +344,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                       <SelectContent>
                         {products?.data?.map((product) => (
                           <SelectItem key={product.product_id} value={product.product_id}>
-                            {product.name} {product.sku && `(${product.sku})`}
+                            {product.name} {product.batch_number && `(Lote: ${product.batch_number})`}
                           </SelectItem>
                         ))}
                       </SelectContent>

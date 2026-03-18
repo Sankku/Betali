@@ -63,7 +63,7 @@ export interface OrderDetail {
   products?: {
     product_id: string;
     name: string;
-    sku: string;
+    batch_number?: string;
     price: number;
     description?: string;
   };

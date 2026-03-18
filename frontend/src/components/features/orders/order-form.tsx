@@ -117,7 +117,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
             quantity: item.quantity,
             price: item.price,
             product_name: product?.name,
-            product_sku: product?.sku,
+            product_sku: product?.batch_number,
           };
         });
         setItems(orderItems);
@@ -166,7 +166,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           product_id: value as string,
           price: selectedProduct.price,
           product_name: selectedProduct.name,
-          product_sku: selectedProduct.sku,
+          product_sku: selectedProduct.batch_number,
         };
       }
     } else if (field === 'quantity') {
@@ -394,7 +394,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                           <div className="flex flex-col">
                             <span className="font-medium text-gray-900">{product.name}</span>
                             <span className="text-sm text-gray-700">
-                              SKU: {product.sku} | ${product.price}
+                              Lote: {product.batch_number} | ${product.price}
                             </span>
                           </div>
                         </SelectItem>

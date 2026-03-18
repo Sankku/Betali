@@ -158,7 +158,8 @@ function PurchaseOrderFormModal({
       shipping_amount: resolvedOrder.shipping_amount || 0,
       notes: resolvedOrder.notes || '',
     });
-  }, [resolvedOrder, mode, isOpen, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedOrder, mode, isOpen]);
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
     const valid = await form.trigger(['supplier_id', 'warehouse_id']);

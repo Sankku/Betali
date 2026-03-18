@@ -74,22 +74,26 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
           items: [{ product_id: '', quantity: 1, price: 0 }],
         });
       } else if (mode === 'edit' && resolvedFullOrder) {
+        const details = resolvedFullOrder.order_details ?? [];
+        // Only reset once we have real detail records (list items won't have product_id)
+        if (details.length === 0 || !details[0]?.product_id) return;
         form.reset({
           client_id: resolvedFullOrder.client_id || 'no-client',
           warehouse_id: resolvedFullOrder.warehouse_id || 'no-warehouse',
           status: resolvedFullOrder.status,
           notes: resolvedFullOrder.notes || '',
-          tax_rate_ids: [],
-          items:
-            resolvedFullOrder.order_details?.map((detail: any) => ({
-              product_id: detail.product_id,
-              quantity: detail.quantity,
-              price: detail.price,
-            })) || [],
+          // tax_rate_ids can't be restored from saved order (backend stores tax_amount, not which rates)
+          tax_rate_ids: (resolvedFullOrder as any).tax_rate_ids ?? [],
+          items: details.map((detail: any) => ({
+            product_id: detail.product_id,
+            quantity: detail.quantity,
+            price: detail.price,
+          })),
         });
       }
     }
-  }, [isOpen, mode, resolvedFullOrder, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, resolvedFullOrder]);
 
   const handleSubmit = async (data: OrderFormData) => {
     try {
