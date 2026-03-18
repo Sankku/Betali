@@ -48,6 +48,7 @@ import {
 import { useOrganization } from '@/context/OrganizationContext';
 import { supplierService } from '@/services/api/supplierService';
 import { usePlanResourceLimit } from '@/hooks/useSubscriptionPlans';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface ModalState {
   isOpen: boolean;
@@ -67,6 +68,7 @@ interface FilterState {
 }
 
 export function SuppliersPage() {
+  const { t } = useTranslation();
   const { currentOrganization } = useOrganization();
   
   const [modal, setModal] = useState<ModalState>({
@@ -221,19 +223,19 @@ export function SuppliersPage() {
   // Stats cards data
   const statsCards = [
     {
-      title: 'Total Proveedores',
+      title: t('suppliers.page.totalSuppliers'),
       value: supplierStats?.total ?? 0,
       icon: Building,
       color: 'blue',
     },
     {
-      title: 'Activos',
+      title: t('suppliers.page.activeSuppliers'),
       value: supplierStats?.active ?? 0,
       icon: Star,
       color: 'green',
     },
     {
-      title: 'Preferidos',
+      title: t('suppliers.page.preferredSuppliers'),
       value: supplierStats?.preferred ?? 0,
       icon: TrendingUp,
       color: 'purple',
@@ -243,7 +245,7 @@ export function SuppliersPage() {
   // Bulk actions configuration
   const bulkActions: BulkAction<Supplier>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Eliminar',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -259,7 +261,7 @@ export function SuppliersPage() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Proveedor',
+      header: t('suppliers.page.columnSupplier'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
@@ -283,7 +285,7 @@ export function SuppliersPage() {
     },
     {
       accessorKey: 'cuit',
-      header: 'CUIT',
+      header: t('suppliers.page.columnCuit'),
       cell: ({ row }: any) => (
         <span className="font-mono text-sm text-gray-900">
           {formatCuit(row.original.cuit)}
@@ -292,7 +294,7 @@ export function SuppliersPage() {
     },
     {
       accessorKey: 'contact',
-      header: 'Contacto',
+      header: t('suppliers.page.columnContact'),
       cell: ({ row }: any) => (
         <div className="space-y-1">
           {row.original.email && (
@@ -316,7 +318,7 @@ export function SuppliersPage() {
                 rel="noopener noreferrer"
                 className="hover:text-blue-600"
               >
-                Sitio web
+                {t('suppliers.page.website')}
               </a>
             </div>
           )}
@@ -325,7 +327,7 @@ export function SuppliersPage() {
     },
     {
       accessorKey: 'business_type',
-      header: 'Tipo de Negocio',
+      header: t('suppliers.page.columnBusinessType'),
       cell: ({ row }: any) => (
         row.original.business_type ? (
           <Badge variant="outline">
@@ -336,18 +338,18 @@ export function SuppliersPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Estado',
+      header: t('suppliers.page.columnStatus'),
       cell: ({ row }: any) => (
         <div className="space-y-1">
           <Badge
             variant={row.original.is_active ? "default" : "secondary"}
             className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
           >
-            {row.original.is_active ? 'Activo' : 'Inactivo'}
+            {row.original.is_active ? t('suppliers.page.statusActive') : t('suppliers.page.statusInactive')}
           </Badge>
           {row.original.is_preferred && (
             <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
-              Preferido
+              {t('suppliers.page.statusPreferred')}
             </Badge>
           )}
         </div>
@@ -355,7 +357,7 @@ export function SuppliersPage() {
     },
     {
       id: 'actions',
-      header: 'Acciones',
+      header: t('suppliers.page.columnActions'),
       cell: ({ row }: any) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -378,7 +380,7 @@ export function SuppliersPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleActive(row.original)}
-            title={row.original.is_active ? 'Deactivate supplier' : 'Activate supplier'}
+            title={row.original.is_active ? t('suppliers.page.deactivateSupplier') : t('suppliers.page.activateSupplier')}
             className={row.original.is_active
               ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"
               : "text-red-400 hover:text-red-600 hover:bg-red-50"}
@@ -391,7 +393,7 @@ export function SuppliersPage() {
             variant="ghost"
             size="sm"
             onClick={() => handleTogglePreferred(row.original)}
-            title={row.original.is_preferred ? 'Remove from preferred' : 'Mark as preferred'}
+            title={row.original.is_preferred ? t('suppliers.page.removePreferred') : t('suppliers.page.markPreferred')}
             className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
           >
             <Star className={`w-4 h-4 ${row.original.is_preferred ? 'fill-current' : ''}`} />
@@ -412,16 +414,16 @@ export function SuppliersPage() {
   return (
     <>
       <Helmet>
-        <title>Gestión de Proveedores - Betali</title>
+        <title>{t('suppliers.page.title')} - Betali</title>
         <meta
           name="description"
-          content="Administre proveedores, información de contacto y términos comerciales en Betali"
+          content={t('suppliers.page.description')}
         />
       </Helmet>
 
       <CRUDPage
-        title="Gestión de Proveedores"
-        description="Administre proveedores, información de contacto y términos comerciales"
+        title={t('suppliers.page.title')}
+        description={t('suppliers.page.description')}
         data={suppliers}
         isLoading={isLoading}
         error={error}
@@ -457,7 +459,7 @@ export function SuppliersPage() {
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Buscar por nombre, email, CUIT o contacto..."
+                      placeholder={t('suppliers.page.searchPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -468,11 +470,11 @@ export function SuppliersPage() {
                     onClick={handleSearch}
                     disabled={!searchQuery.trim() || searchSuppliers.isPending}
                   >
-                    {searchSuppliers.isPending ? 'Buscando...' : 'Buscar'}
+                    {searchSuppliers.isPending ? t('suppliers.page.searching') : t('suppliers.page.search')}
                   </Button>
                   {(searchQuery || Object.values(filters).some(f => f !== 'all')) && (
                     <Button variant="outline" onClick={clearSearch}>
-                      Limpiar
+                      {t('suppliers.page.clearSearch')}
                     </Button>
                   )}
                 </div>
@@ -480,44 +482,44 @@ export function SuppliersPage() {
                 {/* Filters */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormSelect
-                    label="Tipo de Negocio"
+                    label={t('suppliers.page.filterBusinessType')}
                     value={filters.businessType}
                     onValueChange={(value) => setFilters(prev => ({ ...prev, businessType: value }))}
                     options={[
-                      { value: 'all', label: 'Todos los tipos' },
+                      { value: 'all', label: t('suppliers.page.filterAllTypes') },
                       ...supplierService.getBusinessTypeOptions()
                     ]}
                     icon={<Building className="h-4 w-4" />}
-                    description="Filtrar por tipo de negocio"
-                    placeholder="Seleccionar tipo"
+                    description={t('suppliers.page.filterBusinessTypeDesc')}
+                    placeholder={t('suppliers.page.filterBusinessTypePlaceholder')}
                   />
 
                   <FormSelect
-                    label="Estado"
+                    label={t('suppliers.page.filterStatus')}
                     value={filters.isActive}
                     onValueChange={(value) => setFilters(prev => ({ ...prev, isActive: value }))}
                     options={[
-                      { value: 'all', label: 'Todos' },
-                      { value: 'true', label: 'Activos' },
-                      { value: 'false', label: 'Inactivos' }
+                      { value: 'all', label: t('suppliers.page.filterAllStatuses') },
+                      { value: 'true', label: t('suppliers.page.filterActive') },
+                      { value: 'false', label: t('suppliers.page.filterInactive') }
                     ]}
                     icon={<ToggleLeft className="h-4 w-4" />}
-                    description="Filtrar por estado del proveedor"
-                    placeholder="Seleccionar estado"
+                    description={t('suppliers.page.filterStatusDesc')}
+                    placeholder={t('suppliers.page.filterStatusPlaceholder')}
                   />
 
                   <FormSelect
-                    label="Preferencia"
+                    label={t('suppliers.page.filterPreference')}
                     value={filters.isPreferred}
                     onValueChange={(value) => setFilters(prev => ({ ...prev, isPreferred: value }))}
                     options={[
-                      { value: 'all', label: 'Todos' },
-                      { value: 'true', label: 'Preferidos' },
-                      { value: 'false', label: 'No preferidos' }
+                      { value: 'all', label: t('suppliers.page.filterAllPreferences') },
+                      { value: 'true', label: t('suppliers.page.filterPreferred') },
+                      { value: 'false', label: t('suppliers.page.filterNotPreferred') }
                     ]}
                     icon={<Star className="h-4 w-4" />}
-                    description="Filtrar por proveedores preferidos"
-                    placeholder="Seleccionar preferencia"
+                    description={t('suppliers.page.filterPreferenceDesc')}
+                    placeholder={t('suppliers.page.filterPreferencePlaceholder')}
                   />
                 </div>
               </div>
@@ -531,18 +533,18 @@ export function SuppliersPage() {
             loading={isLoading}
             getRowId={(supplier: Supplier) => supplier.supplier_id}
             bulkActions={bulkActions}
-            createButtonLabel="Nuevo Proveedor"
+            createButtonLabel={t('suppliers.page.newSupplier')}
             onCreateClick={handleCreateClick}
             createButtonDisabled={atSupplierLimit}
-            createButtonTooltip={atSupplierLimit ? `Has alcanzado el límite de proveedores (${supplierLimit}) de tu plan. Hacé upgrade para agregar más.` : undefined}
+            createButtonTooltip={atSupplierLimit ? t('suppliers.page.supplierLimitTooltip', { limit: String(supplierLimit) }) : undefined}
             onRowDoubleClick={(supplier) => openModal('edit', supplier)}
             searchable={false}
             enablePagination={true}
             pageSize={10}
             emptyMessage={
               !currentOrganization
-                ? "Please select or create an organization to access supplier management features."
-                : "No se encontraron proveedores. ¡Crea tu primer proveedor para comenzar!"
+                ? t('suppliers.page.noOrgMessage')
+                : t('suppliers.page.emptyMessage')
             }
           />
         }
@@ -566,32 +568,31 @@ export function SuppliersPage() {
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Confirmar Eliminación
+              {t('suppliers.page.deleteTitle')}
             </ModalTitle>
             <ModalDescription>
               {showDeleteConfirm.suppliers.length === 1 ? (
-                <>
-                  ¿Está seguro que desea eliminar al proveedor{' '}
-                  <strong>{showDeleteConfirm.suppliers[0]?.name}</strong>?
-                </>
+                t('suppliers.page.deleteSingle', { name: showDeleteConfirm.suppliers[0]?.name || '' })
               ) : (
-                <>
-                  ¿Está seguro que desea eliminar <strong>{showDeleteConfirm.suppliers.length}</strong> proveedores?
-                </>
+                t('suppliers.page.deleteMultiple', { count: String(showDeleteConfirm.suppliers.length) })
               )}
-              {' '}Esta acción no se puede deshacer.
+              {' '}{t('suppliers.page.deleteCannotUndo')}
             </ModalDescription>
           </ModalHeader>
           <ModalFooter>
             <Button variant="outline" onClick={closeDeleteConfirm}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteSupplier.isPending}
             >
-              {deleteSupplier.isPending ? 'Eliminando...' : `Eliminar ${showDeleteConfirm.suppliers.length === 1 ? 'Proveedor' : 'Proveedores'}`}
+              {deleteSupplier.isPending
+                ? t('suppliers.page.deleting')
+                : showDeleteConfirm.suppliers.length === 1
+                  ? t('suppliers.page.deleteSingleButton')
+                  : t('suppliers.page.deleteMultipleButton')}
             </Button>
           </ModalFooter>
         </ModalContent>

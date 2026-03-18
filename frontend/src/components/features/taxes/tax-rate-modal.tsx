@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Percent, Info, Calculator, Zap } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { ModalForm } from '@/components/templates/modal-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ interface TaxRateFormData {
 }
 
 export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalProps) {
+  const { t } = useTranslation();
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [testAmount, setTestAmount] = useState<number>(100);
 
@@ -118,24 +120,24 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Create Tax Rate';
+        return t('taxManagement.modal.createTitle');
       case 'edit':
-        return 'Edit Tax Rate';
+        return t('taxManagement.modal.editTitle');
       case 'view':
-        return `Tax Rate: ${taxRate?.name}`;
+        return t('taxManagement.modal.viewTitle', { name: taxRate?.name || '' });
       default:
-        return 'Tax Rate';
+        return t('taxManagement.modal.defaultTitle');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Create a new tax rate for your products and services.';
+        return t('taxManagement.modal.createDescription');
       case 'edit':
-        return 'Modify the tax rate settings and configuration.';
+        return t('taxManagement.modal.editDescription');
       case 'view':
-        return 'View detailed information about this tax rate.';
+        return t('taxManagement.modal.viewDescription');
       default:
         return '';
     }
@@ -170,10 +172,10 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-gray-900">
                 <Zap className="h-4 w-4 text-blue-500" />
-                Quick Presets
+                {t('taxManagement.modal.quickPresetsTitle')}
               </CardTitle>
               <CardDescription>
-                Start with a common tax rate configuration
+                {t('taxManagement.modal.quickPresetsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -190,7 +192,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
                     <div className="flex flex-col items-start">
                       <span className="font-medium">{preset.name}</span>
                       <span className="text-xs text-gray-600">
-                        {formatTaxRate(preset.rate)} - {preset.is_inclusive ? 'Inclusive' : 'Exclusive'}
+                        {formatTaxRate(preset.rate)} - {preset.is_inclusive ? t('taxManagement.modal.inclusive') : t('taxManagement.modal.exclusive')}
                       </span>
                     </div>
                   </Button>
@@ -204,11 +206,11 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-900 font-medium">
-              Tax Name *
+              {t('taxManagement.modal.taxNameLabel')}
             </Label>
             <Input
               {...form.register('name', { required: 'Tax name is required' })}
-              placeholder="e.g., Standard VAT, Sales Tax"
+              placeholder={t('taxManagement.modal.taxNamePlaceholder')}
               disabled={isViewMode}
             />
             {form.formState.errors.name && (
@@ -218,7 +220,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
 
           <div className="space-y-2">
             <Label htmlFor="rate" className="text-gray-900 font-medium">
-              Tax Rate (%) *
+              {t('taxManagement.modal.taxRateLabel')}
             </Label>
             <div className="relative">
               <Input
@@ -244,11 +246,11 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
 
         <div className="space-y-2">
           <Label htmlFor="description" className="text-gray-900 font-medium">
-            Description
+            {t('taxManagement.modal.descriptionLabel')}
           </Label>
           <Textarea
             {...form.register('description')}
-            placeholder="Optional description of when this tax rate applies"
+            placeholder={t('taxManagement.modal.descriptionPlaceholder')}
             rows={3}
             disabled={isViewMode}
           />
@@ -260,11 +262,11 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
             <div className="flex items-start space-x-3">
               <Calculator className="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900">Tax Calculation Method</h4>
+                <h4 className="font-medium text-gray-900">{t('taxManagement.modal.calculationMethodTitle')}</h4>
                 <p className="text-sm text-gray-600">
-                  {watchedValues.is_inclusive 
-                    ? "Tax is included in the product price (tax-inclusive pricing)"
-                    : "Tax is added to the product price (tax-exclusive pricing)"
+                  {watchedValues.is_inclusive
+                    ? t('taxManagement.modal.inclusiveCalcDesc')
+                    : t('taxManagement.modal.exclusiveCalcDesc')
                   }
                 </p>
               </div>
@@ -280,11 +282,11 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
             <div className="flex items-start space-x-3">
               <Info className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900">Active Status</h4>
+                <h4 className="font-medium text-gray-900">{t('taxManagement.modal.activeStatusTitle')}</h4>
                 <p className="text-sm text-gray-600">
-                  {watchedValues.is_active 
-                    ? "This tax rate is active and can be used"
-                    : "This tax rate is inactive and won't be applied"
+                  {watchedValues.is_active
+                    ? t('taxManagement.modal.activeStatusOn')
+                    : t('taxManagement.modal.activeStatusOff')
                   }
                 </p>
               </div>
@@ -303,15 +305,15 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-gray-900">
                 <Calculator className="h-4 w-4 text-green-500" />
-                Tax Calculation Preview
+                {t('taxManagement.modal.previewTitle')}
               </CardTitle>
               <CardDescription>
-                See how this tax rate affects pricing
+                {t('taxManagement.modal.previewDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
-                <Label className="text-sm font-medium">Test Amount ($):</Label>
+                <Label className="text-sm font-medium">{t('taxManagement.modal.testAmount')}</Label>
                 <Input
                   type="number"
                   value={testAmount}
@@ -325,7 +327,7 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="space-y-1">
                   <p className="font-medium text-gray-700">
-                    {watchedValues.is_inclusive ? 'Input Amount' : 'Base Amount'}
+                    {watchedValues.is_inclusive ? t('taxManagement.modal.inputAmount') : t('taxManagement.modal.baseAmount')}
                   </p>
                   <p className="text-lg font-semibold text-gray-900">
                     ${testAmount.toFixed(2)}
@@ -337,14 +339,14 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
                   )}
                 </div>
                 <div className="space-y-1">
-                  <p className="font-medium text-gray-700">Tax Amount</p>
+                  <p className="font-medium text-gray-700">{t('taxManagement.modal.taxAmount')}</p>
                   <p className="text-lg font-semibold text-blue-600">
                     ${taxAmount.toFixed(2)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-gray-700">
-                    {watchedValues.is_inclusive ? 'Final Price' : 'Total with Tax'}
+                    {watchedValues.is_inclusive ? t('taxManagement.modal.finalPrice') : t('taxManagement.modal.totalWithTax')}
                   </p>
                   <p className="text-lg font-semibold text-green-600">
                     ${totalWithTax.toFixed(2)}
@@ -354,9 +356,17 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  {watchedValues.is_inclusive 
-                    ? `With tax-inclusive pricing, customers pay $${totalWithTax.toFixed(2)} (which includes $${taxAmount.toFixed(2)} tax). Your business receives $${baseAmount.toFixed(2)}.`
-                    : `With tax-exclusive pricing, $${testAmount.toFixed(2)} + $${taxAmount.toFixed(2)} tax = $${totalWithTax.toFixed(2)} total.`
+                  {watchedValues.is_inclusive
+                    ? t('taxManagement.modal.inclusiveExplanation', {
+                        total: totalWithTax.toFixed(2),
+                        tax: taxAmount.toFixed(2),
+                        base: baseAmount.toFixed(2),
+                      })
+                    : t('taxManagement.modal.exclusiveExplanation', {
+                        amount: testAmount.toFixed(2),
+                        tax: taxAmount.toFixed(2),
+                        total: totalWithTax.toFixed(2),
+                      })
                   }
                 </p>
               </div>

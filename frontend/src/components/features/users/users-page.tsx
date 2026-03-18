@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, User as UserIcon, Mail, Shield, Eye, Edit, Trash, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { CRUDPage } from '@/components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ interface DeleteConfirmState {
 }
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     mode: 'create',
@@ -129,7 +131,7 @@ export function UsersPage() {
   // Bulk actions configuration
   const bulkActions: BulkAction<User>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Delete',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -139,13 +141,13 @@ export function UsersPage() {
     },
     onClick: (users) => handleDelete(users.filter(u => u.user_id !== currentUserId)),
     alwaysShow: true,
-  }], [currentUserId]);
+  }], [currentUserId, t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'User',
+      header: t('users.page.columnUser'),
       cell: ({ row }: any) => {
         const isSelf = row.original.user_id === currentUserId;
         return (
@@ -159,7 +161,7 @@ export function UsersPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-900">{row.original.name}</span>
                 {isSelf && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-medium">Tú</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 font-medium">{t('users.page.selfBadge')}</span>
                 )}
               </div>
               <div className="text-sm text-gray-500">{row.original.email}</div>
@@ -170,7 +172,7 @@ export function UsersPage() {
     },
     {
       accessorKey: 'role',
-      header: 'Role',
+      header: t('users.page.columnRole'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <Shield className="w-4 h-4 text-gray-400 mr-2" />
@@ -182,19 +184,19 @@ export function UsersPage() {
     },
     {
       accessorKey: 'is_active',
-      header: 'Status',
+      header: t('users.page.columnStatus'),
       cell: ({ row }: any) => (
         <Badge
           variant={row.original.is_active ? "default" : "secondary"}
           className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
         >
-          {row.original.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? t('users.page.statusActive') : t('users.page.statusInactive')}
         </Badge>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       cell: ({ row }: any) => {
         const isSelf = row.original.user_id === currentUserId;
         return (
@@ -215,13 +217,13 @@ export function UsersPage() {
             >
               <Edit className="w-4 h-4" />
             </Button>
-            <span title={isSelf ? 'No puedes desactivar tu propia cuenta' : undefined}>
+            <span title={isSelf ? t('users.page.cantDeactivateSelf') : undefined}>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleToggleStatus(row.original)}
                 disabled={isSelf}
-                title={row.original.is_active ? 'Deactivate user' : 'Activate user'}
+                title={row.original.is_active ? t('users.page.deactivateUser') : t('users.page.activateUser')}
                 className={row.original.is_active
                   ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"
                   : "text-red-400 hover:text-red-600 hover:bg-red-50"}
@@ -231,7 +233,7 @@ export function UsersPage() {
                   : <ToggleLeft className="w-5 h-5" />}
               </Button>
             </span>
-            <span title={isSelf ? 'No puedes eliminar tu propia cuenta' : undefined}>
+            <span title={isSelf ? t('users.page.cantDeleteSelf') : undefined}>
               <Button
                 variant="ghost"
                 size="sm"
@@ -246,17 +248,17 @@ export function UsersPage() {
         );
       },
     },
-  ], [currentUserId]);
+  ], [currentUserId, t]);
 
   return (
     <>
       <Helmet>
-        <title>Users - Dashboard</title>
+        <title>{t('users.title')} - Dashboard</title>
       </Helmet>
 
       <CRUDPage
-        title="User Management"
-        description="Manage system users, roles, and permissions"
+        title={t('users.page.managementTitle')}
+        description={t('users.page.managementDesc')}
         data={users}
         isLoading={isLoading || isLoaderVisible}
         error={error}
@@ -268,13 +270,13 @@ export function UsersPage() {
             loading={isLoading}
             getRowId={(user: User) => user.user_id}
             bulkActions={bulkActions}
-            createButtonLabel="New User"
+            createButtonLabel={t('users.page.newUser')}
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(user) => openModal('edit', user)}
             searchable={true}
             enablePagination={true}
             pageSize={10}
-            emptyMessage="No users found. Create your first user to get started!"
+            emptyMessage={t('users.page.emptyMessage')}
           />
         }
       />
@@ -294,22 +296,13 @@ export function UsersPage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete user permanently?</ModalTitle>
+            <ModalTitle>{t('users.page.deleteTitle')}</ModalTitle>
             <ModalDescription>
-              {showDeleteConfirm.users.length === 1 ? (
-                <>
-                  This action will permanently delete the user{' '}
-                  <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.users[0]?.name || 'selected'}"
-                  </span>
-                  .
-                </>
-              ) : (
-                <>
-                  This action will permanently delete <strong>{showDeleteConfirm.users.length}</strong> users.
-                </>
-              )}
-              {' '}This action cannot be undone and all data will be lost.
+              {showDeleteConfirm.users.length === 1
+                ? t('users.page.deleteSingleDesc', { name: showDeleteConfirm.users[0]?.name || '' })
+                : t('users.page.deleteMultipleDesc', { count: String(showDeleteConfirm.users.length) })
+              }
+              {' '}{t('users.page.deleteWarning')}
             </ModalDescription>
           </ModalHeader>
 
@@ -320,7 +313,7 @@ export function UsersPage() {
               disabled={deleteUser.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -328,7 +321,7 @@ export function UsersPage() {
               loading={deleteUser.isPending}
               className="w-full sm:w-auto"
             >
-              Delete Permanently
+              {t('users.page.deletePermanently')}
             </Button>
           </ModalFooter>
         </ModalContent>

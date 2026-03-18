@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users } from 'lucide-react';
 import { z } from 'zod';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { ModalForm } from '../../templates/modal-form';
 import { UserForm } from './user-form';
 import { User, CreateUserData } from '../../../hooks/useUsers';
@@ -50,6 +51,7 @@ export function UserModal({
   user,
   isLoading = false,
 }: UserModalProps) {
+  const { t } = useTranslation();
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -64,24 +66,24 @@ export function UserModal({
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Create New User';
+        return t('users.modal.createTitle');
       case 'edit':
-        return `Edit ${user?.name}`;
+        return t('users.modal.editTitle', { name: user?.name || '' });
       case 'view':
-        return `${user?.name} Details`;
+        return t('users.modal.viewTitle', { name: user?.name || '' });
       default:
-        return 'User';
+        return t('users.modal.defaultTitle');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Add a new user to the system. They will need to be invited to organizations separately.';
+        return t('users.modal.createDescription');
       case 'edit':
-        return `Modify the global user information for "${user?.name}". Organization-specific roles are managed in the team section.`;
+        return t('users.modal.editDescription', { name: user?.name || '' });
       case 'view':
-        return `Global user information for "${user?.name}". Organization roles and permissions are managed separately.`;
+        return t('users.modal.viewDescription', { name: user?.name || '' });
       default:
         return '';
     }

@@ -93,7 +93,7 @@ export function PricingCard({
   return (
     <div
       className={`
-        relative flex flex-col rounded-2xl border-2 p-8 shadow-sm
+        relative flex flex-col rounded-2xl border-2 p-6 shadow-sm
         ${isPopular
           ? 'border-green-500 shadow-lg shadow-green-500/20'
           : 'border-gray-200 hover:border-gray-300'
@@ -134,15 +134,19 @@ export function PricingCard({
       {/* Price */}
       <div className="mb-6">
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold text-gray-900">
-            ${displayPrice.toFixed(0)}
+          <span className="text-3xl font-bold text-gray-900">
+            {plan.price_monthly === 0
+              ? t('pricing.free')
+              : `$ ${displayPrice.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`}
           </span>
-          <span className="text-gray-600">{t('pricing.perMonth')}</span>
+          {plan.price_monthly > 0 && (
+            <span className="text-gray-600">{t('pricing.perMonth')}</span>
+          )}
         </div>
         {billingCycle === 'yearly' && (
           <div className="mt-1 flex items-center gap-2">
             <span className="text-sm text-gray-500">
-              ${plan.price_yearly.toFixed(0)} {t('pricing.billedAnnually')}
+              {`$ ${plan.price_yearly.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`} {t('pricing.billedAnnually')}
             </span>
             {savings > 0 && (
               <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">

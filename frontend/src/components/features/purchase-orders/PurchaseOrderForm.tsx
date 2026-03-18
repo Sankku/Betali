@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,7 @@ interface PurchaseOrderFormProps {
 }
 
 export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrderFormProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -64,8 +66,20 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
   const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ enabled: true });
   const { data: products } = useProducts();
 
-  const { watch, setValue, register } = form;
+  const { watch, setValue, register, formState: { errors: formErrors } } = form;
+
+  // Normalize a money field to 2 decimal places on blur.
+  const handleMoneyBlur =
+    (field: 'discount_amount' | 'tax_amount' | 'shipping_amount') =>
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const val = parseFloat(e.target.value);
+      setValue(field, isNaN(val) ? 0 : parseFloat(val.toFixed(2)));
+    };
   const watchedValues = watch();
+
+  // Register required fields so RHF tracks validation
+  register('supplier_id', { required: t('purchaseOrders.form.supplierRequired') });
+  register('warehouse_id', { required: t('purchaseOrders.form.warehouseRequired') });
 
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
@@ -78,15 +92,15 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
       refetchWarehouses();
     }
 
-    if (watchedValues.items && watchedValues.items.length > 0) {
+    if (watchedValues.items) {
       const itemsInSync =
         items.length === watchedValues.items.length &&
         items.every((item, index) => {
           const watchedItem = watchedValues.items[index];
           return (
-            item.product_id === watchedItem.product_id &&
-            item.quantity === watchedItem.quantity &&
-            item.unit_price === watchedItem.unit_price
+            item.product_id === watchedItem?.product_id &&
+            item.quantity === watchedItem?.quantity &&
+            item.unit_price === watchedItem?.unit_price
           );
         });
 
@@ -94,9 +108,9 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
         const purchaseOrderItems: PurchaseOrderItem[] = watchedValues.items.map((item) => {
           const product = products?.data?.find((p) => p.product_id === item.product_id);
           return {
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
+            product_id: item.product_id ?? '',
+            quantity: item.quantity ?? 1,
+            unit_price: item.unit_price ?? 0,
             notes: item.notes,
             product_name: product?.name,
             product_sku: product?.sku,
@@ -136,7 +150,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
    */
   const handleRemoveItem = (index: number) => {
     if (items.length === 1) {
-      setErrors({ ...errors, items: 'Debe haber al menos un producto en la orden de compra' });
+      setErrors({ ...errors, items: t('purchaseOrders.form.minOneProduct') });
       return;
     }
 
@@ -184,14 +198,19 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Supplier */}
         <div className="space-y-2">
-          <Label htmlFor="supplier_id">Proveedor *</Label>
+          <Label htmlFor="supplier_id">
+            {t('purchaseOrders.form.supplierLabel')} <span className="text-danger-500 ml-0.5">*</span>
+          </Label>
           <Select
             value={watchedValues.supplier_id}
-            onValueChange={(value) => setValue('supplier_id', value)}
+            onValueChange={(value) => setValue('supplier_id', value, { shouldValidate: true })}
             disabled={isViewMode}
           >
-            <SelectTrigger id="supplier_id">
-              <SelectValue placeholder="Seleccionar proveedor" />
+            <SelectTrigger
+              id="supplier_id"
+              className={formErrors.supplier_id ? 'border-danger-500 focus:ring-danger-500' : ''}
+            >
+              <SelectValue placeholder={t('purchaseOrders.form.supplierPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {suppliers?.map((supplier) => (
@@ -201,24 +220,32 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
               ))}
             </SelectContent>
           </Select>
+          {formErrors.supplier_id && (
+            <p className="text-xs text-danger-500">{formErrors.supplier_id.message}</p>
+          )}
         </div>
 
         {/* Warehouse */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="warehouse_id">Almacén *</Label>
+            <Label htmlFor="warehouse_id">
+              {t('purchaseOrders.form.warehouseLabel')} <span className="text-danger-500 ml-0.5">*</span>
+            </Label>
             <TooltipHelp
-              content="Almacén donde se recibirá y almacenará la mercadería de esta orden de compra."
+              content={t('purchaseOrders.form.warehouseTooltip')}
               position="right"
             />
           </div>
           <Select
             value={watchedValues.warehouse_id}
-            onValueChange={(value) => setValue('warehouse_id', value)}
+            onValueChange={(value) => setValue('warehouse_id', value, { shouldValidate: true })}
             disabled={isViewMode}
           >
-            <SelectTrigger id="warehouse_id">
-              <SelectValue placeholder="Seleccionar almacén" />
+            <SelectTrigger
+              id="warehouse_id"
+              className={formErrors.warehouse_id ? 'border-danger-500 focus:ring-danger-500' : ''}
+            >
+              <SelectValue placeholder={t('purchaseOrders.form.warehousePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {warehouses?.data?.map((warehouse) => (
@@ -228,14 +255,17 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
               ))}
             </SelectContent>
           </Select>
+          {formErrors.warehouse_id && (
+            <p className="text-xs text-danger-500">{formErrors.warehouse_id.message}</p>
+          )}
         </div>
 
         {/* Expected Delivery Date */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="expected_delivery_date">Fecha de Entrega Esperada</Label>
+            <Label htmlFor="expected_delivery_date">{t('purchaseOrders.form.deliveryDate')}</Label>
             <TooltipHelp
-              content="Fecha estimada en la que esperas recibir la mercadería del proveedor. Ayuda a planificar el inventario."
+              content={t('purchaseOrders.form.deliveryDateTooltip')}
               position="right"
             />
           </div>
@@ -246,20 +276,20 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             }}
             minDate={new Date(getMinDeliveryDate() + 'T00:00:00')}
             disabled={isViewMode}
-            placeholder="Seleccionar fecha"
+            placeholder={t('purchaseOrders.form.deliveryDatePlaceholder')}
           />
         </div>
 
         {/* Status */}
         <div className="space-y-2">
-          <Label htmlFor="status">Estado *</Label>
+          <Label htmlFor="status">{t('purchaseOrders.form.statusLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
           <Select
             value={watchedValues.status}
             onValueChange={(value) => setValue('status', value as PurchaseOrderStatus)}
             disabled={isViewMode || isEditMode} // Status should be changed via status update endpoint
           >
             <SelectTrigger id="status">
-              <SelectValue placeholder="Seleccionar estado" />
+              <SelectValue placeholder={t('purchaseOrders.form.statusPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
@@ -271,7 +301,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
           </Select>
           {isEditMode && (
             <p className="text-sm text-muted-foreground">
-              El estado se actualiza mediante acciones específicas
+              {t('purchaseOrders.form.statusNote')}
             </p>
           )}
         </div>
@@ -279,12 +309,12 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
       {/* Line Items */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Productos</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle>{t('purchaseOrders.form.productsTitle')}</CardTitle>
           {!isViewMode && (
-            <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Producto
+            <Button type="button" size="sm" className="flex items-center gap-2" onClick={handleAddItem}>
+              <Plus className="h-4 w-4 text-white" />
+              {t('purchaseOrders.form.addProduct')}
             </Button>
           )}
         </CardHeader>
@@ -302,14 +332,14 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                   {/* Product Selection */}
                   <div className="md:col-span-5">
-                    <Label htmlFor={`item-product-${index}`}>Producto *</Label>
+                    <Label htmlFor={`item-product-${index}`}>{t('purchaseOrders.form.productLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
                     <Select
-                      value={item.product_id}
+                      value={item.product_id || ''}
                       onValueChange={(value) => handleItemChange(index, 'product_id', value)}
                       disabled={isViewMode}
                     >
                       <SelectTrigger id={`item-product-${index}`}>
-                        <SelectValue placeholder="Seleccionar producto" />
+                        <SelectValue placeholder={t('purchaseOrders.form.productPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {products?.data?.map((product) => (
@@ -323,38 +353,46 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
                   {/* Quantity */}
                   <div className="md:col-span-2">
-                    <Label htmlFor={`item-quantity-${index}`}>Cantidad *</Label>
+                    <Label htmlFor={`item-quantity-${index}`}>{t('purchaseOrders.form.quantityLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
                     <Input
                       id={`item-quantity-${index}`}
                       type="number"
                       min="1"
-                      value={item.quantity}
+                      value={item.quantity || ''}
                       onChange={(e) =>
-                        handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)
+                        handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)
                       }
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!val || val < 1) handleItemChange(index, 'quantity', 1);
+                      }}
                       disabled={isViewMode}
                     />
                   </div>
 
                   {/* Unit Price */}
                   <div className="md:col-span-2">
-                    <Label htmlFor={`item-price-${index}`}>Precio Unitario *</Label>
+                    <Label htmlFor={`item-price-${index}`}>{t('purchaseOrders.form.unitPrice')} <span className="text-danger-500 ml-0.5">*</span></Label>
                     <Input
                       id={`item-price-${index}`}
                       type="number"
                       min="0"
                       step="0.01"
-                      value={item.unit_price}
+                      value={item.unit_price ?? ''}
                       onChange={(e) =>
                         handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)
                       }
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value);
+                        handleItemChange(index, 'unit_price', isNaN(val) ? 0 : parseFloat(val.toFixed(2)));
+                      }}
                       disabled={isViewMode}
                     />
                   </div>
 
                   {/* Line Total */}
                   <div className="md:col-span-2">
-                    <Label>Total</Label>
+                    <Label>{t('purchaseOrders.form.lineTotal')}</Label>
                     <div className="h-10 flex items-center font-semibold text-neutral-900">
                       ${calculateLineTotal(item.quantity, item.unit_price).toFixed(2)}
                     </div>
@@ -378,10 +416,10 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
                 {/* Item Notes */}
                 <div className="mt-2">
-                  <Label htmlFor={`item-notes-${index}`}>Notas del Producto (Opcional)</Label>
+                  <Label htmlFor={`item-notes-${index}`}>{t('purchaseOrders.form.itemNotes')}</Label>
                   <Input
                     id={`item-notes-${index}`}
-                    placeholder="Notas adicionales sobre este producto..."
+                    placeholder={t('purchaseOrders.form.itemNotesPlaceholder')}
                     value={item.notes || ''}
                     onChange={(e) => handleItemChange(index, 'notes', e.target.value)}
                     disabled={isViewMode}
@@ -396,16 +434,16 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
       {/* Additional Costs & Totals */}
       <Card>
         <CardHeader>
-          <CardTitle>Costos Adicionales y Totales</CardTitle>
+          <CardTitle>{t('purchaseOrders.form.costsTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Discount */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="discount_amount">Descuento</Label>
+                <Label htmlFor="discount_amount">{t('purchaseOrders.form.discountLabel')}</Label>
                 <TooltipHelp
-                  content="Monto de descuento otorgado por el proveedor. Se restará del subtotal."
+                  content={t('purchaseOrders.form.discountTooltip')}
                   position="right"
                 />
               </div>
@@ -416,6 +454,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                 step="0.01"
                 placeholder="0.00"
                 {...register('discount_amount', { valueAsNumber: true })}
+                onBlur={handleMoneyBlur('discount_amount')}
                 disabled={isViewMode}
               />
             </div>
@@ -423,9 +462,9 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             {/* Tax */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="tax_amount">Impuestos</Label>
+                <Label htmlFor="tax_amount">{t('purchaseOrders.form.taxLabel')}</Label>
                 <TooltipHelp
-                  content="Monto de impuestos aplicables a esta compra (IVA, etc.). Se sumará al total."
+                  content={t('purchaseOrders.form.taxTooltip')}
                   position="right"
                 />
               </div>
@@ -436,6 +475,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                 step="0.01"
                 placeholder="0.00"
                 {...register('tax_amount', { valueAsNumber: true })}
+                onBlur={handleMoneyBlur('tax_amount')}
                 disabled={isViewMode}
               />
             </div>
@@ -443,9 +483,9 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             {/* Shipping */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="shipping_amount">Envío</Label>
+                <Label htmlFor="shipping_amount">{t('purchaseOrders.form.shippingLabel')}</Label>
                 <TooltipHelp
-                  content="Costo de envío o flete de la mercadería. Se sumará al total de la compra."
+                  content={t('purchaseOrders.form.shippingTooltip')}
                   position="right"
                 />
               </div>
@@ -456,6 +496,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                 step="0.01"
                 placeholder="0.00"
                 {...register('shipping_amount', { valueAsNumber: true })}
+                onBlur={handleMoneyBlur('shipping_amount')}
                 disabled={isViewMode}
               />
             </div>
@@ -464,28 +505,28 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             <div className="space-y-2">
               <div className="border rounded-lg p-4 bg-muted/30">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-neutral-800">Subtotal:</span>
+                  <span className="text-sm font-medium text-neutral-800">{t('purchaseOrders.form.subtotal')}</span>
                   <span className="font-semibold text-neutral-900">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-neutral-800">Descuento:</span>
+                  <span className="text-sm font-medium text-neutral-800">{t('purchaseOrders.form.discountSummary')}</span>
                   <span className="font-semibold text-green-600">
                     -${(watchedValues.discount_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-neutral-800">Impuestos:</span>
+                  <span className="text-sm font-medium text-neutral-800">{t('purchaseOrders.form.taxSummary')}</span>
                   <span className="font-semibold text-neutral-900">${(watchedValues.tax_amount || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-neutral-800">Envío:</span>
+                  <span className="text-sm font-medium text-neutral-800">{t('purchaseOrders.form.shippingSummary')}</span>
                   <span className="font-semibold text-neutral-900">
                     ${(watchedValues.shipping_amount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-neutral-900">TOTAL:</span>
+                    <span className="font-bold text-neutral-900">{t('purchaseOrders.form.totalLabel')}</span>
                     <span className="font-bold text-lg text-neutral-900">${total.toFixed(2)}</span>
                   </div>
                 </div>
@@ -497,10 +538,10 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas Adicionales</Label>
+        <Label htmlFor="notes">{t('purchaseOrders.form.notesLabel')}</Label>
         <Textarea
           id="notes"
-          placeholder="Notas generales sobre la orden de compra..."
+          placeholder={t('purchaseOrders.form.notesPlaceholder')}
           rows={4}
           {...register('notes')}
           disabled={isViewMode}

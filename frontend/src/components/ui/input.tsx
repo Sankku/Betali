@@ -24,11 +24,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       variant = 'default',
       helpText,
       disabled,
+      onFocus,
       ...props
     },
     ref
   ) => {
     const inputId = props.id || props.name;
+
+    // Auto-select all text on focus for number inputs so users can type to replace the value.
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (type === 'number') e.target.select();
+      onFocus?.(e);
+    };
 
     return (
       <div className="space-y-3">
@@ -48,6 +55,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           <input
             type={type}
+            onFocus={handleFocus}
             className={cn(
               'w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900',
               'placeholder:text-neutral-500',

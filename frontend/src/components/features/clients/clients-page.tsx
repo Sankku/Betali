@@ -322,7 +322,7 @@ export function ClientsPage() {
             createButtonId="create-client-button"
             onCreateClick={handleCreateClick}
             createButtonDisabled={atClientLimit}
-            createButtonTooltip={atClientLimit ? `You've reached the client limit (${clientLimit}) for your plan. Upgrade to add more.` : undefined}
+            createButtonTooltip={atClientLimit ? t('clients.page.clientLimitTooltip', { limit: String(clientLimit) }) : undefined}
             onRowDoubleClick={(client) => openModal('edit', client)}
             searchable={false}
             enablePagination={true}

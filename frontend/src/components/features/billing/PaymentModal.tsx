@@ -42,8 +42,9 @@ export function PaymentModal({
     });
 
     // Invalidate subscription queries
-    queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
-    queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+    queryClient.removeQueries({ queryKey: ['current-subscription'] });
+    queryClient.removeQueries({ queryKey: ['subscription-plans'] });
+    queryClient.removeQueries({ queryKey: ['feature-access'] });
 
     // Close modal and redirect
     onClose();

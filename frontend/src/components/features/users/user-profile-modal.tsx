@@ -36,6 +36,7 @@ export function UserProfileModal({
   const [isEditingName, setIsEditingName] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user, permissions } = userContext || {};
@@ -43,6 +44,9 @@ export function UserProfileModal({
   useEffect(() => {
     if (user) {
       setProfileName(user.name || '');
+    }
+    if (!isOpen) {
+      setLocalAvatarUrl(null);
     }
   }, [user, isOpen]);
 
@@ -83,7 +87,9 @@ export function UserProfileModal({
 
     setIsSaving(true);
     try {
-      await userService.uploadAvatar(file);
+      const result = await userService.uploadAvatar(file);
+      const newAvatarUrl = (result as any).avatar_url;
+      if (newAvatarUrl) setLocalAvatarUrl(newAvatarUrl);
       await onRefresh();
       toast.success(t('profile.profileUpdated'));
     } catch (error: any) {
@@ -172,7 +178,7 @@ export function UserProfileModal({
               {t('profile.displayPreferences')}
             </button>
             <div className="px-4 mt-6 mb-2">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Seguridad</h2>
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('profile.security')}</h2>
             </div>
             <button
               onClick={() => setActiveTab('permissions')}
@@ -208,19 +214,25 @@ export function UserProfileModal({
                 <div className="flex justify-between items-end mb-6">
                   <div className="relative group">
                     <div className="w-32 h-32 rounded-full border-4 border-white bg-white overflow-hidden shadow-sm flex items-center justify-center relative bg-gray-100">
-                      {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                      {(localAvatarUrl || user.avatar_url) ? (
+                        <img src={localAvatarUrl || user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
                         <UserIcon className="w-16 h-16 text-gray-400" />
                       )}
-                      
+
                       {/* Hover Overlay for Avatar */}
-                      <div 
+                      <div
                         onClick={handleAvatarClick}
-                        className="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white transition-opacity"
+                        className={`absolute inset-0 flex flex-col items-center justify-center cursor-pointer text-white transition-opacity ${isSaving ? 'bg-black/40' : 'bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100'}`}
                       >
-                        <Camera className="w-6 h-6 mb-1" />
-                        <span className="text-[10px] font-bold uppercase">{t('profile.uploadAvatar')}</span>
+                        {isSaving ? (
+                          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Camera className="w-6 h-6 mb-1" />
+                            <span className="text-[10px] font-bold uppercase">{t('profile.uploadAvatar')}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -328,7 +340,7 @@ export function UserProfileModal({
           {activeTab === 'permissions' && (
             <div className="p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('profile.permissionsOverview')}</h2>
-              <p className="text-gray-500 mb-6">Módulos a los que tienes acceso basado en tu rol activo.</p>
+              <p className="text-gray-500 mb-6">{t('profile.permissionsDesc')}</p>
               
               <div className="bg-white border text-gray-900 overflow-hidden border-gray-200 rounded-xl mb-6">
                 <div className="p-5 flex items-center border-b border-gray-100">

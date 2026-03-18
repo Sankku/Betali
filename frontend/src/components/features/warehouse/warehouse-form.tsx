@@ -4,6 +4,7 @@ import { Warehouse, MapPin } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Toggle } from '../../ui/toggle';
 import { FormSection } from '../../templates/form-section';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 export interface WarehouseFormData {
   name: string;
@@ -18,6 +19,7 @@ export interface WarehouseFormProps {
 }
 
 export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoading = false }) => {
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
   const {
     register,
@@ -43,7 +45,7 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'Not specified'}</span>
+        <span className="text-neutral-800">{value || t('warehouse.form.notSpecified')}</span>
       </div>
     </div>
   );
@@ -53,51 +55,51 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {isViewMode ? (
           <ViewField
-            label="Warehouse Name"
+            label={t('warehouse.form.warehouseName')}
             value={currentName}
             icon={<Warehouse className="inline h-4 w-4 mr-2" />}
-            description="Warehouse identification name"
+            description={t('warehouse.form.warehouseNameDesc')}
           />
         ) : (
           <Input
             {...register('name')}
-            label="Warehouse Name"
-            placeholder="E.g.: Central Warehouse"
+            label={t('warehouse.form.warehouseName')}
+            placeholder={t('warehouse.form.warehouseNamePlaceholder')}
             icon={<Warehouse className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.name?.message}
-            description="Warehouse identification name"
+            description={t('warehouse.form.warehouseNameDesc')}
             required
           />
         )}
         {isViewMode ? (
           <ViewField
-            label="Location"
+            label={t('warehouse.form.location')}
             value={currentLocation}
             icon={<MapPin className="inline h-4 w-4 mr-2" />}
-            description="Address or physical location"
+            description={t('warehouse.form.locationDesc')}
           />
         ) : (
           <Input
             {...register('location')}
-            label="Location"
-            placeholder="E.g.: Córdoba, Argentina"
+            label={t('warehouse.form.location')}
+            placeholder={t('warehouse.form.locationPlaceholder')}
             icon={<MapPin className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.location?.message}
-            description="Address or physical location"
+            description={t('warehouse.form.locationDesc')}
             required
           />
         )}
       </div>
-      <FormSection title="Configuration" variant="highlighted">
+      <FormSection title={t('warehouse.form.configuration')} variant="highlighted">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h5 className="text-sm font-medium text-neutral-900 mb-1">Warehouse Status</h5>
+            <h5 className="text-sm font-medium text-neutral-900 mb-1">{t('warehouse.form.warehouseStatus')}</h5>
             <p className="text-xs text-neutral-600">
               {currentIsActive
-                ? 'The warehouse is active and can receive stock movements.'
-                : 'The warehouse is inactive and cannot receive new movements.'}
+                ? t('warehouse.form.activeDesc')
+                : t('warehouse.form.inactiveDesc')}
             </p>
           </div>
           {isViewMode ? (
@@ -107,7 +109,7 @@ export const WarehouseForm: React.FC<WarehouseFormProps> = ({ form, mode, isLoad
                   currentIsActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}
               >
-                {currentIsActive ? 'Active' : 'Inactive'}
+                {currentIsActive ? t('common.active') : t('common.inactive')}
               </span>
             </div>
           ) : (

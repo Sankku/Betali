@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -60,13 +61,14 @@ interface SupplierFormProps {
   mode?: 'create' | 'edit' | 'view';
 }
 
-export function SupplierForm({ 
-  supplier, 
-  onSubmit, 
-  onCancel, 
+export function SupplierForm({
+  supplier,
+  onSubmit,
+  onCancel,
   isLoading = false,
   mode = 'create'
 }: SupplierFormProps) {
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
@@ -172,66 +174,66 @@ export function SupplierForm({
         <div className="border-b border-neutral-200 pb-4">
           <h3 className="text-lg font-semibold text-neutral-900 flex items-center">
             <Building className="h-5 w-5 mr-2 text-neutral-600" />
-            Información Básica
+            {t('suppliers.form.basicInfoTitle')}
             {watchedIsPreferred && (
               <Star className="ml-2 h-4 w-4 text-yellow-400 fill-current" />
             )}
           </h3>
-          <p className="text-sm text-neutral-600 mt-1">Información principal del proveedor</p>
+          <p className="text-sm text-neutral-600 mt-1">{t('suppliers.form.basicInfoDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             {...register('name')}
-            label="Nombre del Proveedor"
-            placeholder="Ingrese el nombre del proveedor"
+            label={t('suppliers.form.nameLabel')}
+            placeholder={t('suppliers.form.namePlaceholder')}
             icon={<Building className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
             error={errors.name?.message}
-            description="Nombre completo de la empresa proveedora"
+            description={t('suppliers.form.nameDesc')}
             required
           />
 
           <FormSelect
-            label="Tipo de Negocio"
+            label={t('suppliers.form.businessType')}
             value={watch('business_type') || ''}
             onValueChange={(value) => setValue('business_type', value)}
             options={businessTypeOptions}
             icon={<Building className="h-4 w-4" />}
-            description="Categoría del negocio del proveedor"
-            placeholder="Seleccionar tipo de negocio"
+            description={t('suppliers.form.businessTypeDesc')}
+            placeholder={t('suppliers.form.businessTypePlaceholder')}
             disabled={isViewMode || isLoading}
           />
 
           <Input
             {...register('cuit')}
-            label="CUIT"
+            label={t('suppliers.form.cuit')}
             placeholder="XX-XXXXXXXX-X"
             maxLength={13}
             icon={<CreditCard className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
             error={errors.cuit?.message}
-            description="Código Único de Identificación Tributaria"
+            description={t('suppliers.form.cuitDesc')}
             required
             onChange={handleCuitChange}
           />
 
           <Input
             {...register('contact_person')}
-            label="Persona de Contacto"
-            placeholder="Nombre del contacto principal"
+            label={t('suppliers.form.contactPerson')}
+            placeholder={t('suppliers.form.contactPersonPlaceholder')}
             icon={<Building className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
-            description="Persona responsable de contacto"
+            description={t('suppliers.form.contactPersonDesc')}
           />
         </div>
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-800 flex items-center">
             <Star className="h-4 w-4 mr-2 text-neutral-600" />
-            Preferencias
+            {t('suppliers.form.preferencesTitle')}
           </label>
-          <p className="text-xs text-neutral-600">Configuraciones especiales del proveedor</p>
+          <p className="text-xs text-neutral-600">{t('suppliers.form.preferencesDesc')}</p>
           <div className="flex items-center space-x-3">
             <Checkbox
               id="is_preferred"
@@ -241,7 +243,7 @@ export function SupplierForm({
             />
             <label htmlFor="is_preferred" className="text-sm text-neutral-700 flex items-center gap-2">
               <Star className="w-4 h-4 text-yellow-500" />
-              Marcar como proveedor preferido
+              {t('suppliers.form.markPreferred')}
             </label>
           </div>
         </div>
@@ -252,43 +254,43 @@ export function SupplierForm({
         <div className="border-b border-neutral-200 pb-4">
           <h3 className="text-lg font-semibold text-neutral-900 flex items-center">
             <Mail className="h-5 w-5 mr-2 text-neutral-600" />
-            Información de Contacto
+            {t('suppliers.form.contactInfoTitle')}
           </h3>
-          <p className="text-sm text-neutral-600 mt-1">Datos de comunicación del proveedor</p>
+          <p className="text-sm text-neutral-600 mt-1">{t('suppliers.form.contactInfoDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             {...register('email')}
-            label="Email"
+            label={t('suppliers.form.emailLabel')}
             type="email"
-            placeholder="proveedor@empresa.com"
+            placeholder={t('suppliers.form.emailPlaceholder')}
             icon={<Mail className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
             error={errors.email?.message}
-            description="Dirección de correo electrónico principal"
+            description={t('suppliers.form.emailDesc')}
             required
           />
 
           <Input
             {...register('phone')}
-            label="Teléfono"
-            placeholder="+54 11 4567-8900"
+            label={t('suppliers.form.phoneLabel')}
+            placeholder={t('suppliers.form.phonePlaceholder')}
             icon={<Phone className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
-            description="Número de teléfono de contacto"
+            description={t('suppliers.form.phoneDesc')}
           />
         </div>
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-800 flex items-center">
             <MapPin className="h-4 w-4 mr-2 text-neutral-600" />
-            Dirección
+            {t('suppliers.form.addressLabel')}
           </label>
-          <p className="text-xs text-neutral-600">Dirección completa del proveedor</p>
+          <p className="text-xs text-neutral-600">{t('suppliers.form.addressDesc')}</p>
           <Textarea
             {...register('address')}
-            placeholder="Calle, número, ciudad, provincia..."
+            placeholder={t('suppliers.form.addressPlaceholder')}
             disabled={isViewMode || isLoading}
             rows={3}
             className="resize-none"
@@ -297,12 +299,12 @@ export function SupplierForm({
 
         <Input
           {...register('website')}
-          label="Sitio Web"
-          placeholder="https://ejemplo.com"
+          label={t('suppliers.form.websiteLabel')}
+          placeholder={t('suppliers.form.websitePlaceholder')}
           icon={<Globe className="h-4 w-4" />}
           disabled={isViewMode || isLoading}
           error={errors.website?.message}
-          description="URL del sitio web corporativo (opcional)"
+          description={t('suppliers.form.websiteDesc')}
         />
       </div>
 
@@ -311,35 +313,35 @@ export function SupplierForm({
         <div className="border-b border-neutral-200 pb-4">
           <h3 className="text-lg font-semibold text-neutral-900 flex items-center">
             <CreditCard className="h-5 w-5 mr-2 text-neutral-600" />
-            Información Financiera
+            {t('suppliers.form.financialInfoTitle')}
           </h3>
-          <p className="text-sm text-neutral-600 mt-1">Configuraciones de pago y crédito</p>
+          <p className="text-sm text-neutral-600 mt-1">{t('suppliers.form.financialInfoDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormSelect
-            label="Términos de Pago"
+            label={t('suppliers.form.paymentTerms')}
             value={watch('payment_terms') || ''}
             onValueChange={(value) => setValue('payment_terms', value)}
             options={paymentTermsOptions}
             icon={<CreditCard className="h-4 w-4" />}
-            description="Condiciones de pago acordadas"
-            placeholder="Seleccionar términos"
+            description={t('suppliers.form.paymentTermsDesc')}
+            placeholder={t('suppliers.form.paymentTermsPlaceholder')}
             disabled={isViewMode || isLoading}
           />
 
           <Input
             {...register('tax_category')}
-            label="Categoría Fiscal"
-            placeholder="Ej: Responsable Inscripto"
+            label={t('suppliers.form.taxCategory')}
+            placeholder={t('suppliers.form.taxCategoryPlaceholder')}
             icon={<CreditCard className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
-            description="Situación tributaria del proveedor"
+            description={t('suppliers.form.taxCategoryDesc')}
           />
 
           <Input
             {...register('credit_limit')}
-            label="Límite de Crédito"
+            label={t('suppliers.form.creditLimit')}
             type="number"
             step="0.01"
             min="0"
@@ -347,7 +349,7 @@ export function SupplierForm({
             icon={<CreditCard className="h-4 w-4" />}
             disabled={isViewMode || isLoading}
             error={errors.credit_limit?.message}
-            description="Límite máximo de crédito en pesos"
+            description={t('suppliers.form.creditLimitDesc')}
           />
         </div>
       </div>
@@ -357,20 +359,20 @@ export function SupplierForm({
         <div className="border-b border-neutral-200 pb-4">
           <h3 className="text-lg font-semibold text-neutral-900 flex items-center">
             <Building className="h-5 w-5 mr-2 text-neutral-600" />
-            Información Adicional
+            {t('suppliers.form.additionalInfoTitle')}
           </h3>
-          <p className="text-sm text-neutral-600 mt-1">Notas y observaciones especiales</p>
+          <p className="text-sm text-neutral-600 mt-1">{t('suppliers.form.additionalInfoDesc')}</p>
         </div>
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-800 flex items-center">
             <Building className="h-4 w-4 mr-2 text-neutral-600" />
-            Notas y Observaciones
+            {t('suppliers.form.notesTitle')}
           </label>
-          <p className="text-xs text-neutral-600">Información adicional sobre el proveedor (opcional)</p>
+          <p className="text-xs text-neutral-600">{t('suppliers.form.notesDesc')}</p>
           <Textarea
             {...register('notes')}
-            placeholder="Información adicional, términos especiales, observaciones..."
+            placeholder={t('suppliers.form.notesPlaceholder')}
             disabled={isViewMode || isLoading}
             rows={4}
             className="resize-none"
@@ -380,27 +382,15 @@ export function SupplierForm({
 
       {/* Form Actions */}
       {!isViewMode && (
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
+        <div className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4 border-t border-neutral-200">
           {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+              {t('suppliers.form.cancel')}
+            </Button>
           )}
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
-            disabled={isLoading}
-          >
-            {isLoading && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            )}
-            {isCreateMode ? 'Crear Proveedor' : 'Actualizar Proveedor'}
-          </button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? t('suppliers.form.saving') : isCreateMode ? t('suppliers.form.create') : t('suppliers.form.update')}
+          </Button>
         </div>
       )}
     </form>

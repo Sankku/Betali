@@ -189,7 +189,7 @@ export default function Pricing() {
           </div>
 
           {/* Pricing Cards */}
-          <div className="mt-12 grid gap-8 lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
+          <div className="mt-12 grid gap-4 lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
             {plans?.map((plan) => {
               const isLoadingThisPlan = isCreatingSubscription && selectedPlanId === plan.plan_id;
               const isPendingPaymentPlan = currentSubscription?.subscription?.status === 'pending_payment'
@@ -475,7 +475,10 @@ export default function Pricing() {
               {t('pricing.customPlanDesc')}
             </p>
             <Button
-              onClick={() => navigate('/contact')}
+              onClick={() => {
+                navigator.clipboard.writeText('betali.business@gmail.com');
+                toast({ title: 'Email copiado al portapapeles', variant: 'default' });
+              }}
               className="mt-8 bg-white text-green-600 hover:bg-green-50 px-8 py-6 text-lg font-semibold h-auto"
             >
               {t('pricing.contactSales')}

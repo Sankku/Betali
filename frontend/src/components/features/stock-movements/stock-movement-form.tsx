@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar } from 'lucide-react';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { useStockMovementForm } from '../../../hooks/useStockMovementForm';
 import { StockMovementFormData } from '../../../services/api/stockMovementService';
 import { useProducts } from '../../../hooks/useProducts';
@@ -17,11 +18,11 @@ interface StockMovementFormProps {
   onCancel?: () => void;
 }
 
-const MOVEMENT_TYPES = [
-  { value: 'entry',      label: 'Entry',      description: 'Goods entry to inventory',         color: 'text-green-700' },
-  { value: 'exit',       label: 'Exit',        description: 'Goods exit from inventory',         color: 'text-red-700'   },
-  { value: 'adjustment', label: 'Adjustment',  description: 'Inventory correction',              color: 'text-blue-700'  },
-  { value: 'compliance', label: 'Compliance',  description: 'Regulatory compliance movement',    color: 'text-purple-700'},
+const MOVEMENT_TYPE_KEYS = [
+  { value: 'entry',      labelKey: 'stockMovements.types.entry',      descKey: 'stockMovements.types.entryDesc',      color: 'text-green-700' },
+  { value: 'exit',       labelKey: 'stockMovements.types.exit',       descKey: 'stockMovements.types.exitDesc',       color: 'text-red-700'   },
+  { value: 'adjustment', labelKey: 'stockMovements.types.adjustment', descKey: 'stockMovements.types.adjustmentDesc', color: 'text-blue-700'  },
+  { value: 'compliance', labelKey: 'stockMovements.types.compliance', descKey: 'stockMovements.types.complianceDesc', color: 'text-purple-700'},
 ];
 
 // ─── Tooltip wrapper ───────────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ export function StockMovementForm({
   isLoading = false,
   onCancel,
 }: StockMovementFormProps) {
+  const { t } = useTranslation();
   const productsQuery   = useProducts();
   const warehousesQuery = useWarehouses();
 
@@ -114,7 +116,7 @@ export function StockMovementForm({
   // ── helpers ──────────────────────────────────────────────────────────────────
   const getProductLabel = (productId: string) => {
     const p = validProducts.find(p => p.product_id === productId);
-    return p ? p.name : 'Product not found';
+    return p ? p.name : t('stockMovements.form.productNotFound');
   };
 
   const getProductSubtitle = (productId: string) => {
@@ -126,7 +128,7 @@ export function StockMovementForm({
 
   const getWarehouseLabel = (warehouseId: string) => {
     const w = validWarehouses.find((w: any) => w.warehouse_id === warehouseId);
-    return w ? w.name : 'Warehouse not found';
+    return w ? w.name : t('stockMovements.form.warehouseNotFound');
   };
 
   const getWarehouseSubtitle = (warehouseId: string) => {
@@ -134,8 +136,10 @@ export function StockMovementForm({
     return w?.location || '';
   };
 
-  const getMovementTypeLabel = (type: string) =>
-    MOVEMENT_TYPES.find(t => t.value === type)?.label || type;
+  const getMovementTypeLabel = (type: string) => {
+    const found = MOVEMENT_TYPE_KEYS.find(m => m.value === type);
+    return found ? t(found.labelKey as any) : type;
+  };
 
   // ── loading / error states ───────────────────────────────────────────────────
   if (productsLoading || warehousesLoading) {
@@ -143,7 +147,7 @@ export function StockMovementForm({
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center space-y-3">
           <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-medium text-neutral-600">Loading data...</span>
+          <span className="text-sm font-medium text-neutral-600">{t('stockMovements.form.loadingData')}</span>
         </div>
       </div>
     );
@@ -159,7 +163,7 @@ export function StockMovementForm({
             </svg>
           </div>
           <div>
-            <h3 className="text-red-800 font-semibold">Error loading data</h3>
+            <h3 className="text-red-800 font-semibold">{t('stockMovements.form.errorLoadingData')}</h3>
             <p className="text-red-700 text-sm mt-1">
               {productsError?.message || warehousesError?.message || 'Unknown error'}
             </p>
@@ -179,23 +183,23 @@ export function StockMovementForm({
         </label>
         {description && <p className="text-xs text-neutral-600">{description}</p>}
         <div className="w-full rounded-lg border-2 border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
-          <span className="text-neutral-900 font-medium">{value || 'Not specified'}</span>
+          <span className="text-neutral-900 font-medium">{value || t('stockMovements.form.notSpecified')}</span>
         </div>
       </div>
     );
 
     return (
       <div className="space-y-6">
-        <ViewField label="Movement Type"  value={getMovementTypeLabel(watchedValues.movement_type)} icon={<ArrowUpDown className="h-4 w-4" />} description="Type of stock operation" />
-        <ViewField label="Quantity"        value={watchedValues.quantity?.toString() || '0'}          icon={<Hash className="h-4 w-4" />}      description="Number of units" />
-        <ViewField label="Product"         value={getProductLabel(watchedValues?.product_id || '')}   icon={<Package className="h-4 w-4" />}   description="Affected product" />
-        <ViewField label="Warehouse"       value={getWarehouseLabel(watchedValues?.warehouse_id || '')} icon={<Warehouse className="h-4 w-4" />} description="Source/destination warehouse" />
-        <ViewField label="Reference"       value={watchedValues.reference || 'No reference'}          icon={<FileText className="h-4 w-4" />}  description="Additional notes or references" />
+        <ViewField label={t('stockMovements.form.movementType')}  value={getMovementTypeLabel(watchedValues.movement_type)} icon={<ArrowUpDown className="h-4 w-4" />} description={t('stockMovements.form.typeOfOperation')} />
+        <ViewField label={t('stockMovements.form.quantity')}        value={watchedValues.quantity?.toString() || '0'}          icon={<Hash className="h-4 w-4" />}      description={t('stockMovements.form.numberOfUnits')} />
+        <ViewField label={t('stockMovements.form.product')}         value={getProductLabel(watchedValues?.product_id || '')}   icon={<Package className="h-4 w-4" />}   description={t('stockMovements.form.affectedProduct')} />
+        <ViewField label={t('stockMovements.form.warehouse')}       value={getWarehouseLabel(watchedValues?.warehouse_id || '')} icon={<Warehouse className="h-4 w-4" />} description={t('stockMovements.form.sourceWarehouse')} />
+        <ViewField label={t('stockMovements.form.reference')}       value={watchedValues.reference || t('stockMovements.form.noReference')}          icon={<FileText className="h-4 w-4" />}  description={t('stockMovements.form.additionalNotes')} />
         <ViewField
-          label="Movement Date"
-          value={watchedValues.movement_date ? new Date(watchedValues.movement_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No date'}
+          label={t('stockMovements.form.movementDate')}
+          value={watchedValues.movement_date ? new Date(watchedValues.movement_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : t('stockMovements.form.noDate')}
           icon={<Calendar className="h-4 w-4" />}
-          description="Date of operation"
+          description={t('stockMovements.form.dateOfOperation')}
         />
       </div>
     );
@@ -211,22 +215,22 @@ export function StockMovementForm({
 
       {/* Movement Type — full width */}
       <FormField
-        label="Movement Type"
-        description="Select the type of stock operation"
+        label={t('stockMovements.form.movementType')}
+        description={t('stockMovements.form.movementTypeDesc')}
         icon={<ArrowUpDown className="h-4 w-4" />}
         required
         error={getFieldError('movement_type')}
       >
         <Select value={watchedValues.movement_type} onValueChange={v => setValue('movement_type', v)} disabled={isLoading}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select movement type" />
+            <SelectValue placeholder={t('stockMovements.form.movementTypePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            {MOVEMENT_TYPES.map(type => (
+            {MOVEMENT_TYPE_KEYS.map(type => (
               <SelectItem key={type.value} value={type.value}>
                 <div className="flex flex-col gap-0.5">
-                  <span className={`font-semibold ${type.color}`}>{type.label}</span>
-                  <span className="text-xs text-neutral-500">{type.description}</span>
+                  <span className={`font-semibold ${type.color}`}>{t(type.labelKey as any)}</span>
+                  <span className="text-xs text-neutral-500">{t(type.descKey as any)}</span>
                 </div>
               </SelectItem>
             ))}
@@ -237,8 +241,8 @@ export function StockMovementForm({
       {/* Quantity + Date — 2 col grid, aligned via FormField min-h header */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <FormField
-          label="Quantity"
-          description="Number of units in the movement (whole numbers only)"
+          label={t('stockMovements.form.quantity')}
+          description={t('stockMovements.form.quantityDesc')}
           icon={<Hash className="h-4 w-4" />}
           required
           error={getFieldError('quantity')}
@@ -255,8 +259,8 @@ export function StockMovementForm({
         </FormField>
 
         <FormField
-          label="Movement Date"
-          description="Date when the operation was performed"
+          label={t('stockMovements.form.movementDate')}
+          description={t('stockMovements.form.movementDateDesc')}
           icon={<Calendar className="h-4 w-4" />}
           required
           error={getFieldError('movement_date')}
@@ -275,8 +279,8 @@ export function StockMovementForm({
       {/* Product + Warehouse — 2 col grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <FormField
-          label="Product"
-          description="Select the product for the movement"
+          label={t('stockMovements.form.product')}
+          description={t('stockMovements.form.productDesc')}
           icon={<Package className="h-4 w-4" />}
           required
           error={getFieldError('product_id')}
@@ -284,11 +288,11 @@ export function StockMovementForm({
           <WithTooltip label={selectedProductLabel}>
             <Select value={watchedValues.product_id} onValueChange={v => setValue('product_id', v)} disabled={isLoading}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a product" />
+                <SelectValue placeholder={t('stockMovements.form.productPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {validProducts.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">No products available</div>
+                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noProductsAvailable')}</div>
                 ) : (
                   validProducts
                     .filter(p => p?.product_id && p?.name)
@@ -319,8 +323,8 @@ export function StockMovementForm({
         </FormField>
 
         <FormField
-          label="Warehouse"
-          description="Select the source or destination warehouse"
+          label={t('stockMovements.form.warehouse')}
+          description={t('stockMovements.form.warehouseDesc')}
           icon={<Warehouse className="h-4 w-4" />}
           required
           error={getFieldError('warehouse_id')}
@@ -328,11 +332,11 @@ export function StockMovementForm({
           <WithTooltip label={selectedWarehouseLabel}>
             <Select value={watchedValues.warehouse_id} onValueChange={v => setValue('warehouse_id', v)} disabled={isLoading}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a warehouse" />
+                <SelectValue placeholder={t('stockMovements.form.warehousePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {validWarehouses.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">No warehouses available</div>
+                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noWarehousesAvailable')}</div>
                 ) : (
                   validWarehouses
                     .filter((w: any) => w?.warehouse_id && w?.name)
@@ -359,14 +363,14 @@ export function StockMovementForm({
 
       {/* Reference — full width */}
       <FormField
-        label="Reference"
-        description="Additional notes or references (optional)"
+        label={t('stockMovements.form.reference')}
+        description={t('stockMovements.form.referenceDesc')}
         icon={<FileText className="h-4 w-4" />}
         error={getFieldError('reference')}
       >
         <Textarea
           {...register('reference')}
-          placeholder="Enter references, notes or observations..."
+          placeholder={t('stockMovements.form.referencePlaceholder')}
           disabled={isLoading}
           rows={3}
           className="resize-none"
@@ -382,7 +386,7 @@ export function StockMovementForm({
             className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             disabled={isLoading}
           >
-            Cancel
+            {t('stockMovements.form.cancel')}
           </button>
           <button
             type="submit"
@@ -392,7 +396,7 @@ export function StockMovementForm({
             {isLoading && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             )}
-            {mode === 'create' ? 'Create Movement' : 'Save Changes'}
+            {mode === 'create' ? t('stockMovements.form.createMovement') : t('stockMovements.form.saveChanges')}
           </button>
         </div>
       )}

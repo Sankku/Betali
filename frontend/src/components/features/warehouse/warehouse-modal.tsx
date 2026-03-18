@@ -6,6 +6,7 @@ import { Warehouse } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { WarehouseForm, WarehouseFormData } from './warehouse-form';
 import { WarehouseStats } from './warehouse-stats';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 const warehouseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -50,6 +51,7 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const form = useForm<WarehouseFormData>({
     resolver: zodResolver(warehouseSchema),
     defaultValues: {
@@ -62,24 +64,24 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Create New Warehouse';
+        return t('warehouse.modal.createTitle');
       case 'edit':
-        return `Edit ${warehouse?.name}`;
+        return t('warehouse.modal.editTitle', { name: warehouse?.name });
       case 'view':
-        return `${warehouse?.name} Details`;
+        return t('warehouse.modal.viewTitle', { name: warehouse?.name });
       default:
-        return 'Warehouse';
+        return t('warehouse.title');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Complete the information to create a new warehouse in the system.';
+        return t('warehouse.modal.createDescription');
       case 'edit':
-        return `Modify the fields you want to update for "${warehouse?.name}".`;
+        return t('warehouse.modal.editDescription', { name: warehouse?.name });
       case 'view':
-        return `Detailed information for warehouse "${warehouse?.name}" and its statistics.`;
+        return t('warehouse.modal.viewDescription', { name: warehouse?.name });
       default:
         return '';
     }

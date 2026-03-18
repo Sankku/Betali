@@ -77,13 +77,12 @@ export function useCreateOrder() {
 
   return useMutation({
     mutationFn: (orderData: CreateOrderData) => orderService.createOrder(orderData),
-    onSuccess: (newOrder) => {
-      // Invalidate and refetch orders list
+    onSuccess: (response) => {
+      const order = (response as any)?.data ?? response;
+
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
-
-      // Add the new order to cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, newOrder.order_id), newOrder);
+      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
 
       toast.success('Order created successfully');
     },
@@ -103,12 +102,15 @@ export function useUpdateOrder() {
   return useMutation({
     mutationFn: ({ orderId, orderData }: { orderId: string; orderData: UpdateOrderData }) =>
       orderService.updateOrder(orderId, orderData),
-    onSuccess: (updatedOrder) => {
-      // Update specific order in cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, updatedOrder.order_id), updatedOrder);
+    onSuccess: (response) => {
+      // Backend returns { success, data: order } — unwrap to get the actual order
+      const order = (response as any)?.data ?? response;
 
-      // Invalidate orders list to reflect changes
-      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
+      // Update detail cache at the correct key
+      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
+
+      // Refetch list immediately so the grid reflects the new totals
+      queryClient.refetchQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
       toast.success('Order updated successfully');
@@ -129,17 +131,14 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: Order['status'] }) =>
       orderService.updateOrderStatus(orderId, status),
-    onSuccess: (updatedOrder) => {
-      // Update specific order in cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, updatedOrder.order_id), updatedOrder);
+    onSuccess: (response) => {
+      const order = (response as any)?.data ?? response;
 
-      // Invalidate orders list to reflect changes
+      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
-      // If order was marked as shipped, invalidate stock-related queries
-      // because stock deduction happens on the backend
-      if (updatedOrder.status === 'shipped') {
+      if (order.status === 'shipped') {
         queryClient.invalidateQueries({ queryKey: ['stock'] });
         queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });

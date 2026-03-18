@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Building2 } from "lucide-react";
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalCloseButton } from "../../ui/modal";
 import { Button } from "../../ui/button";
 import { Organization } from "../../../types/organization";
@@ -74,10 +75,11 @@ export function OrganizationModal({
     onSubmit(formData);
   };
 
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
-  const title = mode === 'create' ? 'Create Organization' : 
-               mode === 'edit' ? 'Edit Organization' : 
-               'Organization Details';
+  const title = mode === 'create' ? t('organizations.modal.createTitle') :
+               mode === 'edit' ? t('organizations.modal.editTitle') :
+               t('organizations.modal.viewTitle');
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
@@ -90,9 +92,9 @@ export function OrganizationModal({
           <div>
             <ModalTitle>{title}</ModalTitle>
             <ModalDescription>
-              {mode === 'create' && 'Create a new organization with isolated data and team management'}
-              {mode === 'edit' && 'Update organization information and settings'}
-              {mode === 'view' && 'View organization details and current status'}
+              {mode === 'create' && t('organizations.modal.createDescription')}
+              {mode === 'edit' && t('organizations.modal.editDescription')}
+              {mode === 'view' && t('organizations.modal.viewDescription')}
             </ModalDescription>
           </div>
         </div>
@@ -103,7 +105,7 @@ export function OrganizationModal({
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Organization Name *
+                {t('organizations.modal.nameLabel')}
               </label>
               <input
                 type="text"
@@ -112,14 +114,14 @@ export function OrganizationModal({
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 disabled={isViewMode}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
-                placeholder="Enter organization name"
+                placeholder={t('organizations.modal.namePlaceholder')}
                 required
               />
             </div>
 
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                Slug *
+                {t('organizations.modal.slugLabel')}
               </label>
               <input
                 type="text"
@@ -128,19 +130,19 @@ export function OrganizationModal({
                 onChange={(e) => handleInputChange('slug', e.target.value)}
                 disabled={isViewMode}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
-                placeholder="organization-slug"
+                placeholder={t('organizations.modal.slugPlaceholder')}
                 pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
                 title="Only lowercase letters, numbers, and hyphens are allowed"
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                URL-friendly identifier (auto-generated from name)
+                {t('organizations.modal.slugHint')}
               </p>
             </div>
 
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+                {t('organizations.modal.descriptionLabel')}
               </label>
               <textarea
                 id="description"
@@ -148,7 +150,7 @@ export function OrganizationModal({
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 disabled={isViewMode}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
-                placeholder="Enter organization description"
+                placeholder={t('organizations.modal.descriptionPlaceholder')}
                 rows={3}
               />
             </div>
@@ -163,7 +165,7 @@ export function OrganizationModal({
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
               />
               <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                Active Organization
+                {t('organizations.modal.activeLabel')}
               </label>
             </div>
           </div>
@@ -177,7 +179,7 @@ export function OrganizationModal({
               onClick={onClose}
               disabled={isLoading}
             >
-              {isViewMode ? 'Close' : 'Cancel'}
+              {isViewMode ? t('organizations.modal.closeButton') : t('organizations.modal.cancelButton')}
             </Button>
             {!isViewMode && (
               <Button
@@ -185,7 +187,7 @@ export function OrganizationModal({
                 loading={isLoading}
                 disabled={!formData.name.trim() || isLoading}
               >
-                {mode === 'create' ? 'Create Organization' : 'Update Organization'}
+                {mode === 'create' ? t('organizations.modal.createButton') : t('organizations.modal.updateButton')}
               </Button>
             )}
           </div>

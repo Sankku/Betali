@@ -2,6 +2,7 @@ import { useState } from "react";
 import { User, Settings, Shield, ShieldCheck, Eye } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { useUserContextSwitcher } from "../../../context/UserContextSwitcher";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface RoleSwitcherModalProps {
   isOpen: boolean;
@@ -18,41 +19,42 @@ interface UserProfile {
   is_active: boolean;
 }
 
-const roleConfig = {
-  super_admin: {
-    label: 'Super Admin',
-    icon: <ShieldCheck className="w-4 h-4" />,
-    color: 'text-red-600 bg-red-100',
-    description: 'Full system access'
-  },
-  admin: {
-    label: 'Administrator',
-    icon: <Shield className="w-4 h-4" />,
-    color: 'text-purple-600 bg-purple-100',
-    description: 'Administrative privileges'
-  },
-  manager: {
-    label: 'Manager',
-    icon: <Settings className="w-4 h-4" />,
-    color: 'text-blue-600 bg-blue-100',
-    description: 'Management access'
-  },
-  employee: {
-    label: 'Employee',
-    icon: <User className="w-4 h-4" />,
-    color: 'text-green-600 bg-green-100',
-    description: 'Standard user access'
-  },
-  viewer: {
-    label: 'Viewer',
-    icon: <Eye className="w-4 h-4" />,
-    color: 'text-gray-600 bg-gray-100',
-    description: 'Read-only access'
-  }
-};
-
 export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
+
+  const roleConfig = {
+    super_admin: {
+      label: t('users.roleSwitcher.roleLabels.super_admin'),
+      icon: <ShieldCheck className="w-4 h-4" />,
+      color: 'text-red-600 bg-red-100',
+      description: t('users.roleSwitcher.roleDescriptions.super_admin'),
+    },
+    admin: {
+      label: t('users.roleSwitcher.roleLabels.admin'),
+      icon: <Shield className="w-4 h-4" />,
+      color: 'text-purple-600 bg-purple-100',
+      description: t('users.roleSwitcher.roleDescriptions.admin'),
+    },
+    manager: {
+      label: t('users.roleSwitcher.roleLabels.manager'),
+      icon: <Settings className="w-4 h-4" />,
+      color: 'text-blue-600 bg-blue-100',
+      description: t('users.roleSwitcher.roleDescriptions.manager'),
+    },
+    employee: {
+      label: t('users.roleSwitcher.roleLabels.employee'),
+      icon: <User className="w-4 h-4" />,
+      color: 'text-green-600 bg-green-100',
+      description: t('users.roleSwitcher.roleDescriptions.employee'),
+    },
+    viewer: {
+      label: t('users.roleSwitcher.roleLabels.viewer'),
+      icon: <Eye className="w-4 h-4" />,
+      color: 'text-gray-600 bg-gray-100',
+      description: t('users.roleSwitcher.roleDescriptions.viewer'),
+    },
+  };
   const { 
     currentUserContext, 
     availableUsers, 
@@ -95,7 +97,7 @@ export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Switch User Context</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('users.roleSwitcher.title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -114,7 +116,7 @@ export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
         ) : (
           <div className="space-y-2">
             <div className="text-sm text-gray-600 mb-3">
-              Choose a user context to work with:
+              {t('users.roleSwitcher.chooseContext')}
             </div>
             
             {availableUsers.map((userProfile) => {
@@ -144,7 +146,7 @@ export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
                           {userProfile.name}
                           {isCurrentUser && (
                             <span className="ml-2 text-xs text-blue-600 font-normal">
-                              (Current)
+                              {t('users.roleSwitcher.current')}
                             </span>
                           )}
                         </div>
@@ -159,7 +161,7 @@ export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
                       </div>
                       {!userProfile.is_active && (
                         <span className="text-xs text-red-500 bg-red-100 px-2 py-1 rounded-full">
-                          Inactive
+                          {t('users.roleSwitcher.inactive')}
                         </span>
                       )}
                     </div>
@@ -172,10 +174,10 @@ export function RoleSwitcherModal({ isOpen, onClose }: RoleSwitcherModalProps) {
 
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="text-xs text-gray-500">
-            <strong>Current Context:</strong> {currentUserContext?.name || 'Loading...'}
+            <strong>{t('users.roleSwitcher.currentContext')}</strong> {currentUserContext?.name || t('common.loading')}
             {currentUserContext && (
               <span className="ml-1">
-                ({roleConfig[currentUserContext.role]?.label || 'Unknown Role'})
+                ({roleConfig[currentUserContext.role]?.label || t('users.roleSwitcher.unknownRole')})
               </span>
             )}
           </div>

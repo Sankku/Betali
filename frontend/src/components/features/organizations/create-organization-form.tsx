@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Building2 } from 'lucide-react';
 import { useOrganization } from '../../../context/OrganizationContext';
 import { ModalForm } from '../../templates/modal-form';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(255, 'Name too long'),
@@ -23,6 +24,7 @@ interface CreateOrganizationFormProps {
 }
 
 export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrganizationFormProps) {
+  const { t } = useTranslation();
   const { createOrganization, loading } = useOrganization();
   
   const form = useForm<CreateOrganizationFormData>({
@@ -91,25 +93,25 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
       onClose={onClose}
       form={form}
       onSubmit={onSubmit}
-      title="Create Organization"
-      description="Set up your organization to start managing your business inventory and team members."
+      title={t('organizations.modal.createFormTitle')}
+      description={t('organizations.modal.createFormDesc')}
       icon={Building2}
       mode="create"
       isLoading={loading}
       size="md"
-      submitLabel="Create Organization"
+      submitLabel={t('organizations.modal.submitLabel')}
     >
       <div className="space-y-4">
         {/* Organization Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Organization Name *
+            {t('organizations.modal.nameLabel')}
           </label>
           <input
             {...register('name')}
             type="text"
             id="name"
-            placeholder="Enter organization name"
+            placeholder={t('organizations.modal.namePlaceholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-500"
           />
           {errors.name && (
@@ -120,20 +122,20 @@ export function CreateOrganizationForm({ isOpen, onClose, onSuccess }: CreateOrg
         {/* Organization Slug */}
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            URL Slug *
+            {t('organizations.modal.slugLabel2')}
           </label>
           <input
             {...register('slug')}
             type="text"
             id="slug"
-            placeholder="organization-slug"
+            placeholder={t('organizations.modal.slugPlaceholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-500"
           />
           {errors.slug && (
             <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>
           )}
           <p className="mt-1 text-xs text-gray-500">
-            URL-friendly identifier (auto-generated from name)
+            {t('organizations.modal.slugHint')}
           </p>
         </div>
       </div>

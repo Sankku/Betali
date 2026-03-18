@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { ModalForm } from '@/components/templates/modal-form';
 import { Modal, ModalContent, ModalHeader, ModalTitle } from '@/components/ui/modal';
 import { OrderForm } from './order-form';
@@ -30,23 +31,25 @@ interface OrderFormData {
 }
 
 export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
+  const { t } = useTranslation();
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
 
-  // Fetch full order details when in view mode
-  // Only fetch if we're in view mode and have an order_id
-  const shouldFetchDetails = mode === 'view' && !!order?.order_id && isOpen;
+  // Fetch full order details when in view or edit mode (to get order_details/items)
+  const shouldFetchDetails = (mode === 'view' || mode === 'edit') && !!order?.order_id && isOpen;
   const { data: fullOrder, isLoading: isLoadingOrder } = useOrder(
     shouldFetchDetails ? order!.order_id : ''
   );
 
   // Use fullOrder if available (with complete details), otherwise use the order from props
   // Extract .data from fullOrder if it has the wrapped structure
-  const displayOrder = shouldFetchDetails
+  const resolvedFullOrder = shouldFetchDetails
     ? fullOrder && 'data' in fullOrder
       ? (fullOrder as any).data
       : fullOrder
     : order;
+
+  const displayOrder = resolvedFullOrder;
 
   const form = useForm<OrderFormData>({
     defaultValues: {
@@ -70,14 +73,15 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
           tax_rate_ids: [],
           items: [{ product_id: '', quantity: 1, price: 0 }],
         });
-      } else if (order && (mode === 'edit' || mode === 'view')) {
+      } else if (mode === 'edit' && resolvedFullOrder) {
         form.reset({
-          client_id: order.client_id || 'no-client',
-          warehouse_id: order.warehouse_id || 'no-warehouse',
-          status: order.status,
-          notes: order.notes || '',
+          client_id: resolvedFullOrder.client_id || 'no-client',
+          warehouse_id: resolvedFullOrder.warehouse_id || 'no-warehouse',
+          status: resolvedFullOrder.status,
+          notes: resolvedFullOrder.notes || '',
+          tax_rate_ids: [],
           items:
-            order.order_details?.map(detail => ({
+            resolvedFullOrder.order_details?.map((detail: any) => ({
               product_id: detail.product_id,
               quantity: detail.quantity,
               price: detail.price,
@@ -85,23 +89,23 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
         });
       }
     }
-  }, [isOpen, mode, order, form]);
+  }, [isOpen, mode, resolvedFullOrder, form]);
 
   const handleSubmit = async (data: OrderFormData) => {
     try {
       // Validate that all items have a product selected
       if (!data.warehouse_id || data.warehouse_id === 'no-warehouse') {
-        toast.error('Please select a warehouse');
+        toast.error(t('orders.validation.selectWarehouse'));
         return;
       }
 
       const itemsWithProduct = data.items.filter(item => item.product_id && item.quantity > 0);
       if (itemsWithProduct.length === 0) {
-        toast.error('Add at least one product to the order');
+        toast.error(t('orders.validation.addProduct'));
         return;
       }
       if (data.items.some(item => !item.product_id)) {
-        toast.error('All order items must have a product selected');
+        toast.error(t('orders.validation.allItemsNeedProduct'));
         return;
       }
 
@@ -130,30 +134,31 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Create New Order';
+        return t('orders.modal.createTitle');
       case 'edit':
-        return 'Edit Order';
+        return t('orders.modal.editTitle');
       case 'view':
-        return `Order #${order?.order_id.slice(-8).toUpperCase()}`;
+        return t('orders.modal.viewTitle', { id: order?.order_id.slice(-8).toUpperCase() });
       default:
-        return 'Order';
+        return t('orders.modal.defaultTitle');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Create a new order with products and customer information.';
+        return t('orders.modal.createDescription');
       case 'edit':
-        return 'Modify the order details and items.';
+        return t('orders.modal.editDescription');
       case 'view':
-        return 'View detailed information about this order.';
+        return t('orders.modal.viewDescription');
       default:
         return '';
     }
   };
 
   const isSubmitting = createOrderMutation.isPending || updateOrderMutation.isPending;
+  const isLoadingEditData = mode === 'edit' && isLoadingOrder;
 
   // Handle view mode separately since it has different layout
   if (mode === 'view') {
@@ -168,10 +173,10 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
         >
           <ModalContent className="">
             <ModalHeader>
-              <ModalTitle>Loading...</ModalTitle>
+              <ModalTitle>{t('orders.modal.loading')}</ModalTitle>
             </ModalHeader>
             <div className="p-6 flex items-center justify-center min-h-[400px]">
-              <div className="text-gray-500">Loading order details...</div>
+              <div className="text-gray-500">{t('orders.modal.loadingDetails')}</div>
             </div>
           </ModalContent>
         </Modal>
@@ -208,7 +213,7 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
       isLoading={isSubmitting}
       size="xl"
     >
-      <OrderForm form={form} mode={mode} isLoading={isSubmitting} />
+      <OrderForm form={form} mode={mode} isLoading={isSubmitting || isLoadingEditData} />
     </ModalForm>
   );
 }

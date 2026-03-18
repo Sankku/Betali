@@ -1,5 +1,5 @@
 const multer = require('multer');
-const { fileTypeFromBuffer } = require('file-type');
+const { fromBuffer: fileTypeFromBuffer } = require('file-type');
 // const mime = require('mime-types'); // TODO: Use when implementing MIME type validation
 const path = require('path');
 const fs = require('fs').promises;

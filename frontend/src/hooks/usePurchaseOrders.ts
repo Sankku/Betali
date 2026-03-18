@@ -50,7 +50,7 @@ export function usePurchaseOrder(purchaseOrderId: string, enabled = true) {
     queryKey: ['purchaseOrder', purchaseOrderId],
     queryFn: () => purchaseOrdersService.getById(purchaseOrderId),
     enabled: !!purchaseOrderId && enabled,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always refetch on mount so re-opening the modal gets fresh data
   });
 }
 

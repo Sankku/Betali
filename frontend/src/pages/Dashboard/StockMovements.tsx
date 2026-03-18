@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from '../../contexts/LanguageContext';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '../../components/ui/table-with-bulk-actions';
 import { StockMovementModal } from '../../components/features/stock-movements/stock-movement-modal';
@@ -34,6 +35,7 @@ interface ModalState {
 }
 
 export default function StockMovementsPage() {
+  const { t } = useTranslation();
   const { currentOrganization } = useOrganization();
   
   const [modal, setModal] = useState<ModalState>({
@@ -115,7 +117,7 @@ export default function StockMovementsPage() {
   // Bulk actions configuration
   const bulkActions: BulkAction<StockMovementWithDetails>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Delete',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -125,13 +127,13 @@ export default function StockMovementsPage() {
     },
     onClick: (movements) => handleDelete(movements),
     alwaysShow: true,
-  }], []);
+  }], [t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'movement_type',
-      header: 'Type',
+      header: t('stockMovements.page.columnType'),
       cell: ({ row }: any) => {
         const isEntry = row.original.movement_type === 'entry';
         return (
@@ -145,7 +147,7 @@ export default function StockMovementsPage() {
               variant="outline"
               className={isEntry ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
             >
-              {isEntry ? 'Entry' : 'Exit'}
+              {isEntry ? t('stockMovements.types.entry') : t('stockMovements.types.exit')}
             </Badge>
           </div>
         );
@@ -153,7 +155,7 @@ export default function StockMovementsPage() {
     },
     {
       accessorKey: 'product',
-      header: 'Product',
+      header: t('stockMovements.page.columnProduct'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <Package className="w-4 h-4 text-gray-400 mr-2" />
@@ -165,7 +167,7 @@ export default function StockMovementsPage() {
     },
     {
       accessorKey: 'quantity',
-      header: 'Quantity',
+      header: t('stockMovements.page.columnQuantity'),
       cell: ({ row }: any) => (
         <span className="text-sm font-medium text-gray-900">
           {row.original.quantity}
@@ -174,7 +176,7 @@ export default function StockMovementsPage() {
     },
     {
       accessorKey: 'warehouse',
-      header: 'Warehouse',
+      header: t('stockMovements.page.columnWarehouse'),
       cell: ({ row }: any) => (
         <span className="text-sm text-gray-900">
           {row.original.warehouse?.name || 'N/A'}
@@ -183,7 +185,7 @@ export default function StockMovementsPage() {
     },
     {
       accessorKey: 'reference',
-      header: 'Reference',
+      header: t('stockMovements.page.columnReference'),
       cell: ({ row }: any) => (
         <span className="text-sm text-gray-500">
           {row.original.reference || '-'}
@@ -192,7 +194,7 @@ export default function StockMovementsPage() {
     },
     {
       accessorKey: 'created_at',
-      header: 'Date',
+      header: t('stockMovements.page.columnDate'),
       cell: ({ row }: any) => (
         <span className="text-sm text-gray-900">
           {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : '-'}
@@ -201,7 +203,7 @@ export default function StockMovementsPage() {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('stockMovements.page.columnActions'),
       cell: ({ row }: any) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -231,18 +233,17 @@ export default function StockMovementsPage() {
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
   return (
     <>
       <Helmet>
-        <title>Stock Movements | AgroPanel</title>
-        <meta name="description" content="Manage inventory movements and adjustments" />
+        <title>{t('stockMovements.page.title')} - Betali</title>
       </Helmet>
 
       <CRUDPage
-        title="Stock Movements"
-        description="Manage inventory entries, exits, and adjustments"
+        title={t('stockMovements.page.title')}
+        description={t('stockMovements.page.description')}
         data={movements}
         isLoading={isLoading || isLoaderVisible}
         error={error}
@@ -254,7 +255,7 @@ export default function StockMovementsPage() {
             loading={isLoading}
             getRowId={(movement: StockMovementWithDetails) => movement.movement_id}
             bulkActions={bulkActions}
-            createButtonLabel="New Movement"
+            createButtonLabel={t('stockMovements.page.newMovement')}
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(movement) => openModal('edit', movement)}
             searchable={true}
@@ -262,8 +263,8 @@ export default function StockMovementsPage() {
             pageSize={10}
             emptyMessage={
               !currentOrganization
-                ? "Please select or create an organization to access stock movement features."
-                : "No stock movements recorded yet. Create your first movement to get started!"
+                ? t('stockMovements.page.noOrgMessage')
+                : t('stockMovements.page.emptyMessage')
             }
           />
         }
@@ -287,18 +288,14 @@ export default function StockMovementsPage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete Movement</ModalTitle>
+            <ModalTitle>{t('stockMovements.page.deleteTitle')}</ModalTitle>
             <ModalDescription>
               {deleteModal.movements.length === 1 ? (
-                <>
-                  Are you sure you want to delete this stock movement?
-                </>
+                <span dangerouslySetInnerHTML={{ __html: t('stockMovements.page.deleteSingle') }} />
               ) : (
-                <>
-                  Are you sure you want to delete <strong>{deleteModal.movements.length}</strong> stock movements?
-                </>
+                <span dangerouslySetInnerHTML={{ __html: t('stockMovements.page.deleteMultiple', { count: String(deleteModal.movements.length) }) }} />
               )}
-              {' '}This action cannot be undone.
+              {' '}{t('stockMovements.page.deleteCannotUndo')}
             </ModalDescription>
           </ModalHeader>
           <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
@@ -308,7 +305,7 @@ export default function StockMovementsPage() {
               disabled={deleteMovement.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -316,7 +313,7 @@ export default function StockMovementsPage() {
               loading={deleteMovement.isPending}
               className="w-full sm:w-auto"
             >
-              {deleteMovement.isPending ? 'Deleting...' : 'Delete'}
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

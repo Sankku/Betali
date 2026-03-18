@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from '@/contexts/LanguageContext';
 import {
   ShoppingCart,
   Search,
@@ -12,6 +13,8 @@ import {
   CheckCircle,
   AlertCircle,
   FileDown,
+  Eye,
+  Pencil,
 } from 'lucide-react';
 import { CRUDPage } from '@/components/templates/crud-page';
 import { Button } from '@/components/ui/button';
@@ -59,6 +62,7 @@ interface ModalState {
 }
 
 export function OrdersPage() {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
@@ -175,7 +179,7 @@ export function OrdersPage() {
     () => [
       {
         key: 'process',
-        label: 'Process',
+        label: t('orders.page.process'),
         icon: Play,
         colorScheme: {
           bg: 'bg-white',
@@ -188,7 +192,7 @@ export function OrdersPage() {
       },
       {
         key: 'fulfill',
-        label: 'Fulfill',
+        label: t('orders.page.fulfill'),
         icon: Truck,
         colorScheme: {
           bg: 'bg-white',
@@ -201,7 +205,7 @@ export function OrdersPage() {
       },
       {
         key: 'complete',
-        label: 'Complete',
+        label: t('orders.page.complete'),
         icon: CheckCircle,
         colorScheme: {
           bg: 'bg-white',
@@ -214,7 +218,7 @@ export function OrdersPage() {
       },
       {
         key: 'download-pdf',
-        label: 'PDF',
+        label: t('orders.page.pdf'),
         icon: FileDown,
         colorScheme: {
           bg: 'bg-white',
@@ -225,7 +229,7 @@ export function OrdersPage() {
         onClick: orders => {
           const pdfOrders: PdfOrderItem[] = orders.map(order => ({
             id: order.order_id,
-            label: `#${order.order_id.slice(-8).toUpperCase()} - ${order.clients?.name || 'Sin cliente'}`,
+            label: `#${order.order_id.slice(-8).toUpperCase()} - ${order.clients?.name || t('orders.page.noClient')}`,
           }));
           setPdfPreviewState({ isOpen: true, orders: pdfOrders });
         },
@@ -233,7 +237,7 @@ export function OrdersPage() {
       },
       {
         key: 'duplicate',
-        label: 'Duplicate',
+        label: t('orders.page.duplicate'),
         icon: Copy,
         colorScheme: {
           bg: 'bg-white',
@@ -250,7 +254,7 @@ export function OrdersPage() {
       },
       {
         key: 'delete',
-        label: 'Delete',
+        label: t('common.delete'),
         icon: Trash,
         colorScheme: {
           bg: 'bg-white',
@@ -270,14 +274,14 @@ export function OrdersPage() {
     () => [
       {
         accessorKey: 'order_id',
-        header: 'Order ID',
+        header: t('orders.page.columnId'),
         cell: ({ row }: { row: any }) => (
           <div className="font-mono text-sm">#{row.original.order_id.slice(-8).toUpperCase()}</div>
         ),
       },
       {
         accessorKey: 'warehouse',
-        header: 'Warehouse',
+        header: t('orders.page.columnWarehouse'),
         cell: ({ row }: { row: any }) => {
           const order = row.original as Order;
           return order.warehouse ? (
@@ -301,7 +305,7 @@ export function OrdersPage() {
       },
       {
         accessorKey: 'clients',
-        header: 'Client',
+        header: t('orders.page.columnClient'),
         cell: ({ row }: { row: any }) => {
           const order = row.original as Order;
           return (
@@ -332,7 +336,7 @@ export function OrdersPage() {
       },
       {
         accessorKey: 'order_date',
-        header: 'Date',
+        header: t('orders.page.columnDate'),
         enableColumnFilter: true,
         cell: ({ row }: { row: any }) => (
           <div className="text-sm tabular-nums">{formatDate(row.original.order_date)}</div>
@@ -373,7 +377,7 @@ export function OrdersPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('orders.page.columnStatus'),
         cell: ({ row }: { row: any }) => {
           const order = row.original as Order;
           const validTransitions = getValidStatusTransitions(order.status);
@@ -420,27 +424,58 @@ export function OrdersPage() {
         meta: {
           filterType: 'select',
           filterOptions: ORDER_STATUS_OPTIONS.map(status => ({
-            label: status.label,
+            label: t(`orders.status.${status.value}`),
             value: status.value,
           })),
         },
       },
       {
         accessorKey: 'total',
-        header: 'Total',
+        header: t('orders.page.columnTotal'),
         cell: ({ row }: { row: any }) => (
           <div className="font-medium">${(row.original.total ?? row.original.total_price ?? 0).toFixed(2)}</div>
         ),
       },
+      {
+        id: 'actions',
+        header: t('orders.page.columnActions'),
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as Order;
+          const canEdit = ['pending', 'draft'].includes(order.status);
+          return (
+            <div
+              className="data-table-no-click flex items-center justify-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleViewOrder(order)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEditOrder(order)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          );
+        },
+      },
     ],
-    [handleStatusChange, clients, warehouses]
+    [handleStatusChange, handleViewOrder, handleEditOrder, clients, warehouses]
   );
 
 
   return (
     <>
       <Helmet>
-        <title>Orders - Betali</title>
+        <title>{t('orders.title')} - Betali</title>
       </Helmet>
 
       <div className="space-y-6">
@@ -457,7 +492,7 @@ export function OrdersPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                      <dt className="text-sm font-medium text-gray-500 truncate">{t('orders.page.totalOrders')}</dt>
                       <dd>
                         <div className="text-lg font-medium text-gray-900">
                           {orderStats?.total_orders ?? 0}
@@ -477,7 +512,7 @@ export function OrdersPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                      <dt className="text-sm font-medium text-gray-500 truncate">{t('orders.page.totalRevenue')}</dt>
                       <dd>
                         <div className="text-lg font-medium text-gray-900">
                           ${orderStats?.total_revenue?.toFixed(2) ?? '0.00'}
@@ -497,13 +532,13 @@ export function OrdersPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">This Month</dt>
+                      <dt className="text-sm font-medium text-gray-500 truncate">{t('orders.page.thisMonth')}</dt>
                       <dd>
                         <div className="text-lg font-medium text-gray-900">
                           {orderStats?.orders_this_month ?? 0}
                         </div>
                         <div className="text-sm text-gray-500">
-                          ${orderStats?.revenue_this_month?.toFixed(2) ?? '0.00'} revenue
+                          ${orderStats?.revenue_this_month?.toFixed(2) ?? '0.00'} {t('orders.page.revenue')}
                         </div>
                       </dd>
                     </dl>
@@ -520,7 +555,7 @@ export function OrdersPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Pending</dt>
+                      <dt className="text-sm font-medium text-gray-500 truncate">{t('orders.page.pending')}</dt>
                       <dd>
                         <div className="text-lg font-medium text-gray-900">
                           {orderStats?.orders_by_status?.pending || 0}
@@ -541,7 +576,7 @@ export function OrdersPage() {
           loading={isLoading}
           getRowId={(order: Order) => order.order_id}
           bulkActions={bulkActions}
-          createButtonLabel="New Order"
+          createButtonLabel={t('orders.page.newOrder')}
           createButtonId="create-order-button"
           onCreateClick={handleCreateOrder}
           onRowDoubleClick={handleViewOrder}
@@ -549,7 +584,7 @@ export function OrdersPage() {
           enableColumnFilters={true}
           enablePagination={true}
           pageSize={20}
-          emptyMessage="No orders found. Get started by creating your first order."
+          emptyMessage={t('orders.page.emptyMessage')}
         />
       </div>
 
@@ -569,37 +604,29 @@ export function OrdersPage() {
         <ModalContent>
           <ModalHeader>
             <ModalTitle>
-              Batch{' '}
               {batchActionModalState.action === 'process'
-                ? 'Process'
+                ? t('orders.page.batchProcess')
                 : batchActionModalState.action === 'fulfill'
-                  ? 'Fulfill'
+                  ? t('orders.page.batchFulfill')
                   : batchActionModalState.action === 'complete'
-                    ? 'Complete'
-                    : 'Delete'}{' '}
-              Orders
+                    ? t('orders.page.batchComplete')
+                    : t('orders.page.batchDelete')}
             </ModalTitle>
             <ModalDescription>
               {batchActionModalState.action === 'delete' ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-red-600">
                     <AlertCircle className="h-4 w-4" />
-                    <span>
-                      Are you sure you want to permanently delete{' '}
-                      {batchActionModalState.orders.length} order(s)? This action cannot be undone.
-                    </span>
+                    <span>{t('orders.page.batchDeleteConfirm', { count: String(batchActionModalState.orders.length) })}</span>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p>
-                    Are you sure you want to {batchActionModalState.action}{' '}
-                    {batchActionModalState.orders.length} order(s)?
-                  </p>
+                  <p>{t('orders.page.batchActionConfirm', { action: batchActionModalState.action, count: String(batchActionModalState.orders.length) })}</p>
                   {batchActionModalState.action === 'fulfill' && (
                     <div className="flex items-center gap-2 text-amber-600">
                       <AlertCircle className="h-4 w-4" />
-                      <span>This will deduct stock from inventory.</span>
+                      <span>{t('orders.page.fulfillWarning')}</span>
                     </div>
                   )}
                 </div>
@@ -611,7 +638,7 @@ export function OrdersPage() {
               variant="outline"
               onClick={() => setBatchActionModalState({ isOpen: false, action: '', orders: [] })}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant={batchActionModalState.action === 'delete' ? 'destructive' : 'default'}
@@ -627,16 +654,16 @@ export function OrdersPage() {
               fulfillOrderMutation.isPending ||
               completeOrderMutation.isPending ||
               deleteOrderMutation.isPending
-                ? 'Processing...'
+                ? t('orders.page.processing')
                 : `${
                     batchActionModalState.action === 'process'
-                      ? 'Process'
+                      ? t('orders.page.process')
                       : batchActionModalState.action === 'fulfill'
-                        ? 'Fulfill'
+                        ? t('orders.page.fulfill')
                         : batchActionModalState.action === 'complete'
-                          ? 'Complete'
-                          : 'Delete'
-                  } Orders`}
+                          ? t('orders.page.complete')
+                          : t('common.delete')
+                  } ${t('orders.page.batchOrders')}`}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -647,7 +674,7 @@ export function OrdersPage() {
         isOpen={pdfPreviewState.isOpen}
         onClose={() => setPdfPreviewState({ isOpen: false, orders: [] })}
         orders={pdfPreviewState.orders}
-        title="Vista Previa - Ordenes de Venta"
+        title={t('orders.page.pdfTitle')}
         getBatchPdfBlob={orderService.getBatchPdfBlob}
         downloadBatchPdf={orderService.downloadBatchPdf}
       />

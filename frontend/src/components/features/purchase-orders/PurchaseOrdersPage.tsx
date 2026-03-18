@@ -178,7 +178,7 @@ export function PurchaseOrdersPage() {
     () => [
       {
         key: 'submit',
-        label: t('common.actions') === 'Actions' ? 'Submit' : 'Enviar',
+        label: t('purchaseOrders.actions.submit'),
         icon: FileText,
         colorScheme: {
           bg: 'bg-white',
@@ -192,7 +192,7 @@ export function PurchaseOrdersPage() {
       },
       {
         key: 'approve',
-        label: t('common.actions') === 'Actions' ? 'Approve' : 'Aprobar',
+        label: t('purchaseOrders.actions.approve'),
         icon: CheckCircle,
         colorScheme: {
           bg: 'bg-white',
@@ -206,7 +206,7 @@ export function PurchaseOrdersPage() {
       },
       {
         key: 'receive',
-        label: t('common.actions') === 'Actions' ? 'Receive' : 'Recibir',
+        label: t('purchaseOrders.actions.receive'),
         icon: Truck,
         colorScheme: {
           bg: 'bg-white',
@@ -231,7 +231,7 @@ export function PurchaseOrdersPage() {
         onClick: (orders) => {
           const pdfOrders: PdfOrderItem[] = orders.map((order) => ({
             id: order.purchase_order_id,
-            label: `${order.purchase_order_number} - ${order.suppliers?.name || 'Sin proveedor'}`,
+            label: `${order.purchase_order_number} - ${order.suppliers?.name || t('purchaseOrders.page.noSupplier')}`,
           }));
           setPdfPreviewState({ isOpen: true, orders: pdfOrders });
         },
@@ -239,7 +239,7 @@ export function PurchaseOrdersPage() {
       },
       {
         key: 'cancel',
-        label: t('common.cancel'),
+        label: t('purchaseOrders.actions.cancel'),
         icon: XCircle,
         colorScheme: {
           bg: 'bg-white',
@@ -311,11 +311,32 @@ export function PurchaseOrdersPage() {
         header: t('purchaseOrders.fields.status'),
         cell: ({ row }: { row: any }) => {
           const order = row.original as PurchaseOrder;
+          const localeKey = order.status.replace(/_([a-z])/g, (_: string, c: string) => c.toUpperCase());
+          const colorClasses: Record<string, string> = {
+            gray:   'bg-gray-100 text-gray-800 border-gray-200',
+            yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            blue:   'bg-blue-100 text-blue-800 border-blue-200',
+            orange: 'bg-orange-100 text-orange-800 border-orange-200',
+            green:  'bg-green-100 text-green-800 border-green-200',
+            red:    'bg-red-100 text-red-800 border-red-200',
+          };
+          const color = STATUS_COLORS[order.status] ?? 'gray';
           return (
-            <Badge variant={getStatusBadgeVariant(order.status) as any}>
-              {STATUS_LABELS[order.status]}
+            <Badge variant="outline" className={colorClasses[color]}>
+              {t(`purchaseOrders.status.${localeKey}`)}
             </Badge>
           );
+        },
+        filterFn: (row: any, _columnId: string, filterValue: string) => {
+          if (!filterValue) return true;
+          return (row.original as PurchaseOrder).status === filterValue;
+        },
+        meta: {
+          filterType: 'select',
+          filterOptions: PURCHASE_ORDER_STATUS_OPTIONS.map(option => {
+            const localeKey = option.value.replace(/_([a-z])/g, (_: string, c: string) => c.toUpperCase());
+            return { label: t(`purchaseOrders.status.${localeKey}`), value: option.value };
+          }),
         },
       },
       {
@@ -369,7 +390,7 @@ export function PurchaseOrdersPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por número o notas..."
+          placeholder={t('purchaseOrders.page.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-9"
@@ -379,25 +400,28 @@ export function PurchaseOrdersPage() {
       {/* Status Filter */}
       <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
         <SelectTrigger>
-          <SelectValue placeholder="Estado" />
+          <SelectValue placeholder={t('purchaseOrders.page.filterStatus')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los Estados</SelectItem>
-          {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          <SelectItem value="all">{t('purchaseOrders.page.allStatuses')}</SelectItem>
+          {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => {
+            const localeKey = option.value.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+            return (
+              <SelectItem key={option.value} value={option.value}>
+                {t(`purchaseOrders.status.${localeKey}`)}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 
       {/* Supplier Filter */}
       <Select value={supplierFilter} onValueChange={setSupplierFilter}>
         <SelectTrigger>
-          <SelectValue placeholder="Proveedor" />
+          <SelectValue placeholder={t('purchaseOrders.fields.supplier')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los Proveedores</SelectItem>
+          <SelectItem value="all">{t('purchaseOrders.page.allSuppliers')}</SelectItem>
           {suppliers?.map((supplier) => (
             <SelectItem key={supplier.supplier_id} value={supplier.supplier_id}>
               {supplier.name}
@@ -409,10 +433,10 @@ export function PurchaseOrdersPage() {
       {/* Warehouse Filter */}
       <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
         <SelectTrigger>
-          <SelectValue placeholder="Almacén" />
+          <SelectValue placeholder={t('purchaseOrders.fields.warehouse')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los Almacenes</SelectItem>
+          <SelectItem value="all">{t('purchaseOrders.page.allWarehouses')}</SelectItem>
           {warehouses?.data?.map((warehouse) => (
             <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
               {warehouse.name}
@@ -482,40 +506,26 @@ export function PurchaseOrdersPage() {
           <div className="px-6 py-4">
             {batchActionModalState.action === 'receive' && (
               <p>
-                {t('common.actions') === 'Actions'
-                  ? `Are you sure you want to mark ${batchActionModalState.purchaseOrders.length} purchase order(s) as received?`
-                  : `¿Está seguro de marcar ${batchActionModalState.purchaseOrders.length} orden(es) de compra como recibida(s)?`}
+                {t('purchaseOrders.page.batchReceiveConfirm', { count: String(batchActionModalState.purchaseOrders.length) })}
                 <br />
-                <strong>
-                  {t('common.actions') === 'Actions'
-                    ? 'This will automatically create stock entry movements.'
-                    : 'Esto creará movimientos de stock de entrada automáticamente.'}
-                </strong>
+                <strong>{t('purchaseOrders.page.batchReceiveNote')}</strong>
               </p>
             )}
             {batchActionModalState.action === 'approve' && (
               <p>
-                {t('common.actions') === 'Actions'
-                  ? `Are you sure you want to approve ${batchActionModalState.purchaseOrders.length} purchase order(s)?`
-                  : `¿Está seguro de aprobar ${batchActionModalState.purchaseOrders.length} orden(es) de compra?`}
+                {t('purchaseOrders.page.batchApproveConfirm', { count: String(batchActionModalState.purchaseOrders.length) })}
               </p>
             )}
             {batchActionModalState.action === 'submit' && (
               <p>
-                {t('common.actions') === 'Actions'
-                  ? `Are you sure you want to submit ${batchActionModalState.purchaseOrders.length} purchase order(s) for approval?`
-                  : `¿Está seguro de enviar ${batchActionModalState.purchaseOrders.length} orden(es) de compra para aprobación?`}
+                {t('purchaseOrders.page.batchSubmitConfirm', { count: String(batchActionModalState.purchaseOrders.length) })}
               </p>
             )}
             {batchActionModalState.action === 'cancel' && (
               <p className="text-destructive">
-                {t('common.actions') === 'Actions'
-                  ? `Are you sure you want to cancel ${batchActionModalState.purchaseOrders.length} purchase order(s)?`
-                  : `¿Está seguro de cancelar ${batchActionModalState.purchaseOrders.length} orden(es) de compra?`}
+                {t('purchaseOrders.page.batchCancelConfirm', { count: String(batchActionModalState.purchaseOrders.length) })}
                 <br />
-                {t('common.actions') === 'Actions'
-                  ? 'This action cannot be undone.'
-                  : 'Esta acción no se puede deshacer.'}
+                {t('purchaseOrders.page.batchCancelNote')}
               </p>
             )}
           </div>
@@ -543,7 +553,7 @@ export function PurchaseOrdersPage() {
         isOpen={pdfPreviewState.isOpen}
         onClose={() => setPdfPreviewState({ isOpen: false, orders: [] })}
         orders={pdfPreviewState.orders}
-        title="Vista Previa - Ordenes de Compra"
+        title={t('purchaseOrders.page.pdfPreviewTitle')}
         getBatchPdfBlob={purchaseOrdersService.getBatchPdfBlob}
         downloadBatchPdf={purchaseOrdersService.downloadBatchPdf}
       />

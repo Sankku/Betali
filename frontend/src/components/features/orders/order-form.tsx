@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,7 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<OrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -245,18 +247,18 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       {/* Order Header Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="client_id" className="text-gray-900 font-medium">Client <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
-          <Select 
-            value={watchedValues.client_id || 'no-client'} 
+          <Label htmlFor="client_id" className="text-gray-900 font-medium">{t('orders.form.client')} <span className="text-gray-400 font-normal text-xs">{t('orders.form.clientOptional')}</span></Label>
+          <Select
+            value={watchedValues.client_id || 'no-client'}
             onValueChange={(value) => setValue('client_id', value)}
             disabled={isViewMode}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a client (optional)" />
+              <SelectValue placeholder={t('orders.form.clientPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no-client">
-                <span className="text-gray-500 italic">No client</span>
+                <span className="text-gray-500 italic">{t('orders.form.noClient')}</span>
               </SelectItem>
               {clients?.data?.map((client) => (
                 <SelectItem key={client.client_id} value={client.client_id}>
@@ -268,18 +270,18 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="warehouse_id" className="text-gray-900 font-medium">Warehouse <span className="text-red-500">*</span></Label>
-          <Select 
-            value={watchedValues.warehouse_id || 'no-warehouse'} 
+          <Label htmlFor="warehouse_id" className="text-gray-900 font-medium">{t('orders.form.warehouse')} <span className="text-red-500">*</span></Label>
+          <Select
+            value={watchedValues.warehouse_id || 'no-warehouse'}
             onValueChange={(value) => setValue('warehouse_id', value)}
             disabled={isViewMode}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a warehouse (optional)" />
+              <SelectValue placeholder={t('orders.form.warehousePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no-warehouse">
-                <span className="text-gray-500 italic">No warehouse</span>
+                <span className="text-gray-500 italic">{t('orders.form.noWarehouse')}</span>
               </SelectItem>
               {warehouses?.data?.map((warehouse) => (
                 <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
@@ -291,18 +293,18 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tax_rate_ids" className="text-gray-900 font-medium">Tax Rates <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
-          <Select 
-            value={watchedValues.tax_rate_ids?.length ? watchedValues.tax_rate_ids[0] : 'no-tax'} 
+          <Label htmlFor="tax_rate_ids" className="text-gray-900 font-medium">{t('orders.form.taxRates')} <span className="text-gray-400 font-normal text-xs">{t('orders.form.clientOptional')}</span></Label>
+          <Select
+            value={watchedValues.tax_rate_ids?.length ? watchedValues.tax_rate_ids[0] : 'no-tax'}
             onValueChange={(value) => setValue('tax_rate_ids', value === 'no-tax' ? [] : [value])}
             disabled={isViewMode}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select tax rate (optional)" />
+              <SelectValue placeholder={t('orders.form.taxRatesPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no-tax">
-                <span className="text-gray-500 italic">No tax</span>
+                <span className="text-gray-500 italic">{t('orders.form.noTax')}</span>
               </SelectItem>
               {taxRates?.data?.map((taxRate) => (
                 <SelectItem key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
@@ -319,7 +321,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="status" className="text-gray-900 font-medium">Status</Label>
+          <Label htmlFor="status" className="text-gray-900 font-medium">{t('orders.form.status')}</Label>
           <Select 
             value={watchedValues.status} 
             onValueChange={(value) => setValue('status', value)}
@@ -333,7 +335,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 <SelectItem key={status.value} value={status.value}>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className={`bg-${status.color}-50 text-${status.color}-700 border-${status.color}-200`}>
-                      {status.label}
+                      {t(`orders.status.${status.value}`)}
                     </Badge>
                   </div>
                 </SelectItem>
@@ -343,10 +345,10 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="notes" className="text-gray-900 font-medium">Notes <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
+          <Label htmlFor="notes" className="text-gray-900 font-medium">{t('orders.form.notes')} <span className="text-gray-400 font-normal text-xs">{t('orders.form.notesOptional')}</span></Label>
           <Textarea
             {...register('notes')}
-            placeholder="Order notes (optional)"
+            placeholder={t('orders.form.notesPlaceholder')}
             rows={3}
             disabled={isViewMode}
           />
@@ -356,11 +358,11 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       {/* Order Items */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg text-gray-900">Order Items</CardTitle>
+          <CardTitle className="text-lg text-gray-900">{t('orders.form.orderItems')}</CardTitle>
           {!isViewMode && (
             <Button type="button" onClick={addItem} size="sm" className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-white" />
-              Add Item
+              {t('orders.form.addItem')}
             </Button>
           )}
         </CardHeader>
@@ -372,7 +374,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           {items.map((item, index) => (
             <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg bg-gray-50">
               <div className="md:col-span-2">
-                <Label className="text-gray-900 font-medium">Product *</Label>
+                <Label className="text-gray-900 font-medium">{t('orders.form.product')} *</Label>
                 <Select
                   value={item.product_id}
                   onValueChange={(value) => handleItemChange(index, 'product_id', value)}
@@ -380,9 +382,9 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 >
                   <SelectTrigger className={(isSubmitted && !item.product_id) ? 'border-red-500' : ''}>
                     <SelectValue placeholder={
-                      productsLoading ? "Loading products..." :
-                      productsError ? "Error loading products" :
-                      "Choose a product from your inventory"
+                      productsLoading ? t('orders.form.loadingProducts') :
+                      productsError ? t('orders.form.errorLoadingProducts') :
+                      t('orders.form.chooseProduct')
                     } />
                   </SelectTrigger>
                   <SelectContent>
@@ -399,13 +401,13 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                       ))
                     ) : (
                       <SelectItem value="no-products" disabled>
-                        <span className="text-gray-500 italic">No products available - Add products first</span>
+                        <span className="text-gray-500 italic">{t('orders.form.noProducts')}</span>
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {isSubmitted && !item.product_id && (
-                  <p className="text-sm text-red-600 mt-1">Product is required</p>
+                  <p className="text-sm text-red-600 mt-1">{t('orders.form.productRequired')}</p>
                 )}
               </div>
 
@@ -420,7 +422,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
               />
 
               <div>
-                <Label className="text-gray-900 font-medium">Price *</Label>
+                <Label className="text-gray-900 font-medium">{t('orders.form.price')} *</Label>
                 <Input
                   type="number"
                   value={item.price}
@@ -437,7 +439,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
 
               <div className="flex items-end">
                 <div className="w-full">
-                  <Label className="text-gray-900 font-medium">Line Total</Label>
+                  <Label className="text-gray-900 font-medium">{t('orders.form.lineTotal')}</Label>
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-gray-900">${(item.quantity * item.price).toFixed(2)}</span>
                     {!isViewMode && items.length > 1 && (
@@ -460,56 +462,56 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           {/* Order Totals */}
           <div className="border-t pt-4 space-y-3 bg-white p-4 rounded-lg">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-gray-900">Order Summary</h4>
+              <h4 className="font-medium text-gray-900">{t('orders.form.orderSummary')}</h4>
               {pricingLoading && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
                   <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                  Calculating...
+                  {t('orders.form.calculating')}
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-gray-800">
-                <span className="font-medium">Subtotal:</span>
+                <span className="font-medium">{t('orders.form.subtotal')}</span>
                 <span className="font-semibold text-gray-900">{formatPricing(subtotal)}</span>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between text-sm text-gray-800">
-                  <span className="font-medium text-red-600">Discount:</span>
+                  <span className="font-medium text-red-600">{t('orders.form.discount')}</span>
                   <span className="font-semibold text-red-600">-{formatPricing(discount)}</span>
                 </div>
               )}
 
               {tax > 0 ? (
                 <div className="flex justify-between text-sm text-gray-800">
-                  <span className="font-medium">Impuesto:</span>
+                  <span className="font-medium">{t('orders.form.tax')}</span>
                   <span className="font-semibold text-gray-900">
                     {formatPricing(tax)}
                     {pricingResult?.tax_breakdown && pricingResult.tax_breakdown.length > 0 && (
                       <span className="text-xs text-gray-500 ml-1">
-                        ({pricingResult.tax_breakdown.map(t => `${t.name ?? 'Impuesto'}: ${(t.rate * 100).toFixed(1)}%`).join(', ')})
+                        ({pricingResult.tax_breakdown.map(tb => `${tb.name ?? t('orders.form.tax').replace(':', '')}: ${(tb.rate * 100).toFixed(1)}%`).join(', ')})
                       </span>
                     )}
                   </span>
                 </div>
               ) : (
                 <div className="flex justify-between text-sm text-gray-800">
-                  <span className="font-medium">Impuesto:</span>
-                  <span className="text-gray-500 italic">Sin impuestos aplicados</span>
+                  <span className="font-medium">{t('orders.form.tax')}</span>
+                  <span className="text-gray-500 italic">{t('orders.form.noTaxApplied')}</span>
                 </div>
               )}
 
               {shipping > 0 && (
                 <div className="flex justify-between text-sm text-gray-800">
-                  <span className="font-medium">Shipping:</span>
+                  <span className="font-medium">{t('orders.form.shipping')}</span>
                   <span className="font-semibold text-gray-900">{formatPricing(shipping)}</span>
                 </div>
               )}
 
               <div className="flex justify-between text-lg font-semibold border-t pt-2 text-gray-900">
-                <span>Total:</span>
+                <span>{t('orders.form.total')}</span>
                 <span className="text-green-600">{formatPricing(total)}</span>
               </div>
             </div>
@@ -517,11 +519,11 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
             {/* Pricing Source Indicator */}
             {pricingResult ? (
               <div className="text-xs text-gray-500 border-t pt-2">
-                ✓ Prices calculated with taxes and discounts
+                {t('orders.form.pricesCalculated')}
               </div>
             ) : (
               <div className="text-xs text-gray-500 border-t pt-2">
-                ℹ Basic calculation - configure products with tax rates for accurate pricing
+                {t('orders.form.basicCalculation')}
               </div>
             )}
           </div>

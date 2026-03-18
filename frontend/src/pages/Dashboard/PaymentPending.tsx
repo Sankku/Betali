@@ -1,4 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from '../../lib/toast';
 import { Clock, ArrowLeft, Mail } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { DashboardLayout } from '../../components/layout/Dashboard';
@@ -133,7 +134,10 @@ export default function PaymentPending() {
                 <p className="text-sm text-gray-600">
                   ¿Necesitas ayuda?{' '}
                   <button
-                    onClick={() => navigate('/contact')}
+                    onClick={() => {
+                      navigator.clipboard.writeText('betali.business@gmail.com');
+                      toast.success('Email copiado al portapapeles');
+                    }}
                     className="text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Contacta a Soporte

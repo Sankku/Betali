@@ -117,7 +117,13 @@ const updateUserSchema = Joi.object({
     }),
 
 
-  is_active: Joi.boolean()
+  is_active: Joi.boolean(),
+
+  avatar_url: Joi.string()
+    .uri()
+    .max(2000)
+    .optional()
+    .allow(null, '')
 });
 
 const queryParamsSchema = Joi.object({

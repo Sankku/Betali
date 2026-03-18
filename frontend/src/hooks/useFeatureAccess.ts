@@ -110,7 +110,7 @@ export function useCurrentSubscription() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['current-subscription'],
     queryFn: () => subscriptionService.getCurrentSubscription(),
-    staleTime: 2 * 60 * 1000 // Cache for 2 minutes
+    staleTime: 0, // Always background-refresh so upgrades are reflected immediately
   });
 
   return {

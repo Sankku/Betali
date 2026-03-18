@@ -1,4 +1,5 @@
 import { ArrowUpDown } from 'lucide-react';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { StockMovementForm } from './stock-movement-form';
 import {
   StockMovementWithDetails,
@@ -23,28 +24,30 @@ export function StockMovementModal({
   initialData,
   isLoading = false,
 }: StockMovementModalProps) {
+  const { t } = useTranslation();
+
   // Titles based on mode
   const getTitle = () => {
     switch (mode) {
       case 'create':
-        return 'New Stock Movement';
+        return t('stockMovements.modal.createTitle');
       case 'edit':
-        return 'Edit Movement';
+        return t('stockMovements.modal.editTitle');
       case 'view':
-        return 'Movement Details';
+        return t('stockMovements.modal.viewTitle');
       default:
-        return 'Stock Movement';
+        return t('stockMovements.modal.defaultTitle');
     }
   };
 
   const getDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Register a new inventory movement';
+        return t('stockMovements.modal.createDescription');
       case 'edit':
-        return 'Modify the selected movement data';
+        return t('stockMovements.modal.editDescription');
       case 'view':
-        return 'View movement details';
+        return t('stockMovements.modal.viewDescription');
       default:
         return '';
     }

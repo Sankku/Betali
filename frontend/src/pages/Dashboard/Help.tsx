@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '@/lib/toast';
 import { Helmet } from 'react-helmet-async';
 import {
   HelpCircle,
@@ -229,7 +230,10 @@ export default function HelpPage() {
             <p className="text-neutral-600 mb-4">
               Nuestro equipo está aquí para ayudarte. Contáctanos y responderemos lo antes posible.
             </p>
-            <Button>
+            <Button onClick={() => {
+              navigator.clipboard.writeText('betali.business@gmail.com');
+              toast.success('Email copiado al portapapeles');
+            }}>
               <Mail className="h-4 w-4 mr-2" />
               Contactar Soporte
             </Button>

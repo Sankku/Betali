@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/modal';
 import { SupplierForm } from './supplier-form';
 import { type Supplier, type CreateSupplierData } from '@/services/api/supplierService';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 export interface SupplierModalProps {
   isOpen: boolean;
@@ -26,27 +27,29 @@ export function SupplierModal({
   mode = 'create',
   isLoading = false
 }: SupplierModalProps) {
+  const { t } = useTranslation();
+
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Crear Nuevo Proveedor';
+        return t('suppliers.modal.createTitle');
       case 'edit':
-        return `Editar Proveedor - ${supplier?.name || ''}`;
+        return t('suppliers.modal.editTitle', { name: supplier?.name || '' });
       case 'view':
-        return `Ver Proveedor - ${supplier?.name || ''}`;
+        return t('suppliers.modal.viewTitle', { name: supplier?.name || '' });
       default:
-        return 'Proveedor';
+        return t('suppliers.modal.defaultTitle');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Complete la información para agregar un nuevo proveedor a su organización.';
+        return t('suppliers.modal.createDescription');
       case 'edit':
-        return 'Modifique la información del proveedor según sea necesario.';
+        return t('suppliers.modal.editDescription');
       case 'view':
-        return 'Información detallada del proveedor.';
+        return t('suppliers.modal.viewDescription');
       default:
         return '';
     }

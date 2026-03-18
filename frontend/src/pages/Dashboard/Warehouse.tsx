@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, Building2, MapPin, Eye, Edit, Trash, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useTranslation } from '../../contexts/LanguageContext';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '../../components/ui/table-with-bulk-actions';
 import {
@@ -41,6 +42,7 @@ interface DeleteConfirmState {
 }
 
 const WarehousesPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentOrganization } = useOrganization();
   
   const [modal, setModal] = useState<ModalState>({
@@ -133,7 +135,7 @@ const WarehousesPage: React.FC = () => {
   // Bulk actions configuration
   const bulkActions: BulkAction<WarehouseWithStats>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Delete',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -143,13 +145,13 @@ const WarehousesPage: React.FC = () => {
     },
     onClick: (warehouses) => handleDelete(warehouses),
     alwaysShow: true,
-  }], []);
+  }], [t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Warehouse',
+      header: t('warehouse.page.columnWarehouse'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
@@ -160,7 +162,7 @@ const WarehousesPage: React.FC = () => {
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
             {row.original.code && (
-              <div className="text-sm text-gray-500">Code: {row.original.code}</div>
+              <div className="text-sm text-gray-500">{t('warehouse.form.code')} {row.original.code}</div>
             )}
           </div>
         </div>
@@ -168,7 +170,7 @@ const WarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'location',
-      header: 'Location',
+      header: t('warehouse.page.columnLocation'),
       cell: ({ row }: any) => (
         row.original.location ? (
           <div className="flex items-center text-sm text-gray-900">
@@ -182,19 +184,19 @@ const WarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'is_active',
-      header: 'Status',
+      header: t('warehouse.page.columnStatus'),
       cell: ({ row }: any) => (
         <Badge
           variant={row.original.is_active ? "default" : "secondary"}
           className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
         >
-          {row.original.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? t('common.active') : t('common.inactive')}
         </Badge>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('warehouse.page.columnActions'),
       cell: ({ row }: any) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -217,7 +219,7 @@ const WarehousesPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleActive(row.original)}
-            title={row.original.is_active ? 'Deactivate warehouse' : 'Activate warehouse'}
+            title={row.original.is_active ? t('warehouse.page.deactivateWarehouse') : t('warehouse.page.activateWarehouse')}
             className={row.original.is_active
               ? "text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"
               : "text-red-400 hover:text-red-600 hover:bg-red-50"}
@@ -237,7 +239,7 @@ const WarehousesPage: React.FC = () => {
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
 
   return (
@@ -247,8 +249,8 @@ const WarehousesPage: React.FC = () => {
       </Helmet>
 
       <CRUDPage
-        title="Warehouse Management"
-        description="Manage warehouses and their configuration"
+        title={t('warehouse.page.title')}
+        description={t('warehouse.page.description')}
         data={warehouses || []}
         isLoading={isLoading || isLoaderVisible}
         error={error}
@@ -260,19 +262,19 @@ const WarehousesPage: React.FC = () => {
             loading={isLoading}
             getRowId={(warehouse: WarehouseWithStats) => warehouse.warehouse_id}
             bulkActions={bulkActions}
-            createButtonLabel="New Warehouse"
+            createButtonLabel={t('warehouse.page.newWarehouse')}
             createButtonId="create-warehouse-button"
             onCreateClick={handleCreateClick}
             createButtonDisabled={atWarehouseLimit}
-            createButtonTooltip={atWarehouseLimit ? `You've reached the warehouse limit (${warehouseLimit}) for your plan. Upgrade to add more.` : undefined}
+            createButtonTooltip={atWarehouseLimit ? t('warehouse.page.warehouseLimitTooltip', { limit: String(warehouseLimit) }) : undefined}
             onRowDoubleClick={(warehouse) => openModal('edit', warehouse)}
             searchable={true}
             enablePagination={true}
             pageSize={10}
             emptyMessage={
               !currentOrganization
-                ? "Please select or create an organization to access warehouse management features."
-                : "No warehouses created yet. Create your first warehouse to get started!"
+                ? t('warehouse.page.noOrgMessage')
+                : t('warehouse.page.emptyMessage')
             }
           />
         }
@@ -293,21 +295,18 @@ const WarehousesPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete warehouse?</ModalTitle>
+            <ModalTitle>{t('warehouse.page.deleteTitle')}</ModalTitle>
             <ModalDescription>
               {showDeleteConfirm.warehouses.length === 1 ? (
                 <>
-                  This action cannot be undone. The warehouse{' '}
+                  {t('warehouse.page.deleteCannotUndo')}{' '}
                   <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.warehouses[0]?.name || 'selected'}"
+                    "{showDeleteConfirm.warehouses[0]?.name || t('warehouse.page.selected')}"
                   </span>{' '}
-                  will be permanently deleted.
+                  {t('warehouse.page.deleteWillBeDeleted')}
                 </>
               ) : (
-                <>
-                  This action will permanently delete <strong>{showDeleteConfirm.warehouses.length}</strong> warehouses.
-                  This action cannot be undone.
-                </>
+                <span dangerouslySetInnerHTML={{ __html: t('warehouse.page.deleteMultiple', { count: String(showDeleteConfirm.warehouses.length) }) }} />
               )}
             </ModalDescription>
           </ModalHeader>
@@ -319,7 +318,7 @@ const WarehousesPage: React.FC = () => {
               disabled={deleteWarehouse.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -327,7 +326,7 @@ const WarehousesPage: React.FC = () => {
               loading={deleteWarehouse.isPending}
               className="w-full sm:w-auto"
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -1,4 +1,5 @@
 import { httpClient } from "../http/httpClient";
+import { supabase } from "../../lib/supabase";
 import { Database } from "../../types/database";
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
@@ -84,16 +85,24 @@ export const userService = {
   },
 
   async uploadAvatar(file: File): Promise<{ avatar_url: string }> {
-    try {
-      const formData = new FormData();
-      formData.append('files', file);
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Not authenticated');
 
-      const response = await httpClient.postFormData<{ avatar_url: string }>('/api/users/profile/avatar', formData);
-      return response as any;
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      throw error;
-    }
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `${userId}_avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, { contentType: file.type, upsert: true });
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName);
+
+    await this.updateCurrentProfile({ avatar_url: publicUrl });
+    return { avatar_url: publicUrl };
   },
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {

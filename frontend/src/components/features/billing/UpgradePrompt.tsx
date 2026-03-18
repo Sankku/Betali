@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { toast } from '../../lib/toast';
 import { Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '../../ui/button';
 
@@ -163,7 +164,10 @@ export function UpgradePrompt({
             <ArrowRight className="ml-2 h-4 w-4 text-white" />
           </Button>
           <Button
-            onClick={() => navigate('/contact')}
+            onClick={() => {
+              navigator.clipboard.writeText('betali.business@gmail.com');
+              toast.success('Email copiado al portapapeles');
+            }}
             variant="outline"
             className="flex-1"
           >

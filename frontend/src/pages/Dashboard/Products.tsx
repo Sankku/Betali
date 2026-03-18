@@ -163,14 +163,14 @@ const ProductsPage: React.FC = () => {
 
         return (
           <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${stockClass}`}>
-            {stock > 0 ? stock : 'Out of stock'}
+            {stock > 0 ? stock : t('products.outOfStock')}
           </div>
         );
       },
     },
     {
       accessorKey: 'origin_country',
-      header: 'Origin',
+      header: t('products.fields.origin'),
       cell: ({ row }: { row: any }) => (
         <div className="text-sm text-gray-600">
           {row.original.origin_country || 'N/A'}

@@ -257,7 +257,7 @@ export function useCurrentPlanLimits() {
   const { data: currentSubscription, isLoading: isLoadingSub } = useQuery({
     queryKey: ['current-subscription'],
     queryFn: () => subscriptionService.getCurrentSubscription(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always background-refresh so limit pages reflect plan upgrades immediately
   });
 
   // Plan name from nested subscription_plans (if API embeds it), fallback to 'free'

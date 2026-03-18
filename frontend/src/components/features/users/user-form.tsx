@@ -1,6 +1,7 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Users, Mail, Shield } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Input } from '../../ui/input';
 import { Switch } from '../../ui/switch';
 import { UserFormData } from './user-modal';
@@ -15,6 +16,7 @@ export interface UserFormProps {
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = false }) => {
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
   const isEditing = mode === 'edit';
   const {
@@ -49,7 +51,7 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'Not specified'}</span>
+        <span className="text-neutral-800">{value || t('users.form.notSpecified')}</span>
       </div>
     </div>
   );
@@ -59,31 +61,31 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ViewField
-            label="Full Name"
+            label={t('users.form.fullName')}
             value={currentName}
             icon={<Users className="w-4 h-4" />}
           />
           <ViewField
-            label="Email Address"
+            label={t('users.form.emailAddress')}
             value={currentEmail}
             icon={<Mail className="w-4 h-4" />}
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ViewField
-            label="Role"
-            value={currentRole || 'Not assigned'}
+            label={t('users.form.globalRole')}
+            value={currentRole || t('users.form.notAssigned')}
             icon={<Shield className="w-4 h-4" />}
           />
           <ViewField
-            label="Status"
-            value={currentIsActive ? 'Active' : 'Inactive'}
+            label={t('users.fields.status')}
+            value={currentIsActive ? t('users.form.statusActive') : t('users.form.statusInactive')}
             icon={<Shield className="w-4 h-4" />}
           />
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Organization roles, permissions, and assignments are managed separately in the team management section.
+            {t('users.form.orgRolesNote')}
           </p>
         </div>
       </div>
@@ -96,11 +98,11 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
         <div className="space-y-2">
           <label htmlFor="name" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Full Name
+            {t('users.form.fullName')}
           </label>
           <Input
             id="name"
-            placeholder="Enter full name"
+            placeholder={t('users.form.fullNamePlaceholder')}
             {...register('name')}
             disabled={isLoading}
             className={errors.name ? 'border-red-500' : ''}
@@ -113,12 +115,12 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Mail className="w-4 h-4" />
-            Email Address
+            {t('users.form.emailAddress')}
           </label>
           <Input
             id="email"
             type="email"
-            placeholder="Enter email address"
+            placeholder={t('users.form.emailPlaceholder')}
             {...register('email')}
             disabled={isLoading}
             className={errors.email ? 'border-red-500' : ''}
@@ -132,13 +134,13 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
       <div className="space-y-2">
         <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
           <Shield className="w-4 h-4" />
-          Global Role
+          {t('users.form.globalRole')}
         </label>
         <RoleSelector
           value={currentRole}
           onValueChange={(value) => setValue('role', value)}
           disabled={isLoading}
-          placeholder="Select a role..."
+          placeholder={t('users.form.rolePlaceholder')}
           excludeRoles={[]}
           showDescription={true}
           currentUserRole={currentUserRole}
@@ -152,12 +154,12 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
           <Shield className="w-4 h-4" />
-          Password {isEditing && '(leave empty to keep current password)'}
+          {isEditing ? t('users.form.passwordOptional') : t('users.form.password')}
         </label>
         <Input
           id="password"
           type="password"
-          placeholder={isEditing ? 'Enter new password (optional)' : 'Enter password'}
+          placeholder={isEditing ? t('users.form.passwordEditPlaceholder') : t('users.form.passwordPlaceholder')}
           {...register('password')}
           disabled={isLoading}
           className={errors.password ? 'border-red-500' : ''}
@@ -171,10 +173,9 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
         <div className="flex items-start gap-3">
           <Shield className="w-5 h-5 text-amber-600 mt-0.5" />
           <div>
-            <h4 className="font-medium text-amber-800 mb-1">Organization Roles & Permissions</h4>
+            <h4 className="font-medium text-amber-800 mb-1">{t('users.form.orgRolesTitle')}</h4>
             <p className="text-sm text-amber-700">
-              User roles and permissions are now managed per organization. After creating this user, 
-              invite them to organizations through the team management section to assign specific roles and permissions.
+              {t('users.form.orgRolesDesc')}
             </p>
           </div>
         </div>
@@ -184,10 +185,10 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
         <div className="space-y-0.5">
           <label className="text-base font-medium text-neutral-700 flex items-center gap-2">
             <Shield className="w-4 h-4" />
-            Active User
+            {t('users.form.activeUser')}
           </label>
           <p className="text-sm text-neutral-500">
-            Active users can access the system and perform their assigned tasks
+            {t('users.form.activeUserDesc')}
           </p>
         </div>
         <Switch

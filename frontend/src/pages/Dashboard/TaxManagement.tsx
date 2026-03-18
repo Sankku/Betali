@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Percent, Settings, AlertCircle, Eye, Edit, Trash, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui';
 
 export default function TaxManagement() {
+  const { t } = useTranslation();
   const { currentOrganization } = useOrganization();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,7 +83,7 @@ export default function TaxManagement() {
   // Bulk actions configuration
   const bulkActions: BulkAction<TaxRate>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Delete',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -91,13 +93,13 @@ export default function TaxManagement() {
     },
     onClick: (rates) => handleDelete(rates),
     alwaysShow: true,
-  }], []);
+  }], [t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Tax Rate Name',
+      header: t('taxManagement.page.columnName'),
       cell: ({ row }: any) => (
         <div>
           <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
@@ -109,7 +111,7 @@ export default function TaxManagement() {
     },
     {
       accessorKey: 'rate',
-      header: 'Rate',
+      header: t('taxManagement.page.columnRate'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <Percent className="w-4 h-4 text-gray-400 mr-2" />
@@ -121,28 +123,28 @@ export default function TaxManagement() {
     },
     {
       accessorKey: 'is_inclusive',
-      header: 'Type',
+      header: t('taxManagement.page.columnType'),
       cell: ({ row }: any) => (
         <Badge variant="outline">
-          {row.original.is_inclusive ? 'Inclusive' : 'Exclusive'}
+          {row.original.is_inclusive ? t('taxManagement.page.inclusive') : t('taxManagement.page.exclusive')}
         </Badge>
       ),
     },
     {
       accessorKey: 'is_active',
-      header: 'Status',
+      header: t('common.status'),
       cell: ({ row }: any) => (
         <Badge
           variant={row.original.is_active ? "default" : "secondary"}
           className={row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
         >
-          {row.original.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? t('common.active') : t('common.inactive')}
         </Badge>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       cell: ({ row }: any) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -172,13 +174,13 @@ export default function TaxManagement() {
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
 
   return (
     <>
       <Helmet>
-        <title>Tax Management | Betali</title>
+        <title>{t('taxManagement.page.title')}</title>
       </Helmet>
       
       <DashboardLayout>
@@ -190,7 +192,7 @@ export default function TaxManagement() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-900">Active Tax Rates</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-900">{t('taxManagement.page.statsActiveTitle')}</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -198,14 +200,14 @@ export default function TaxManagement() {
               {taxRates?.data?.filter(rate => rate.is_active).length || 0}
             </div>
             <p className="text-xs text-gray-800">
-              Currently active rates
+              {t('taxManagement.page.statsActiveDesc')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-900">Average Tax Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-900">{t('taxManagement.page.statsAverageTitle')}</CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -216,14 +218,14 @@ export default function TaxManagement() {
               }
             </div>
             <p className="text-xs text-gray-800">
-              Across all tax rates
+              {t('taxManagement.page.statsAverageDesc')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-900">Total Tax Rates</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-900">{t('taxManagement.page.statsTotalTitle')}</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -231,7 +233,7 @@ export default function TaxManagement() {
               {taxRates?.data?.length || 0}
             </div>
             <p className="text-xs text-gray-800">
-              Including inactive rates
+              {t('taxManagement.page.statsTotalDesc')}
             </p>
           </CardContent>
         </Card>
@@ -242,16 +244,16 @@ export default function TaxManagement() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900">
             <AlertCircle className="h-5 w-5 text-blue-500" />
-            Common Tax Rate Examples
+            {t('taxManagement.page.examplesTitle')}
           </CardTitle>
           <CardDescription className="text-gray-800">
-            Here are some typical tax rates you might need for your business
+            {t('taxManagement.page.examplesDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="p-4 border rounded-lg bg-gray-50">
-              <h4 className="font-medium text-gray-900 mb-2">Standard VAT/IVA</h4>
+              <h4 className="font-medium text-gray-900 mb-2">{t('taxManagement.page.exampleStandardVat')}</h4>
               <div className="space-y-1 text-sm text-gray-800">
                 <div>• Argentina: 21%</div>
                 <div>• Mexico: 16%</div>
@@ -259,19 +261,19 @@ export default function TaxManagement() {
               </div>
             </div>
             <div className="p-4 border rounded-lg bg-gray-50">
-              <h4 className="font-medium text-gray-900 mb-2">Reduced VAT/IVA</h4>
+              <h4 className="font-medium text-gray-900 mb-2">{t('taxManagement.page.exampleReducedVat')}</h4>
               <div className="space-y-1 text-sm text-gray-800">
-                <div>• Food items: 10.5%</div>
-                <div>• Books/Education: 0-5%</div>
-                <div>• Medicine: 0%</div>
+                <div>• {t('taxManagement.page.exampleReducedItem1')}</div>
+                <div>• {t('taxManagement.page.exampleReducedItem2')}</div>
+                <div>• {t('taxManagement.page.exampleReducedItem3')}</div>
               </div>
             </div>
             <div className="p-4 border rounded-lg bg-gray-50">
-              <h4 className="font-medium text-gray-900 mb-2">Sales Tax (US)</h4>
+              <h4 className="font-medium text-gray-900 mb-2">{t('taxManagement.page.exampleSalesTax')}</h4>
               <div className="space-y-1 text-sm text-gray-800">
-                <div>• State sales tax: 0-10%</div>
-                <div>• Local tax: 0-3%</div>
-                <div>• Combined: varies by location</div>
+                <div>• {t('taxManagement.page.exampleSalesItem1')}</div>
+                <div>• {t('taxManagement.page.exampleSalesItem2')}</div>
+                <div>• {t('taxManagement.page.exampleSalesItem3')}</div>
               </div>
             </div>
           </div>
@@ -281,9 +283,9 @@ export default function TaxManagement() {
       {/* Tax Rates Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-900">Tax Rates</CardTitle>
+          <CardTitle className="text-gray-900">{t('taxManagement.page.tableTitle')}</CardTitle>
           <CardDescription className="text-gray-800">
-            Manage all your tax rates and their configurations
+            {t('taxManagement.page.tableDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -293,7 +295,7 @@ export default function TaxManagement() {
             loading={isLoading}
             getRowId={(rate: TaxRate) => rate.tax_rate_id}
             bulkActions={bulkActions}
-            createButtonLabel="Add Tax Rate"
+            createButtonLabel={t('taxManagement.page.addTaxRate')}
             onCreateClick={handleCreate}
             onRowDoubleClick={(rate) => handleEdit(rate)}
             searchable={true}
@@ -301,8 +303,8 @@ export default function TaxManagement() {
             pageSize={10}
             emptyMessage={
               !currentOrganization
-                ? "Please select or create an organization to access tax management features."
-                : "No tax rates created yet. Create your first tax rate to get started!"
+                ? t('taxManagement.page.emptyNoOrg')
+                : t('taxManagement.page.emptyNoRates')
             }
           />
         </CardContent>
@@ -323,21 +325,12 @@ export default function TaxManagement() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete tax rate?</ModalTitle>
+            <ModalTitle>{t('taxManagement.page.deleteTitle')}</ModalTitle>
             <ModalDescription>
               {showDeleteConfirm.taxRates.length === 1 ? (
-                <>
-                  This action cannot be undone. The tax rate{' '}
-                  <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.taxRates[0]?.name || 'selected'}"
-                  </span>{' '}
-                  will be permanently deleted.
-                </>
+                t('taxManagement.page.deleteSingleDesc', { name: showDeleteConfirm.taxRates[0]?.name || 'selected' })
               ) : (
-                <>
-                  This action will permanently delete <strong>{showDeleteConfirm.taxRates.length}</strong> tax rates.
-                  This action cannot be undone.
-                </>
+                t('taxManagement.page.deleteMultipleDesc', { count: String(showDeleteConfirm.taxRates.length) })
               )}
             </ModalDescription>
           </ModalHeader>
@@ -349,7 +342,7 @@ export default function TaxManagement() {
               disabled={deleteTaxRate.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -357,7 +350,7 @@ export default function TaxManagement() {
               loading={deleteTaxRate.isPending}
               className="w-full sm:w-auto"
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

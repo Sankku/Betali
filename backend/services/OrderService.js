@@ -236,8 +236,8 @@ class OrderService {
         throw new Error('Order not found or access denied');
       }
 
-      // Validate status transitions
-      if (updateData.status) {
+      // Validate status transitions (only when status actually changes)
+      if (updateData.status && updateData.status !== currentOrder.status) {
         this.validateStatusTransition(currentOrder.status, updateData.status);
       }
 
@@ -255,12 +255,18 @@ class OrderService {
 
         await this.orderDetailRepository.replaceOrderDetails(orderId, organizationId, orderDetails);
 
-        // Update order total
+        // Update all financial fields
+        updateData.subtotal = orderTotals.subtotal;
+        updateData.tax_amount = orderTotals.tax;
+        updateData.total = orderTotals.total;
         updateData.total_price = orderTotals.total;
       }
 
+      // Strip fields that don't belong to the orders table before persisting
+      const { items, tax_rate_ids, ...orderFields } = updateData;
+
       // Update the order
-      const updatedOrder = await this.orderRepository.update(orderId, organizationId, updateData);
+      const updatedOrder = await this.orderRepository.update(orderId, organizationId, orderFields);
 
       // Get complete order with details
       const completeOrder = await this.getOrderById(orderId, organizationId);
@@ -426,6 +432,8 @@ class OrderService {
       warehouseId,
       itemCount: lineItems.length
     });
+
+    return lineItems;
   }
 
   /**

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, Building2, Eye, Edit, Trash, Users, Calendar } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { CRUDPage } from '@/components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ interface DeleteConfirmState {
 }
 
 export function OrganizationsPage() {
+  const { t } = useTranslation();
   const { currentOrganization } = useOrganization();
   
   const [modal, setModal] = useState<ModalState>({
@@ -117,7 +119,7 @@ export function OrganizationsPage() {
   // Bulk actions configuration
   const bulkActions: BulkAction<Organization>[] = useMemo(() => [{
     key: 'delete',
-    label: 'Delete',
+    label: t('common.delete'),
     icon: Trash,
     colorScheme: {
       bg: 'bg-white',
@@ -127,13 +129,13 @@ export function OrganizationsPage() {
     },
     onClick: (organizations) => handleDelete(organizations),
     alwaysShow: true,
-  }], []);
+  }], [t]);
 
   // Columns configuration
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Organization',
+      header: t('organizations.page.columnOrganization'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
@@ -145,7 +147,7 @@ export function OrganizationsPage() {
             <div className="text-sm font-medium text-gray-900">{row.original.name}</div>
             {row.original.organization_id === currentOrganization?.organization_id && (
               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1">
-                Current
+                {t('organizations.page.currentBadge')}
               </Badge>
             )}
           </div>
@@ -154,7 +156,7 @@ export function OrganizationsPage() {
     },
     {
       accessorKey: 'created_at',
-      header: 'Created',
+      header: t('organizations.page.columnCreated'),
       cell: ({ row }: any) => (
         <div className="flex items-center text-sm text-gray-900">
           <Calendar className="w-4 h-4 text-gray-400 mr-2" />
@@ -166,7 +168,7 @@ export function OrganizationsPage() {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('common.actions'),
       cell: ({ row }: any) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -196,17 +198,17 @@ export function OrganizationsPage() {
         </div>
       ),
     },
-  ], [currentOrganization]);
+  ], [currentOrganization, t]);
 
   return (
     <>
       <Helmet>
-        <title>Organizations - Dashboard</title>
+        <title>{t('organizations.page.helmetTitle')}</title>
       </Helmet>
 
       <CRUDPage
-        title="Organization Management"
-        description="Manage organizations in the multi-tenant system. Each organization has its own data isolation and team management."
+        title={t('organizations.page.title')}
+        description={t('organizations.page.description')}
         data={organizations}
         isLoading={isLoading || isLoaderVisible}
         error={error}
@@ -218,13 +220,13 @@ export function OrganizationsPage() {
             loading={isLoading}
             getRowId={(org: Organization) => org.organization_id}
             bulkActions={bulkActions}
-            createButtonLabel="New Organization"
+            createButtonLabel={t('organizations.page.newOrganization')}
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(org) => openModal('edit', org)}
             searchable={true}
             enablePagination={true}
             pageSize={10}
-            emptyMessage="No organizations found. Create your first organization to get started!"
+            emptyMessage={t('organizations.page.emptyMessage')}
           />
         }
       />
@@ -247,26 +249,17 @@ export function OrganizationsPage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Delete organization?</ModalTitle>
+            <ModalTitle>{t('organizations.page.deleteTitle')}</ModalTitle>
             <ModalDescription>
               {showDeleteConfirm.organizations.length === 1 ? (
                 <>
-                  This action cannot be undone. The organization{' '}
-                  <span className="font-medium text-neutral-900">
-                    "{showDeleteConfirm.organizations[0]?.name || 'selected'}"
-                  </span>{' '}
-                  will be permanently deleted.
+                  {t('organizations.page.deleteSingleDesc', { name: showDeleteConfirm.organizations[0]?.name || 'selected' })}
                   {showDeleteConfirm.organizations[0]?.organization_id === currentOrganization?.organization_id && (
-                    <>
-                      {' '}<strong>Warning:</strong> You are deleting your current organization.
-                    </>
+                    <strong>{t('organizations.page.deleteSingleCurrentWarning')}</strong>
                   )}
                 </>
               ) : (
-                <>
-                  This action will permanently delete <strong>{showDeleteConfirm.organizations.length}</strong> organizations.
-                  This action cannot be undone.
-                </>
+                t('organizations.page.deleteMultipleDesc', { count: String(showDeleteConfirm.organizations.length) })
               )}
             </ModalDescription>
           </ModalHeader>
@@ -278,7 +271,7 @@ export function OrganizationsPage() {
               disabled={deleteOrganization.isPending}
               className="w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -286,7 +279,7 @@ export function OrganizationsPage() {
               loading={deleteOrganization.isPending}
               className="w-full sm:w-auto"
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

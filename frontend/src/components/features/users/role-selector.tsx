@@ -12,6 +12,7 @@ import {
   getAssignableRoles,
   getRoleDisplayName,
 } from '@/utils/roleUtils';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 export interface UserRole {
   value: string;
@@ -99,6 +100,7 @@ export function RoleSelector({
   currentUserRole,
   showRestrictions = true,
 }: RoleSelectorProps) {
+  const { t } = useTranslation();
   // Filter roles based on current user's permissions
   const assignableRoles = currentUserRole ? getAssignableRoles(currentUserRole) : [];
 
@@ -125,9 +127,9 @@ export function RoleSelector({
             {selectedRole && (
               <div className="flex items-center gap-2">
                 <Badge variant={selectedRole.color} className="text-xs">
-                  {selectedRole.label}
+                  {t(`users.roleSelector.labels.${selectedRole.value}`)}
                 </Badge>
-                <span className="text-sm text-muted-foreground">{selectedRole.description}</span>
+                <span className="text-sm text-muted-foreground">{t(`users.roleSelector.descriptions.${selectedRole.value}`)}</span>
               </div>
             )}
           </SelectValue>
@@ -138,11 +140,11 @@ export function RoleSelector({
               <div className="flex flex-col gap-1 py-1">
                 <div className="flex items-center gap-2">
                   <Badge variant={role.color} className="text-xs">
-                    {role.label}
+                    {t(`users.roleSelector.labels.${role.value}`)}
                   </Badge>
                 </div>
                 {showDescription && (
-                  <p className="text-xs text-muted-foreground">{role.description}</p>
+                  <p className="text-xs text-muted-foreground">{t(`users.roleSelector.descriptions.${role.value}`)}</p>
                 )}
               </div>
             </SelectItem>
@@ -156,7 +158,7 @@ export function RoleSelector({
             <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-blue-900">
-                {selectedRole.label} Permissions
+                {t('users.roleSelector.permissions', { label: t(`users.roleSelector.labels.${selectedRole.value}`) })}
               </p>
               <div className="text-xs text-blue-700">
                 <ul className="space-y-0.5">
@@ -179,9 +181,9 @@ export function RoleSelector({
           <div className="flex items-start gap-2">
             <Shield className="h-4 w-4 text-sky-400 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-sky-700">Available Roles</p>
+              <p className="text-sm font-medium text-sky-700">{t('users.roleSelector.availableRoles')}</p>
               <p className="text-xs text-sky-600">
-                As a {getRoleDisplayName(currentUserRole)}, you can assign these roles:
+                {t('users.roleSelector.canAssign', { role: getRoleDisplayName(currentUserRole) })}
               </p>
               <div className="flex flex-wrap gap-1 mt-2">
                 {availableRoles.map(role => (
@@ -191,7 +193,7 @@ export function RoleSelector({
                     className="text-xs border-sky-200 text-sky-600 bg-white"
                   >
                     <Shield className="w-3 h-3 mr-1" />
-                    {role.label}
+                    {t(`users.roleSelector.labels.${role.value}`)}
                   </Badge>
                 ))}
               </div>
@@ -209,6 +211,7 @@ interface RoleBadgeProps {
 }
 
 export function RoleBadge({ role, showDescription = false }: RoleBadgeProps) {
+  const { t } = useTranslation();
   const roleConfig = USER_ROLES.find(r => r.value === role);
 
   if (!roleConfig) {
@@ -222,10 +225,10 @@ export function RoleBadge({ role, showDescription = false }: RoleBadgeProps) {
   return (
     <div className="flex items-center gap-2">
       <Badge variant={roleConfig.color} className="text-xs">
-        {roleConfig.label}
+        {t(`users.roleSelector.labels.${roleConfig.value}`)}
       </Badge>
       {showDescription && (
-        <span className="text-xs text-muted-foreground">{roleConfig.description}</span>
+        <span className="text-xs text-muted-foreground">{t(`users.roleSelector.descriptions.${roleConfig.value}`)}</span>
       )}
     </div>
   );

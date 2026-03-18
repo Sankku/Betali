@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Order } from '@/services/api/orderService';
 import { getOrderStatusColor } from '@/hooks/useOrders';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface OrderStatusBadgeProps {
   status: Order['status'];
@@ -9,6 +10,7 @@ interface OrderStatusBadgeProps {
 }
 
 export function OrderStatusBadge({ status, variant = 'outline' }: OrderStatusBadgeProps) {
+  const { t } = useTranslation();
   const color = getOrderStatusColor(status);
   
   const colorClasses = {
@@ -22,7 +24,7 @@ export function OrderStatusBadge({ status, variant = 'outline' }: OrderStatusBad
 
   return (
     <Badge variant={variant} className={colorClasses[color]}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {t(`orders.status.${status}`)}
     </Badge>
   );
 }
