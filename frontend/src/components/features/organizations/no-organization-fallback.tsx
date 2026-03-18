@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Building2, Plus, Users, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Building2, Plus, Users, RefreshCw, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -18,8 +18,8 @@ import { useAuth } from '@/context/AuthContext';
  * Provides options to create or join an organization
  */
 export function NoOrganizationFallback() {
-  const { userOrganizations, loading, switchOrganization } = useOrganization();
-  const { user } = useAuth();
+  const { userOrganizations, loading, switchOrganization, accountDeactivated } = useOrganization();
+  const { user, signOut } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
@@ -30,6 +30,25 @@ export function NoOrganizationFallback() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading organizations...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accountDeactivated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <UserX className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Deactivated</h1>
+          <p className="text-red-600 mb-6">
+            Your account has been deactivated. Please contact an administrator.
+          </p>
+          <Button variant="outline" onClick={() => signOut()}>
+            Sign Out
+          </Button>
         </div>
       </div>
     );

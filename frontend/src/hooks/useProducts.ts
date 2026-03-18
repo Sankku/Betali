@@ -63,7 +63,11 @@ export function useCreateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error('Error al crear el producto. Intenta de nuevo.');
+      const isDuplicate = (error as any).status === 409 || error.message.includes('batch number already exists');
+      toast.error(isDuplicate
+        ? 'Ya existe un producto con ese SKU/Número de Lote en tu organización.'
+        : 'Error al crear el producto. Intenta de nuevo.'
+      );
       throw error;
     },
   });
@@ -82,7 +86,11 @@ export function useUpdateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error('Error al actualizar el producto. Intenta de nuevo.');
+      const isDuplicate = (error as any).status === 409 || error.message.includes('batch number already exists');
+      toast.error(isDuplicate
+        ? 'Ya existe otro producto con ese SKU/Número de Lote en tu organización.'
+        : 'Error al actualizar el producto. Intenta de nuevo.'
+      );
       throw error;
     },
   });

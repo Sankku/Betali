@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { warehouseService } from "../services/api/warehouseService";
 import { toast } from "../lib/toast";
-import { useOrganization } from "../context/OrganizationContext"; 
+import { useOrganization } from "../context/OrganizationContext";
+import { translateApiError } from "../utils/apiErrorTranslator";
 
 export interface WarehouseFormData {
   name: string;
@@ -67,11 +68,11 @@ export function useCreateWarehouse() {
       // Invalidate all warehouse queries for fresh data
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["warehouses", currentOrganization?.organization_id] });
-      toast.success("Warehouse created successfully");
+      toast.success("Depósito creado exitosamente");
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error creating warehouse: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al crear el depósito. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -86,11 +87,11 @@ export function useUpdateWarehouse() {
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["warehouse", variables.id] });
-      toast.success("Warehouse updated successfully");
+      toast.success("Depósito actualizado exitosamente");
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error updating warehouse: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el depósito. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -103,10 +104,10 @@ export function useDeactivateWarehouse() {
     mutationFn: (id: string) => warehouseService.deactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
-      toast.success("Warehouse deactivated successfully");
+      toast.success("Depósito desactivado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(`Error deactivating warehouse: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al desactivar el depósito. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -119,10 +120,10 @@ export function useDeleteWarehouse() {
     mutationFn: (id: string) => warehouseService.deletePermanently(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["warehouses"] });
-      toast.success("Warehouse permanently deleted");
+      toast.success("Depósito eliminado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(`Error deleting warehouse: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al eliminar el depósito. Intenta de nuevo.'));
       throw error;
     },
   });

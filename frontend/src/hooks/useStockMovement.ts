@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { stockMovementService, StockMovementFormData } from "../services/api/stockMovementService";
 import { toast } from "../lib/toast";
+import { translateApiError } from "../utils/apiErrorTranslator";
 import { useOrganization } from "../context/OrganizationContext";
 
 export interface UseStockMovementsOptions {
@@ -57,7 +58,7 @@ export function useCreateStockMovement() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al crear movimiento: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al crear el movimiento. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -78,7 +79,7 @@ export function useUpdateStockMovement() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar movimiento: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el movimiento. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -97,7 +98,7 @@ export function useDeleteStockMovement() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al eliminar movimiento: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al eliminar el movimiento. Intenta de nuevo.'));
       throw error;
     },
   });

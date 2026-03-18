@@ -25,6 +25,11 @@ class ReceiptService {
       .from('manual_payments')
       .select(`
         *,
+        recorded_by_user:users!manual_payments_recorded_by_fkey (
+          user_id,
+          email,
+          name
+        ),
         subscriptions!inner (
           subscription_id,
           billing_cycle,
@@ -36,7 +41,9 @@ class ReceiptService {
           organizations!inner (
             organization_id,
             name,
-            owner_id
+            email,
+            phone,
+            address
           )
         )
       `)
@@ -48,12 +55,7 @@ class ReceiptService {
       throw new Error('Payment not found');
     }
 
-    // Get organization owner details for the receipt
-    const { data: owner } = await supabase
-      .from('users')
-      .select('email, name')
-      .eq('id', payment.subscriptions.organizations.owner_id)
-      .single();
+    const owner = payment.recorded_by_user || null;
 
     // Generate PDF
     const pdfBuffer = await this.createPDF({

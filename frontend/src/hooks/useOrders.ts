@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
+import { translateApiError } from '@/utils/apiErrorTranslator';
 import {
   orderService,
   Order,
@@ -84,11 +85,11 @@ export function useCreateOrder() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
       queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
 
-      toast.success('Order created successfully');
+      toast.success('Pedido creado exitosamente');
     },
     onError: (error: any) => {
       console.error('Create order error:', error);
-      toast.error(error?.message || 'Failed to create order');
+      toast.error(translateApiError(error, 'Error al crear el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -113,11 +114,11 @@ export function useUpdateOrder() {
       queryClient.refetchQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
-      toast.success('Order updated successfully');
+      toast.success('Pedido actualizado exitosamente');
     },
     onError: (error: any) => {
       console.error('Update order error:', error);
-      toast.error(error?.message || 'Failed to update order');
+      toast.error(translateApiError(error, 'Error al actualizar el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -144,11 +145,11 @@ export function useUpdateOrderStatus() {
         queryClient.invalidateQueries({ queryKey: ['products'] });
       }
 
-      toast.success('Order status updated successfully');
+      toast.success('Estado del pedido actualizado exitosamente');
     },
     onError: (error: any) => {
       console.error('Update order status error:', error);
-      toast.error(error?.message || 'Failed to update order status');
+      toast.error(translateApiError(error, 'Error al actualizar el estado del pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -172,11 +173,11 @@ export function useDeleteOrder() {
       // Invalidate products cache in case stock was affected
       queryClient.invalidateQueries({ queryKey: ['products'] });
 
-      toast.success('Order deleted successfully');
+      toast.success('Pedido eliminado exitosamente');
     },
     onError: (error: any) => {
       console.error('Delete order error:', error);
-      toast.error(error?.message || 'Failed to delete order');
+      toast.error(translateApiError(error, 'Error al eliminar el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -197,11 +198,11 @@ export function useDuplicateOrder() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
-      toast.success('Order duplicated successfully');
+      toast.success('Pedido duplicado exitosamente');
     },
     onError: (error: any) => {
       console.error('Duplicate order error:', error);
-      toast.error(error?.message || 'Failed to duplicate order');
+      toast.error(translateApiError(error, 'Error al duplicar el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -222,11 +223,11 @@ export function useProcessOrder() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
-      toast.success('Order marked as processing. Stock availability validated.');
+      toast.success('Pedido marcado como en proceso. Disponibilidad de stock validada.');
     },
     onError: (error: any) => {
       console.error('Process order error:', error);
-      toast.error(error?.message || 'Failed to process order');
+      toast.error(translateApiError(error, 'Error al procesar el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -255,11 +256,11 @@ export function useFulfillOrder() {
       // Invalidate products cache to update stock levels
       queryClient.invalidateQueries({ queryKey: ['products'] });
 
-      toast.success('Order fulfilled successfully! Stock has been deducted.');
+      toast.success('Pedido despachado exitosamente. Stock descontado.');
     },
     onError: (error: any) => {
       console.error('Fulfill order error:', error);
-      toast.error(error?.message || 'Failed to fulfill order');
+      toast.error(translateApiError(error, 'Error al despachar el pedido. Intenta de nuevo.'));
     },
   });
 }
@@ -280,11 +281,11 @@ export function useCompleteOrder() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
-      toast.success('Order completed successfully');
+      toast.success('Pedido completado exitosamente');
     },
     onError: (error: any) => {
       console.error('Complete order error:', error);
-      toast.error(error?.message || 'Failed to complete order');
+      toast.error(translateApiError(error, 'Error al completar el pedido. Intenta de nuevo.'));
     },
   });
 }

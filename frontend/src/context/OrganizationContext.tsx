@@ -25,6 +25,7 @@ interface OrganizationContextState {
   // Loading states
   loading: boolean;
   switching: boolean;
+  accountDeactivated: boolean;
 
   // Actions
   switchOrganization: (organizationId: string) => Promise<void>;
@@ -369,6 +370,11 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     setDefaultOrganizationIdState(organizationId);
   }, []);
 
+  const accountDeactivated = useMemo(() => {
+    const msg = (error as Error | null)?.message ?? '';
+    return msg.toLowerCase().includes('deactivated');
+  }, [error]);
+
   const value: OrganizationContextState = useMemo(() => ({
     currentOrganization,
     currentUserRole,
@@ -377,6 +383,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     defaultOrganizationId,
     loading: isLoading,
     switching,
+    accountDeactivated,
     switchOrganization,
     createOrganization,
     setDefaultOrganization,
@@ -390,6 +397,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     defaultOrganizationId,
     isLoading,
     switching,
+    accountDeactivated,
     switchOrganization,
     createOrganization,
     setDefaultOrganization,

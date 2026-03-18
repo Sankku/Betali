@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
+import { translateApiError } from '@/utils/apiErrorTranslator';
 import { useOrganization } from '@/context/OrganizationContext';
 import { purchaseOrdersService } from '@/services/api/purchaseOrdersService';
 import {
@@ -99,8 +100,7 @@ export function useCreatePurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error creating purchase order:', error);
-      const message = error.response?.data?.error || 'Error al crear la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al crear la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -127,8 +127,7 @@ export function useUpdatePurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error updating purchase order:', error);
-      const message = error.response?.data?.error || 'Error al actualizar la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -160,9 +159,7 @@ export function useUpdatePurchaseOrderStatus() {
     },
     onError: (error: any) => {
       console.error('Error updating purchase order status:', error);
-      const message =
-        error.response?.data?.error || 'Error al actualizar el estado de la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar el estado de la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -182,8 +179,7 @@ export function useCancelPurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error cancelling purchase order:', error);
-      const message = error.response?.data?.error || 'Error al cancelar la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al cancelar la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -212,8 +208,7 @@ export function useReceivePurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error receiving purchase order:', error);
-      const message = error.response?.data?.error || 'Error al recibir la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al recibir la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -239,8 +234,7 @@ export function useApprovePurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error approving purchase order:', error);
-      const message = error.response?.data?.error || 'Error al aprobar la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al aprobar la orden de compra. Intenta de nuevo.'));
     },
   });
 }
@@ -266,8 +260,7 @@ export function useSubmitPurchaseOrder() {
     },
     onError: (error: any) => {
       console.error('Error submitting purchase order:', error);
-      const message = error.response?.data?.error || 'Error al enviar la orden de compra';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al enviar la orden de compra. Intenta de nuevo.'));
     },
   });
 }

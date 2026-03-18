@@ -89,8 +89,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       if (mode === 'create') {
         form.reset();
       }
-    } catch {
-      // Error ya mostrado por el hook — no resetear el formulario
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 409 || err.message?.includes('batch number already exists')) {
+        form.setError('batch_number', {
+          type: 'manual',
+          message: t('products.form.skuDuplicateError'),
+        });
+      }
     }
   };
 

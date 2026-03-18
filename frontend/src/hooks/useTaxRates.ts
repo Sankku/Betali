@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../lib/toast";
 import { useOrganization } from "../context/OrganizationContext";
 import { httpClient } from "../services/http/httpClient";
+import { translateApiError } from "../utils/apiErrorTranslator";
 
 export interface TaxRate {
   tax_rate_id: string;
@@ -88,12 +89,11 @@ export function useCreateTaxRate() {
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id] });
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, true] });
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, false] });
-      toast.success("Tax rate created successfully");
+      toast.success("Tasa de impuesto creada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to create tax rate";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al crear la tasa de impuesto. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -116,12 +116,11 @@ export function useUpdateTaxRate() {
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id] });
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, true] });
       queryClient.invalidateQueries({ queryKey: ["taxRates", currentOrganization?.organization_id, false] });
-      toast.success("Tax rate updated successfully");
+      toast.success("Tasa de impuesto actualizada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to update tax rate";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar la tasa de impuesto. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -138,12 +137,11 @@ export function useDeleteTaxRate() {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["taxRates"] });
-      toast.success("Tax rate deleted successfully");
+      toast.success("Tasa de impuesto eliminada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to delete tax rate";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al eliminar la tasa de impuesto. Intenta de nuevo.'));
       throw error;
     }
   });

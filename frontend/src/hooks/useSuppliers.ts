@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
+import { translateApiError } from '@/utils/apiErrorTranslator';
 import { useOrganization } from '@/context/OrganizationContext';
 import { 
   supplierService, 
@@ -138,8 +139,8 @@ export function useCreateSupplier() {
     },
     onError: (error: any) => {
       console.error('Error creating supplier:', error);
-      const message = error.response?.data?.error || 'Error al crear el proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al crear el proveedor. Intenta de nuevo.'));
+      throw error;
     }
   });
 }
@@ -164,8 +165,8 @@ export function useUpdateSupplier() {
     },
     onError: (error: any) => {
       console.error('Error updating supplier:', error);
-      const message = error.response?.data?.error || 'Error al actualizar el proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar el proveedor. Intenta de nuevo.'));
+      throw error;
     }
   });
 }
@@ -186,8 +187,7 @@ export function useDeleteSupplier() {
     },
     onError: (error: any) => {
       console.error('Error deleting supplier:', error);
-      const message = error.response?.data?.error || 'Error al eliminar el proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al eliminar el proveedor. Intenta de nuevo.'));
     }
   });
 }
@@ -211,8 +211,7 @@ export function useDeactivateSupplier() {
     },
     onError: (error: any) => {
       console.error('Error deactivating supplier:', error);
-      const message = error.response?.data?.error || 'Error al desactivar el proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al desactivar el proveedor. Intenta de nuevo.'));
     }
   });
 }
@@ -236,8 +235,7 @@ export function useReactivateSupplier() {
     },
     onError: (error: any) => {
       console.error('Error reactivating supplier:', error);
-      const message = error.response?.data?.error || 'Error al reactivar el proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al reactivar el proveedor. Intenta de nuevo.'));
     }
   });
 }
@@ -263,8 +261,7 @@ export function useSetSupplierPreferred() {
     },
     onError: (error: any) => {
       console.error('Error setting supplier preferred status:', error);
-      const message = error.response?.data?.error || 'Error al cambiar el estado preferido del proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al cambiar el estado del proveedor. Intenta de nuevo.'));
     }
   });
 }
@@ -280,8 +277,7 @@ export function useSearchSuppliers() {
     }) => supplierService.search(query, options),
     onError: (error: any) => {
       console.error('Error searching suppliers:', error);
-      const message = error.response?.data?.error || 'Error al buscar proveedores';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al buscar proveedores. Intenta de nuevo.'));
     }
   });
 }
@@ -295,8 +291,7 @@ export function useValidateSupplier() {
       supplierService.validate(data),
     onError: (error: any) => {
       console.error('Error validating supplier:', error);
-      const message = error.response?.data?.error || 'Error al validar los datos del proveedor';
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al validar los datos del proveedor. Intenta de nuevo.'));
     }
   });
 }

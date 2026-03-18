@@ -153,6 +153,7 @@ export const en: TranslationKeys = {
       taxManagementLink: 'Tax Management',
       sku: 'SKU/Batch Number',
       skuPlaceholder: 'E.g.: SKU-2024-001',
+      skuDuplicateError: 'This SKU/Batch Number is already in use by another product.',
       origin: 'Origin/Source',
       originPlaceholder: 'E.g.: Local Supplier',
       expiryDate: 'Expiry/Best Before Date',

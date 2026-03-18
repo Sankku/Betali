@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userService, CreateUserData, UpdateUserData } from '../services/api/userService';
 import { toast } from '../lib/toast';
+import { translateApiError } from '../utils/apiErrorTranslator';
 import { Database } from '../types/database';
 import { useOrganization } from '../context/OrganizationContext';
 
@@ -75,7 +76,7 @@ export function useCreateUser() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al crear usuario: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al crear el usuario. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -94,7 +95,7 @@ export function useUpdateUser() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar usuario: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el usuario. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -112,7 +113,7 @@ export function useUpdateCurrentUser() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar perfil: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el perfil. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -126,7 +127,7 @@ export function useChangePassword() {
       toast.success('Contraseña cambiada exitosamente');
     },
     onError: (error: Error) => {
-      toast.error(`Error al cambiar contraseña: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al cambiar la contraseña. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -142,7 +143,7 @@ export function useDeleteUser() {
       toast.success('Usuario eliminado exitosamente');
     },
     onError: (error: Error) => {
-      toast.error(`Error al eliminar usuario: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al eliminar el usuario. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -159,7 +160,7 @@ export function useToggleUserStatus() {
       toast.success('Estado del usuario actualizado exitosamente');
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar estado: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el estado del usuario. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -169,7 +170,7 @@ export function useSearchUsers() {
   return useMutation({
     mutationFn: (query: string) => userService.search(query),
     onError: (error: Error) => {
-      toast.error(`Error en búsqueda: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al buscar usuarios. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -223,7 +224,7 @@ export function useRefreshUserContext() {
     },
     onError: (error: Error) => {
       console.error('Error refreshing user context:', error);
-      toast.error(`Error refreshing context: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el contexto de usuario. Intenta de nuevo.'));
     },
   });
 }

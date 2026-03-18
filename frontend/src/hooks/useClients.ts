@@ -8,6 +8,7 @@ import {
   ClientValidation 
 } from '../services/api/clientService';
 import { toast } from '../lib/toast';
+import { translateApiError } from '../utils/apiErrorTranslator';
 import { Database } from '../types/database';
 import { useOrganization } from '../context/OrganizationContext';
 
@@ -120,7 +121,7 @@ export function useCreateClient() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al crear cliente: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al crear el cliente. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -140,7 +141,7 @@ export function useUpdateClient() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar cliente: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al actualizar el cliente. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -157,7 +158,7 @@ export function useDeleteClient() {
       toast.success('Cliente eliminado exitosamente');
     },
     onError: (error: Error) => {
-      toast.error(`Error al eliminar cliente: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al eliminar el cliente. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -168,7 +169,7 @@ export function useSearchClients() {
     mutationFn: ({ query, options }: { query: string; options?: Omit<ClientSearchOptions, 'search'> }) => 
       clientService.search(query, options),
     onError: (error: Error) => {
-      toast.error(`Error en búsqueda de clientes: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al buscar clientes. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -196,7 +197,7 @@ export function useValidateCuit() {
       return validateClient.mutateAsync({ cuit });
     },
     onError: (error: Error) => {
-      toast.error(`Error al validar CUIT: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al validar el CUIT. Intenta de nuevo.'));
       throw error;
     },
   });
@@ -215,7 +216,7 @@ export function useValidateEmail() {
       return validateClient.mutateAsync({ email });
     },
     onError: (error: Error) => {
-      toast.error(`Error al validar email: ${error.message}`);
+      toast.error(translateApiError(error, 'Error al validar el email. Intenta de nuevo.'));
       throw error;
     },
   });

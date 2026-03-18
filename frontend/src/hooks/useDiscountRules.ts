@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../lib/toast";
 import { useOrganization } from "../context/OrganizationContext";
 import { httpClient } from "../services/http/httpClient";
+import { translateApiError } from "../utils/apiErrorTranslator";
 
 export interface DiscountRule {
   discount_rule_id: string;
@@ -123,12 +124,11 @@ export function useCreateDiscountRule() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["discountRules"] });
       queryClient.invalidateQueries({ queryKey: ["discountStats"] });
-      toast.success("Discount rule created successfully");
+      toast.success("Regla de descuento creada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to create discount rule";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al crear la regla de descuento. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -147,12 +147,11 @@ export function useUpdateDiscountRule() {
       queryClient.invalidateQueries({ queryKey: ["discountRules"] });
       queryClient.invalidateQueries({ queryKey: ["discountRule", discountRuleId] });
       queryClient.invalidateQueries({ queryKey: ["discountStats"] });
-      toast.success("Discount rule updated successfully");
+      toast.success("Regla de descuento actualizada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to update discount rule";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar la regla de descuento. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -170,12 +169,11 @@ export function useDeleteDiscountRule() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["discountRules"] });
       queryClient.invalidateQueries({ queryKey: ["discountStats"] });
-      toast.success("Discount rule deleted successfully");
+      toast.success("Regla de descuento eliminada exitosamente");
       return response;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to delete discount rule";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al eliminar la regla de descuento. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -189,8 +187,7 @@ export function useValidateCoupon() {
       return response.data;
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to validate coupon";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al validar el cupón. Intenta de nuevo.'));
       throw error;
     }
   });
@@ -211,8 +208,7 @@ export function useIncrementDiscountUsage() {
       queryClient.invalidateQueries({ queryKey: ["discountStats"] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Failed to increment discount usage";
-      toast.error(message);
+      toast.error(translateApiError(error, 'Error al actualizar el uso del descuento. Intenta de nuevo.'));
       throw error;
     }
   });

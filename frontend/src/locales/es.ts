@@ -151,6 +151,7 @@ export const es = {
       taxManagementLink: 'Gestión de Impuestos',
       sku: 'SKU/Número de Lote',
       skuPlaceholder: 'Ej.: SKU-2024-001',
+      skuDuplicateError: 'Este SKU/Número de Lote ya está en uso por otro producto.',
       origin: 'Origen/Fuente',
       originPlaceholder: 'Ej.: Proveedor Local',
       expiryDate: 'Fecha de Vencimiento/Mejor Antes De',
