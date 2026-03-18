@@ -41,36 +41,25 @@ test.describe('Create Product', () => {
     await page.fill('input[name="batch_number"]', uniqueSKU);
     await page.fill('input[name="price"]', '99.99');
     await page.fill('input[name="origin_country"]', 'Local Supplier');
-    // Set expiration date: open DatePicker, navigate to next month, click day 15
-    // (next month day 15 is always valid, never today, avoids all timezone/month-end edge cases)
+    // Set expiration date via the DatePicker's manual text input (DD/MM/YYYY).
+    // Using the manual input is reliable: page.evaluate() calendar clicks can leave
+    // the backdrop (z-[9998]) open, blocking the submit button click.
     const pickerEl = page.locator('button[class*="h-\\[48px\\]"]').first();
     if (await pickerEl.isVisible({ timeout: 2000 }).catch(() => false)) {
       await pickerEl.click();
-      await page.waitForTimeout(500);
-      // Navigate to next month (calendar nav buttons: [0]=prev, [1]=next)
-      await page.evaluate(() => {
-        const cal = Array.from(document.querySelectorAll('div')).find((d: any) =>
-          d.style && d.style.width === '320px' && d.style.top
-        ) as HTMLElement | undefined;
-        if (!cal) return;
-        const btns = cal.querySelectorAll('button[type="button"]') as NodeListOf<HTMLButtonElement>;
-        if (btns[1]) btns[1].click(); // next month arrow
-      });
-      await page.waitForTimeout(300);
-      // Click day 15 in next month
-      await page.evaluate(() => {
-        const cal = Array.from(document.querySelectorAll('div')).find((d: any) =>
-          d.style && d.style.width === '320px' && d.style.top
-        ) as HTMLElement | undefined;
-        if (!cal) return;
-        const dayBtn = Array.from(cal.querySelectorAll('button[type="button"]') as NodeListOf<HTMLButtonElement>)
-          .find(b => b.textContent?.trim() === '15' && !b.disabled);
-        if (dayBtn) dayBtn.click();
-      });
-      await page.waitForTimeout(500); // Let calendar close and form state settle
+      // Wait for the manual input to appear (auto-focuses after 50ms)
+      const manualInput = page.locator('input[placeholder="DD/MM/YYYY"]');
+      await manualInput.waitFor({ state: 'visible', timeout: 3000 });
+      // Compute next-month day 15 as DD/MM/YYYY
+      const d = new Date();
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(15);
+      const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      await manualInput.fill(dateStr);
+      await page.keyboard.press('Enter'); // closes calendar and commits date
+      // Wait for backdrop to disappear before proceeding
+      await page.waitForSelector('.fixed.inset-0[class*="z-\\[9998\\]"]', { state: 'detached', timeout: 3000 }).catch(() => {});
     }
-
-    await page.waitForTimeout(300);
 
     // Submit form — wait for the actual POST /api/products 201 response (most reliable signal)
     const createResponsePromise = page.waitForResponse(
