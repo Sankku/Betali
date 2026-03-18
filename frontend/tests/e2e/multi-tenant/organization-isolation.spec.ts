@@ -68,12 +68,13 @@ test.describe('Multi-Tenant Data Isolation', () => {
       }
 
       await page.waitForTimeout(300);
+      // Set up response listener BEFORE clicking submit
+      const createResponsePromise = page.waitForResponse(
+        r => r.url().includes('/api/products') && r.method() === 'POST',
+        { timeout: 15000 }
+      );
       await page.click('button[type="submit"]');
-      // Wait for modal to close (most reliable signal of successful save)
-      await Promise.race([
-        page.waitForSelector('[role="dialog"]', { state: 'hidden', timeout: 15000 }),
-        page.waitForSelector('text=exitosamente', { state: 'visible', timeout: 15000 }),
-      ]);
+      await createResponsePromise;
     };
 
     // --- ORG 1: login as admin test user ---

@@ -72,16 +72,14 @@ test.describe('Create Product', () => {
 
     await page.waitForTimeout(300);
 
-    // Submit form
+    // Submit form — wait for the actual POST /api/products 201 response (most reliable signal)
+    const createResponsePromise = page.waitForResponse(
+      r => r.url().includes('/api/products') && r.method() === 'POST',
+      { timeout: 15000 }
+    );
     await page.click('button[type="submit"]');
-
-    // Wait for success: modal closes (reliable signal) OR toast appears
-    const successVisible = await Promise.race([
-      // Modal closing is the most reliable signal of a successful save
-      page.waitForSelector('[role="dialog"]', { state: 'hidden', timeout: 10000 }).then(() => true),
-      // Fallback: toast message text
-      page.waitForSelector('text=exitosamente', { state: 'visible', timeout: 10000 }).then(() => true),
-    ]).catch(() => false);
+    const createResponse = await createResponsePromise.catch(() => null);
+    const successVisible = createResponse !== null && createResponse.status() === 201;
     expect(successVisible).toBeTruthy();
 
     // Verify product appears in the list (use search to avoid pagination)
