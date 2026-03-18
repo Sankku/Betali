@@ -74,7 +74,7 @@ test.describe('Create Product', () => {
 
     // Submit form — wait for the actual POST /api/products 201 response (most reliable signal)
     const createResponsePromise = page.waitForResponse(
-      r => r.url().includes('/api/products') && r.method() === 'POST',
+      r => r.url().includes('/api/products') && r.request().method() === 'POST',
       { timeout: 15000 }
     );
     await page.click('button[type="submit"]');
