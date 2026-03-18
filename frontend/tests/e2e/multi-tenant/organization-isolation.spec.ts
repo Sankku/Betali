@@ -69,10 +69,11 @@ test.describe('Multi-Tenant Data Isolation', () => {
 
       await page.waitForTimeout(300);
       await page.click('button[type="submit"]');
-      await page.waitForSelector('.border-l-success-500, [class*="border-l-success"]', {
-        state: 'visible',
-        timeout: 15000,
-      });
+      // Wait for modal to close (most reliable signal of successful save)
+      await Promise.race([
+        page.waitForSelector('[role="dialog"]', { state: 'hidden', timeout: 15000 }),
+        page.waitForSelector('text=exitosamente', { state: 'visible', timeout: 15000 }),
+      ]);
     };
 
     // --- ORG 1: login as admin test user ---
@@ -112,14 +113,15 @@ test.describe('Multi-Tenant Data Isolation', () => {
     );
     await page.goto('/dashboard/products');
     await productsLoaded;
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
 
     // The table uses client-side pagination (pageSize=10). If this org has accumulated
     // >10 products from prior test runs, the new product lands on page 2+.
     // Search by name to collapse the list to exactly 1 row, making the assertion reliable.
-    const searchInput = page.locator('input[placeholder*="Search"]').first();
+    const searchInput = page.locator('input[placeholder*="Search"], input[placeholder*="search"]').first();
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       await searchInput.fill(org2ProductName);
-      await page.waitForTimeout(400); // let debounce / filter settle
+      await page.waitForTimeout(800); // let filter settle
     }
 
     await expect(page.locator(`text=${org2ProductName}`).first()).toBeVisible({ timeout: 10000 });

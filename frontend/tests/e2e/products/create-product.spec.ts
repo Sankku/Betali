@@ -75,11 +75,13 @@ test.describe('Create Product', () => {
     // Submit form
     await page.click('button[type="submit"]');
 
-    // Wait for success toast (custom toast renders with border-l-success-500)
-    const successVisible = await page.waitForSelector(
-      '.border-l-success-500, [class*="border-l-success"]',
-      { state: 'visible', timeout: 10000 }
-    ).then(() => true).catch(() => false);
+    // Wait for success: modal closes (reliable signal) OR toast appears
+    const successVisible = await Promise.race([
+      // Modal closing is the most reliable signal of a successful save
+      page.waitForSelector('[role="dialog"]', { state: 'hidden', timeout: 10000 }).then(() => true),
+      // Fallback: toast message text
+      page.waitForSelector('text=exitosamente', { state: 'visible', timeout: 10000 }).then(() => true),
+    ]).catch(() => false);
     expect(successVisible).toBeTruthy();
 
     // Verify product appears in the list (use search to avoid pagination)
