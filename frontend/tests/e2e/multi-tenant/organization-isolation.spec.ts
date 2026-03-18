@@ -25,7 +25,12 @@ test.describe('Multi-Tenant Data Isolation', () => {
       await page.waitForLoadState('networkidle');
       // Wait for any loading overlays (e.g., onboarding wizard backdrop z-40) to disappear
       await page.waitForSelector('div.fixed.inset-0.z-40', { state: 'detached', timeout: 5000 }).catch(() => {});
-      await page.click('#create-product-button, button:has-text("Add Product"), button:has-text("Agregar Producto")');
+      const createBtn = page.locator('#create-product-button, button:has-text("Add Product"), button:has-text("Agregar Producto")').first();
+      await createBtn.waitFor({ state: 'visible', timeout: 10000 });
+      if (!await createBtn.isEnabled()) {
+        throw new Error('Create product button is disabled — test user has reached plan limit. Seed data may need cleanup.');
+      }
+      await createBtn.click();
       await page.waitForSelector('input[name="name"]', { timeout: 5000 });
 
       await page.fill('input[name="name"]', productName);
