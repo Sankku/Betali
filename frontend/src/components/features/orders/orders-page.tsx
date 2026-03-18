@@ -49,6 +49,7 @@ import {
   getValidStatusTransitions,
 } from '@/hooks/useOrders';
 import { useClients } from '@/hooks/useClients';
+import { useWarehouses } from '@/hooks/useWarehouse';
 import { Order, OrderQueryParams, orderService } from '@/services/api/orderService';
 
 interface ModalState {
@@ -91,6 +92,8 @@ export function OrdersPage() {
   const orderStats = orderStatsResponse?.data;
   const { data: clientsResponse } = useClients();
   const clients = clientsResponse?.data || [];
+  const { data: warehousesResponse } = useWarehouses();
+  const warehouses = warehousesResponse?.data || [];
   const updateOrderStatusMutation = useUpdateOrderStatus();
   const deleteOrderMutation = useDeleteOrder();
   const duplicateOrderMutation = useDuplicateOrder();
@@ -273,6 +276,30 @@ export function OrdersPage() {
         ),
       },
       {
+        accessorKey: 'warehouse',
+        header: 'Warehouse',
+        cell: ({ row }: { row: any }) => {
+          const order = row.original as Order;
+          return order.warehouse ? (
+            <div className="font-medium">{order.warehouse.name}</div>
+          ) : (
+            <span className="text-gray-400">—</span>
+          );
+        },
+        filterFn: (row: any, columnId: string, filterValue: string) => {
+          if (!filterValue) return true;
+          const order = row.original as Order;
+          return order.warehouse?.name === filterValue;
+        },
+        meta: {
+          filterType: 'select',
+          filterOptions: warehouses.map(w => ({
+            label: w.name,
+            value: w.name,
+          })),
+        },
+      },
+      {
         accessorKey: 'clients',
         header: 'Client',
         cell: ({ row }: { row: any }) => {
@@ -285,7 +312,7 @@ export function OrdersPage() {
                   <div className="text-sm text-gray-600">{order.clients.email}</div>
                 </div>
               ) : (
-                <span className="text-gray-500">No client</span>
+                <span className="text-gray-400">—</span>
               )}
             </div>
           );
@@ -406,7 +433,7 @@ export function OrdersPage() {
         ),
       },
     ],
-    [handleStatusChange, clients]
+    [handleStatusChange, clients, warehouses]
   );
 
 

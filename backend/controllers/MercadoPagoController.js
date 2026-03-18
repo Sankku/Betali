@@ -606,6 +606,32 @@ class MercadoPagoController {
           throw new Error(`Subscription activation failed: ${activationError.message}`);
         }
 
+        // Sync organizations table so limitEnforcement middleware reads the correct plan
+        const { error: orgSyncError } = await supabase
+          .from('organizations')
+          .update({
+            subscription_plan: plan.name,
+            subscription_status: newStatus,
+            updated_at: now.toISOString()
+          })
+          .eq('organization_id', subscription.organization_id);
+
+        if (orgSyncError) {
+          // Non-fatal: subscription is activated, limits will be stale until next manual sync
+          this.logger.error('Failed to sync organizations.subscription_plan after payment:', {
+            subscriptionId,
+            organizationId: subscription.organization_id,
+            planName: plan.name,
+            error: orgSyncError
+          });
+        } else {
+          this.logger.info('Synced organizations.subscription_plan:', {
+            organizationId: subscription.organization_id,
+            planName: plan.name,
+            status: newStatus
+          });
+        }
+
         // Send payment success email
         try {
           await emailService.sendPaymentSuccessEmail({

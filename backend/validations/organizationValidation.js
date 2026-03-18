@@ -31,6 +31,8 @@ const createOrganizationSchema = Joi.object({
   
   description: Joi.string()
     .max(1000)
+    .allow('')
+    .allow(null)
     .optional()
     .messages({
       'string.max': 'Description cannot exceed 1000 characters'
@@ -60,6 +62,8 @@ const updateOrganizationSchema = Joi.object({
   
   description: Joi.string()
     .max(1000)
+    .allow('')
+    .allow(null)
     .optional()
     .messages({
       'string.max': 'Description cannot exceed 1000 characters'

@@ -5,6 +5,7 @@ import { Package } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
 import { productFormSchema } from '../../../validations/productValidation';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 export interface Product {
   product_id: string;
@@ -38,6 +39,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const form = useForm<ProductFormData>({
     resolver: yupResolver(productFormSchema),
     defaultValues: {
@@ -58,24 +60,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const getModalTitle = () => {
     switch (mode) {
       case 'create':
-        return 'Create New Product';
+        return t('products.modal.createTitle');
       case 'edit':
-        return `Edit ${product?.name}`;
+        return t('products.modal.editTitle', { name: product?.name });
       case 'view':
-        return `${product?.name} Details`;
+        return t('products.modal.viewTitle', { name: product?.name });
       default:
-        return 'Product';
+        return t('nav.products');
     }
   };
 
   const getModalDescription = () => {
     switch (mode) {
       case 'create':
-        return 'Complete the information to register a new product.';
+        return t('products.modal.createDescription');
       case 'edit':
-        return `Modify the fields you want to update for "${product?.name}".`;
+        return t('products.modal.editDescription', { name: product?.name });
       case 'view':
-        return `Detailed information for product "${product?.name}".`;
+        return t('products.modal.viewDescription', { name: product?.name });
       default:
         return '';
     }

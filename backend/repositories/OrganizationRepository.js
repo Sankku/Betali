@@ -25,7 +25,7 @@ class OrganizationRepository extends BaseRepository {
           ...organizationData,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          is_active: true
+          is_active: true,
         })
         .select()
         .single();
@@ -34,14 +34,14 @@ class OrganizationRepository extends BaseRepository {
 
       this.logger.info('Organization created successfully', {
         organizationId: data.organization_id,
-        name: data.name
+        name: data.name,
       });
 
       return data;
     } catch (error) {
       this.logger.error('Error creating organization', {
         error: error.message,
-        organizationData
+        organizationData,
       });
       throw error;
     }
@@ -66,7 +66,7 @@ class OrganizationRepository extends BaseRepository {
     } catch (error) {
       this.logger.error('Error fetching organization by ID', {
         error: error.message,
-        organizationId
+        organizationId,
       });
       throw error;
     }
@@ -79,10 +79,7 @@ class OrganizationRepository extends BaseRepository {
    */
   async getAll(options = {}) {
     try {
-      let query = this.supabase
-        .from(this.table)
-        .select('*')
-        .eq('is_active', true);
+      let query = this.supabase.from(this.table).select('*').eq('is_active', true);
 
       if (options.search) {
         query = query.ilike('name', `%${options.search}%`);
@@ -103,7 +100,7 @@ class OrganizationRepository extends BaseRepository {
     } catch (error) {
       this.logger.error('Error fetching organizations', {
         error: error.message,
-        options
+        options,
       });
       throw error;
     }
@@ -121,7 +118,7 @@ class OrganizationRepository extends BaseRepository {
         .from(this.table)
         .update({
           ...updateData,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('organization_id', organizationId)
         .select()
@@ -131,7 +128,7 @@ class OrganizationRepository extends BaseRepository {
 
       this.logger.info('Organization updated successfully', {
         organizationId,
-        fieldsUpdated: Object.keys(updateData)
+        fieldsUpdated: Object.keys(updateData),
       });
 
       return data;
@@ -139,7 +136,7 @@ class OrganizationRepository extends BaseRepository {
       this.logger.error('Error updating organization', {
         error: error.message,
         organizationId,
-        updateData
+        updateData,
       });
       throw error;
     }
@@ -156,21 +153,21 @@ class OrganizationRepository extends BaseRepository {
         .from(this.table)
         .update({
           is_active: false,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('organization_id', organizationId);
 
       if (error) throw error;
 
       this.logger.info('Organization deactivated successfully', {
-        organizationId
+        organizationId,
       });
 
       return true;
     } catch (error) {
       this.logger.error('Error deactivating organization', {
         error: error.message,
-        organizationId
+        organizationId,
       });
       throw error;
     }
@@ -185,20 +182,22 @@ class OrganizationRepository extends BaseRepository {
     try {
       const { data, error } = await this.supabase
         .from('user_organizations')
-        .select(`
+        .select(
+          `
           *,
           organization:organizations(*)
-        `)
+        `
+        )
         .eq('user_id', userId)
         .eq('is_active', true);
 
       if (error) throw error;
-      
+
       return data || [];
     } catch (error) {
       this.logger.error('Error fetching user organizations', {
         error: error.message,
-        userId
+        userId,
       });
       throw error;
     }

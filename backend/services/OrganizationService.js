@@ -431,35 +431,54 @@ class OrganizationService {
         throw new Error('Organization not found');
       }
 
+      const supabase = this.organizationRepository.client;
+
       // CASCADE DELETION - Delete all related data in correct order
       // 1. Delete stock movements (they reference warehouses)
       const warehouses = await this.warehouseRepository.findAll({ organization_id: organizationId });
       const warehouseIds = warehouses.map(w => w.warehouse_id);
-      
+
       let deletedMovements = 0;
       for (const warehouseId of warehouseIds) {
         const movements = await this.stockMovementRepository.deleteByFilter({ warehouse_id: warehouseId });
         deletedMovements += movements;
       }
 
-      // 2. Delete order details (they reference orders, but we need the orders first)
-      // Note: We would need OrderRepository for this, but it's not in the current schema with organization_id
-      // For now, we'll handle this when we have proper order management
+      // 2. Get product IDs for this org (needed to clean up FK references before deleting products)
+      const { data: orgProducts } = await supabase
+        .from('products')
+        .select('product_id')
+        .eq('organization_id', organizationId);
+      const productIds = (orgProducts || []).map(p => p.product_id);
 
-      // 3. Delete orders (they reference warehouses)
-      // Note: Orders table exists but doesn't have organization_id, so we skip for now
+      if (productIds.length > 0) {
+        // 3. Delete order_details (FK → products and orders)
+        await supabase.from('order_details').delete().in('product_id', productIds);
 
-      // 4. Delete products (they are linked via owner_id to users in this organization)
-      const orgUsers = await this.userOrganizationRepository.findAll({ organization_id: organizationId });
-      const userIds = orgUsers.map(u => u.user_id);
-      
-      let deletedProducts = 0;
-      for (const userId of userIds) {
-        const products = await this.productRepository.deleteByFilter({ owner_id: userId });
-        deletedProducts += products;
+        // 4. Delete purchase_order_details (FK → products)
+        await supabase.from('purchase_order_details').delete().in('product_id', productIds);
       }
 
-      // 5. Delete warehouses (they reference organization)
+      // 5. Delete orders linked to this org's warehouses (FK → warehouses)
+      if (warehouseIds.length > 0) {
+        const { data: orgOrders } = await supabase
+          .from('orders')
+          .select('order_id')
+          .in('warehouse_id', warehouseIds);
+        const orderIds = (orgOrders || []).map(o => o.order_id);
+
+        if (orderIds.length > 0) {
+          await supabase.from('order_details').delete().in('order_id', orderIds);
+          await supabase.from('orders').delete().in('order_id', orderIds);
+        }
+      }
+
+      // 6. Delete products by organization_id (correct tenant isolation)
+      const deletedProducts = productIds.length > 0
+        ? await this.productRepository.deleteByFilter({ organization_id: organizationId })
+        : 0;
+
+      // 7. Delete warehouses (they reference organization)
       const deletedWarehouses = await this.warehouseRepository.deleteByFilter({ organization_id: organizationId });
 
       // 6. Delete user-organization relationships

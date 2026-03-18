@@ -51,9 +51,10 @@ const createOrderSchema = Joi.object({
     }),
   warehouse_id: Joi.string()
     .uuid()
-    .allow(null)
+    .required()
     .messages({
-      'string.guid': 'Warehouse ID must be a valid UUID'
+      'string.guid': 'Warehouse ID must be a valid UUID',
+      'any.required': 'Warehouse is required'
     }),
   status: Joi.string()
     .valid(...ORDER_STATUSES)
@@ -68,6 +69,15 @@ const createOrderSchema = Joi.object({
       'date.base': 'Order date must be a valid date',
       'date.format': 'Order date must be in ISO format',
       'date.max': 'Order date cannot be in the future'
+    }),
+  tax_rate_ids: Joi.array()
+    .items(Joi.string().uuid())
+    .max(10)
+    .default([])
+    .messages({
+      'array.base': 'Tax rate IDs must be an array',
+      'array.max': 'Cannot apply more than 10 tax rates',
+      'string.guid': 'Each tax rate ID must be a valid UUID'
     }),
   items: Joi.array()
     .items(orderItemSchema)
@@ -122,6 +132,14 @@ const updateOrderSchema = Joi.object({
       'array.base': 'Items must be an array',
       'array.min': 'Order must have at least 1 item',
       'array.max': 'Order cannot have more than 100 items'
+    }),
+  tax_rate_ids: Joi.array()
+    .items(Joi.string().uuid())
+    .max(10)
+    .messages({
+      'array.base': 'Tax rate IDs must be an array',
+      'array.max': 'Cannot apply more than 10 tax rates',
+      'string.guid': 'Each tax rate ID must be a valid UUID'
     }),
   notes: Joi.string()
     .max(1000)

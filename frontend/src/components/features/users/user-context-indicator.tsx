@@ -4,6 +4,7 @@ import { useUserContext } from '@/hooks/useUsers';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useAuth } from '@/context/AuthContext';
 import { useGlobalSync } from '@/context/GlobalSyncContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ export function UserContextIndicator() {
     setDefaultOrganization,
   } = useOrganization();
   const { signOut } = useAuth();
+  const { t } = useTranslation();
   // const { toast } = useToast(); // Replaced by imported toast singleton
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOrgSwitching, setIsOrgSwitching] = useState(false);
@@ -48,7 +50,7 @@ export function UserContextIndicator() {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-md text-sm">
         <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse"></div>
-        <span className="text-gray-500">Loading...</span>
+        <span className="text-gray-500">{t('userMenu.loading')}</span>
       </div>
     );
   }
@@ -57,7 +59,7 @@ export function UserContextIndicator() {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-md text-sm">
         <AlertCircle className="w-4 h-4 text-red-500" />
-        <span className="text-red-600">Error loading context</span>
+        <span className="text-red-600">{t('userMenu.errorLoading')}</span>
       </div>
     );
   }
@@ -124,9 +126,9 @@ export function UserContextIndicator() {
                 {user.name || 'User'}
               </span>
               <span className="text-xs text-gray-500 font-medium capitalize">
-                {currentOrganization 
-                  ? currentOrganization.name 
-                  : 'No Organization'}
+                {currentOrganization
+                  ? currentOrganization.name
+                  : t('userMenu.noOrganization')}
               </span>
             </div>
 
@@ -159,7 +161,7 @@ export function UserContextIndicator() {
           {/* Organization Selector */}
           <div className="py-1">
             <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase bg-gray-50">
-              Organizations
+              {t('userMenu.organizations')}
             </div>
             
             {userOrganizations.length > 0 ? (
@@ -189,11 +191,11 @@ export function UserContextIndicator() {
                             <Pin className="w-3 h-3 text-amber-500 fill-amber-500" />
                           )}
                           {isSelected && (
-                            <span className="text-xs text-blue-600">• Current</span>
+                            <span className="text-xs text-blue-600">• {t('userMenu.current')}</span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500 capitalize">
-                          {userOrg.role} access
+                          {userOrg.role} {t('userMenu.access')}
                         </div>
                       </div>
                     </DropdownMenuItem>
@@ -203,7 +205,7 @@ export function UserContextIndicator() {
                         e.stopPropagation();
                         setDefaultOrganization(isDefault ? null : orgId);
                       }}
-                      title={isDefault ? 'Remove default' : 'Set as default'}
+                      title={isDefault ? t('userMenu.removeDefault') : t('userMenu.setAsDefault')}
                       className={`px-2 py-1 mr-1 rounded transition-opacity ${
                         isDefault
                           ? 'opacity-100 text-amber-500'
@@ -222,7 +224,7 @@ export function UserContextIndicator() {
             ) : (
               <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
                 <AlertCircle className="w-4 h-4 mr-2 text-gray-400" />
-                <span className="text-sm">No organizations available</span>
+                <span className="text-sm">{t('userMenu.noOrganizationsAvailable')}</span>
               </DropdownMenuItem>
             )}
             
@@ -232,7 +234,7 @@ export function UserContextIndicator() {
               className="cursor-pointer border-t border-gray-100 mt-1"
             >
               <Plus className="w-4 h-4 mr-2 text-green-600" />
-              <span className="text-sm text-green-600">Create Organization</span>
+              <span className="text-sm text-green-600">{t('userMenu.createOrganization')}</span>
             </DropdownMenuItem>
           </div>
           
@@ -245,23 +247,23 @@ export function UserContextIndicator() {
               className="cursor-pointer"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
-              <span className="text-sm">Sync Data</span>
+              <span className="text-sm">{t('userMenu.syncData')}</span>
             </DropdownMenuItem>
-            
+
             <DropdownMenuItem
               onClick={() => setIsDetailsOpen(true)}
               className="cursor-pointer"
             >
               <Settings className="w-4 h-4 mr-2" />
-              <span className="text-sm">Profile & Preferences</span>
+              <span className="text-sm">{t('userMenu.profilePreferences')}</span>
             </DropdownMenuItem>
-            
-            <DropdownMenuItem 
+
+            <DropdownMenuItem
               onClick={handleSignOut}
               className="cursor-pointer text-red-600 hover:text-red-700 focus:text-red-700"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              <span className="text-sm">Sign Out</span>
+              <span className="text-sm">{t('userMenu.signOut')}</span>
             </DropdownMenuItem>
           </div>
         </DropdownMenuContent>

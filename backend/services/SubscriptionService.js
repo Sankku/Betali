@@ -1,6 +1,7 @@
 const { SubscriptionRepository } = require('../repositories/SubscriptionRepository');
 const { Logger } = require('../utils/Logger');
 const subscriptionPlanRepository = require('../repositories/SubscriptionPlanRepository');
+const supabase = require('../lib/supabaseClient');
 
 class SubscriptionService {
   constructor(subscriptionRepository, logger) {
@@ -67,13 +68,41 @@ class SubscriptionService {
       const existingSubscription = await this.subscriptionRepository.getCurrentByOrganizationId(organizationId);
 
       if (existingSubscription) {
-        // If subscription is pending payment, return it so they can complete payment
+        // If subscription is pending payment, update plan if different or return as-is
         if (existingSubscription.status === 'pending_payment') {
-          this.logger.warn('Organization already has a pending payment subscription', {
-            subscriptionId: existingSubscription.subscription_id,
-            organizationId
+          if (existingSubscription.plan_id === planId) {
+            // Same plan — return so the user can complete the existing payment
+            this.logger.info('Returning existing pending_payment subscription (same plan)', {
+              subscriptionId: existingSubscription.subscription_id,
+              organizationId
+            });
+            return existingSubscription;
+          }
+
+          // Different plan — update the pending subscription to the new plan
+          const subscription = await this.subscriptionRepository.update(
+            existingSubscription.subscription_id,
+            {
+              plan_id: planId,
+              amount,
+              currency,
+              updated_at: new Date().toISOString(),
+              metadata: {
+                ...existingSubscription.metadata,
+                plan_switched_at: new Date().toISOString(),
+                previous_plan_id: existingSubscription.plan_id
+              }
+            }
+          );
+
+          this.logger.info('Updated pending_payment subscription to new plan', {
+            subscriptionId: subscription.subscription_id,
+            organizationId,
+            previousPlanId: existingSubscription.plan_id,
+            newPlanId: planId
           });
-          return existingSubscription;
+
+          return subscription;
         }
 
         // If subscription is already active/trialing with same plan, return it
@@ -238,6 +267,27 @@ class SubscriptionService {
       };
 
       const updatedSubscription = await this.subscriptionRepository.update(subscriptionId, updateData);
+
+      // Sync organizations table so limitEnforcement middleware picks up the new plan
+      const newPlan = await subscriptionPlanRepository.findById(scheduledChange.new_plan_id);
+      if (newPlan) {
+        const { error: orgSyncError } = await supabase
+          .from('organizations')
+          .update({
+            subscription_plan: newPlan.name,
+            subscription_status: 'active',
+            updated_at: now.toISOString()
+          })
+          .eq('organization_id', subscription.organization_id);
+
+        if (orgSyncError) {
+          this.logger.error('Failed to sync organizations.subscription_plan on scheduled change:', {
+            subscriptionId,
+            organizationId: subscription.organization_id,
+            error: orgSyncError
+          });
+        }
+      }
 
       this.logger.info('Applied scheduled plan change', {
         subscriptionId,

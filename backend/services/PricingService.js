@@ -64,11 +64,12 @@ class PricingService {
       // Calculate discounted amount
       const discountedAmount = subtotal - orderDiscounts.total_discount;
 
-      // Calculate taxes
+      // Calculate taxes — pass tax_rate_ids so explicit "no tax" selection is respected
       const taxCalculation = await this.calculateTaxes(
         lineItems,
         discountedAmount,
-        organizationId
+        organizationId,
+        orderData.tax_rate_ids
       );
 
       // Calculate final total based on tax method
@@ -358,8 +359,13 @@ class PricingService {
    * Calculate taxes for the order
    * @private
    */
-  async calculateTaxes(lineItems, taxableAmount, organizationId) {
+  async calculateTaxes(lineItems, taxableAmount, organizationId, taxRateIds) {
     try {
+      // If the caller explicitly passed an empty array, the user selected "No tax"
+      if (Array.isArray(taxRateIds) && taxRateIds.length === 0) {
+        return { total_tax: 0, tax_breakdown: [] };
+      }
+
       let totalTax = 0;
       const taxBreakdown = [];
 
@@ -393,7 +399,7 @@ class PricingService {
           
           taxBreakdown.push({
             tax_rate_id: defaultTaxRate.tax_rate_id,
-            tax_name: defaultTaxRate.name,
+            name: defaultTaxRate.name,
             rate: defaultTaxRate.rate,
             taxable_amount: parseFloat(adjustedTaxableAmount.toFixed(2)),
             tax_amount: parseFloat(taxAmount.toFixed(2)),
@@ -431,7 +437,7 @@ class PricingService {
               } else {
                 taxBreakdown.push({
                   tax_rate_id: taxRate.tax_rate_id,
-                  tax_name: taxRate.name,
+                  name: taxRate.name,
                   rate: taxRate.rate,
                   taxable_amount: parseFloat(adjustedItemTaxableAmount.toFixed(2)),
                   tax_amount: parseFloat(itemTaxAmount.toFixed(2)),

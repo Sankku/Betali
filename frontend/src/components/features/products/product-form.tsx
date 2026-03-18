@@ -6,6 +6,7 @@ import { DatePicker } from '../../ui/date-picker';
 import { Label } from '../../ui/label';
 import { TooltipHelp } from '../../ui/tooltip-help';
 import { useTaxRates, formatTaxRate } from '../../../hooks/useTaxRates';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 import { ProductFormSchemaData } from '../../../validations/productValidation';
 
@@ -19,6 +20,7 @@ export interface ProductFormProps {
 
 export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading = false }) => {
   const isViewMode = mode === 'view';
+  const { t } = useTranslation();
   const {
     register,
     watch,
@@ -49,15 +51,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'Not specified'}</span>
+        <span className="text-neutral-800">{value || t('products.form.notSpecified')}</span>
       </div>
     </div>
   );
 
   const formatDateForDisplay = (dateString: string): string => {
-    if (!dateString) return 'Not specified';
+    if (!dateString) return t('products.form.notSpecified');
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -72,30 +74,30 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
       <div className="space-y-6">
         {isViewMode ? (
           <ViewField
-            label="Product Name"
+            label={t('products.form.productName')}
             value={currentName}
             icon={<Package className="inline h-4 w-4 mr-2" />}
-            description="Product identification name"
+            description={t('products.form.productNameDesc')}
           />
         ) : (
           <Input
             {...register('name')}
-            label="Product Name"
-            placeholder="E.g.: Premium Widget"
+            label={t('products.form.productName')}
+            placeholder={t('products.form.productNamePlaceholder')}
             icon={<Package className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.name?.message}
-            description="Product identification name"
+            description={t('products.form.productNameDesc')}
             required
           />
         )}
 
         {isViewMode ? (
           <ViewField
-            label="Price"
+            label={t('products.form.price')}
             value={`$${currentPrice.toFixed(2)}`}
             icon={<DollarSign className="inline h-4 w-4 mr-2" />}
-            description="Product selling price"
+            description={t('products.form.priceDesc')}
           />
         ) : (
           <Input
@@ -103,12 +105,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
             type="number"
             step="0.01"
             min="0"
-            label="Price"
+            label={t('products.form.price')}
             placeholder="0.00"
             icon={<DollarSign className="h-4 w-4" />}
             disabled={isLoading}
             error={errors.price?.message}
-            description="Product selling price"
+            description={t('products.form.priceDesc')}
             required
           />
         )}
@@ -116,25 +118,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         {/* Tax Rate Selection */}
         {isViewMode ? (
           <ViewField
-            label="Tax Rate"
+            label={t('products.form.taxRate')}
             value={
-              currentTaxRateId && taxRates?.data 
+              currentTaxRateId && taxRates?.data
                 ? (() => {
                     const selectedTaxRate = taxRates.data.find(rate => rate.tax_rate_id === currentTaxRateId);
-                    return selectedTaxRate 
+                    return selectedTaxRate
                       ? `${selectedTaxRate.name} (${formatTaxRate(selectedTaxRate.rate)})`
-                      : 'No tax rate selected';
+                      : t('products.form.noTaxRate');
                   })()
-                : 'No tax rate selected'
+                : t('products.form.noTaxRate')
             }
             icon={<Percent className="inline h-4 w-4 mr-2" />}
-            description="Tax rate applied to this product"
+            description={t('products.form.taxRateDesc')}
           />
         ) : (
           <div className="space-y-2">
             <Label htmlFor="tax_rate_id" className="text-gray-900 font-medium flex items-center gap-2">
               <Percent className="h-4 w-4" />
-              Tax Rate
+              {t('products.form.taxRate')}
             </Label>
             <select
               id="tax_rate_id"
@@ -144,11 +146,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-neutral-50 disabled:text-neutral-400"
             >
               <option value="">
-                {taxRatesLoading ? 'Loading tax rates...' : 'Select tax rate (optional)'}
+                {taxRatesLoading ? t('products.form.taxRateLoading') : t('products.form.taxRatePlaceholder')}
               </option>
               {taxRates?.data && taxRates.data.map((taxRate) => (
                 <option key={taxRate.tax_rate_id} value={taxRate.tax_rate_id}>
-                  {taxRate.name} ({formatTaxRate(taxRate.rate)} • {taxRate.is_inclusive ? 'Tax Inclusive' : 'Tax Exclusive'})
+                  {taxRate.name} ({formatTaxRate(taxRate.rate)} • {taxRate.is_inclusive ? t('products.form.taxInclusive') : t('products.form.taxExclusive')})
                 </option>
               ))}
             </select>
@@ -156,7 +158,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
               <p className="text-sm text-red-600">{errors.tax_rate_id.message}</p>
             )}
             <p className="text-xs text-gray-600">
-              Configure tax rates in <a href="/dashboard/taxes" className="text-blue-600 hover:underline">Tax Management</a> section
+              {t('products.form.taxRateNotePrefix')} <a href="/dashboard/taxes" className="text-blue-600 hover:underline">{t('products.form.taxManagementLink')}</a>
             </p>
           </div>
         )}
@@ -164,15 +166,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isViewMode ? (
             <ViewField
-              label="SKU/Batch Number"
+              label={t('products.form.sku')}
               value={currentBatchNumber}
               icon={<Package className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('batch_number')}
-              label="SKU/Batch Number"
-              placeholder="E.g.: SKU-2024-001"
+              label={t('products.form.sku')}
+              placeholder={t('products.form.skuPlaceholder')}
               icon={<Package className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.batch_number?.message}
@@ -181,15 +183,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           )}
           {isViewMode ? (
             <ViewField
-              label="Origin/Source"
+              label={t('products.form.origin')}
               value={currentOriginCountry}
               icon={<Globe className="inline h-4 w-4 mr-2" />}
             />
           ) : (
             <Input
               {...register('origin_country')}
-              label="Origin/Source"
-              placeholder="E.g.: Local Supplier"
+              label={t('products.form.origin')}
+              placeholder={t('products.form.originPlaceholder')}
               icon={<Globe className="h-4 w-4" />}
               disabled={isLoading}
               error={errors.origin_country?.message}
@@ -199,7 +201,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         </div>
         {isViewMode ? (
           <ViewField
-            label="Expiry/Best Before Date"
+            label={t('products.form.expiryDate')}
             value={formatDateForDisplay(currentExpirationDate)}
             icon={<Calendar className="inline h-4 w-4 mr-2" />}
           />
@@ -207,7 +209,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           <div className="space-y-3">
             <label className="text-sm font-semibold text-neutral-800 flex items-center">
               <span className="text-neutral-600 mr-2"><Calendar className="h-4 w-4" /></span>
-              Expiry/Best Before Date
+              {t('products.form.expiryDate')}
               <span className="text-red-500 ml-1">*</span>
             </label>
             <DatePicker
@@ -226,23 +228,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
         <div className="border-t pt-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <h4 className="text-md font-semibold text-gray-900">Inventory Alerts</h4>
+            <h4 className="text-md font-semibold text-gray-900">{t('products.form.inventoryAlerts')}</h4>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {isViewMode ? (
               <>
                 <ViewField
-                  label="Minimum Stock"
+                  label={t('products.form.minStock')}
                   value={String(watch('min_stock') || 0)}
                   icon={<Package className="inline h-4 w-4 mr-2" />}
-                  description="Alert when stock falls below this level"
+                  description={t('products.form.minStockDesc')}
                 />
                 <ViewField
-                  label="Maximum Stock"
-                  value={String(watch('max_stock') || 'Not set')}
+                  label={t('products.form.maxStock')}
+                  value={String(watch('max_stock') || t('products.form.notSet'))}
                   icon={<Package className="inline h-4 w-4 mr-2" />}
-                  description="Alert when stock exceeds this level"
+                  description={t('products.form.maxStockDesc')}
                 />
               </>
             ) : (
@@ -250,9 +252,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
                 <div className="space-y-2">
                   <Label htmlFor="min_stock" className="text-gray-900 font-medium flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Minimum Stock
+                    {t('products.form.minStock')}
                     <TooltipHelp
-                      content="Set the minimum stock level. You'll receive an alert when inventory falls below this amount."
+                      content={t('products.form.minStockTooltip')}
                       position="right"
                     />
                   </Label>
@@ -266,16 +268,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
                     error={errors.min_stock?.message}
                   />
                   <p className="text-xs text-gray-600">
-                    Alert will trigger when stock falls below this level
+                    {t('products.form.minStockDesc')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="max_stock" className="text-gray-900 font-medium flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Maximum Stock (Optional)
+                    {t('products.form.maxStock')}
                     <TooltipHelp
-                      content="Set the maximum stock level. You'll receive an alert when inventory exceeds this amount."
+                      content={t('products.form.maxStockTooltip')}
                       position="right"
                     />
                   </Label>
@@ -284,12 +286,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
                     type="number"
                     min="0"
                     step="1"
-                    placeholder="Not set"
+                    placeholder={t('products.form.notSet')}
                     disabled={isLoading}
                     error={errors.max_stock?.message}
                   />
                   <p className="text-xs text-gray-600">
-                    Alert will trigger when stock exceeds this level
+                    {t('products.form.maxStockDesc')}
                   </p>
                 </div>
               </>
@@ -307,7 +309,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
               />
               <Label htmlFor="alert_enabled" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <Bell className="h-4 w-4" />
-                Enable inventory alerts for this product
+                {t('products.form.enableAlerts')}
               </Label>
             </div>
           )}

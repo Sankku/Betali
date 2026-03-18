@@ -60,13 +60,13 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts();
   const { data: taxRates } = useTaxRates({ active_only: true });
 
-  const { watch, setValue, register } = form;
+  const { watch, setValue, register, formState: { errors: formErrors, isSubmitted } } = form;
   const watchedValues = watch();
 
   // Prepare order data for pricing calculation with memoization
   const orderDataForPricing = useMemo(() => ({
-    client_id: watchedValues.client_id !== 'no-client' ? watchedValues.client_id : undefined,
-    warehouse_id: watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined,
+    client_id: watchedValues.client_id && watchedValues.client_id !== 'no-client' ? watchedValues.client_id : undefined,
+    warehouse_id: watchedValues.warehouse_id && watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined,
     tax_rate_ids: watchedValues.tax_rate_ids || [],
     items: items.filter(item => item.product_id && item.quantity > 0).map(item => ({
       product_id: item.product_id,
@@ -216,18 +216,20 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
     }
   };
 
+  const noTaxSelected = !watchedValues.tax_rate_ids || watchedValues.tax_rate_ids.length === 0;
+
   const calculateTotals = () => {
     // Use pricing result from backend if available, otherwise fallback to basic calculation
     if (pricingResult) {
-      return {
-        subtotal: pricingResult.subtotal,
-        tax: pricingResult.tax_amount,
-        total: pricingResult.total,
-        discount: pricingResult.discount_amount,
-        shipping: pricingResult.shipping_amount
-      };
+      // If user explicitly chose "No tax", override any stale tax from a previous result
+      const tax = noTaxSelected ? 0 : (pricingResult.tax_amount ?? 0);
+      const subtotal = pricingResult.subtotal ?? 0;
+      const discount = pricingResult.discount_amount ?? 0;
+      const shipping = pricingResult.shipping_amount ?? 0;
+      const total = noTaxSelected ? subtotal - discount + shipping : (pricingResult.total ?? subtotal - discount + shipping);
+      return { subtotal, tax, total, discount, shipping };
     }
-    
+
     // Fallback to basic calculation
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
     const tax = 0;
@@ -243,7 +245,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       {/* Order Header Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="client_id" className="text-gray-900 font-medium">Client</Label>
+          <Label htmlFor="client_id" className="text-gray-900 font-medium">Client <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
           <Select 
             value={watchedValues.client_id || 'no-client'} 
             onValueChange={(value) => setValue('client_id', value)}
@@ -266,7 +268,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="warehouse_id" className="text-gray-900 font-medium">Warehouse</Label>
+          <Label htmlFor="warehouse_id" className="text-gray-900 font-medium">Warehouse <span className="text-red-500">*</span></Label>
           <Select 
             value={watchedValues.warehouse_id || 'no-warehouse'} 
             onValueChange={(value) => setValue('warehouse_id', value)}
@@ -289,7 +291,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tax_rate_ids" className="text-gray-900 font-medium">Tax Rates</Label>
+          <Label htmlFor="tax_rate_ids" className="text-gray-900 font-medium">Tax Rates <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
           <Select 
             value={watchedValues.tax_rate_ids?.length ? watchedValues.tax_rate_ids[0] : 'no-tax'} 
             onValueChange={(value) => setValue('tax_rate_ids', value === 'no-tax' ? [] : [value])}
@@ -341,7 +343,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="notes" className="text-gray-900 font-medium">Notes</Label>
+          <Label htmlFor="notes" className="text-gray-900 font-medium">Notes <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
           <Textarea
             {...register('notes')}
             placeholder="Order notes (optional)"
@@ -363,8 +365,8 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {errors.items && (
-            <p className="text-sm text-red-600">{errors.items}</p>
+          {formErrors.root && (
+            <p className="text-sm text-red-600">{formErrors.root.message}</p>
           )}
           
           {items.map((item, index) => (
@@ -376,9 +378,9 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                   onValueChange={(value) => handleItemChange(index, 'product_id', value)}
                   disabled={isViewMode}
                 >
-                  <SelectTrigger className={errors[`item_${index}_product`] ? 'border-red-500' : ''}>
+                  <SelectTrigger className={(isSubmitted && !item.product_id) ? 'border-red-500' : ''}>
                     <SelectValue placeholder={
-                      productsLoading ? "Loading products..." : 
+                      productsLoading ? "Loading products..." :
                       productsError ? "Error loading products" :
                       "Choose a product from your inventory"
                     } />
@@ -402,8 +404,8 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                     )}
                   </SelectContent>
                 </Select>
-                {errors[`item_${index}_product`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`item_${index}_product`]}</p>
+                {isSubmitted && !item.product_id && (
+                  <p className="text-sm text-red-600 mt-1">Product is required</p>
                 )}
               </div>
 
@@ -480,17 +482,24 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 </div>
               )}
 
-              <div className="flex justify-between text-sm text-gray-800">
-                <span className="font-medium">Tax:</span>
-                <span className="font-semibold text-gray-900">
-                  {formatPricing(tax)}
-                  {pricingResult?.tax_breakdown && pricingResult.tax_breakdown.length > 0 && (
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({pricingResult.tax_breakdown.map(t => `${t.name}: ${(t.rate * 100).toFixed(1)}%`).join(', ')})
-                    </span>
-                  )}
-                </span>
-              </div>
+              {tax > 0 ? (
+                <div className="flex justify-between text-sm text-gray-800">
+                  <span className="font-medium">Impuesto:</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPricing(tax)}
+                    {pricingResult?.tax_breakdown && pricingResult.tax_breakdown.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({pricingResult.tax_breakdown.map(t => `${t.name ?? 'Impuesto'}: ${(t.rate * 100).toFixed(1)}%`).join(', ')})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between text-sm text-gray-800">
+                  <span className="font-medium">Impuesto:</span>
+                  <span className="text-gray-500 italic">Sin impuestos aplicados</span>
+                </div>
+              )}
 
               {shipping > 0 && (
                 <div className="flex justify-between text-sm text-gray-800">

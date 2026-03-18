@@ -1,6 +1,8 @@
 import { Check, Zap } from 'lucide-react';
 import { SubscriptionPlan } from '../../../services/api/subscriptionService';
 import { Button } from '../../ui/button';
+import { useTranslation } from '../../../contexts/LanguageContext';
+import { translations } from '../../../locales';
 
 interface PricingCardProps {
   plan: SubscriptionPlan;
@@ -23,6 +25,7 @@ export function PricingCard({
   hasActiveSubscription = false,
   hasPendingPayment = false
 }: PricingCardProps) {
+  const { t, locale } = useTranslation();
   const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
   const displayPrice = billingCycle === 'monthly' ? price : price / 12;
 
@@ -32,11 +35,11 @@ export function PricingCard({
     : 0;
 
   // Format features from JSONB
+  const featureNameMap = translations[locale].pricing.featureNames as Record<string, string>;
   const features = Object.entries(plan.features || {})
     .filter(([_, value]) => value === true)
-    .map(([key, _]) => {
-      // Convert snake_case to Title Case
-      return key.split('_').map(word =>
+    .map(([key]) => {
+      return featureNameMap[key] || key.split('_').map(word =>
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' ');
     });
@@ -44,45 +47,45 @@ export function PricingCard({
   // Add limit-based features
   const limitFeatures = [];
   if (plan.max_users === -1) {
-    limitFeatures.push('Unlimited Users');
+    limitFeatures.push(t('pricing.unlimitedUsers'));
   } else {
-    limitFeatures.push(`Up to ${plan.max_users} user${plan.max_users > 1 ? 's' : ''}`);
+    limitFeatures.push(t('pricing.upToUsers', { count: plan.max_users }));
   }
 
   if (plan.max_warehouses === -1) {
-    limitFeatures.push('Unlimited Warehouses');
+    limitFeatures.push(t('pricing.unlimitedWarehouses'));
   } else {
-    limitFeatures.push(`${plan.max_warehouses} warehouse${plan.max_warehouses > 1 ? 's' : ''}`);
+    limitFeatures.push(t('pricing.warehouseCount', { count: plan.max_warehouses }));
   }
 
   if (plan.max_products === -1) {
-    limitFeatures.push('Unlimited Products');
+    limitFeatures.push(t('pricing.unlimitedProducts'));
   } else if (plan.max_products) {
-    limitFeatures.push(`${plan.max_products.toLocaleString()} products`);
+    limitFeatures.push(t('pricing.productCount', { count: plan.max_products.toLocaleString() }));
   }
 
   if (plan.max_clients === -1) {
-    limitFeatures.push('Unlimited Clients');
+    limitFeatures.push(t('pricing.unlimitedClients'));
   } else if (plan.max_clients) {
-    limitFeatures.push(`${plan.max_clients.toLocaleString()} clients`);
+    limitFeatures.push(t('pricing.clientCount', { count: plan.max_clients.toLocaleString() }));
   }
 
   if (plan.max_suppliers === -1) {
-    limitFeatures.push('Unlimited Suppliers');
+    limitFeatures.push(t('pricing.unlimitedSuppliers'));
   } else if (plan.max_suppliers) {
-    limitFeatures.push(`${plan.max_suppliers.toLocaleString()} suppliers`);
+    limitFeatures.push(t('pricing.supplierCount', { count: plan.max_suppliers.toLocaleString() }));
   }
 
   if (plan.max_orders_per_month === -1) {
-    limitFeatures.push('Unlimited Orders');
+    limitFeatures.push(t('pricing.unlimitedOrders'));
   } else if (plan.max_orders_per_month) {
-    limitFeatures.push(`${plan.max_orders_per_month.toLocaleString()} orders/month`);
+    limitFeatures.push(t('pricing.ordersPerMonthCount', { count: plan.max_orders_per_month.toLocaleString() }));
   }
 
   if (plan.max_stock_movements_per_month === -1) {
-    limitFeatures.push('Unlimited Stock Movements');
+    limitFeatures.push(t('pricing.unlimitedMovements'));
   } else if (plan.max_stock_movements_per_month) {
-    limitFeatures.push(`${plan.max_stock_movements_per_month.toLocaleString()} movements/month`);
+    limitFeatures.push(t('pricing.movementsPerMonthCount', { count: plan.max_stock_movements_per_month.toLocaleString() }));
   }
 
   const allFeatures = [...limitFeatures, ...features];
@@ -104,7 +107,7 @@ export function PricingCard({
         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-1 text-sm font-semibold text-white shadow-lg">
             <Zap className="h-4 w-4" />
-            Most Popular
+            {t('pricing.mostPopular')}
           </span>
         </div>
       )}
@@ -117,7 +120,7 @@ export function PricingCard({
               ? 'bg-yellow-100 text-yellow-800'
               : 'bg-blue-100 text-blue-800'
           }`}>
-            {hasPendingPayment ? 'Pago Pendiente' : 'Current Plan'}
+            {hasPendingPayment ? 'Pago Pendiente' : t('pricing.currentPlan')}
           </span>
         </div>
       )}
@@ -134,16 +137,16 @@ export function PricingCard({
           <span className="text-4xl font-bold text-gray-900">
             ${displayPrice.toFixed(0)}
           </span>
-          <span className="text-gray-600">/month</span>
+          <span className="text-gray-600">{t('pricing.perMonth')}</span>
         </div>
         {billingCycle === 'yearly' && (
           <div className="mt-1 flex items-center gap-2">
             <span className="text-sm text-gray-500">
-              ${plan.price_yearly.toFixed(0)} billed annually
+              ${plan.price_yearly.toFixed(0)} {t('pricing.billedAnnually')}
             </span>
             {savings > 0 && (
               <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                Save {savings}%
+                {t('pricing.savePercent', { percent: savings })}
               </span>
             )}
           </div>
@@ -169,24 +172,24 @@ export function PricingCard({
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Processing...
+            {t('pricing.processing')}
           </span>
         ) : hasPendingPayment ? (
           'Completar Pago'
         ) : isCurrentPlan ? (
-          'Current Plan'
+          t('pricing.currentPlan')
         ) : hasActiveSubscription ? (
-          'Switch Plan'
+          t('pricing.switchPlan')
         ) : plan.price_monthly === 0 ? (
-          'Get Started'
+          t('pricing.getStarted')
         ) : (
-          'Upgrade Now'
+          t('pricing.upgradeNow')
         )}
       </Button>
 
       {/* Features List - grows to fill remaining space */}
       <div className="flex-1 space-y-3">
-        <p className="text-sm font-semibold text-gray-900">What's included:</p>
+        <p className="text-sm font-semibold text-gray-900">{t('pricing.whatsIncluded')}</p>
         <ul className="space-y-2.5">
           {allFeatures.map((feature, index) => (
             <li key={index} className="flex items-start gap-3">
@@ -202,7 +205,7 @@ export function PricingCard({
         {plan.trial_days > 0 && (
           <div className="rounded-lg bg-blue-50 p-3 text-center">
             <p className="text-sm font-medium text-blue-900">
-              {plan.trial_days}-day free trial included
+              {t('pricing.trialIncluded', { days: plan.trial_days })}
             </p>
           </div>
         )}
@@ -215,7 +218,7 @@ export function PricingCard({
             }}
             className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
           >
-            Ver en detalle
+            {t('pricing.viewDetails')}
           </a>
         </div>
       </div>

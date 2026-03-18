@@ -8,6 +8,7 @@ import { PaymentModal } from '../../components/features/billing/PaymentModal';
 import { Button } from '../../components/ui/button';
 import { useToast } from '../../hooks/useToast';
 import { DashboardLayout } from '../../components/layout/Dashboard';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -18,6 +19,7 @@ export default function Pricing() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const INACTIVE_STATUSES = ['canceled', 'cancelled', 'expired'];
@@ -56,9 +58,21 @@ export default function Pricing() {
       return { subscription, planId };
     },
     onSuccess: ({ subscription }) => {
+      queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
+
+      // Active/trialing subscriptions get a scheduled change — no payment required now
+      if ((subscription as any).scheduled_change) {
+        toast({
+          title: 'Cambio de plan programado',
+          description: `Tu plan cambiará al final del período actual (${new Date((subscription as any).effective_date).toLocaleDateString('es-AR')}).`,
+          variant: 'default',
+        });
+        setSelectedPlanId(null);
+        return;
+      }
+
       setCurrentSubscriptionId(subscription.subscription_id);
       setPaymentModalOpen(true);
-      queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
       toast({
         title: 'Suscripción creada',
         description: 'Completa el pago para activar tu plan',
@@ -126,7 +140,7 @@ export default function Pricing() {
           <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
             <div className="text-center">
               <Loader2 className="mx-auto h-12 w-12 animate-spin text-green-600" />
-              <p className="mt-4 text-lg text-gray-600">Loading pricing plans...</p>
+              <p className="mt-4 text-lg text-gray-600">{t('pricing.loadingPlans')}</p>
             </div>
           </div>
         ) : (
@@ -134,10 +148,10 @@ export default function Pricing() {
           {/* Header */}
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-              Choose Your Plan
+              {t('pricing.chooseYourPlan')}
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              Start free and scale as you grow. All plans include core inventory management.
+              {t('pricing.subtitle')}
             </p>
           </div>
 
@@ -154,7 +168,7 @@ export default function Pricing() {
                   }
                 `}
               >
-                Monthly
+                {t('pricing.monthly')}
               </button>
               <button
                 onClick={() => setBillingCycle('yearly')}
@@ -166,9 +180,9 @@ export default function Pricing() {
                   }
                 `}
               >
-                Yearly
+                {t('pricing.yearly')}
                 <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                  Save 20%
+                  {t('pricing.save20')}
                 </span>
               </button>
             </div>
@@ -226,10 +240,10 @@ export default function Pricing() {
           <div id="plan-comparison" className="mt-24">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900">
-                Compare Plans
+                {t('pricing.comparePlans')}
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                Detailed breakdown of features and limits for each plan
+                {t('pricing.compareSubtitle')}
               </p>
             </div>
 
@@ -239,7 +253,7 @@ export default function Pricing() {
                   <thead>
                     <tr className="bg-gray-50/80 border-b border-gray-200">
                       <th className="p-6 text-left text-sm font-bold text-gray-900 uppercase tracking-wider w-1/4">
-                        Features
+                        {t('pricing.tableFeatures')}
                       </th>
                       {plans?.map((plan) => (
                         <th key={plan.plan_id} className="p-6 text-center text-sm font-bold text-gray-900 uppercase tracking-wider">
@@ -251,12 +265,12 @@ export default function Pricing() {
                   <tbody className="divide-y divide-gray-100">
                     {/* Users */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Users</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableUsers')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_users === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_users}
                         </td>
@@ -265,12 +279,12 @@ export default function Pricing() {
 
                     {/* Warehouses */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Warehouses</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableWarehouses')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_warehouses === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_warehouses}
                         </td>
@@ -279,12 +293,12 @@ export default function Pricing() {
 
                     {/* Products */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Products</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableProducts')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_products === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_products?.toLocaleString() || 'N/A'}
                         </td>
@@ -293,12 +307,12 @@ export default function Pricing() {
 
                     {/* Clients */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Clients</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableClients')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_clients === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_clients?.toLocaleString() || 'N/A'}
                         </td>
@@ -307,12 +321,12 @@ export default function Pricing() {
 
                     {/* Suppliers */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Suppliers</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableSuppliers')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_suppliers === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_suppliers?.toLocaleString() || 'N/A'}
                         </td>
@@ -321,12 +335,12 @@ export default function Pricing() {
 
                     {/* Orders per Month */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Orders per Month</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableOrdersPerMonth')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_orders_per_month === -1 ? (
                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                               Unlimited
+                               {t('pricing.unlimited')}
                              </span>
                           ) : plan.max_orders_per_month?.toLocaleString() || 'N/A'}
                         </td>
@@ -335,12 +349,12 @@ export default function Pricing() {
 
                     {/* Stock Movements per Month */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Stock Movements / Month</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableStockMovements')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
                           {plan.max_stock_movements_per_month === -1 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Unlimited
+                              {t('pricing.unlimited')}
                             </span>
                           ) : plan.max_stock_movements_per_month?.toLocaleString() || 'N/A'}
                         </td>
@@ -349,7 +363,7 @@ export default function Pricing() {
 
                     {/* API Access */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">API Access</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableApiAccess')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center">
                           {plan.features?.api_access ? (
@@ -369,7 +383,7 @@ export default function Pricing() {
 
                     {/* Advanced Analytics */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Advanced Analytics</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableAnalytics')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center">
                           {plan.features?.advanced_analytics ? (
@@ -389,7 +403,7 @@ export default function Pricing() {
 
                     {/* Custom Reports */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Custom Reports</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableCustomReports')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center">
                           {plan.features?.custom_reports ? (
@@ -409,7 +423,7 @@ export default function Pricing() {
 
                     {/* Priority Support */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Priority Support</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tablePrioritySupport')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center">
                           {plan.features?.priority_support ? (
@@ -429,7 +443,7 @@ export default function Pricing() {
 
                     {/* SSO */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-6 text-sm font-medium text-gray-700">Single Sign-On (SSO)</td>
+                      <td className="p-6 text-sm font-medium text-gray-700">{t('pricing.tableSso')}</td>
                       {plans?.map((plan) => (
                         <td key={plan.plan_id} className="p-6 text-center">
                           {plan.features?.sso ? (
@@ -455,16 +469,16 @@ export default function Pricing() {
           {/* FAQ or Contact Section */}
           <div className="mt-20 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 p-12 text-center shadow-lg">
             <h2 className="text-3xl font-bold text-white">
-              Need a Custom Plan?
+              {t('pricing.needCustomPlan')}
             </h2>
             <p className="mt-4 text-lg text-green-50">
-              Contact our sales team for enterprise solutions and custom pricing
+              {t('pricing.customPlanDesc')}
             </p>
             <Button
               onClick={() => navigate('/contact')}
               className="mt-8 bg-white text-green-600 hover:bg-green-50 px-8 py-6 text-lg font-semibold h-auto"
             >
-              Contact Sales
+              {t('pricing.contactSales')}
             </Button>
           </div>
           </div>

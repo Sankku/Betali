@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { ShoppingCart } from 'lucide-react';
+import { toast } from '@/lib/toast';
 import { ModalForm } from '@/components/templates/modal-form';
 import { Modal, ModalContent, ModalHeader, ModalTitle } from '@/components/ui/modal';
 import { OrderForm } from './order-form';
@@ -20,6 +21,7 @@ interface OrderFormData {
   warehouse_id: string;
   status: Order['status'];
   notes: string;
+  tax_rate_ids: string[];
   items: Array<{
     product_id: string;
     quantity: number;
@@ -52,6 +54,7 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
       warehouse_id: order?.warehouse_id || 'no-warehouse',
       status: order?.status || 'draft',
       notes: order?.notes || '',
+      tax_rate_ids: [],
       items: [],
     },
   });
@@ -64,6 +67,7 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
           warehouse_id: 'no-warehouse',
           status: 'draft',
           notes: '',
+          tax_rate_ids: [],
           items: [{ product_id: '', quantity: 1, price: 0 }],
         });
       } else if (order && (mode === 'edit' || mode === 'view')) {
@@ -85,11 +89,28 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
 
   const handleSubmit = async (data: OrderFormData) => {
     try {
+      // Validate that all items have a product selected
+      if (!data.warehouse_id || data.warehouse_id === 'no-warehouse') {
+        toast.error('Please select a warehouse');
+        return;
+      }
+
+      const itemsWithProduct = data.items.filter(item => item.product_id && item.quantity > 0);
+      if (itemsWithProduct.length === 0) {
+        toast.error('Add at least one product to the order');
+        return;
+      }
+      if (data.items.some(item => !item.product_id)) {
+        toast.error('All order items must have a product selected');
+        return;
+      }
+
       const orderData = {
         ...data,
-        client_id: data.client_id === 'no-client' ? undefined : data.client_id,
-        warehouse_id: data.warehouse_id === 'no-warehouse' ? undefined : data.warehouse_id,
+        client_id: data.client_id && data.client_id !== 'no-client' ? data.client_id : undefined,
+        warehouse_id: data.warehouse_id && data.warehouse_id !== 'no-warehouse' ? data.warehouse_id : undefined,
         notes: data.notes || undefined,
+        items: itemsWithProduct,
       };
 
       if (mode === 'create') {
