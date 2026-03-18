@@ -17,9 +17,21 @@ async function seedUser({ email, password, name, orgName, slug, role }) {
 
   let { data: org } = await supabase.from('organizations').select('*').eq('slug', slug).maybeSingle();
   if (!org) {
-    const { data, error } = await supabase.from('organizations').insert({ name: orgName, slug, plan_type: 'professional' }).select().single();
+    const { data, error } = await supabase.from('organizations').insert({
+      name: orgName,
+      slug,
+      plan_type: 'professional',
+      subscription_plan: 'professional',
+      subscription_status: 'active',
+    }).select().single();
     if (error) throw new Error(`Org creation failed for ${slug}: ` + error.message);
     org = data;
+  } else {
+    // Ensure existing orgs have correct subscription fields for tests
+    await supabase.from('organizations').update({
+      subscription_plan: 'professional',
+      subscription_status: 'active',
+    }).eq('organization_id', org.organization_id);
   }
   const orgId = org.organization_id;
 

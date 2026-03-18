@@ -65,10 +65,10 @@ test.describe('Warehouse — Core flows', () => {
       }
     } else if (isVisible && !isEnabled) {
       console.log('⚠️  Create warehouse button is disabled (plan limit reached) — skipping click, verifying page loaded');
-      await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('table, [role="table"], #create-warehouse-button').first()).toBeVisible({ timeout: 5000 });
     } else {
       console.log('⚠️  Create warehouse button not found — checking if it requires a different selector');
-      await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('table, [role="table"], #create-warehouse-button').first()).toBeVisible({ timeout: 5000 });
     }
   });
 

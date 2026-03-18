@@ -50,3 +50,8 @@ next-env.d.ts
 # AI agent exploration artifacts
 /explorer-report.json
 /explorer-screenshots/
+
+# Claude / claude-flow runtime data (auto-generated, not source code)
+**/.claude-flow/data/
+**/.claude-flow/sessions/
+.claude/settings.local.json
