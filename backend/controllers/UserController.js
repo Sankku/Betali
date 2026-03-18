@@ -175,17 +175,8 @@ class UserController {
       try {
         // First, validate user can be created (checks email uniqueness, etc.)
         newUser = await this.userService.createUser(userData);
-        
-        // If user has organization_id, create the user-organization relationship
-        if (newUser.organization_id) {
-          await this.userService.createUserOrganizationRelationship(newUser.user_id, newUser.organization_id);
-          this.logger.info('Created user-organization relationship', {
-            userId: newUser.user_id,
-            organizationId: newUser.organization_id
-          });
-        }
-        
-        // Then create in Supabase Auth if password is provided
+
+        // Create in Supabase Auth if password is provided (before user_organizations to avoid FK conflict)
         if (plainPassword) {
           try {
             const { data: authData, error: authError } = await this.userService.createSupabaseAuthUser({
@@ -196,22 +187,22 @@ class UserController {
                 role: userData.role
               }
             });
-            
+
             if (authError) {
               // If Supabase Auth fails, we need to rollback the database user
               await this.userService.hardDeleteUser(newUser.user_id);
               throw new Error(`Authentication setup failed: ${authError.message}`);
             }
-            
+
             supabaseUser = authData.user;
-            
-            // Update the user with the Supabase Auth ID
+
+            // Update the user with the Supabase Auth ID (no FK dependents yet)
             if (supabaseUser && supabaseUser.id !== newUser.user_id) {
               newUser = await this.userService.updateUser(newUser.user_id, {
                 user_id: supabaseUser.id
               });
             }
-            
+
             this.logger.info('User created in both database and Supabase Auth', {
               userId: supabaseUser.id,
               email: userData.email
@@ -223,10 +214,19 @@ class UserController {
               email: userData.email,
               dbUserId: newUser.user_id
             });
-            
+
             await this.userService.hardDeleteUser(newUser.user_id);
             throw authError;
           }
+        }
+
+        // Create user-organization relationship after user_id is finalized
+        if (newUser.organization_id) {
+          await this.userService.createUserOrganizationRelationship(newUser.user_id, newUser.organization_id);
+          this.logger.info('Created user-organization relationship', {
+            userId: newUser.user_id,
+            organizationId: newUser.organization_id
+          });
         }
       } catch (dbError) {
         // Database creation failed, just propagate the error

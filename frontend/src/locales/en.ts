@@ -46,6 +46,9 @@ export const en: TranslationKeys = {
     notes: 'Notes',
     create: 'Create',
     update: 'Update',
+    readOnly: 'Read only',
+    editing: 'Editing',
+    creating: 'Creating',
   },
 
   // Navigation
@@ -789,6 +792,11 @@ export const en: TranslationKeys = {
       orgRolesDesc: 'User roles and permissions are now managed per organization. After creating this user, invite them to organizations through the team management section to assign specific roles and permissions.',
       activeUser: 'Active User',
       activeUserDesc: 'Active users can access the system and perform their assigned tasks',
+      confirmPassword: 'Confirm Password',
+      confirmPasswordPlaceholder: 'Repeat the password',
+      confirmPasswordEditPlaceholder: 'Repeat the new password',
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
     },
     roleSelector: {
       availableRoles: 'Available Roles',
@@ -807,6 +815,25 @@ export const en: TranslationKeys = {
         manager: 'Manage operations and view users',
         employee: 'Standard operational access',
         viewer: 'Read-only access to data',
+      },
+      permissionLabels: {
+        all: 'All permissions',
+        fullAccess: 'full access',
+      },
+      permissionModules: {
+        products: 'Products',
+        warehouses: 'Warehouses',
+        stock_movements: 'Stock movements',
+        users: 'Users',
+        dashboard: 'Dashboard',
+        admin: 'Administration',
+      },
+      permissionActions: {
+        read: 'read',
+        create: 'create',
+        update: 'update',
+        users: 'user management',
+        system: 'system',
       },
     },
     roleSwitcher: {
@@ -839,42 +866,6 @@ export const en: TranslationKeys = {
       passwordMin: 'Password must be at least 8 characters',
       passwordFormat: 'Password must contain at least one lowercase letter, one uppercase letter, and one number',
       roleRequired: 'Role is required',
-    },
-  },
-
-  // Organizations
-  organizations: {
-    title: 'Organizations',
-    add: 'Add Organization',
-    edit: 'Edit Organization',
-    delete: 'Delete Organization',
-    view: 'View Organization',
-    deleteConfirm: 'Are you sure you want to delete {{count}} organization(s)?',
-    deleteConfirmSingle: 'Are you sure you want to delete this organization?',
-    deleteSuccess: 'Organization(s) deleted successfully',
-    createSuccess: 'Organization created successfully',
-    updateSuccess: 'Organization updated successfully',
-    fields: {
-      name: 'Organization Name',
-      taxId: 'Tax ID',
-      address: 'Address',
-      phone: 'Phone',
-      email: 'Email',
-      website: 'Website',
-    },
-  },
-
-  // Tax Management
-  taxManagement: {
-    title: 'Tax Management',
-    add: 'Add Tax',
-    edit: 'Edit Tax',
-    delete: 'Delete Tax',
-    fields: {
-      name: 'Tax Name',
-      rate: 'Rate (%)',
-      type: 'Type',
-      description: 'Description',
     },
   },
 
@@ -1153,6 +1144,16 @@ export const en: TranslationKeys = {
 
   // Tax Management
   taxManagement: {
+    title: 'Tax Management',
+    add: 'Add Tax',
+    edit: 'Edit Tax',
+    delete: 'Delete Tax',
+    fields: {
+      name: 'Tax Name',
+      rate: 'Rate (%)',
+      type: 'Type',
+      description: 'Description',
+    },
     page: {
       title: 'Tax Management | Betali',
       statsActiveTitle: 'Active Tax Rates',
@@ -1224,6 +1225,24 @@ export const en: TranslationKeys = {
 
   // Organizations
   organizations: {
+    title: 'Organizations',
+    add: 'Add Organization',
+    edit: 'Edit Organization',
+    delete: 'Delete Organization',
+    view: 'View Organization',
+    deleteConfirm: 'Are you sure you want to delete {{count}} organization(s)?',
+    deleteConfirmSingle: 'Are you sure you want to delete this organization?',
+    deleteSuccess: 'Organization(s) deleted successfully',
+    createSuccess: 'Organization created successfully',
+    updateSuccess: 'Organization updated successfully',
+    fields: {
+      name: 'Organization Name',
+      taxId: 'Tax ID',
+      address: 'Address',
+      phone: 'Phone',
+      email: 'Email',
+      website: 'Website',
+    },
     page: {
       helmetTitle: 'Organizations - Dashboard',
       title: 'Organization Management',

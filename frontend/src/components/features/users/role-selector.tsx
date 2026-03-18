@@ -90,6 +90,33 @@ interface RoleSelectorProps {
   showRestrictions?: boolean; // Show why certain roles are not available
 }
 
+// Formats a raw permission string like "products:read/create" into a translated label
+function formatPermission(permission: string, t: (key: string) => string): string {
+  if (permission === 'All permissions') {
+    return t('users.roleSelector.permissionLabels.all');
+  }
+
+  const colonIdx = permission.indexOf(':');
+  if (colonIdx === -1) return permission;
+
+  const module = permission.substring(0, colonIdx);
+  const actions = permission.substring(colonIdx + 1);
+
+  const moduleLabel = t(`users.roleSelector.permissionModules.${module}`);
+
+  if (actions === '*') {
+    const fullAccess = t('users.roleSelector.permissionLabels.fullAccess');
+    return `${moduleLabel}: ${fullAccess}`;
+  }
+
+  const actionParts = actions.split('/');
+  const actionsLabel = actionParts
+    .map(a => t(`users.roleSelector.permissionActions.${a}`))
+    .join(', ');
+
+  return `${moduleLabel}: ${actionsLabel}`;
+}
+
 export function RoleSelector({
   value,
   onValueChange,
@@ -165,7 +192,7 @@ export function RoleSelector({
                   {selectedRole.permissions.map((permission, index) => (
                     <li key={index} className="flex items-center gap-1">
                       <span className="text-green-600">•</span>
-                      {permission}
+                      {formatPermission(permission, t)}
                     </li>
                   ))}
                 </ul>

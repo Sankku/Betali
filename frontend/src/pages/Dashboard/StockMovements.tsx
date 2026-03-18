@@ -108,6 +108,7 @@ export default function StockMovementsPage() {
       closeModal();
     } catch (error) {
       console.error('Error saving movement:', error);
+      throw error;
     }
   };
 

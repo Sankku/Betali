@@ -44,6 +44,9 @@ export const es = {
     notes: 'Notas',
     create: 'Crear',
     update: 'Actualizar',
+    readOnly: 'Solo lectura',
+    editing: 'Editando',
+    creating: 'Creando',
   },
 
   // Navigation
@@ -787,6 +790,11 @@ export const es = {
       orgRolesDesc: 'Los roles y permisos de los usuarios ahora se gestionan por organización. Después de crear este usuario, invítalo a las organizaciones a través de la sección de gestión de equipos para asignarle roles y permisos específicos.',
       activeUser: 'Usuario Activo',
       activeUserDesc: 'Los usuarios activos pueden acceder al sistema y realizar sus tareas asignadas',
+      confirmPassword: 'Confirmar Contraseña',
+      confirmPasswordPlaceholder: 'Repite la contraseña',
+      confirmPasswordEditPlaceholder: 'Repite la nueva contraseña',
+      showPassword: 'Mostrar contraseña',
+      hidePassword: 'Ocultar contraseña',
     },
     roleSelector: {
       availableRoles: 'Roles Disponibles',
@@ -805,6 +813,25 @@ export const es = {
         manager: 'Gestionar operaciones y ver usuarios',
         employee: 'Acceso operativo estándar',
         viewer: 'Acceso de solo lectura a los datos',
+      },
+      permissionLabels: {
+        all: 'Todos los permisos',
+        fullAccess: 'acceso completo',
+      },
+      permissionModules: {
+        products: 'Productos',
+        warehouses: 'Almacenes',
+        stock_movements: 'Movimientos de stock',
+        users: 'Usuarios',
+        dashboard: 'Panel de control',
+        admin: 'Administración',
+      },
+      permissionActions: {
+        read: 'leer',
+        create: 'crear',
+        update: 'actualizar',
+        users: 'gestión de usuarios',
+        system: 'sistema',
       },
     },
     roleSwitcher: {
@@ -837,42 +864,6 @@ export const es = {
       passwordMin: 'La contraseña debe tener al menos 8 caracteres',
       passwordFormat: 'La contraseña debe contener al menos una minúscula, una mayúscula y un número',
       roleRequired: 'El rol es requerido',
-    },
-  },
-
-  // Organizations
-  organizations: {
-    title: 'Organizaciones',
-    add: 'Agregar Organización',
-    edit: 'Editar Organización',
-    delete: 'Eliminar Organización',
-    view: 'Ver Organización',
-    deleteConfirm: '¿Estás seguro de que deseas eliminar {{count}} organización(es)?',
-    deleteConfirmSingle: '¿Estás seguro de que deseas eliminar esta organización?',
-    deleteSuccess: 'Organización(es) eliminado(s) exitosamente',
-    createSuccess: 'Organización creada exitosamente',
-    updateSuccess: 'Organización actualizada exitosamente',
-    fields: {
-      name: 'Nombre de la Organización',
-      taxId: 'RFC/NIT',
-      address: 'Dirección',
-      phone: 'Teléfono',
-      email: 'Correo Electrónico',
-      website: 'Sitio Web',
-    },
-  },
-
-  // Tax Management
-  taxManagement: {
-    title: 'Gestión de Impuestos',
-    add: 'Agregar Impuesto',
-    edit: 'Editar Impuesto',
-    delete: 'Eliminar Impuesto',
-    fields: {
-      name: 'Nombre del Impuesto',
-      rate: 'Tasa (%)',
-      type: 'Tipo',
-      description: 'Descripción',
     },
   },
 
@@ -1151,6 +1142,16 @@ export const es = {
 
   // Tax Management
   taxManagement: {
+    title: 'Gestión de Impuestos',
+    add: 'Agregar Impuesto',
+    edit: 'Editar Impuesto',
+    delete: 'Eliminar Impuesto',
+    fields: {
+      name: 'Nombre del Impuesto',
+      rate: 'Tasa (%)',
+      type: 'Tipo',
+      description: 'Descripción',
+    },
     page: {
       title: 'Gestión de Impuestos | Betali',
       statsActiveTitle: 'Tasas Activas',
@@ -1222,6 +1223,24 @@ export const es = {
 
   // Organizations
   organizations: {
+    title: 'Organizaciones',
+    add: 'Agregar Organización',
+    edit: 'Editar Organización',
+    delete: 'Eliminar Organización',
+    view: 'Ver Organización',
+    deleteConfirm: '¿Estás seguro de que deseas eliminar {{count}} organización(es)?',
+    deleteConfirmSingle: '¿Estás seguro de que deseas eliminar esta organización?',
+    deleteSuccess: 'Organización(es) eliminado(s) exitosamente',
+    createSuccess: 'Organización creada exitosamente',
+    updateSuccess: 'Organización actualizada exitosamente',
+    fields: {
+      name: 'Nombre de la Organización',
+      taxId: 'RFC/NIT',
+      address: 'Dirección',
+      phone: 'Teléfono',
+      email: 'Correo Electrónico',
+      website: 'Sitio Web',
+    },
     page: {
       helmetTitle: 'Organizaciones - Panel',
       title: 'Gestión de Organizaciones',

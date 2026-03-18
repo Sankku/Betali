@@ -63,7 +63,7 @@ export function useCreateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al crear producto: ${error.message}`);
+      toast.error('Error al crear el producto. Intenta de nuevo.');
       throw error;
     },
   });
@@ -82,7 +82,7 @@ export function useUpdateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      toast.error(`Error al actualizar producto: ${error.message}`);
+      toast.error('Error al actualizar el producto. Intenta de nuevo.');
       throw error;
     },
   });
@@ -98,7 +98,7 @@ export function useDeleteProduct() {
       toast.success("Producto eliminado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(`Error al eliminar producto: ${error.message}`);
+      toast.error('Error al eliminar el producto. Intenta de nuevo.');
       throw error;
     },
   });

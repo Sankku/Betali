@@ -274,11 +274,14 @@ class OrderController {
       }
 
       // Prepare duplicate order data
+      // Pass tax_rate_ids: [] when original had no tax so calculateTaxes skips the default org tax rate.
+      // tax_rate_ids is not persisted on orders, so we infer intent from tax_amount.
       const duplicateData = {
         client_id: originalOrder.client_id,
         warehouse_id: originalOrder.warehouse_id,
         notes: `Duplicated from Order #${originalOrder.order_id}`,
         status: 'draft',
+        tax_rate_ids: (originalOrder.tax_amount === 0 || originalOrder.tax_amount === null) ? [] : undefined,
         items: originalOrder.order_details.map(detail => ({
           product_id: detail.product_id,
           quantity: detail.quantity,

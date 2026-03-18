@@ -4,6 +4,7 @@ import { LucideIcon } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 export interface ModalFormProps<TFormData = any> {
   isOpen: boolean;
@@ -41,13 +42,14 @@ export function ModalForm<TFormData = any>({
   mode,
   children,
   submitLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   showFooter = true,
   customFooter,
   isLoading = false,
   size = 'lg',
   additionalSections,
 }: ModalFormProps<TFormData>) {
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
 
   const handleSubmit = form.handleSubmit(async data => {
@@ -59,28 +61,29 @@ export function ModalForm<TFormData = any>({
     switch (mode) {
       case 'view':
         return {
-          badge: { variant: 'primary' as const, label: 'Read only' },
+          badge: { variant: 'primary' as const, label: t('common.readOnly') },
           submitLabel: undefined,
         };
       case 'edit':
         return {
-          badge: { variant: 'warning' as const, label: 'Editing' },
-          submitLabel: submitLabel || 'Update',
+          badge: { variant: 'warning' as const, label: t('common.editing') },
+          submitLabel: submitLabel || t('common.update'),
         };
       case 'create':
         return {
-          badge: { variant: 'success' as const, label: 'Creating' },
-          submitLabel: submitLabel || 'Create',
+          badge: { variant: 'success' as const, label: t('common.creating') },
+          submitLabel: submitLabel || t('common.create'),
         };
       default:
         return {
-          badge: { variant: 'default' as const, label: 'Unknown' },
-          submitLabel: submitLabel || 'Save',
+          badge: { variant: 'default' as const, label: '' },
+          submitLabel: submitLabel || t('common.save'),
         };
     }
   };
 
   const modeConfig = getModeConfig();
+  const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={size}>
@@ -113,7 +116,7 @@ export function ModalForm<TFormData = any>({
           {customFooter || (
             <>
               <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-                {cancelLabel}
+                {resolvedCancelLabel}
               </Button>
               {!isViewMode && modeConfig.submitLabel && (
                 <Button

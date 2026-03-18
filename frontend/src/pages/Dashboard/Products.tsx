@@ -98,6 +98,7 @@ const ProductsPage: React.FC = () => {
       closeModal();
     } catch (error) {
       console.error('Error saving:', error);
+      throw error;
     }
   };
 

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Users, Mail, Shield } from 'lucide-react';
+import { Users, Mail, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { Input } from '../../ui/input';
 import { Switch } from '../../ui/switch';
+import { Button } from '../../ui/button';
 import { UserFormData } from './user-modal';
 import { RoleSelector } from './role-selector';
 import { useUserContext } from '@/hooks/useUsers';
@@ -26,12 +27,15 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
     formState: { errors },
   } = form;
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Get current user context to determine role restrictions
   const { data: userContext } = useUserContext();
   // Normalize role from backend (SUPER_ADMIN) to frontend format (super_admin)
   const rawRole = userContext?.permissions?.role;
   const currentUserRole = rawRole ? rawRole.toLowerCase() as UserRole : undefined;
-  
+
 
   const currentName = watch('name') || '';
   const currentEmail = watch('email') || '';
@@ -99,6 +103,7 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
           <label htmlFor="name" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Users className="w-4 h-4" />
             {t('users.form.fullName')}
+            <span className="text-red-500">*</span>
           </label>
           <Input
             id="name"
@@ -116,6 +121,7 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
           <label htmlFor="email" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Mail className="w-4 h-4" />
             {t('users.form.emailAddress')}
+            <span className="text-red-500">*</span>
           </label>
           <Input
             id="email"
@@ -151,21 +157,71 @@ export const UserForm: React.FC<UserFormProps> = ({ form, mode, isLoading = fals
         )}
       </div>
 
+      {/* Password field with show/hide toggle */}
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-          <Shield className="w-4 h-4" />
+          <Lock className="w-4 h-4" />
           {isEditing ? t('users.form.passwordOptional') : t('users.form.password')}
         </label>
-        <Input
-          id="password"
-          type="password"
-          placeholder={isEditing ? t('users.form.passwordEditPlaceholder') : t('users.form.passwordPlaceholder')}
-          {...register('password')}
-          disabled={isLoading}
-          className={errors.password ? 'border-red-500' : ''}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder={isEditing ? t('users.form.passwordEditPlaceholder') : t('users.form.passwordPlaceholder')}
+            {...register('password')}
+            disabled={isLoading}
+            className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-neutral-400 hover:text-neutral-600"
+            onClick={() => setShowPassword((prev) => !prev)}
+            disabled={isLoading}
+            tabIndex={-1}
+            aria-label={showPassword ? t('users.form.hidePassword') : t('users.form.showPassword')}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
         {errors.password && (
           <p className="text-xs text-red-500">{errors.password.message}</p>
+        )}
+      </div>
+
+      {/* Confirm password field — only shown when a password is being set */}
+      <div className="space-y-2">
+        <label htmlFor="confirmPassword" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+          <Lock className="w-4 h-4" />
+          {t('users.form.confirmPassword')}
+        </label>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder={isEditing ? t('users.form.confirmPasswordEditPlaceholder') : t('users.form.confirmPasswordPlaceholder')}
+            {...register('confirmPassword', {
+              onBlur: () => form.trigger('confirmPassword'),
+            })}
+            disabled={isLoading}
+            className={`pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-neutral-400 hover:text-neutral-600"
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+            disabled={isLoading}
+            tabIndex={-1}
+            aria-label={showConfirmPassword ? t('users.form.hidePassword') : t('users.form.showPassword')}
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+        {errors.confirmPassword && (
+          <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
         )}
       </div>
 

@@ -176,10 +176,13 @@ export function ClientModal({
       address: data.address || null,
     };
 
-    await onSubmit(normalizedData as CreateClientData);
-    
-    if (mode === 'create') {
-      form.reset();
+    try {
+      await onSubmit(normalizedData as CreateClientData);
+      if (mode === 'create') {
+        form.reset();
+      }
+    } catch {
+      // Error ya mostrado por el hook — no resetear el formulario
     }
   };
 

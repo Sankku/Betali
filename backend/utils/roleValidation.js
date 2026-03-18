@@ -45,10 +45,12 @@ const VALID_ROLES = ['super_admin', 'admin', 'manager', 'employee', 'viewer'];
  */
 function canAssignRole(currentUserRole, targetRole) {
   if (!currentUserRole || !targetRole) return false;
-  if (!VALID_ROLES.includes(currentUserRole) || !VALID_ROLES.includes(targetRole)) return false;
-  
-  const assignableRoles = ROLE_HIERARCHY.assignableRoles[currentUserRole] || [];
-  return assignableRoles.includes(targetRole);
+  const normalizedCurrent = currentUserRole.toLowerCase();
+  const normalizedTarget = targetRole.toLowerCase();
+  if (!VALID_ROLES.includes(normalizedCurrent) || !VALID_ROLES.includes(normalizedTarget)) return false;
+
+  const assignableRoles = ROLE_HIERARCHY.assignableRoles[normalizedCurrent] || [];
+  return assignableRoles.includes(normalizedTarget);
 }
 
 /**
@@ -59,10 +61,12 @@ function canAssignRole(currentUserRole, targetRole) {
  */
 function canManageUserWithRole(currentUserRole, targetUserRole) {
   if (!currentUserRole || !targetUserRole) return false;
-  if (!VALID_ROLES.includes(currentUserRole) || !VALID_ROLES.includes(targetUserRole)) return false;
-  
-  const managementRights = ROLE_HIERARCHY.managementRights[currentUserRole] || [];
-  return managementRights.includes(targetUserRole);
+  const normalizedCurrent = currentUserRole.toLowerCase();
+  const normalizedTarget = targetUserRole.toLowerCase();
+  if (!VALID_ROLES.includes(normalizedCurrent) || !VALID_ROLES.includes(normalizedTarget)) return false;
+
+  const managementRights = ROLE_HIERARCHY.managementRights[normalizedCurrent] || [];
+  return managementRights.includes(normalizedTarget);
 }
 
 /**
@@ -71,7 +75,7 @@ function canManageUserWithRole(currentUserRole, targetUserRole) {
  * @returns {boolean} - Whether the role is protected
  */
 function isProtectedRole(role) {
-  return PROTECTED_ROLES.includes(role);
+  return PROTECTED_ROLES.includes(role?.toLowerCase());
 }
 
 /**
@@ -82,53 +86,56 @@ function isProtectedRole(role) {
  * @returns {Object} - Validation result with success and message
  */
 function validateRoleAssignment(currentUserRole, targetRole, options = {}) {
+  const normalizedCurrent = currentUserRole?.toLowerCase();
+  const normalizedTarget = targetRole?.toLowerCase();
+
   // Check if roles are valid
-  if (!VALID_ROLES.includes(targetRole)) {
+  if (!VALID_ROLES.includes(normalizedTarget)) {
     return {
       success: false,
       error: 'Invalid role specified',
       code: 'INVALID_ROLE'
     };
   }
-  
-  if (!VALID_ROLES.includes(currentUserRole)) {
+
+  if (!VALID_ROLES.includes(normalizedCurrent)) {
     return {
       success: false,
       error: 'Current user has invalid role',
       code: 'INVALID_CURRENT_ROLE'
     };
   }
-  
+
   // Check if current user can assign this role
-  if (!canAssignRole(currentUserRole, targetRole)) {
+  if (!canAssignRole(normalizedCurrent, normalizedTarget)) {
     return {
       success: false,
-      error: `Users with role '${currentUserRole}' cannot assign role '${targetRole}'`,
+      error: `Users with role '${normalizedCurrent}' cannot assign role '${normalizedTarget}'`,
       code: 'INSUFFICIENT_PERMISSIONS',
       details: {
-        currentUserRole,
-        targetRole,
-        assignableRoles: ROLE_HIERARCHY.assignableRoles[currentUserRole] || []
+        currentUserRole: normalizedCurrent,
+        targetRole: normalizedTarget,
+        assignableRoles: ROLE_HIERARCHY.assignableRoles[normalizedCurrent] || []
       }
     };
   }
-  
+
   // Special handling for protected roles
-  if (isProtectedRole(targetRole) && currentUserRole !== 'super_admin') {
+  if (isProtectedRole(normalizedTarget) && normalizedCurrent !== 'super_admin') {
     return {
       success: false,
       error: `Role '${targetRole}' is protected and can only be assigned by super administrators`,
       code: 'PROTECTED_ROLE',
       details: {
-        protectedRole: targetRole,
+        protectedRole: normalizedTarget,
         requiredRole: 'super_admin'
       }
     };
   }
-  
+
   return {
     success: true,
-    message: `Role assignment validated: ${currentUserRole} can assign ${targetRole}`
+    message: `Role assignment validated: ${normalizedCurrent} can assign ${normalizedTarget}`
   };
 }
 
@@ -138,8 +145,9 @@ function validateRoleAssignment(currentUserRole, targetRole, options = {}) {
  * @returns {string[]} - Array of roles that can be assigned
  */
 function getAssignableRoles(currentUserRole) {
-  if (!VALID_ROLES.includes(currentUserRole)) return [];
-  return ROLE_HIERARCHY.assignableRoles[currentUserRole] || [];
+  const normalized = currentUserRole?.toLowerCase();
+  if (!VALID_ROLES.includes(normalized)) return [];
+  return ROLE_HIERARCHY.assignableRoles[normalized] || [];
 }
 
 /**
@@ -148,12 +156,13 @@ function getAssignableRoles(currentUserRole) {
  * @returns {Object} - Role hierarchy information
  */
 function getRoleInfo(role) {
+  const normalized = role?.toLowerCase();
   return {
-    role,
-    isValid: VALID_ROLES.includes(role),
-    isProtected: isProtectedRole(role),
-    canAssign: getAssignableRoles(role),
-    canManage: ROLE_HIERARCHY.managementRights[role] || []
+    role: normalized,
+    isValid: VALID_ROLES.includes(normalized),
+    isProtected: isProtectedRole(normalized),
+    canAssign: getAssignableRoles(normalized),
+    canManage: ROLE_HIERARCHY.managementRights[normalized] || []
   };
 }
 

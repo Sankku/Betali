@@ -334,6 +334,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                   <div className="md:col-span-5">
                     <Label htmlFor={`item-product-${index}`}>{t('purchaseOrders.form.productLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
                     <Select
+                      key={`product-select-${index}-${item.product_id}-${products?.data?.length ?? 0}`}
                       value={item.product_id || ''}
                       onValueChange={(value) => handleItemChange(index, 'product_id', value)}
                       disabled={isViewMode}

@@ -219,6 +219,81 @@ class PurchaseOrderService {
   }
 
   /**
+   * Update purchase order (full edit: header + items)
+   * @param {string} purchaseOrderId - Purchase Order ID
+   * @param {Object} updateData - Fields to update
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object>}
+   */
+  async updatePurchaseOrder(purchaseOrderId, updateData, organizationId) {
+    try {
+      this.logger.info('Updating purchase order', { purchaseOrderId, organizationId });
+
+      const existing = await this.purchaseOrderRepository.findById(purchaseOrderId, organizationId);
+      if (!existing) {
+        throw new Error('Purchase order not found or access denied');
+      }
+
+      // Only draft/pending orders can be fully edited
+      const editableStatuses = ['draft', 'pending'];
+      if (!editableStatuses.includes(existing.status)) {
+        throw new Error(`Cannot edit a purchase order with status "${existing.status}". Only draft and pending orders can be edited.`);
+      }
+
+      // Validate supplier if changing
+      if (updateData.supplier_id && updateData.supplier_id !== existing.supplier_id) {
+        const supplier = await this.supplierRepository.findById(updateData.supplier_id, organizationId);
+        if (!supplier) throw new Error('Supplier not found or access denied');
+        if (!supplier.is_active) throw new Error('Supplier is inactive');
+      }
+
+      // Validate warehouse if changing
+      const warehouseId = updateData.warehouse_id || existing.warehouse_id;
+      if (updateData.warehouse_id && updateData.warehouse_id !== existing.warehouse_id) {
+        const warehouse = await this.warehouseRepository.findById(warehouseId, organizationId);
+        if (!warehouse) throw new Error('Warehouse not found or access denied');
+      }
+
+      // Re-calculate totals if items are provided
+      let headerUpdate = {};
+      if (updateData.items && Array.isArray(updateData.items) && updateData.items.length > 0) {
+        const lineItems = await this.validateAndPrepareLineItems(updateData.items, organizationId);
+        const subtotal = lineItems.reduce((sum, item) => sum + item.line_total, 0);
+        const discountAmount = updateData.discount_amount ?? existing.discount_amount ?? 0;
+        const taxAmount = updateData.tax_amount ?? existing.tax_amount ?? 0;
+        const shippingAmount = updateData.shipping_amount ?? existing.shipping_amount ?? 0;
+        const total = subtotal - discountAmount + taxAmount + shippingAmount;
+
+        // Replace details
+        await this.purchaseOrderDetailRepository.deleteByPurchaseOrderId(purchaseOrderId, organizationId);
+        const orderDetails = lineItems.map(item => ({
+          purchase_order_id: purchaseOrderId,
+          organization_id: organizationId,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.line_total,
+          notes: item.notes || null
+        }));
+        await this.purchaseOrderDetailRepository.createBulk(orderDetails, organizationId);
+
+        headerUpdate = { subtotal, discount_amount: discountAmount, tax_amount: taxAmount, shipping_amount: shippingAmount, total };
+      }
+
+      // Update header fields
+      const { items, ...fieldsWithoutItems } = updateData;
+      await this.purchaseOrderRepository.update(purchaseOrderId, { ...fieldsWithoutItems, ...headerUpdate }, organizationId);
+
+      const updated = await this.purchaseOrderRepository.findById(purchaseOrderId, organizationId);
+      this.logger.info('Purchase order updated successfully', { purchaseOrderId });
+      return updated;
+    } catch (error) {
+      this.logger.error('Error updating purchase order', { error: error.message, purchaseOrderId });
+      throw error;
+    }
+  }
+
+  /**
    * Update purchase order status with business logic
    * @param {string} purchaseOrderId - Purchase Order ID
    * @param {string} newStatus - New status
@@ -322,6 +397,7 @@ class PurchaseOrderService {
             organization_id: organizationId,
             movement_type: 'entry',
             quantity: quantityToReceive,
+            reference: purchaseOrder.purchase_order_number || `PO-${purchaseOrder.purchase_order_id.slice(0, 8).toUpperCase()}`,
             reference_type: 'purchase_order',
             reference_id: purchaseOrder.purchase_order_id,
             notes: `Received from purchase order ${purchaseOrder.purchase_order_number || purchaseOrder.purchase_order_id}`,

@@ -88,9 +88,13 @@ export const WarehouseModal: React.FC<WarehouseModalProps> = ({
   };
 
   const handleSubmit = async (data: WarehouseFormData) => {
-    await onSubmit(data);
-    if (mode === 'create') {
-      form.reset();
+    try {
+      await onSubmit(data);
+      if (mode === 'create') {
+        form.reset();
+      }
+    } catch {
+      // Error ya mostrado por el hook — no resetear el formulario
     }
   };
 

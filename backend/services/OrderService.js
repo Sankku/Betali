@@ -569,7 +569,7 @@ class OrderService {
         movement_type: 'exit',
         quantity: detail.quantity,
         movement_date: new Date().toISOString(),
-        reference: `Order ${order.order_number || order.order_id.slice(-8)}`
+        reference: `#${order.order_id.slice(-8).toUpperCase()}`
       };
 
       stockMovements.push(movement);
@@ -654,7 +654,7 @@ class OrderService {
         movement_type: 'entry',
         quantity: detail.quantity,
         movement_date: new Date().toISOString(),
-        reference: `Order Cancellation ${order.order_number || order.order_id.slice(-8)}`
+        reference: `#${order.order_id.slice(-8).toUpperCase()} ↩`
       };
 
       restorationMovements.push(movement);

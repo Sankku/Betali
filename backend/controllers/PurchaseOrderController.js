@@ -103,6 +103,30 @@ class PurchaseOrderController {
   }
 
   /**
+   * Update purchase order (full edit)
+   * PUT /api/purchase-orders/:id
+   */
+  async updatePurchaseOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found. Please select an organization.' });
+      }
+
+      const updatedPurchaseOrder = await this.purchaseOrderService.updatePurchaseOrder(id, req.body, organizationId);
+
+      res.json({
+        data: updatedPurchaseOrder,
+        message: 'Purchase order updated successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Update purchase order status
    * PATCH /api/purchase-orders/:id/status
    */

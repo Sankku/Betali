@@ -84,9 +84,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   const handleSubmit = async (data: ProductFormData) => {
-    await onSubmit(data);
-    if (mode === 'create') {
-      form.reset();
+    try {
+      await onSubmit(data);
+      if (mode === 'create') {
+        form.reset();
+      }
+    } catch {
+      // Error ya mostrado por el hook — no resetear el formulario
     }
   };
 

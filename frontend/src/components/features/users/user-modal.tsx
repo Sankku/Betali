@@ -8,29 +8,38 @@ import { ModalForm } from '../../templates/modal-form';
 import { UserForm } from './user-form';
 import { User, CreateUserData } from '../../../hooks/useUsers';
 
-const userSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name cannot exceed 100 characters'),
-  email: z
-    .string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email cannot exceed 100 characters'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one lowercase letter, one uppercase letter, and one number'
-    )
-    .optional()
-    .or(z.literal('')),
-  role: z
-    .string()
-    .min(1, 'Role is required'),
-  is_active: z.boolean().default(true),
-});
+const userSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, 'El nombre debe tener al menos 2 caracteres')
+      .max(100, 'El nombre no puede superar los 100 caracteres'),
+    email: z
+      .string()
+      .email('Ingresa un correo electrónico válido')
+      .max(100, 'El correo no puede superar los 100 caracteres'),
+    password: z
+      .string()
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'La contraseña debe contener al menos una minúscula, una mayúscula y un número'
+      )
+      .optional()
+      .or(z.literal('')),
+    confirmPassword: z.string().optional().or(z.literal('')),
+    role: z.string().min(1, 'El rol es requerido'),
+    is_active: z.boolean().default(true),
+  })
+  .refine(
+    (data) => {
+      if (data.password && data.password.length > 0) {
+        return data.password === data.confirmPassword;
+      }
+      return true;
+    },
+    { message: 'Las contraseñas no coinciden', path: ['confirmPassword'] }
+  );
 
 export type UserFormData = z.infer<typeof userSchema>;
 
@@ -58,6 +67,7 @@ export function UserModal({
       name: user?.name || '',
       email: user?.email || '',
       password: '',
+      confirmPassword: '',
       role: user?.role || 'employee',
       is_active: user?.is_active ?? true,
     },
@@ -90,16 +100,21 @@ export function UserModal({
   };
 
   const handleSubmit = async (data: UserFormData) => {
-    // If editing and password is empty, don't include it
-    if (mode === 'edit' && !data.password) {
-      const { password, ...dataWithoutPassword } = data;
-      await onSubmit(dataWithoutPassword as CreateUserData);
-    } else {
-      await onSubmit(data as CreateUserData);
-    }
-    
-    if (mode === 'create') {
-      form.reset();
+    try {
+      // Always strip confirmPassword before sending
+      const { confirmPassword: _confirmPassword, ...cleanData } = data;
+      // If editing and password is empty, don't include it
+      if (mode === 'edit' && !cleanData.password) {
+        const { password: _password, ...dataWithoutPassword } = cleanData;
+        await onSubmit(dataWithoutPassword as CreateUserData);
+      } else {
+        await onSubmit(cleanData as CreateUserData);
+      }
+      if (mode === 'create') {
+        form.reset();
+      }
+    } catch {
+      // Error ya mostrado por el hook — no resetear el formulario
     }
   };
 
@@ -109,6 +124,7 @@ export function UserModal({
         name: user.name || '',
         email: user.email || '',
         password: '',
+        confirmPassword: '',
         is_active: user.is_active ?? true,
       });
     } else if (isOpen && mode === 'create') {
@@ -116,6 +132,7 @@ export function UserModal({
         name: '',
         email: '',
         password: '',
+        confirmPassword: '',
         is_active: true,
       });
     }

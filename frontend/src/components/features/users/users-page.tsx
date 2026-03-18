@@ -122,6 +122,7 @@ export function UsersPage() {
       closeModal();
     } catch (error) {
       console.error('Error saving:', error);
+      throw error;
     }
   };
 

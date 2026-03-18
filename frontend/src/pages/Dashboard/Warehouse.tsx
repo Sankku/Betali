@@ -126,6 +126,7 @@ const WarehousesPage: React.FC = () => {
       closeModal();
     } catch (error) {
       console.error('Error saving:', error);
+      throw error;
     }
   };
 

@@ -117,6 +117,23 @@ router.post(
 );
 
 /**
+ * PUT /api/purchase-orders/:id
+ * Update purchase order (full edit: header + items)
+ */
+router.put(
+  '/:id',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_UPDATE || PERMISSIONS.PRODUCTS_UPDATE),
+  async (req, res, next) => {
+    try {
+      const controller = getPurchaseOrderController();
+      await controller.updatePurchaseOrder(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * PATCH /api/purchase-orders/:id/status
  * Update purchase order status
  */
