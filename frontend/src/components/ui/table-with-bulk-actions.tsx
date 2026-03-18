@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { CheckSquare, Plus } from 'lucide-react';
+import { CheckSquare, Plus, Lock } from 'lucide-react';
 import { Button } from './button';
 import { Card, CardContent } from './card';
 import { DataTable } from './data-table';
@@ -55,6 +55,54 @@ export interface TableWithBulkActionsProps<T = any> {
   // Custom toolbar content
   customToolbarLeft?: (selectedItems: T[]) => React.ReactNode;
   customToolbarRight?: (selectedItems: T[]) => React.ReactNode;
+
+  // Limit enforcement
+  createButtonDisabled?: boolean;
+  createButtonTooltip?: string;
+}
+
+interface LimitAwareCreateButtonProps {
+  id?: string;
+  label?: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tooltip?: string;
+}
+
+function LimitAwareCreateButton({ id, label = 'New Item', onClick, disabled, tooltip }: LimitAwareCreateButtonProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  if (!disabled) {
+    return (
+      <Button id={id} onClick={onClick} className="flex items-center gap-2">
+        <Plus className="h-4 w-4 text-white" />
+        {label}
+      </Button>
+    );
+  }
+
+  return (
+    <div
+      className="relative inline-block"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <Button
+        id={id}
+        disabled
+        className="flex items-center gap-2 opacity-50 cursor-not-allowed pointer-events-none"
+      >
+        <Lock className="h-4 w-4 text-white" />
+        {label}
+      </Button>
+      {showTooltip && tooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap pointer-events-none">
+          {tooltip}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TableWithBulkActions<T = any>({
@@ -76,6 +124,8 @@ export function TableWithBulkActions<T = any>({
   filterComponents,
   customToolbarLeft,
   customToolbarRight,
+  createButtonDisabled = false,
+  createButtonTooltip,
 }: TableWithBulkActionsProps<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
 
@@ -178,14 +228,13 @@ export function TableWithBulkActions<T = any>({
 
                   {/* Create button when items selected */}
                   {onCreateClick && (
-                    <Button
+                    <LimitAwareCreateButton
                       id={createButtonId}
+                      label={createButtonLabel}
                       onClick={onCreateClick}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4 text-white" />
-                      {createButtonLabel}
-                    </Button>
+                      disabled={createButtonDisabled}
+                      tooltip={createButtonTooltip}
+                    />
                   )}
 
                   {customToolbarRight && customToolbarRight(selectedItems)}
@@ -205,14 +254,13 @@ export function TableWithBulkActions<T = any>({
                     {customToolbarRight && customToolbarRight([])}
 
                     {onCreateClick && (
-                      <Button
+                      <LimitAwareCreateButton
                         id={createButtonId}
+                        label={createButtonLabel}
                         onClick={onCreateClick}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4 text-white" />
-                        {createButtonLabel}
-                      </Button>
+                        disabled={createButtonDisabled}
+                        tooltip={createButtonTooltip}
+                      />
                     )}
                   </div>
                 </div>

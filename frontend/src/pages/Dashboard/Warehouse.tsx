@@ -27,6 +27,7 @@ import {
   useDeleteWarehouse,
 } from '../../hooks/useWarehouse';
 import { useOrganization } from '../../context/OrganizationContext';
+import { usePlanResourceLimit } from '../../hooks/useSubscriptionPlans';
 
 interface ModalState {
   isOpen: boolean;
@@ -53,6 +54,10 @@ const WarehousesPage: React.FC = () => {
   });
 
   const { warehouses, isLoading, error } = useWarehouseManagement();
+  const { atLimit: atWarehouseLimit, limit: warehouseLimit } = usePlanResourceLimit(
+    'max_warehouses',
+    warehouses?.length ?? 0
+  );
   const createWarehouse = useCreateWarehouse();
   const updateWarehouse = useUpdateWarehouse();
   const deactivateWarehouse = useDeactivateWarehouse();
@@ -258,6 +263,8 @@ const WarehousesPage: React.FC = () => {
             createButtonLabel="New Warehouse"
             createButtonId="create-warehouse-button"
             onCreateClick={handleCreateClick}
+            createButtonDisabled={atWarehouseLimit}
+            createButtonTooltip={atWarehouseLimit ? `You've reached the warehouse limit (${warehouseLimit}) for your plan. Upgrade to add more.` : undefined}
             onRowDoubleClick={(warehouse) => openModal('edit', warehouse)}
             searchable={true}
             enablePagination={true}

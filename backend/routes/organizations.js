@@ -3,7 +3,8 @@ const { authenticateUser } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 const { validateRequest } = require('../middleware/validation');
 const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
-const { 
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
+const {
   createOrganizationSchema, 
   updateOrganizationSchema, 
   inviteUserSchema 
@@ -122,6 +123,7 @@ function createOrganizationRoutes(container) {
    */
   router.post('/:id/invite',
     createLimiter,
+    checkOrganizationLimit('users'),
     validateRequest(inviteUserSchema),
     organizationController.inviteUser.bind(organizationController)
   );

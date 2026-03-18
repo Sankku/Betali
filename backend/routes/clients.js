@@ -2,6 +2,7 @@ const express = require('express');
 const { container } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 
 const router = express.Router();
 
@@ -114,6 +115,7 @@ router.get('/:id',
 router.post('/',
   authenticateUser,
   requirePermission(PERMISSIONS.CLIENTS_CREATE),
+  checkOrganizationLimit('clients'),
   async (req, res, next) => {
     const controller = getClientController();
     await controller.createClient(req, res, next);

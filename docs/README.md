@@ -20,6 +20,7 @@ Product Requirements Documents (especificaciones de features):
 - `PRD-03-Pricing-Tax-Management.md` - Gestión de precios e impuestos
 - `PRD-04-SaaS-Signup-Onboarding.md` - Registro y onboarding SaaS
 - `PRD-05-Inventory-Alerts-Notifications.md` - Alertas de inventario
+- `PRD-06-Production-Manufacturing-Movements.md` - Sistema de elaboración/producción (BOM)
 - `PRD-PRICING-SYSTEM.md` - Sistema de precios
 - `PRD-SUBSCRIPTION-BILLING-SYSTEM.md` - Sistema de facturación y suscripciones
 - `PRD_ORGANIZATION_LIMITS.md` - Límites de organizaciones

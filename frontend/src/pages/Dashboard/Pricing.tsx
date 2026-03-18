@@ -223,7 +223,7 @@ export default function Pricing() {
           )}
 
           {/* Feature Comparison Table */}
-          <div className="mt-24">
+          <div id="plan-comparison" className="mt-24">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900">
                 Compare Plans
@@ -277,6 +277,48 @@ export default function Pricing() {
                       ))}
                     </tr>
 
+                    {/* Products */}
+                    <tr className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-6 text-sm font-medium text-gray-700">Products</td>
+                      {plans?.map((plan) => (
+                        <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
+                          {plan.max_products === -1 ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Unlimited
+                            </span>
+                          ) : plan.max_products?.toLocaleString() || 'N/A'}
+                        </td>
+                      ))}
+                    </tr>
+
+                    {/* Clients */}
+                    <tr className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-6 text-sm font-medium text-gray-700">Clients</td>
+                      {plans?.map((plan) => (
+                        <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
+                          {plan.max_clients === -1 ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Unlimited
+                            </span>
+                          ) : plan.max_clients?.toLocaleString() || 'N/A'}
+                        </td>
+                      ))}
+                    </tr>
+
+                    {/* Suppliers */}
+                    <tr className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-6 text-sm font-medium text-gray-700">Suppliers</td>
+                      {plans?.map((plan) => (
+                        <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
+                          {plan.max_suppliers === -1 ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Unlimited
+                            </span>
+                          ) : plan.max_suppliers?.toLocaleString() || 'N/A'}
+                        </td>
+                      ))}
+                    </tr>
+
                     {/* Orders per Month */}
                     <tr className="hover:bg-gray-50/50 transition-colors">
                       <td className="p-6 text-sm font-medium text-gray-700">Orders per Month</td>
@@ -287,6 +329,20 @@ export default function Pricing() {
                                Unlimited
                              </span>
                           ) : plan.max_orders_per_month?.toLocaleString() || 'N/A'}
+                        </td>
+                      ))}
+                    </tr>
+
+                    {/* Stock Movements per Month */}
+                    <tr className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-6 text-sm font-medium text-gray-700">Stock Movements / Month</td>
+                      {plans?.map((plan) => (
+                        <td key={plan.plan_id} className="p-6 text-center text-sm font-medium text-gray-900">
+                          {plan.max_stock_movements_per_month === -1 ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Unlimited
+                            </span>
+                          ) : plan.max_stock_movements_per_month?.toLocaleString() || 'N/A'}
                         </td>
                       ))}
                     </tr>

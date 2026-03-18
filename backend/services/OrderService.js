@@ -1,4 +1,5 @@
 const { Logger } = require('../utils/Logger');
+const { incrementUsage } = require('../middleware/limitEnforcement');
 
 /**
  * Order Service - Business logic for managing sales orders
@@ -115,11 +116,16 @@ class OrderService {
         }
       };
 
-      this.logger.info('Order created successfully', { 
+      this.logger.info('Order created successfully', {
         orderId: createdOrder.order_id,
         organizationId,
-        total: pricingResult.total 
+        total: pricingResult.total
       });
+
+      // Track monthly usage (fire-and-forget, must not fail the operation)
+      incrementUsage(organizationId, 'orders_per_month').catch(err =>
+        this.logger.error('Failed to increment order usage', { error: err.message })
+      );
 
       return completeOrder;
     } catch (error) {

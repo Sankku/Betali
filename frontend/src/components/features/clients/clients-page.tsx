@@ -25,6 +25,7 @@ import {
   CreateClientData,
 } from '@/hooks/useClients';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { usePlanResourceLimit } from '@/hooks/useSubscriptionPlans';
 
 interface ModalState {
   isOpen: boolean;
@@ -54,6 +55,7 @@ export function ClientsPage() {
 
   const { data: clientsResponse, isLoading, error } = useClients({ searchOptions });
   const clients = clientsResponse?.data || [];
+  const { atLimit: atClientLimit, limit: clientLimit } = usePlanResourceLimit('max_clients', clients.length);
   const { data: clientStats } = useClientStats();
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
@@ -319,6 +321,8 @@ export function ClientsPage() {
             createButtonLabel={t('clients.add')}
             createButtonId="create-client-button"
             onCreateClick={handleCreateClick}
+            createButtonDisabled={atClientLimit}
+            createButtonTooltip={atClientLimit ? `You've reached the client limit (${clientLimit}) for your plan. Upgrade to add more.` : undefined}
             onRowDoubleClick={(client) => openModal('edit', client)}
             searchable={false}
             enablePagination={true}

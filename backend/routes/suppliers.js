@@ -2,6 +2,7 @@ const express = require('express');
 const { container } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 
 const router = express.Router();
 
@@ -156,6 +157,7 @@ router.get('/:id',
 router.post('/',
   authenticateUser,
   requirePermission(PERMISSIONS.SUPPLIERS_CREATE),
+  checkOrganizationLimit('suppliers'),
   async (req, res, next) => {
     const controller = getSupplierController();
     await controller.createSupplier(req, res, next);

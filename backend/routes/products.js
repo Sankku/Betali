@@ -6,8 +6,9 @@ const { validateRequest, validateQuery } = require('../middleware/validation');
 const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/sanitization');
-const { 
-  createProductSchema, 
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
+const {
+  createProductSchema,
   updateProductSchema, 
   queryParamsSchema 
 } = require('../validations/productValidation');
@@ -86,6 +87,7 @@ router.get(
 router.post(
   '/',
   requirePermission(PERMISSIONS.PRODUCTS_CREATE),
+  checkOrganizationLimit('products'),
   createLimiter, // Apply create-specific rate limiting
   sanitizeMiddleware(SANITIZATION_RULES.product), // Sanitize product inputs
   validateRequest(createProductSchema),

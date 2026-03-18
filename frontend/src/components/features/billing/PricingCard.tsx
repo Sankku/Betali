@@ -55,10 +55,34 @@ export function PricingCard({
     limitFeatures.push(`${plan.max_warehouses} warehouse${plan.max_warehouses > 1 ? 's' : ''}`);
   }
 
+  if (plan.max_products === -1) {
+    limitFeatures.push('Unlimited Products');
+  } else if (plan.max_products) {
+    limitFeatures.push(`${plan.max_products.toLocaleString()} products`);
+  }
+
+  if (plan.max_clients === -1) {
+    limitFeatures.push('Unlimited Clients');
+  } else if (plan.max_clients) {
+    limitFeatures.push(`${plan.max_clients.toLocaleString()} clients`);
+  }
+
+  if (plan.max_suppliers === -1) {
+    limitFeatures.push('Unlimited Suppliers');
+  } else if (plan.max_suppliers) {
+    limitFeatures.push(`${plan.max_suppliers.toLocaleString()} suppliers`);
+  }
+
   if (plan.max_orders_per_month === -1) {
     limitFeatures.push('Unlimited Orders');
   } else if (plan.max_orders_per_month) {
     limitFeatures.push(`${plan.max_orders_per_month.toLocaleString()} orders/month`);
+  }
+
+  if (plan.max_stock_movements_per_month === -1) {
+    limitFeatures.push('Unlimited Stock Movements');
+  } else if (plan.max_stock_movements_per_month) {
+    limitFeatures.push(`${plan.max_stock_movements_per_month.toLocaleString()} movements/month`);
   }
 
   const allFeatures = [...limitFeatures, ...features];
@@ -98,8 +122,8 @@ export function PricingCard({
         </div>
       )}
 
-      {/* Plan Header */}
-      <div className="mb-6">
+      {/* Plan Header - min-h keeps price/button aligned across cards */}
+      <div className="mb-6 min-h-[6rem]">
         <h3 className="text-2xl font-bold text-gray-900">{plan.display_name}</h3>
         <p className="mt-2 text-sm text-gray-600">{plan.description}</p>
       </div>
@@ -160,8 +184,8 @@ export function PricingCard({
         )}
       </Button>
 
-      {/* Features List */}
-      <div className="space-y-3">
+      {/* Features List - grows to fill remaining space */}
+      <div className="flex-1 space-y-3">
         <p className="text-sm font-semibold text-gray-900">What's included:</p>
         <ul className="space-y-2.5">
           {allFeatures.map((feature, index) => (
@@ -173,14 +197,28 @@ export function PricingCard({
         </ul>
       </div>
 
-      {/* Trial Badge */}
-      {plan.trial_days > 0 && (
-        <div className="mt-6 rounded-lg bg-blue-50 p-3 text-center">
-          <p className="text-sm font-medium text-blue-900">
-            {plan.trial_days}-day free trial included
-          </p>
+      {/* Trial Badge + link - pinned to bottom */}
+      <div className="mt-auto pt-4 space-y-4">
+        {plan.trial_days > 0 && (
+          <div className="rounded-lg bg-blue-50 p-3 text-center">
+            <p className="text-sm font-medium text-blue-900">
+              {plan.trial_days}-day free trial included
+            </p>
+          </div>
+        )}
+        <div className="text-center">
+          <a
+            href="#plan-comparison"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('plan-comparison')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+          >
+            Ver en detalle
+          </a>
         </div>
-      )}
+      </div>
     </div>
   );
 }

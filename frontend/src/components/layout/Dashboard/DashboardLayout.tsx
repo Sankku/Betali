@@ -3,7 +3,6 @@ import {
   Package,
   Warehouse,
   RefreshCw,
-  FileSpreadsheet,
   Users,
   Building2,
   UserCheck,
@@ -105,12 +104,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <Building2 className="w-5 h-5" />,
       label: t('nav.organizations'),
       checkAccess: () => canAccess.viewOrganizations(),
-    },
-    {
-      path: '/dashboard/trazabilidad',
-      icon: <FileSpreadsheet className="w-5 h-5" />,
-      label: t('nav.traceability'),
-      requiresRole: ['super_admin', 'admin', 'manager', 'employee'],
     },
     {
       path: '/dashboard/pricing',

@@ -249,6 +249,52 @@ export function useUsageStatus(
 }
 
 /**
+ * Hook that returns the current organization's plan limits.
+ * Uses the already-cached current-subscription query — no extra network requests
+ * if the Pricing page (or any page) has already fetched it.
+ */
+export function useCurrentPlanLimits() {
+  const { data: currentSubscription, isLoading: isLoadingSub } = useQuery({
+    queryKey: ['current-subscription'],
+    queryFn: () => subscriptionService.getCurrentSubscription(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Plan name from nested subscription_plans (if API embeds it), fallback to 'free'
+  const planName =
+    currentSubscription?.subscription?.subscription_plans?.name ?? 'free';
+
+  const { data: limits, isLoading: isLoadingLimits } = usePlanLimits(planName);
+
+  return {
+    limits: limits ?? null,
+    planName,
+    isLoading: isLoadingSub || isLoadingLimits,
+  };
+}
+
+/**
+ * Returns whether a resource is at its plan limit.
+ * Returns false while loading so the button stays enabled during fetch.
+ * @param limitKey  e.g. 'max_warehouses', 'max_products', 'max_clients'
+ * @param currentCount  length of the already-loaded list
+ */
+export function usePlanResourceLimit(
+  limitKey: keyof import('../services/api/subscriptionService').PlanLimits,
+  currentCount: number
+): { atLimit: boolean; limit: number; remaining: number } {
+  const { limits } = useCurrentPlanLimits();
+
+  if (!limits) return { atLimit: false, limit: -1, remaining: -1 };
+
+  const limit = limits[limitKey] as number;
+  if (limit === -1) return { atLimit: false, limit: -1, remaining: -1 }; // unlimited
+
+  const remaining = Math.max(0, limit - currentCount);
+  return { atLimit: currentCount >= limit, limit, remaining };
+}
+
+/**
  * Hook to format limit display
  */
 export function useFormatLimit() {

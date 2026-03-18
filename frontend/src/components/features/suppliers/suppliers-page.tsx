@@ -47,6 +47,7 @@ import {
 } from '@/hooks/useSuppliers';
 import { useOrganization } from '@/context/OrganizationContext';
 import { supplierService } from '@/services/api/supplierService';
+import { usePlanResourceLimit } from '@/hooks/useSubscriptionPlans';
 
 interface ModalState {
   isOpen: boolean;
@@ -95,6 +96,7 @@ export function SuppliersPage() {
 
   const { data: suppliers = [], isLoading, error } = useSuppliers({ searchOptions });
   const { data: supplierStats } = useSupplierStats();
+  const { atLimit: atSupplierLimit, limit: supplierLimit } = usePlanResourceLimit('max_suppliers', suppliers.length);
   const { data: businessTypes = [] } = useBusinessTypes();
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
@@ -531,6 +533,8 @@ export function SuppliersPage() {
             bulkActions={bulkActions}
             createButtonLabel="Nuevo Proveedor"
             onCreateClick={handleCreateClick}
+            createButtonDisabled={atSupplierLimit}
+            createButtonTooltip={atSupplierLimit ? `Has alcanzado el límite de proveedores (${supplierLimit}) de tu plan. Hacé upgrade para agregar más.` : undefined}
             onRowDoubleClick={(supplier) => openModal('edit', supplier)}
             searchable={false}
             enablePagination={true}

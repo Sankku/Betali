@@ -22,6 +22,7 @@ import {
 } from '../../components/ui';
 import { useOrganization } from '../../context/OrganizationContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { usePlanResourceLimit } from '../../hooks/useSubscriptionPlans';
 
 interface ModalState {
   isOpen: boolean;
@@ -49,6 +50,7 @@ const ProductsPage: React.FC = () => {
   });
 
   const { products, isLoading, error } = useProductManagement();
+  const { atLimit: atProductLimit, limit: productLimit } = usePlanResourceLimit('max_products', products?.length ?? 0);
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -229,6 +231,8 @@ const ProductsPage: React.FC = () => {
             createButtonLabel={t('products.add')}
             createButtonId="create-product-button"
             onCreateClick={handleCreateClick}
+            createButtonDisabled={atProductLimit}
+            createButtonTooltip={atProductLimit ? `You've reached the product limit (${productLimit}) for your plan. Upgrade to add more.` : undefined}
             onRowDoubleClick={(product) => openModal('edit', product)}
             searchable={true}
             enablePagination={true}

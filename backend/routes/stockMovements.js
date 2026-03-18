@@ -4,7 +4,8 @@ const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { validateRequest } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
-const { 
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
+const {
   createStockMovementSchema, 
   updateStockMovementSchema,
   queryParamsSchema
@@ -95,7 +96,8 @@ function createStockMovementRoutes(dependencies = {}) {
   });
   
   // POST /api/stock-movements - Create movement
-  router.post('/', 
+  router.post('/',
+    checkOrganizationLimit('stock_movements_per_month'),
     validateRequest(createStockMovementSchema),
     async (req, res, next) => {
       try {

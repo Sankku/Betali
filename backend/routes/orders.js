@@ -7,6 +7,7 @@ const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { ServiceFactory } = require('../config/container');
 const orderPdfService = require('../services/OrderPdfService');
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 
 const {
   createOrderSchema,
@@ -136,6 +137,7 @@ function createOrderRoutes(container) {
   // POST /api/orders - Create new order
   router.post(
     '/',
+    checkOrganizationLimit('orders_per_month'),
     createLimiter,
     sanitizeMiddleware(SANITIZATION_RULES.product), // Reuse product sanitization rules
     validateRequest(createOrderSchema),

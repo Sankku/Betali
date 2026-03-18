@@ -1,3 +1,5 @@
+const { incrementUsage } = require('../middleware/limitEnforcement');
+
 /**
  * Stock movement business logic service
  * Handles business rules and validation for stock movements
@@ -126,8 +128,14 @@ class StockMovementService {
       };
       
       const createdMovement = await this.stockMovementRepository.create(movementToCreate);
-      
+
       this.logger.info(`Stock movement created: ${createdMovement.movement_id}`);
+
+      // Track monthly usage (fire-and-forget, must not fail the operation)
+      incrementUsage(organizationId, 'stock_movements_per_month').catch(err =>
+        this.logger.error('Failed to increment stock movement usage', { error: err.message })
+      );
+
       return createdMovement;
     } catch (error) {
       this.logger.error(`Error creating stock movement: ${error.message}`);
