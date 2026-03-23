@@ -207,6 +207,22 @@ class BaseRepository {
         throw new Error(`Error deleting ${this.table} by filter: ${error?.message || String(error)}`);
       }
     }
+
+  /**
+   * Call a Supabase RPC function
+   * @param {string} functionName - PostgreSQL function name
+   * @param {Object} params - Named parameters object
+   * @returns {Promise<*>} RPC result data
+   */
+  async callRpc(functionName, params) {
+    try {
+      const { data, error } = await this.client.rpc(functionName, params);
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw new Error(`RPC ${functionName} error: ${error?.message || String(error)}`);
+    }
+  }
   }
   
 module.exports = { BaseRepository };

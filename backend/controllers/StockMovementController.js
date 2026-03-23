@@ -327,6 +327,33 @@ class StockMovementController {
   }
 
   /**
+   * Create production movement (BOM)
+   * POST /api/stock-movements/production
+   */
+  async createProductionMovement(req, res, next) {
+    try {
+      const orgId = req.user.currentOrganizationId;
+      if (!orgId) return res.status(400).json({ error: 'No organization context' });
+
+      const result = await this.stockMovementService.createProductionMovement(req.body, orgId);
+
+      res.status(201).json({
+        message: 'Production movement created successfully',
+        data: result,
+      });
+    } catch (error) {
+      this.logger.error('Error creating production movement', { error: error.message });
+
+      if (error.message.includes('required') || error.message.includes('Insufficient stock') ||
+          error.message.includes('not found') || error.message.includes('No formula') ||
+          error.message.includes('must be')) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Build query options from request query parameters
    * @param {Object} query - Request query parameters
    * @returns {Object} Query options

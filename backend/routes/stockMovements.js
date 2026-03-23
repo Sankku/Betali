@@ -95,6 +95,19 @@ function createStockMovementRoutes(dependencies = {}) {
     }
   });
   
+  // POST /api/stock-movements/production — must be before POST / to avoid Express conflicts
+  router.post('/production',
+    checkOrganizationLimit('stock_movements_per_month'),
+    async (req, res, next) => {
+      try {
+        logger.info('POST /api/stock-movements/production', { body: req.body });
+        await stockMovementController.createProductionMovement(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   // POST /api/stock-movements - Create movement
   router.post('/',
     checkOrganizationLimit('stock_movements_per_month'),

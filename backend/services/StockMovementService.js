@@ -298,7 +298,7 @@ class StockMovementService {
       throw new Error('Quantity must be a number greater than 0');
     }
     
-    const validTypes = ['entry', 'exit', 'adjustment', 'senasa'];
+    const validTypes = ['entry', 'exit', 'adjustment', 'senasa', 'production'];
     if (!validTypes.includes(movementData.movement_type)) {
       throw new Error(`Invalid movement type. Must be one of: ${validTypes.join(', ')}`);
     }
@@ -329,6 +329,46 @@ class StockMovementService {
       if (warehouse.organization_id !== organizationId) {
         throw new Error('Warehouse does not belong to your organization');
       }
+    }
+  }
+
+  /**
+   * Create a production movement via Supabase RPC (atomic).
+   * @param {Object} data - { finished_product_id, quantity_to_produce, warehouse_id, reference }
+   * @param {string} organizationId
+   * @returns {Promise<Object>} RPC result with reference and summary
+   */
+  async createProductionMovement(data, organizationId) {
+    try {
+      this.logger.info(`Creating production movement for org: ${organizationId}`, { data });
+
+      const { finished_product_id, quantity_to_produce, warehouse_id, reference } = data;
+
+      if (!finished_product_id || !quantity_to_produce || !warehouse_id) {
+        throw new Error('finished_product_id, quantity_to_produce, and warehouse_id are required');
+      }
+      if (typeof quantity_to_produce !== 'number' || quantity_to_produce <= 0) {
+        throw new Error('quantity_to_produce must be a number greater than 0');
+      }
+
+      const warehouse = await this.warehouseRepository.findById(warehouse_id);
+      if (!warehouse || warehouse.organization_id !== organizationId) {
+        throw new Error('Warehouse not found or does not belong to your organization');
+      }
+
+      const result = await this.stockMovementRepository.callRpc('create_production_movement', {
+        p_finished_product_id: finished_product_id,
+        p_quantity_to_produce: quantity_to_produce,
+        p_warehouse_id: warehouse_id,
+        p_organization_id: organizationId,
+        p_user_reference: reference || null,
+      });
+
+      this.logger.info(`Production movement created: ${result?.reference}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Error creating production movement: ${error.message}`);
+      throw error;
     }
   }
 }
