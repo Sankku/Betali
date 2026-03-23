@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Package } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
+import { ProductFormulaEditor } from './ProductFormulaEditor';
 import { productFormSchema } from '../../../validations/productValidation';
 import { useTranslation } from '../../../contexts/LanguageContext';
 
@@ -56,6 +57,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       tax_rate_id: '',
     },
   });
+
+  const productType = form.watch('product_type');
 
   const getModalTitle = () => {
     switch (mode) {
@@ -145,6 +148,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       size="lg"
     >
       <ProductForm form={form} mode={mode} isLoading={isLoading} />
+      {mode === 'edit' && productType === 'finished_good' && product?.product_id && (
+        <div className="mt-4 border-t pt-4">
+          <ProductFormulaEditor finishedProductId={product.product_id} />
+        </div>
+      )}
     </ModalForm>
   );
 };

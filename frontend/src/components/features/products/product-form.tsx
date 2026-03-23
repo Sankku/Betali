@@ -224,6 +224,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           </div>
         )}
 
+        {/* Product type */}
+        <div className="space-y-2">
+          <Label htmlFor="product_type">Tipo de producto</Label>
+          <select
+            id="product_type"
+            disabled={isViewMode}
+            {...register('product_type')}
+            className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="standard">Estándar</option>
+            <option value="raw_material">Materia prima</option>
+            <option value="finished_good">Producto terminado (BOM)</option>
+          </select>
+        </div>
+
         {/* Inventory Alerts Configuration */}
         <div className="border-t pt-6 mt-6">
           <div className="flex items-center gap-2 mb-4">

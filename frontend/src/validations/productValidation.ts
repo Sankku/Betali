@@ -85,7 +85,13 @@ export const createProductSchema = yup.object({
   alert_enabled: yup
     .boolean()
     .optional()
-    .default(true)
+    .default(true),
+
+  product_type: yup
+    .string()
+    .oneOf(['standard', 'raw_material', 'finished_good'])
+    .default('standard')
+    .optional(),
 });
 
 export const updateProductSchema = yup.object({
@@ -164,7 +170,13 @@ export const updateProductSchema = yup.object({
 
   alert_enabled: yup
     .boolean()
-    .optional()
+    .optional(),
+
+  product_type: yup
+    .string()
+    .oneOf(['standard', 'raw_material', 'finished_good'])
+    .default('standard')
+    .optional(),
 });
 
 // Type inference from Yup schemas
