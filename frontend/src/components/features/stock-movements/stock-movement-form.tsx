@@ -9,6 +9,7 @@ import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Textarea } from '../../ui/textarea';
 import { DatePicker } from '../../ui/date-picker';
+import { ProductionMovementForm } from './ProductionMovementForm';
 
 interface StockMovementFormProps {
   onSubmit: (data: StockMovementFormData) => void | Promise<void>;
@@ -19,10 +20,11 @@ interface StockMovementFormProps {
 }
 
 const MOVEMENT_TYPE_KEYS = [
-  { value: 'entry',      labelKey: 'stockMovements.types.entry',      descKey: 'stockMovements.types.entryDesc',      color: 'text-green-700' },
-  { value: 'exit',       labelKey: 'stockMovements.types.exit',       descKey: 'stockMovements.types.exitDesc',       color: 'text-red-700'   },
-  { value: 'adjustment', labelKey: 'stockMovements.types.adjustment', descKey: 'stockMovements.types.adjustmentDesc', color: 'text-blue-700'  },
-  { value: 'compliance', labelKey: 'stockMovements.types.compliance', descKey: 'stockMovements.types.complianceDesc', color: 'text-purple-700'},
+  { value: 'entry',      labelKey: 'stockMovements.types.entry',      descKey: 'stockMovements.types.entryDesc',      color: 'text-green-700'  },
+  { value: 'exit',       labelKey: 'stockMovements.types.exit',       descKey: 'stockMovements.types.exitDesc',       color: 'text-red-700'    },
+  { value: 'adjustment', labelKey: 'stockMovements.types.adjustment', descKey: 'stockMovements.types.adjustmentDesc', color: 'text-blue-700'   },
+  { value: 'compliance', labelKey: 'stockMovements.types.compliance', descKey: 'stockMovements.types.complianceDesc', color: 'text-purple-700' },
+  { value: 'production', labelKey: 'stockMovements.types.production', descKey: 'stockMovements.types.productionDesc', color: 'text-orange-700' },
 ];
 
 // ─── Tooltip wrapper ───────────────────────────────────────────────────────────
@@ -210,6 +212,8 @@ export function StockMovementForm({
   const selectedWarehouseLabel  = watchedValues.warehouse_id ? `${getWarehouseLabel(watchedValues.warehouse_id)} — ${getWarehouseSubtitle(watchedValues.warehouse_id)}` : '';
 
   // ── edit / create mode ───────────────────────────────────────────────────────
+  const isProduction = watchedValues.movement_type === 'production';
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
 
@@ -238,167 +242,177 @@ export function StockMovementForm({
         </Select>
       </FormField>
 
-      {/* Quantity + Date — 2 col grid, aligned via FormField min-h header */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <FormField
-          label={t('stockMovements.form.quantity')}
-          description={t('stockMovements.form.quantityDesc')}
-          icon={<Hash className="h-4 w-4" />}
-          required
-          error={getFieldError('quantity')}
-        >
-          <input
-            {...register('quantity', { valueAsNumber: true })}
-            type="number"
-            min="0"
-            step="1"
-            placeholder="0"
-            disabled={isLoading}
-            className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
-          />
-        </FormField>
+      {/* Production type — delegate entirely to the dedicated form */}
+      {isProduction && (
+        <ProductionMovementForm onSuccess={onCancel} onCancel={onCancel} />
+      )}
 
-        <FormField
-          label={t('stockMovements.form.movementDate')}
-          description={t('stockMovements.form.movementDateDesc')}
-          icon={<Calendar className="h-4 w-4" />}
-          required
-          error={getFieldError('movement_date')}
-        >
-          <DatePicker
-            value={watchedValues.movement_date ? new Date(`${watchedValues.movement_date}T00:00:00`) : undefined}
-            onChange={(date) => {
-              setValue('movement_date', date ? date.toISOString().split('T')[0] : '', { shouldValidate: true });
-            }}
-            disabled={isLoading}
-            className="w-full h-[48px] rounded-lg border-2 border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-900 shadow-sm"
-          />
-        </FormField>
-      </div>
+      {/* Regular fields — hidden when production type is selected */}
+      {!isProduction && (
+        <>
+          {/* Quantity + Date — 2 col grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <FormField
+              label={t('stockMovements.form.quantity')}
+              description={t('stockMovements.form.quantityDesc')}
+              icon={<Hash className="h-4 w-4" />}
+              required
+              error={getFieldError('quantity')}
+            >
+              <input
+                {...register('quantity', { valueAsNumber: true })}
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                disabled={isLoading}
+                className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
+              />
+            </FormField>
 
-      {/* Product + Warehouse — 2 col grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <FormField
-          label={t('stockMovements.form.product')}
-          description={t('stockMovements.form.productDesc')}
-          icon={<Package className="h-4 w-4" />}
-          required
-          error={getFieldError('product_id')}
-        >
-          <WithTooltip label={selectedProductLabel}>
-            <Select value={watchedValues.product_id} onValueChange={v => setValue('product_id', v)} disabled={isLoading}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('stockMovements.form.productPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {validProducts.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noProductsAvailable')}</div>
-                ) : (
-                  validProducts
-                    .filter(p => p?.product_id && p?.name)
-                    .map(product => {
-                      const subtitle = [
-                        product.batch_number   && `Batch: ${product.batch_number}`,
-                        product.origin_country && `Country: ${product.origin_country}`,
-                      ].filter(Boolean).join(' | ');
-                      return (
-                        <SelectItem key={product.product_id} value={product.product_id}>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="font-semibold text-neutral-900 truncate block" title={product.name}>
-                              {product.name}
-                            </span>
-                            {subtitle && (
-                              <span className="text-xs text-neutral-500 truncate block" title={subtitle}>
-                                {subtitle}
+            <FormField
+              label={t('stockMovements.form.movementDate')}
+              description={t('stockMovements.form.movementDateDesc')}
+              icon={<Calendar className="h-4 w-4" />}
+              required
+              error={getFieldError('movement_date')}
+            >
+              <DatePicker
+                value={watchedValues.movement_date ? new Date(`${watchedValues.movement_date}T00:00:00`) : undefined}
+                onChange={(date) => {
+                  setValue('movement_date', date ? date.toISOString().split('T')[0] : '', { shouldValidate: true });
+                }}
+                disabled={isLoading}
+                className="w-full h-[48px] rounded-lg border-2 border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-900 shadow-sm"
+              />
+            </FormField>
+          </div>
+
+          {/* Product + Warehouse — 2 col grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <FormField
+              label={t('stockMovements.form.product')}
+              description={t('stockMovements.form.productDesc')}
+              icon={<Package className="h-4 w-4" />}
+              required
+              error={getFieldError('product_id')}
+            >
+              <WithTooltip label={selectedProductLabel}>
+                <Select value={watchedValues.product_id} onValueChange={v => setValue('product_id', v)} disabled={isLoading}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('stockMovements.form.productPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validProducts.length === 0 ? (
+                      <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noProductsAvailable')}</div>
+                    ) : (
+                      validProducts
+                        .filter(p => p?.product_id && p?.name)
+                        .map(product => {
+                          const subtitle = [
+                            product.batch_number   && `Batch: ${product.batch_number}`,
+                            product.origin_country && `Country: ${product.origin_country}`,
+                          ].filter(Boolean).join(' | ');
+                          return (
+                            <SelectItem key={product.product_id} value={product.product_id}>
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <span className="font-semibold text-neutral-900 truncate block" title={product.name}>
+                                  {product.name}
+                                </span>
+                                {subtitle && (
+                                  <span className="text-xs text-neutral-500 truncate block" title={subtitle}>
+                                    {subtitle}
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          );
+                        })
+                    )}
+                  </SelectContent>
+                </Select>
+              </WithTooltip>
+            </FormField>
+
+            <FormField
+              label={t('stockMovements.form.warehouse')}
+              description={t('stockMovements.form.warehouseDesc')}
+              icon={<Warehouse className="h-4 w-4" />}
+              required
+              error={getFieldError('warehouse_id')}
+            >
+              <WithTooltip label={selectedWarehouseLabel}>
+                <Select value={watchedValues.warehouse_id} onValueChange={v => setValue('warehouse_id', v)} disabled={isLoading}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('stockMovements.form.warehousePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validWarehouses.length === 0 ? (
+                      <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noWarehousesAvailable')}</div>
+                    ) : (
+                      validWarehouses
+                        .filter((w: any) => w?.warehouse_id && w?.name)
+                        .map((warehouse: any) => (
+                          <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="font-semibold text-neutral-900 truncate block" title={warehouse.name}>
+                                {warehouse.name}
                               </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      );
-                    })
-                )}
-              </SelectContent>
-            </Select>
-          </WithTooltip>
-        </FormField>
+                              {warehouse.location && (
+                                <span className="text-xs text-neutral-500 truncate block" title={warehouse.location}>
+                                  {warehouse.location}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </WithTooltip>
+            </FormField>
+          </div>
 
-        <FormField
-          label={t('stockMovements.form.warehouse')}
-          description={t('stockMovements.form.warehouseDesc')}
-          icon={<Warehouse className="h-4 w-4" />}
-          required
-          error={getFieldError('warehouse_id')}
-        >
-          <WithTooltip label={selectedWarehouseLabel}>
-            <Select value={watchedValues.warehouse_id} onValueChange={v => setValue('warehouse_id', v)} disabled={isLoading}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('stockMovements.form.warehousePlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {validWarehouses.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noWarehousesAvailable')}</div>
-                ) : (
-                  validWarehouses
-                    .filter((w: any) => w?.warehouse_id && w?.name)
-                    .map((warehouse: any) => (
-                      <SelectItem key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="font-semibold text-neutral-900 truncate block" title={warehouse.name}>
-                            {warehouse.name}
-                          </span>
-                          {warehouse.location && (
-                            <span className="text-xs text-neutral-500 truncate block" title={warehouse.location}>
-                              {warehouse.location}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
-                )}
-              </SelectContent>
-            </Select>
-          </WithTooltip>
-        </FormField>
-      </div>
-
-      {/* Reference — full width */}
-      <FormField
-        label={t('stockMovements.form.reference')}
-        description={t('stockMovements.form.referenceDesc')}
-        icon={<FileText className="h-4 w-4" />}
-        error={getFieldError('reference')}
-      >
-        <Textarea
-          {...register('reference')}
-          placeholder={t('stockMovements.form.referencePlaceholder')}
-          disabled={isLoading}
-          rows={3}
-          className="resize-none"
-        />
-      </FormField>
-
-      {/* Actions */}
-      {!isViewMode && (
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            disabled={isLoading}
+          {/* Reference — full width */}
+          <FormField
+            label={t('stockMovements.form.reference')}
+            description={t('stockMovements.form.referenceDesc')}
+            icon={<FileText className="h-4 w-4" />}
+            error={getFieldError('reference')}
           >
-            {t('stockMovements.form.cancel')}
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
-            disabled={isLoading}
-          >
-            {isLoading && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            )}
-            {mode === 'create' ? t('stockMovements.form.createMovement') : t('stockMovements.form.saveChanges')}
-          </button>
-        </div>
+            <Textarea
+              {...register('reference')}
+              placeholder={t('stockMovements.form.referencePlaceholder')}
+              disabled={isLoading}
+              rows={3}
+              className="resize-none"
+            />
+          </FormField>
+
+          {/* Actions */}
+          {!isViewMode && (
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                disabled={isLoading}
+              >
+                {t('stockMovements.form.cancel')}
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {mode === 'create' ? t('stockMovements.form.createMovement') : t('stockMovements.form.saveChanges')}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </form>
   );

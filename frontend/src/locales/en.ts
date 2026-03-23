@@ -518,6 +518,8 @@ export const en: TranslationKeys = {
       adjustmentDesc: 'Inventory correction',
       compliance: 'Compliance',
       complianceDesc: 'Regulatory compliance movement',
+      production: 'Production',
+      productionDesc: 'Finished product production from raw materials',
     },
     page: {
       title: 'Stock Movements',

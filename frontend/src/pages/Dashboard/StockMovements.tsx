@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CRUDPage } from '../../components/templates/crud-page';
@@ -7,7 +7,7 @@ import { StockMovementModal } from '../../components/features/stock-movements/st
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { ToastContainer } from '../../components/ui/toast';
-import { ArrowUpCircle, ArrowDownCircle, AlertTriangle, Eye, Edit, Trash, Package } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, ArrowUpDown, AlertTriangle, Eye, Edit, Trash, Package, Settings2 } from 'lucide-react';
 import {
   useStockMovements,
   useCreateStockMovement,
@@ -136,19 +136,20 @@ export default function StockMovementsPage() {
       accessorKey: 'movement_type',
       header: t('stockMovements.page.columnType'),
       cell: ({ row }: any) => {
-        const isEntry = row.original.movement_type === 'entry';
+        const type: string = row.original.movement_type;
+        const config: Record<string, { icon: React.ReactNode; badgeClass: string; labelKey: string }> = {
+          entry:      { icon: <ArrowUpCircle className="w-5 h-5 text-green-600 mr-2" />,  badgeClass: 'bg-green-50 text-green-700 border-green-200',   labelKey: 'stockMovements.types.entry' },
+          exit:       { icon: <ArrowDownCircle className="w-5 h-5 text-red-600 mr-2" />,  badgeClass: 'bg-red-50 text-red-700 border-red-200',         labelKey: 'stockMovements.types.exit' },
+          adjustment: { icon: <ArrowUpDown className="w-5 h-5 text-blue-600 mr-2" />,     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',      labelKey: 'stockMovements.types.adjustment' },
+          compliance: { icon: <ArrowUpDown className="w-5 h-5 text-purple-600 mr-2" />,   badgeClass: 'bg-purple-50 text-purple-700 border-purple-200', labelKey: 'stockMovements.types.compliance' },
+          production: { icon: <Settings2 className="w-5 h-5 text-orange-600 mr-2" />,     badgeClass: 'bg-orange-50 text-orange-700 border-orange-200', labelKey: 'stockMovements.types.production' },
+        };
+        const { icon, badgeClass, labelKey } = config[type] ?? config.exit;
         return (
           <div className="flex items-center">
-            {isEntry ? (
-              <ArrowUpCircle className="w-5 h-5 text-green-600 mr-2" />
-            ) : (
-              <ArrowDownCircle className="w-5 h-5 text-red-600 mr-2" />
-            )}
-            <Badge
-              variant="outline"
-              className={isEntry ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
-            >
-              {isEntry ? t('stockMovements.types.entry') : t('stockMovements.types.exit')}
+            {icon}
+            <Badge variant="outline" className={badgeClass}>
+              {t(labelKey as any)}
             </Badge>
           </div>
         );

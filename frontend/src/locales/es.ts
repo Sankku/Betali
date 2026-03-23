@@ -516,6 +516,8 @@ export const es = {
       adjustmentDesc: 'Corrección de inventario',
       compliance: 'Cumplimiento',
       complianceDesc: 'Movimiento de cumplimiento regulatorio',
+      production: 'Elaboración',
+      productionDesc: 'Producción de producto terminado a partir de materias primas',
     },
     page: {
       title: 'Movimientos de Stock',
