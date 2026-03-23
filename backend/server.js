@@ -36,6 +36,7 @@ const cronRoutes = require('./routes/cron');
 const healthRoutes = require('./routes/health');
 const debugRoutes = require('./routes/debug');
 const inventoryAlertRoutes = require('./routes/inventoryAlerts');
+const createProductFormulaRoutes = require('./routes/productFormulas');
 const { alertChecker } = require('./jobs/inventoryAlertChecker');
 
 /**
@@ -212,6 +213,7 @@ class Application {
     this.app.use('/api/mercadopago', mercadoPagoRoutes);
     this.app.use('/api', mercadoPagoRoutes); // For webhook route /api/webhooks/mercadopago
     this.app.use('/api/alerts', inventoryAlertRoutes);
+    this.app.use('/api/product-formulas', createProductFormulaRoutes());
     this.app.use('/api/cron', cronRoutes);
 
     // Debug routes (development only)

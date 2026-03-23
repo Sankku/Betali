@@ -60,6 +60,9 @@ const { DiscountRuleController } = require('../controllers/DiscountRuleControlle
 const { InventoryAlertController } = require('../controllers/InventoryAlertController');
 const { SubscriptionController } = require('../controllers/SubscriptionController');
 const { SubscriptionPlanController } = require('../controllers/SubscriptionPlanController');
+const { ProductFormulaRepository } = require('../repositories/ProductFormulaRepository');
+const { ProductFormulaService } = require('../services/ProductFormulaService');
+const { ProductFormulaController } = require('../controllers/ProductFormulaController');
 
 /**
  * Dependency injection container
@@ -152,6 +155,11 @@ function initializeContainer() {
   container.register('stockMovementRepository', () => {
     const dbConfig = container.get('dbConfig');
     return new StockMovementRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('productFormulaRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductFormulaRepository(dbConfig.getClient());
   }, true);
 
   container.register('tableConfigRepository', () => {
@@ -275,6 +283,18 @@ function initializeContainer() {
     const warehouseRepository = container.get('warehouseRepository');
     const logger = container.get('logger');
     return new StockMovementService(stockMovementRepository, productRepository, warehouseRepository, logger);
+  }, true);
+
+  container.register('productFormulaService', () => {
+    const formulaRepository = container.get('productFormulaRepository');
+    const productRepository = container.get('productRepository');
+    const warehouseRepository = container.get('warehouseRepository');
+    const dbConfig = container.get('dbConfig');
+    const logger = container.get('logger');
+    return new ProductFormulaService(
+      formulaRepository, productRepository, warehouseRepository,
+      dbConfig.getClient(), logger
+    );
   }, true);
 
   container.register('dashboardService', () => {
@@ -417,6 +437,11 @@ function initializeContainer() {
   container.register('stockMovementController', () => {
     const stockMovementService = container.get('stockMovementService');
     return new StockMovementController(stockMovementService);
+  }, true);
+
+  container.register('productFormulaController', () => {
+    const service = container.get('productFormulaService');
+    return new ProductFormulaController(service);
   }, true);
 
   container.register('dashboardController', () => {
@@ -612,7 +637,14 @@ const ServiceFactory = {
 
   createSubscriptionPlanController() {
     return container.get('subscriptionPlanController');
-  }
+  },
+
+  createProductFormulaController() {
+    return container.get('productFormulaController');
+  },
+  createProductFormulaService() {
+    return container.get('productFormulaService');
+  },
 };
 
 module.exports = { 
