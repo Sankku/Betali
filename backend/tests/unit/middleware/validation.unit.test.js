@@ -119,7 +119,7 @@ describe('Validation Middleware Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'Validation failed',
+          error: 'Validation failed (body)',
           message: expect.stringContaining('name'),
           details: expect.arrayContaining([
             expect.objectContaining({
@@ -146,7 +146,7 @@ describe('Validation Middleware Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'Validation failed',
+          error: 'Validation failed (body)',
           details: expect.arrayContaining([
             expect.objectContaining({
               field: 'email',
@@ -171,7 +171,7 @@ describe('Validation Middleware Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'Validation failed',
+          error: 'Validation failed (body)',
           details: expect.arrayContaining([
             expect.objectContaining({
               field: 'age',

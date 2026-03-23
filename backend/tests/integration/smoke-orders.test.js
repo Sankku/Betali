@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const { ServiceFactory } = require('../../config/container');
+const { container } = require('../../config/container');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
@@ -18,7 +18,7 @@ const mockAuth = (req, res, next) => {
   next();
 };
 
-const orderController = ServiceFactory.getInstance().get('orderController');
+const orderController = container.get('orderController');
 
 app.post('/api/orders', mockAuth, (req, res, next) => orderController.createOrder(req, res, next));
 app.get('/api/orders/:id', mockAuth, (req, res, next) => orderController.getOrderById(req, res, next));

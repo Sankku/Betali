@@ -325,11 +325,11 @@ describe('UserService Unit Tests', () => {
           status: 400
         });
       
-      // Should fail because name and password_hash are missing
+      // Should fail because non-super admin users must belong to an organization
       try {
         await userService.createUser(invalidData);
       } catch (error) {
-        expect(error.message).toContain('required');
+        expect(error.message).toContain('Non-super admin users must belong to an organization');
         expect(error.status).toBe(400);
       }
     });

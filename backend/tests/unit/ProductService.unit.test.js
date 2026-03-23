@@ -8,6 +8,8 @@ const { ProductService } = require('../../services/ProductService');
 describe('ProductService Unit Tests', () => {
   let productService;
   let mockProductRepository;
+  let mockStockMovementRepository;
+  let mockStockReservationRepository;
   let mockLogger;
 
   beforeEach(() => {
@@ -23,6 +25,17 @@ describe('ProductService Unit Tests', () => {
       search: jest.fn()
     };
 
+    // Mock stock movement repository
+    mockStockMovementRepository = {
+      getCurrentStockBulk: jest.fn(),
+      getCurrentStock: jest.fn()
+    };
+
+    // Mock stock reservation repository
+    mockStockReservationRepository = {
+      getAvailableStock: jest.fn()
+    };
+
     // Mock logger
     mockLogger = {
       info: jest.fn(),
@@ -32,7 +45,12 @@ describe('ProductService Unit Tests', () => {
     };
 
     // Create service instance with mocks
-    productService = new ProductService(mockProductRepository, mockLogger);
+    productService = new ProductService(
+      mockProductRepository,
+      mockStockMovementRepository,
+      mockStockReservationRepository,
+      mockLogger
+    );
   });
 
   afterEach(() => {
@@ -48,10 +66,11 @@ describe('ProductService Unit Tests', () => {
       ];
       
       mockProductRepository.findByOrganizationId.mockResolvedValue(expectedProducts);
+      mockStockMovementRepository.getCurrentStockBulk.mockResolvedValue({});
 
       const result = await productService.getOrganizationProducts(orgId);
 
-      expect(result).toEqual(expectedProducts);
+      expect(result).toEqual(expectedProducts.map(p => ({ ...p, current_stock: 0 })));
       expect(mockProductRepository.findByOrganizationId).toHaveBeenCalledWith(orgId, {});
       expect(mockLogger.info).toHaveBeenCalledWith(`Fetching products for organization: ${orgId}`);
     });
@@ -95,7 +114,7 @@ describe('ProductService Unit Tests', () => {
       const result = await productService.getProductById(productId, orgId);
 
       expect(result).toEqual(mockProduct);
-      expect(mockProductRepository.findById).toHaveBeenCalledWith(productId, 'product_id');
+      expect(mockProductRepository.findById).toHaveBeenCalledWith(productId, orgId);
     });
 
     test('should throw error when product not found', async () => {
@@ -111,15 +130,12 @@ describe('ProductService Unit Tests', () => {
     test('should throw error when product belongs to different organization', async () => {
       const productId = 'prod-123';
       const orgId = 'org-123';
-      const mockProduct = {
-        product_id: productId,
-        organization_id: 'different-org-456'
-      };
 
-      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      // Repository enforces org isolation — returns null when product not in org
+      mockProductRepository.findById.mockResolvedValue(null);
 
       await expect(productService.getProductById(productId, orgId))
-        .rejects.toThrow('Access denied: Product does not belong to your organization');
+        .rejects.toThrow('Product not found');
     });
 
     test('should log errors', async () => {
@@ -140,7 +156,7 @@ describe('ProductService Unit Tests', () => {
     const validProductData = {
       name: 'Test Product',
       batch_number: 'BATCH-001',
-      expiration_date: '2025-12-31',
+      expiration_date: '2027-12-31',
       origin_country: 'Argentina',
       price: 99.99,
       description: 'Test description'
@@ -389,7 +405,7 @@ describe('ProductService Unit Tests', () => {
       name: 'Test Product',
       batch_number: 'BATCH-001',
       origin_country: 'Argentina',
-      expiration_date: '2025-12-31',
+      expiration_date: '2027-12-31',
       price: 99.99
     };
 

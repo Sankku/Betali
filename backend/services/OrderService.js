@@ -301,11 +301,12 @@ class OrderService {
       // Validate status transition
       this.validateStatusTransition(currentOrder.status, newStatus);
 
-      // Apply business rules based on status change
-      await this.applyStatusChangeRules(currentOrder, newStatus, organizationId);
-
-      // Update the status
+      // Update the status FIRST so the DB trigger fires and handles stock reservations/movements
       const updatedOrder = await this.orderRepository.updateStatus(orderId, organizationId, newStatus);
+
+      // Apply additional service-level business rules AFTER the DB trigger has run.
+      // reserveStockForOrder will detect existing trigger-created reservations and skip duplication.
+      await this.applyStatusChangeRules(currentOrder, newStatus, organizationId);
 
       this.logger.info('Order status updated successfully', { orderId, newStatus });
       return updatedOrder;

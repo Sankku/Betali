@@ -86,7 +86,10 @@ fi
 if [ "$SKIP_UNIT" = false ]; then
   log_step "STAGE 1: Unit Tests"
   log_info "Running backend unit tests..."
-  if (cd "$ROOT_DIR/backend" && npx jest tests/unit --passWithNoTests --forceExit 2>&1 | tail -15); then
+  UNIT_TEST_OUTPUT=$(cd "$ROOT_DIR/backend" && npx jest tests/unit --config=jest.unit.config.js --passWithNoTests --forceExit 2>&1)
+  UNIT_TEST_EXIT=$?
+  echo "$UNIT_TEST_OUTPUT" | tail -15
+  if [ $UNIT_TEST_EXIT -eq 0 ]; then
     log_ok "Backend unit tests passed"
   else
     log_fail "Backend unit tests FAILED"
@@ -98,18 +101,48 @@ else
 fi
 
 # ════════════════════════════════════════════
-# STAGE 2: Integration Tests (no servers needed)
+# STAGE 2: Integration Tests (backend required)
 # ════════════════════════════════════════════
 if [ "$SKIP_INTEGRATION" = false ]; then
   log_step "STAGE 2: Integration Tests"
-  log_info "Running integration tests (multi-tenant, order workflow)..."
-  if (cd "$ROOT_DIR/backend" && npx jest tests/integration --passWithNoTests --forceExit 2>&1 | tail -15); then
-    log_ok "Integration tests passed"
-  else
-    log_fail "Integration tests FAILED"
-    OVERALL_PASS=false
-    if [ "${FAIL_FAST:-false}" = "true" ]; then exit 1; fi
+
+  # Start backend if not already running
+  lsof -ti:4000 | xargs kill -9 2>/dev/null || true
+  sleep 1
+  log_info "Starting Backend for integration tests..."
+  (cd "$ROOT_DIR/backend" && bun run dev > /tmp/betali-backend-int.log 2>&1) &
+  INT_BACK_PID=$!
+
+  # Wait for backend
+  INT_COUNTER=0
+  until curl -sf http://localhost:4000/health > /dev/null 2>&1; do
+    sleep 1
+    INT_COUNTER=$((INT_COUNTER + 1))
+    if [ $INT_COUNTER -ge 60 ]; then
+      log_fail "Backend did not start for integration tests"
+      OVERALL_PASS=false
+      break
+    fi
+  done
+
+  if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
+    log_info "Running integration tests (multi-tenant, order workflow)..."
+    INTEGRATION_OUTPUT=$(cd "$ROOT_DIR/backend" && npx jest tests/integration --passWithNoTests --forceExit 2>&1)
+    INTEGRATION_EXIT=$?
+    echo "$INTEGRATION_OUTPUT" | tail -15
+    if [ $INTEGRATION_EXIT -eq 0 ]; then
+      log_ok "Integration tests passed"
+    else
+      log_fail "Integration tests FAILED"
+      OVERALL_PASS=false
+      if [ "${FAIL_FAST:-false}" = "true" ]; then exit 1; fi
+    fi
   fi
+
+  # Stop backend before E2E (E2E starts its own)
+  kill "$INT_BACK_PID" 2>/dev/null || true
+  lsof -ti:4000 | xargs kill -9 2>/dev/null || true
+  sleep 1
 else
   log_warn "Integration tests skipped"
 fi

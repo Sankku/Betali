@@ -1,307 +1,625 @@
-# 🗄️ BETALI DATABASE SCHEMA DOCUMENTATION
+# Database Schema Documentation
 
-## 📋 Table Overview
+Generated from `database.types.ts`.
 
-### 🏢 **Multi-Tenant Core Tables**
+## alert_settings
 
-#### `organizations`
-**Purpose:** Main tenant entities for SaaS multi-tenancy
-```sql
-- organization_id (UUID, PK)
-- name (VARCHAR 255, NOT NULL)
-- slug (VARCHAR 100, UNIQUE, NOT NULL) 
-- domain (VARCHAR 255, NULLABLE)
-- logo_url (TEXT, NULLABLE)
-- address (TEXT, NULLABLE)
-- phone (VARCHAR 50, NULLABLE)
-- email (VARCHAR 255, NULLABLE)
-- tax_id (VARCHAR 50, NULLABLE)
-- plan_type (ENUM: basic, premium, enterprise)
-- max_users (INTEGER, DEFAULT 10)
-- max_warehouses (INTEGER, DEFAULT 5)
-- features (JSONB, DEFAULT '{}')
-- settings (JSONB, DEFAULT '{}')
-- is_active (BOOLEAN, DEFAULT true)
-- created_at (TIMESTAMP WITH TIME ZONE)
-- updated_at (TIMESTAMP WITH TIME ZONE)
-- owner_user_id (UUID, FK → users.user_id)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| check_interval_minutes | `number` | Yes |
+| created_at | `string` | Yes |
+| email_notifications | `boolean` | Yes |
+| enable_expiring_soon_alerts | `boolean` | Yes |
+| enable_low_stock_alerts | `boolean` | Yes |
+| enable_out_of_stock_alerts | `boolean` | Yes |
+| enable_overstock_alerts | `boolean` | Yes |
+| expiring_soon_days | `number` | Yes |
+| in_app_notifications | `boolean` | Yes |
+| last_check_at | `string` | Yes |
+| low_stock_percentage | `number` | Yes |
+| notification_emails | `Json` | Yes |
+| organization_id | `string` | No |
+| setting_id | `string` | No |
+| updated_at | `string` | Yes |
 
-#### `branches`
-**Purpose:** Physical locations/branches within organizations
-```sql
-- branch_id (UUID, PK)
-- organization_id (UUID, FK → organizations.organization_id, CASCADE)
-- name (VARCHAR 255, NOT NULL)
-- address (TEXT, NULLABLE)
-- phone (VARCHAR 50, NULLABLE)
-- manager_user_id (UUID, FK → users.user_id, SET NULL)
-- is_main_branch (BOOLEAN, DEFAULT false)
-- is_active (BOOLEAN, DEFAULT true)
-- settings (JSONB, DEFAULT '{}')
-- created_at (TIMESTAMP WITH TIME ZONE)
-- updated_at (TIMESTAMP WITH TIME ZONE)
-```
+## applied_discounts
 
-#### `users`
-**Purpose:** System users with role-based access
-```sql
-- user_id (UUID, PK)
-- name (VARCHAR 100, NOT NULL)
-- email (VARCHAR 100, UNIQUE, NOT NULL)
-- password_hash (TEXT, NOT NULL)
-- is_active (BOOLEAN, DEFAULT true)
-- created_at (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- role (VARCHAR 50, DEFAULT 'member')
-- organization_id (UUID, FK → organizations.organization_id)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| applied_at | `string` | Yes |
+| applied_discount_id | `string` | No |
+| applied_to | `string` | No |
+| coupon_code | `string` | Yes |
+| discount_amount | `number` | No |
+| discount_rule_id | `string` | No |
+| order_id | `string` | No |
+| order_line_id | `string` | Yes |
+| organization_id | `string` | No |
 
-#### `user_organizations`
-**Purpose:** Many-to-many relationship between users and organizations
-```sql
-- user_organization_id (UUID, PK)
-- user_id (UUID, FK → users.user_id, CASCADE)
-- organization_id (UUID, FK → organizations.organization_id, CASCADE)
-- branch_id (UUID, FK → branches.branch_id, SET NULL)
-- role (ENUM: admin, manager, employee)
-- permissions (JSONB, DEFAULT '[]')
-- is_active (BOOLEAN, DEFAULT true)
-- joined_at (TIMESTAMP, DEFAULT now())
-```
+## branches
 
-### 📦 **Inventory Management Tables**
+| Column | Type | Nullable |
+|---|---|---|
+| address | `string` | Yes |
+| branch_id | `string` | No |
+| created_at | `string` | Yes |
+| is_active | `boolean` | Yes |
+| is_main_branch | `boolean` | Yes |
+| manager_user_id | `string` | Yes |
+| name | `string` | No |
+| organization_id | `string` | Yes |
+| phone | `string` | Yes |
+| settings | `Json` | Yes |
+| updated_at | `string` | Yes |
 
-#### `products`
-**Purpose:** Product/item catalog for any type of business (goods, raw materials, finished goods, services)
-```sql
-- product_id (UUID, PK)
-- name (VARCHAR 100, NOT NULL)
-- description (TEXT, NULLABLE)
-- category (VARCHAR 100, NULLABLE)
-- unit (VARCHAR 50, NULLABLE)             -- e.g. kg, units, liters
-- product_type (VARCHAR 20, NULLABLE)     -- standard | raw_material | finished_good
-- batch_number (VARCHAR 50, NOT NULL)
-- expiration_date (DATE, NOT NULL)
-- origin_country (VARCHAR 100, NOT NULL)
-- destination_id (UUID, NULLABLE)
-- senasa_product_id (VARCHAR 50, UNIQUE, NULLABLE)  -- legacy: Argentine agro compliance field
-- created_at (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- owner_id (UUID, DEFAULT gen_random_uuid())
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-- branch_id (UUID, FK → branches.branch_id, SET NULL)
-```
+## clients
 
-#### `warehouse`
-**Purpose:** Storage locations for inventory
-```sql
-- warehouse_id (UUID, PK)
-- name (VARCHAR 100, NOT NULL)
-- location (TEXT, NULLABLE)
-- is_active (BOOLEAN, DEFAULT true)
-- created_at (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- user_id (UUID, FK → auth.users.id, SET NULL)
-- owner_id (UUID, FK → auth.users.id, SET NULL)
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-- branch_id (UUID, FK → branches.branch_id, RESTRICT)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| address | `string` | Yes |
+| branch_id | `string` | Yes |
+| client_id | `string` | No |
+| created_at | `string` | Yes |
+| cuit | `string` | No |
+| email | `string` | No |
+| name | `string` | No |
+| organization_id | `string` | Yes |
+| phone | `string` | Yes |
+| updated_at | `string` | Yes |
+| user_id | `string` | Yes |
 
-#### `stock_movements`
-**Purpose:** Track all inventory movements (in/out/adjustments)
-```sql
-- movement_id (UUID, PK)
-- product_id (UUID, FK → products.product_id, CASCADE)
-- warehouse_id (UUID, FK → warehouse.warehouse_id, CASCADE)
-- movement_type (VARCHAR 20, CHECK: entry|exit|adjustment|production|senasa)
-- quantity (INTEGER, > 0)
-- movement_date (TIMESTAMP, DEFAULT now())
-- reference (VARCHAR 255, NULLABLE)
-- created_at (TIMESTAMP)
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-- branch_id (UUID, FK → branches.branch_id, SET NULL)
-```
+## customer_pricing
 
-### 👥 **Customer/Client Management**
+| Column | Type | Nullable |
+|---|---|---|
+| client_id | `string` | No |
+| created_at | `string` | Yes |
+| customer_pricing_id | `string` | No |
+| is_active | `boolean` | Yes |
+| notes | `string` | Yes |
+| organization_id | `string` | No |
+| price | `number` | No |
+| product_id | `string` | No |
+| updated_at | `string` | Yes |
+| valid_from | `string` | Yes |
+| valid_to | `string` | Yes |
 
-#### `clients`
-**Purpose:** Customer/client management for sales
-```sql
-- client_id (UUID, PK)
-- name (VARCHAR 100, NOT NULL)
-- cuit (VARCHAR 20, UNIQUE, NOT NULL)
-- phone (VARCHAR 20, NULLABLE)
-- email (VARCHAR 100, UNIQUE, NOT NULL)
-- address (TEXT, NULLABLE)
-- created_at (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- user_id (UUID, FK → users.user_id, SET NULL)
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-- branch_id (UUID, FK → branches.branch_id, SET NULL)
-```
+## discount_rule_products
 
-### 📝 **Orders & Sales Management**
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| discount_rule_id | `string` | No |
+| discount_rule_product_id | `string` | No |
+| organization_id | `string` | No |
+| product_id | `string` | No |
 
-#### `orders`
-**Purpose:** Sales orders management
-```sql
-- order_id (UUID, PK)
-- client_id (UUID, FK → clients.client_id, SET NULL)
-- warehouse_id (UUID, FK → warehouse.warehouse_id, SET NULL)
-- order_date (TIMESTAMP, DEFAULT now())
-- status (VARCHAR 20, CHECK: pending|shipped|delivered|cancelled)
-- total_price (NUMERIC 10,2, DEFAULT 0)
-- created_at (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- user_id (UUID, DEFAULT gen_random_uuid())
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-- branch_id (UUID, FK → branches.branch_id, SET NULL)
-```
+## discount_rules
 
-#### `order_details`
-**Purpose:** Line items for sales orders
-```sql
-- order_detail_id (UUID, PK)
-- order_id (UUID, FK → orders.order_id, CASCADE)
-- product_id (UUID, FK → products.product_id, CASCADE)
-- quantity (INTEGER, > 0)
-- price (NUMERIC 10,2, >= 0)
-- created_at (TIMESTAMP)
-- organization_id (UUID, FK → organizations.organization_id, RESTRICT)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| applies_to | `string` | No |
+| coupon_code | `string` | Yes |
+| created_at | `string` | Yes |
+| created_by | `string` | Yes |
+| current_uses | `number` | Yes |
+| description | `string` | Yes |
+| discount_rule_id | `string` | No |
+| is_active | `boolean` | Yes |
+| max_discount_amount | `number` | Yes |
+| max_uses | `number` | Yes |
+| max_uses_per_customer | `number` | Yes |
+| min_order_amount | `number` | Yes |
+| min_quantity | `number` | Yes |
+| name | `string` | No |
+| organization_id | `string` | No |
+| requires_coupon | `boolean` | Yes |
+| type | `string` | No |
+| updated_at | `string` | Yes |
+| valid_from | `string` | Yes |
+| valid_to | `string` | Yes |
+| value | `number` | No |
 
-### 🔧 **System Configuration**
+## inventory_alerts
 
-#### `table_configurations`
-**Purpose:** Dynamic table configuration for UI
-```sql
-- id (VARCHAR, PK)
-- name (VARCHAR, NOT NULL)
-- entity (VARCHAR, NOT NULL)
-- config (JSONB, NOT NULL)
-- created_at (TIMESTAMP)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| alert_id | `string` | No |
+| alert_type | `string` | No |
+| created_at | `string` | Yes |
+| current_stock | `number` | No |
+| dismissed_at | `string` | Yes |
+| dismissed_by | `string` | Yes |
+| max_stock | `number` | Yes |
+| message | `string` | No |
+| metadata | `Json` | Yes |
+| min_stock | `number` | Yes |
+| organization_id | `string` | No |
+| product_id | `string` | No |
+| resolved_at | `string` | Yes |
+| severity | `string` | No |
+| status | `string` | No |
+| triggered_at | `string` | No |
+| updated_at | `string` | Yes |
+| warehouse_id | `string` | Yes |
 
-### 🏭 **Manufacturing / Production** *(planned feature)*
+## invoices
 
-#### `product_formulas` *(not yet implemented — planned)*
-**Purpose:** Bill of Materials (BOM) — defines which raw materials are needed to produce a finished good
-```sql
-- formula_id (UUID, PK)
-- finished_product_id (UUID, FK → products.product_id)   -- the product being manufactured
-- raw_material_id (UUID, FK → products.product_id)        -- each input ingredient/component
-- quantity_required (NUMERIC 10,4, NOT NULL)              -- quantity consumed per unit produced
-- organization_id (UUID, FK → organizations.organization_id)
-- created_at (TIMESTAMP)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| amount | `number` | No |
+| created_at | `string` | Yes |
+| currency | `string` | No |
+| due_date | `string` | No |
+| invoice_id | `string` | No |
+| invoice_number | `string` | No |
+| issue_date | `string` | Yes |
+| notes | `string` | Yes |
+| organization_id | `string` | No |
+| paid_date | `string` | Yes |
+| period_end | `string` | No |
+| period_start | `string` | No |
+| status | `string` | Yes |
+| subscription_id | `string` | Yes |
+| updated_at | `string` | Yes |
 
-### 🔗 **Legacy / Domain-Specific Integration**
-> These tables exist from an earlier version targeting Argentine agro/SENASA compliance. They are preserved for backwards compatibility but are not part of the generic SaaS product.
+## manual_payments
 
-#### `senasa_products`
-**Purpose:** [Legacy] Official SENASA (Argentine agricultural authority) product catalog
-```sql
-- senasa_product_id (VARCHAR 50, PK)
-- reg_senasa (VARCHAR 50, NULLABLE)
-- formulation_id (VARCHAR 50, NULLABLE)
-- toxicological_class_id (VARCHAR 50, NULLABLE)
-- package_id (VARCHAR 50, NULLABLE)
-- material_id (VARCHAR 50, NULLABLE)
-- capacity (NUMERIC 10,2, NULLABLE)
-- unit_id (VARCHAR 50, NULLABLE)
-- created_at (TIMESTAMP)
-```
+| Column | Type | Nullable |
+|---|---|---|
+| admin_notes | `string` | Yes |
+| amount | `number` | No |
+| confirmed_at | `string` | Yes |
+| confirmed_by | `string` | Yes |
+| created_at | `string` | Yes |
+| currency | `string` | No |
+| invoice_number | `string` | Yes |
+| notes | `string` | Yes |
+| organization_id | `string` | No |
+| payment_date | `string` | Yes |
+| payment_id | `string` | No |
+| payment_method | `string` | Yes |
+| receipt_url | `string` | Yes |
+| recorded_by | `string` | No |
+| status | `string` | Yes |
+| subscription_id | `string` | Yes |
+| transaction_reference | `string` | Yes |
+| updated_at | `string` | Yes |
 
-#### `senasa_transactions`
-**Purpose:** [Legacy] Log of SENASA API interactions for agricultural compliance
-```sql
-- transaction_id (UUID, PK)
-- transaction_date (TIMESTAMP, DEFAULT now())
-- method_name (VARCHAR 100, NOT NULL)
-- request_data (JSONB, NOT NULL)
-- response_data (JSONB, NULLABLE)
-- status (VARCHAR 20, CHECK: success|error|pending)
-- error_message (TEXT, NULLABLE)
-- created_at (TIMESTAMP)
-```
+## order_details
 
-## 🔗 **Key Relationships**
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| discount_amount | `number` | Yes |
+| line_total | `number` | No |
+| order_detail_id | `string` | No |
+| order_id | `string` | Yes |
+| order_item_id | `string` | Yes |
+| organization_id | `string` | Yes |
+| price | `number` | No |
+| product_id | `string` | Yes |
+| quantity | `number` | No |
+| tax_amount | `number` | Yes |
+| unit_price | `number` | No |
+| warehouse_id | `string` | Yes |
 
-### Multi-Tenant Hierarchy
-```
-organizations (1) → (N) branches
-organizations (1) → (N) users
-organizations (1) → (N) clients
-organizations (1) → (N) products
-organizations (1) → (N) warehouse
-organizations (1) → (N) orders
-```
+## orders
 
-### Business Flow
-```
-clients (1) → (N) orders
-orders (1) → (N) order_details
-products (1) → (N) order_details
-warehouse (1) → (N) stock_movements
-products (1) → (N) stock_movements
-```
+| Column | Type | Nullable |
+|---|---|---|
+| branch_id | `string` | Yes |
+| client_id | `string` | Yes |
+| created_at | `string` | Yes |
+| created_by | `string` | Yes |
+| delivery_date | `string` | Yes |
+| discount_amount | `number` | Yes |
+| notes | `string` | Yes |
+| order_date | `string` | Yes |
+| order_id | `string` | No |
+| order_number | `string` | Yes |
+| organization_id | `string` | Yes |
+| shipping_amount | `number` | Yes |
+| status | `string` | No |
+| subtotal | `number` | Yes |
+| tax_amount | `number` | Yes |
+| total | `number` | Yes |
+| total_price | `number` | No |
+| updated_at | `string` | Yes |
+| user_id | `string` | Yes |
+| warehouse_id | `string` | Yes |
 
-## 📊 **Current Indexes**
+## organizations
 
-- Organizations: slug, is_active, owner_user_id
-- Branches: organization_id, (organization_id, is_active)
-- Users: organization_id, role
-- Clients: organization_id, (organization_id, branch_id)
-- Products: organization_id, (organization_id, branch_id)
-- Warehouse: organization_id, (organization_id, branch_id)
-- Stock Movements: organization_id, (organization_id, branch_id)
-- Orders: organization_id, (organization_id, branch_id)
+| Column | Type | Nullable |
+|---|---|---|
+| address | `string` | Yes |
+| created_at | `string` | Yes |
+| domain | `string` | Yes |
+| email | `string` | Yes |
+| features | `Json` | Yes |
+| grace_period_ends_at | `string` | Yes |
+| is_active | `boolean` | Yes |
+| logo_url | `string` | Yes |
+| max_users | `number` | Yes |
+| max_warehouses | `number` | Yes |
+| name | `string` | No |
+| organization_id | `string` | No |
+| owner_user_id | `string` | Yes |
+| phone | `string` | Yes |
+| plan_type | `Database[public][Enums][plan_type_enum]` | Yes |
+| settings | `Json` | Yes |
+| slug | `string` | No |
+| subscription_plan | `string` | Yes |
+| subscription_status | `string` | Yes |
+| tax_id | `string` | Yes |
+| trial_ends_at | `string` | Yes |
+| updated_at | `string` | Yes |
 
-## 🚧 **Missing for MVP**
+## pricing_tiers
 
-### Critical Missing Tables:
-- **suppliers** - For purchase orders
-- **purchase_orders** - Procurement management
-- **purchase_order_details** - Line items for purchases
-- **taxes** - Tax configuration (IVA, etc.)
-- **promotions** - Discount/promotion system
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| is_active | `boolean` | Yes |
+| max_quantity | `number` | Yes |
+| min_quantity | `number` | No |
+| organization_id | `string` | No |
+| price | `number` | No |
+| pricing_tier_id | `string` | No |
+| product_id | `string` | No |
+| tier_name | `string` | No |
+| updated_at | `string` | Yes |
+| valid_from | `string` | Yes |
+| valid_to | `string` | Yes |
 
-### Potential Enhancements:
-- **invoices** - Invoice generation
-- **payments** - Payment tracking
-- **inventory_alerts** - Low stock alerts
-- **audit_logs** - Change tracking
+## product_tax_groups
 
-## 🚨 **Known Schema Issues**
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| organization_id | `string` | No |
+| product_id | `string` | No |
+| product_tax_group_id | `string` | No |
+| tax_rate_id | `string` | No |
 
-### Smoke Test Results: 8/11 Tests Passing
+## products
 
-✅ **Working Correctly:**
-- Organizations CRUD
-- Users management
-- Branches management
-- Clients management
-- Products management
-- Multi-tenant data isolation
-- Database connections
-- Data cleanup
+| Column | Type | Nullable |
+|---|---|---|
+| alert_enabled | `boolean` | Yes |
+| batch_number | `string` | No |
+| branch_id | `string` | Yes |
+| created_at | `string` | Yes |
+| description | `string` | Yes |
+| destination_id | `string` | Yes |
+| expiration_date | `string` | No |
+| external_product_id | `string` | Yes |
+| max_stock | `number` | Yes |
+| min_stock | `number` | Yes |
+| name | `string` | No |
+| organization_id | `string` | Yes |
+| origin_country | `string` | No |
+| owner_id | `string` | Yes |
+| price | `number` | Yes |
+| product_id | `string` | No |
+| senasa_product_id | `string` | Yes |
+| updated_at | `string` | Yes |
 
-❌ **Known Issues:**
-1. **Warehouse table FK constraints** - References `auth.users` instead of `users` table
-2. **Stock movements** - Depends on warehouse creation
-3. **Orders** - Depends on warehouse creation
+## purchase_order_details
 
-### Technical Debt:
-- `warehouse.user_id` → Should reference `users.user_id` not `auth.users.id`
-- `warehouse.owner_id` → Should reference `users.user_id` not `auth.users.id`
-- Default UUID generation causing FK constraint violations
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| detail_id | `string` | No |
+| line_total | `number` | No |
+| notes | `string` | Yes |
+| organization_id | `string` | No |
+| product_id | `string` | No |
+| purchase_order_id | `string` | No |
+| quantity | `number` | No |
+| received_quantity | `number` | Yes |
+| unit_price | `number` | No |
 
-## 📊 **System Health Status**
+## purchase_orders
 
-🟢 **Core Multi-Tenant**: Fully functional  
-🟢 **User Management**: Fully functional  
-🟢 **Product Catalog**: Fully functional  
-🟢 **Client Management**: Fully functional  
-🟡 **Inventory Management**: Partially functional (warehouse issues)  
-🟡 **Order Management**: Partially functional (depends on warehouse)
+| Column | Type | Nullable |
+|---|---|---|
+| branch_id | `string` | Yes |
+| created_at | `string` | Yes |
+| created_by | `string` | Yes |
+| discount_amount | `number` | Yes |
+| expected_delivery_date | `string` | Yes |
+| notes | `string` | Yes |
+| order_date | `string` | Yes |
+| organization_id | `string` | No |
+| purchase_order_id | `string` | No |
+| purchase_order_number | `string` | Yes |
+| received_date | `string` | Yes |
+| shipping_amount | `number` | Yes |
+| status | `string` | No |
+| subtotal | `number` | Yes |
+| supplier_id | `string` | Yes |
+| tax_amount | `number` | Yes |
+| total | `number` | Yes |
+| updated_at | `string` | Yes |
+| user_id | `string` | Yes |
+| warehouse_id | `string` | Yes |
+
+## senasa_products
+
+| Column | Type | Nullable |
+|---|---|---|
+| capacity | `number` | Yes |
+| created_at | `string` | Yes |
+| formulation_id | `string` | Yes |
+| material_id | `string` | Yes |
+| package_id | `string` | Yes |
+| reg_senasa | `string` | Yes |
+| senasa_product_id | `string` | No |
+| toxicological_class_id | `string` | Yes |
+| unit_id | `string` | Yes |
+
+## senasa_transactions
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| error_message | `string` | Yes |
+| method_name | `string` | No |
+| request_data | `Json` | No |
+| response_data | `Json` | Yes |
+| status | `string` | No |
+| transaction_date | `string` | Yes |
+| transaction_id | `string` | No |
+
+## stock_movements
+
+| Column | Type | Nullable |
+|---|---|---|
+| branch_id | `string` | Yes |
+| created_at | `string` | Yes |
+| created_by | `string` | Yes |
+| movement_date | `string` | Yes |
+| movement_id | `string` | No |
+| movement_type | `string` | No |
+| notes | `string` | Yes |
+| organization_id | `string` | Yes |
+| product_id | `string` | Yes |
+| quantity | `number` | No |
+| reference | `string` | Yes |
+| reference_id | `string` | Yes |
+| reference_type | `string` | Yes |
+| warehouse_id | `string` | Yes |
+
+## stock_reservations
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | No |
+| created_by | `string` | Yes |
+| notes | `string` | Yes |
+| order_id | `string` | No |
+| organization_id | `string` | No |
+| product_id | `string` | No |
+| quantity | `number` | No |
+| released_at | `string` | Yes |
+| reservation_id | `string` | No |
+| reserved_at | `string` | No |
+| status | `string` | No |
+| updated_at | `string` | No |
+| warehouse_id | `string` | Yes |
+
+## subscription_history
+
+| Column | Type | Nullable |
+|---|---|---|
+| changed_by | `string` | Yes |
+| created_at | `string` | Yes |
+| event_type | `string` | No |
+| history_id | `string` | No |
+| new_plan_id | `string` | Yes |
+| new_status | `string` | Yes |
+| notes | `string` | Yes |
+| old_plan_id | `string` | Yes |
+| old_status | `string` | Yes |
+| organization_id | `string` | No |
+| subscription_id | `string` | Yes |
+
+## subscription_plans
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| currency | `string` | No |
+| description | `string` | Yes |
+| display_name | `string` | No |
+| features | `Json` | Yes |
+| is_active | `boolean` | Yes |
+| is_public | `boolean` | Yes |
+| max_clients | `number` | Yes |
+| max_orders_per_month | `number` | Yes |
+| max_products | `number` | Yes |
+| max_stock_movements_per_month | `number` | Yes |
+| max_storage_mb | `number` | Yes |
+| max_suppliers | `number` | Yes |
+| max_users | `number` | Yes |
+| max_warehouses | `number` | Yes |
+| name | `string` | No |
+| plan_id | `string` | No |
+| price_monthly | `number` | No |
+| price_yearly | `number` | No |
+| sort_order | `number` | Yes |
+| trial_days | `number` | Yes |
+| updated_at | `string` | Yes |
+
+## subscriptions
+
+| Column | Type | Nullable |
+|---|---|---|
+| amount | `number` | No |
+| billing_cycle | `string` | No |
+| canceled_at | `string` | Yes |
+| created_at | `string` | Yes |
+| currency | `string` | No |
+| current_period_end | `string` | No |
+| current_period_start | `string` | No |
+| ended_at | `string` | Yes |
+| gateway_customer_id | `string` | Yes |
+| gateway_subscription_id | `string` | Yes |
+| metadata | `Json` | Yes |
+| organization_id | `string` | No |
+| payment_gateway | `string` | Yes |
+| payment_provider | `string` | Yes |
+| plan_id | `string` | No |
+| provider_customer_id | `string` | Yes |
+| provider_subscription_id | `string` | Yes |
+| status | `string` | No |
+| subscription_id | `string` | No |
+| trial_end | `string` | Yes |
+| trial_start | `string` | Yes |
+| updated_at | `string` | Yes |
+
+## suppliers
+
+| Column | Type | Nullable |
+|---|---|---|
+| address | `string` | Yes |
+| branch_id | `string` | Yes |
+| business_type | `string` | Yes |
+| contact_person | `string` | Yes |
+| created_at | `string` | Yes |
+| credit_limit | `number` | Yes |
+| cuit | `string` | No |
+| email | `string` | No |
+| is_active | `boolean` | Yes |
+| is_preferred | `boolean` | Yes |
+| name | `string` | No |
+| notes | `string` | Yes |
+| organization_id | `string` | No |
+| payment_terms | `string` | Yes |
+| phone | `string` | Yes |
+| supplier_id | `string` | No |
+| tax_category | `string` | Yes |
+| updated_at | `string` | Yes |
+| user_id | `string` | Yes |
+| website | `string` | Yes |
+
+## table_configurations
+
+| Column | Type | Nullable |
+|---|---|---|
+| config | `Json` | No |
+| created_at | `string` | Yes |
+| entity | `string` | No |
+| id | `string` | No |
+| name | `string` | No |
+
+## tax_rates
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| description | `string` | Yes |
+| is_active | `boolean` | Yes |
+| is_inclusive | `boolean` | Yes |
+| name | `string` | No |
+| organization_id | `string` | No |
+| rate | `number` | No |
+| tax_rate_id | `string` | No |
+| updated_at | `string` | Yes |
+
+## usage_tracking
+
+| Column | Type | Nullable |
+|---|---|---|
+| api_calls_count | `number` | Yes |
+| clients_count | `number` | Yes |
+| created_at | `string` | Yes |
+| orders_count | `number` | Yes |
+| organization_id | `string` | No |
+| period_end | `string` | No |
+| period_start | `string` | No |
+| products_count | `number` | Yes |
+| stock_movements_count | `number` | Yes |
+| storage_used_mb | `number` | Yes |
+| suppliers_count | `number` | Yes |
+| updated_at | `string` | Yes |
+| usage_id | `string` | No |
+| users_count | `number` | Yes |
+| warehouses_count | `number` | Yes |
+
+## user_organizations
+
+| Column | Type | Nullable |
+|---|---|---|
+| branch_id | `string` | Yes |
+| is_active | `boolean` | No |
+| joined_at | `string` | No |
+| organization_id | `string` | No |
+| permissions | `Json` | No |
+| role | `Database[public][Enums][user_role_enum]` | No |
+| user_id | `string` | No |
+| user_organization_id | `string` | No |
+
+## users
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| deactivated_at | `string` | Yes |
+| deactivated_by | `string` | Yes |
+| email | `string` | No |
+| is_active | `boolean` | Yes |
+| name | `string` | No |
+| organization_id | `string` | Yes |
+| password_hash | `string` | No |
+| role | `string` | Yes |
+| updated_at | `string` | Yes |
+| updated_by | `string` | Yes |
+| user_id | `string` | No |
+
+## warehouse
+
+| Column | Type | Nullable |
+|---|---|---|
+| branch_id | `string` | Yes |
+| created_at | `string` | Yes |
+| is_active | `boolean` | Yes |
+| location | `string` | Yes |
+| name | `string` | No |
+| organization_id | `string` | Yes |
+| owner_id | `string` | Yes |
+| updated_at | `string` | Yes |
+| user_id | `string` | Yes |
+| warehouse_id | `string` | No |
+
+## webhook_logs
+
+| Column | Type | Nullable |
+|---|---|---|
+| created_at | `string` | Yes |
+| event_data | `Json` | No |
+| event_type | `string` | No |
+| headers | `Json` | Yes |
+| processed | `boolean` | Yes |
+| processed_at | `string` | Yes |
+| processing_error | `string` | Yes |
+| provider | `string` | No |
+| retry_count | `number` | Yes |
+| webhook_log_id | `string` | No |
+
+## Enums
+
+### plan_type_enum
+- professional
+- enterprise
+
+### user_role_enum
+- super_admin
+- organization_admin
+- branch_manager
+- supervisor
+- employee
+- readonly
+

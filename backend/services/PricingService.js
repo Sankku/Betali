@@ -121,7 +121,7 @@ class PricingService {
       // Use the price from the item if provided (manual override), otherwise get applicable price
       let unitPrice;
       if (item.price !== undefined && item.price !== null) {
-        unitPrice = parseFloat(item.price);
+        unitPrice = Math.max(0, parseFloat(item.price));
       } else {
         unitPrice = await this.getApplicablePrice(
           item.product_id,
@@ -460,11 +460,11 @@ class PricingService {
         tax_breakdown: taxBreakdown
       };
     } catch (error) {
-      this.logger.error('Error calculating taxes', { 
+      this.logger.error('Error calculating taxes', {
         error: error.message,
-        organizationId 
+        organizationId
       });
-      return { total_tax: 0, tax_breakdown: [] };
+      throw error;
     }
   }
 

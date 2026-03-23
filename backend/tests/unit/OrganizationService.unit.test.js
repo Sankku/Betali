@@ -670,11 +670,56 @@ describe('OrganizationService Unit Tests', () => {
       mockUserOrganizationRepository.deleteByFilter.mockResolvedValue(3);
       mockOrganizationRepository.delete.mockResolvedValue(true);
 
-      // Mock branches deletion
-      mockOrganizationRepository.client.from.mockReturnValue({
-        delete: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null })
-        })
+      // Mock supabase chaining on organizationRepository.client
+      // The service uses: supabase.from('products').select('product_id').eq(...)
+      // and: supabase.from('order_details').delete().in(...)
+      // and: supabase.from('branches').delete().eq(...)
+      // and: supabase.from('orders').select('order_id').in(...)
+      const makeChain = (resolvedValue) => {
+        const chain = {
+          select: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockReturnThis(),
+          update: jest.fn().mockReturnThis(),
+          delete: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: null, error: null }),
+          then: undefined
+        };
+        // Make the chain thenable so awaiting it returns resolvedValue
+        chain.eq = jest.fn().mockImplementation(() => ({ ...chain, then: (res) => res(resolvedValue) }));
+        chain.in = jest.fn().mockImplementation(() => ({ ...chain, then: (res) => res(resolvedValue) }));
+        chain.select = jest.fn().mockImplementation(() => ({ ...chain, then: (res) => res(resolvedValue) }));
+        return chain;
+      };
+
+      mockOrganizationRepository.client.from.mockImplementation((table) => {
+        if (table === 'products') {
+          // select('product_id').eq('organization_id', ...) → return product IDs so deleteByFilter is triggered
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: [{ product_id: 'prod-1' }, { product_id: 'prod-2' }], error: null }),
+            in: jest.fn().mockResolvedValue({ data: [], error: null })
+          };
+        }
+        if (table === 'orders') {
+          // select('order_id').in('warehouse_id', ...) → return empty so no further order_details deletions
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+            in: jest.fn().mockResolvedValue({ data: [], error: null })
+          };
+        }
+        // delete().eq(...) or delete().in(...) — returns { error: null }
+        return {
+          delete: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ error: null }),
+            in: jest.fn().mockResolvedValue({ error: null })
+          }),
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+          in: jest.fn().mockResolvedValue({ data: [], error: null })
+        };
       });
     });
 
@@ -686,7 +731,7 @@ describe('OrganizationService Unit Tests', () => {
       // Verify cascade deletion order
       expect(mockWarehouseRepository.findAll).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockStockMovementRepository.deleteByFilter).toHaveBeenCalledTimes(2); // For each warehouse
-      expect(mockProductRepository.deleteByFilter).toHaveBeenCalledTimes(2); // For each user
+      expect(mockProductRepository.deleteByFilter).toHaveBeenCalledTimes(1); // Once for all org products
       expect(mockWarehouseRepository.deleteByFilter).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockUserOrganizationRepository.deleteByFilter).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockOrganizationRepository.delete).toHaveBeenCalledWith(organizationId, 'organization_id');
@@ -724,10 +769,24 @@ describe('OrganizationService Unit Tests', () => {
     });
 
     test('should handle branch deletion errors gracefully', async () => {
-      mockOrganizationRepository.client.from.mockReturnValue({
-        delete: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: new Error('Branch deletion failed') })
-        })
+      mockOrganizationRepository.client.from.mockImplementation((table) => {
+        if (table === 'products' || table === 'orders') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+            in: jest.fn().mockResolvedValue({ data: [], error: null })
+          };
+        }
+        // For 'branches' (and other delete-only tables): return branch deletion error
+        return {
+          delete: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ error: new Error('Branch deletion failed') }),
+            in: jest.fn().mockResolvedValue({ error: null })
+          }),
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+          in: jest.fn().mockResolvedValue({ data: [], error: null })
+        };
       });
 
       // Should still complete successfully despite branch deletion warning

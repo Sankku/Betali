@@ -349,6 +349,7 @@ async function createOrder(quantity, status = 'pending') {
       client_id: testData.clientId,
       warehouse_id: testData.warehouseId,
       user_id: testData.userId,
+      organization_id: testData.organizationId,
       status: status,
       order_date: new Date().toISOString(),
       total_price: quantity * 100
@@ -364,6 +365,7 @@ async function createOrder(quantity, status = 'pending') {
     .insert({
       order_id: data.order_id,
       product_id: testData.productId,
+      organization_id: testData.organizationId,
       quantity: quantity,
       price: 100.00
     });

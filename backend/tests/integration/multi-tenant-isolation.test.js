@@ -248,17 +248,19 @@ async function setupTestOrganizations() {
     testData.user2 = users2.user_id;
 
     // Create test warehouse for Org 1
-    const { data: wh1 } = await supabase
+    const { data: wh1, error: wh1Error } = await supabase
       .from('warehouse')
       .insert({
         organization_id: testData.org1.organization_id,
         name: `TEST Multi-Tenant WH Org1 ${Date.now()}`,
         location: 'Org 1 Location',
-        owner_id: testData.user1,
-        user_id: testData.user1
+        owner_id: null,
+        user_id: null
       })
       .select()
       .single();
+
+    if (wh1Error) throw new Error(`Warehouse 1 failed: ${wh1Error.message}`);
 
     testData.warehouse1 = wh1;
     testData.testEntities.push({ table: 'warehouse', idField: 'warehouse_id', id: wh1.warehouse_id });
@@ -308,17 +310,19 @@ async function setupTestOrganizations() {
     // If we have Org 2, create its test data
     if (testData.org2) {
       // Warehouse for Org 2
-      const { data: wh2 } = await supabase
+      const { data: wh2, error: wh2Error } = await supabase
         .from('warehouse')
         .insert({
           organization_id: testData.org2.organization_id,
           name: `TEST Multi-Tenant WH Org2 ${Date.now()}`,
           location: 'Org 2 Location',
-          owner_id: testData.user2 || testData.user1,
-          user_id: testData.user2 || testData.user1
+          owner_id: null,
+          user_id: null
         })
         .select()
         .single();
+
+      if (wh2Error) throw new Error(`Warehouse 2 failed: ${wh2Error.message}`);
 
       testData.warehouse2 = wh2;
       testData.testEntities.push({ table: 'warehouse', idField: 'warehouse_id', id: wh2.warehouse_id });

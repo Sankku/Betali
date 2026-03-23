@@ -279,9 +279,11 @@ describe('PricingTierRepository Unit Tests', () => {
 
       const mockCreated = { ...tierData, pricing_tier_id: 'tier-123' };
 
+      // BaseRepository.create chain: .from().insert().select().single()
       mockSupabaseClient.from.mockReturnValue({
         insert: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue({ data: [mockCreated], error: null })
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: mockCreated, error: null })
       });
 
       // Assuming BaseRepository has a create method
@@ -304,10 +306,12 @@ describe('PricingTierRepository Unit Tests', () => {
         ...updates
       };
 
+      // BaseRepository.update chain: .from().update().eq().select().single()
       mockSupabaseClient.from.mockReturnValue({
         update: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue({ data: [mockUpdated], error: null })
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: mockUpdated, error: null })
       });
 
       const result = await repository.update(tierId, updates);

@@ -176,7 +176,7 @@ describe('PricingService Unit Tests', () => {
       expect(result.tax_amount).toBe(262.50); // 21% of 1250
       expect(result.total).toBe(1512.50); // 1250 + 262.50
       expect(result.tax_breakdown).toHaveLength(1);
-      expect(result.tax_breakdown[0].tax_name).toBe('IVA');
+      expect(result.tax_breakdown[0].name).toBe('IVA');
       expect(result.tax_breakdown[0].is_inclusive).toBe(false);
     });
 
@@ -286,14 +286,29 @@ describe('PricingService Unit Tests', () => {
     const couponCode = 'SUMMER10';
 
     test('should validate active coupon code', async () => {
-      const discountRule = mockPricingEntities.discountRulePercentage(orgId);
-      discountRule.coupon_code = couponCode;
+      // Use a discount rule shaped to match what calculateDiscountAmount expects
+      const discountRule = {
+        discount_rule_id: 'discount-rule-123',
+        organization_id: orgId,
+        name: 'Summer Sale',
+        type: 'percentage',
+        value: 0.10,
+        coupon_code: couponCode,
+        requires_coupon: true,
+        is_active: true,
+        valid_from: null,
+        valid_to: null,
+        min_order_amount: null,
+        max_uses: null,
+        current_uses: 0
+      };
       const orderData = mockOrders.basicOrder(orgId);
 
       mockDiscountRuleRepository.findByCouponCode.mockResolvedValue(discountRule);
-      // Mock the recursive calculateOrderPricing call
-      mockProductTaxGroupRepository.findByProductId.mockResolvedValue([]);
-      mockDiscountRuleRepository.findActiveByOrganization.mockResolvedValue([discountRule]);
+      // Mock the internal calculateOrderPricing call made inside validateCouponCode
+      mockProductTaxGroupRepository.getProductTaxRates.mockResolvedValue([]);
+      mockTaxRateRepository.getDefaultTaxRate.mockResolvedValue(null);
+      mockDiscountRuleRepository.getActiveDiscountRules.mockResolvedValue([discountRule]);
 
       const result = await pricingService.validateCouponCode(couponCode, orderData, orgId);
 

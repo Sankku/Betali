@@ -198,7 +198,7 @@ class ProductService {
       const requiredFields = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price'];
 
       for (const field of requiredFields) {
-        if (!productData[field] || productData[field].toString().trim() === '') {
+        if (productData[field] == null || productData[field].toString().trim() === '') {
           throw new Error(`${field} is required`);
         }
       }
