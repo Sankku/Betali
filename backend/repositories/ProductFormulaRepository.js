@@ -39,8 +39,11 @@ class ProductFormulaRepository extends BaseRepository {
   }
 
   /**
-   * Check for direct cycles: returns true if adding (finishedProductId → rawMaterialId)
+   * Check for direct (depth-1) cycles: returns true if adding (finishedProductId → rawMaterialId)
    * would create a direct cycle (e.g., A is ingredient of B, and B is ingredient of A).
+   * NOTE: This only detects 1-hop cycles. Multi-hop cycles (A→B→C→A) are NOT detected here.
+   * For the current use case (shallow recipes) this is sufficient, but deeper cycle detection
+   * would require a full graph traversal.
    */
   async wouldCreateCycle(finishedProductId, rawMaterialId, organizationId) {
     try {

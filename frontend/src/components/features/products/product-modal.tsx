@@ -21,6 +21,7 @@ export interface Product {
   external_product_id?: string;
   price?: number;
   sku?: string;
+  product_type?: 'standard' | 'raw_material' | 'finished_good';
 }
 
 export interface ProductModalProps {
@@ -55,6 +56,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       max_stock: undefined,
       alert_enabled: true,
       tax_rate_id: '',
+      product_type: product?.product_type || 'standard',
     },
   });
 
@@ -127,7 +129,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           expiration_date: product.expiration_date || '',
           description: product.description || '',
           external_product_id: product.external_product_id || '',
-          price: product.price || 0
+          price: product.price || 0,
+          product_type: product.product_type || 'standard',
         });
       }
     }

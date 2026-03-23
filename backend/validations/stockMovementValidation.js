@@ -206,9 +206,20 @@ const queryParamsSchema = Joi.object({
     })
 });
 
+const createProductionMovementSchema = Joi.object({
+  finished_product_id: Joi.string().guid({ version: 'uuidv4' }).required()
+    .messages({ 'any.required': 'finished_product_id is required' }),
+  quantity_to_produce: Joi.number().positive().precision(4).required()
+    .messages({ 'number.positive': 'quantity_to_produce must be greater than 0' }),
+  warehouse_id: Joi.string().guid({ version: 'uuidv4' }).required()
+    .messages({ 'any.required': 'warehouse_id is required' }),
+  reference: Joi.string().trim().max(500).optional().allow(''),
+});
+
 module.exports = {
   createStockMovementSchema,
   updateStockMovementSchema,
   queryParamsSchema,
+  createProductionMovementSchema,
   VALID_MOVEMENT_TYPES
 };

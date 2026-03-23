@@ -6,9 +6,10 @@ const { validateRequest } = require('../middleware/validation');
 const { Logger } = require('../utils/Logger');
 const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 const {
-  createStockMovementSchema, 
+  createStockMovementSchema,
   updateStockMovementSchema,
-  queryParamsSchema
+  queryParamsSchema,
+  createProductionMovementSchema
 } = require('../validations/stockMovementValidation');
 
 /**
@@ -98,6 +99,7 @@ function createStockMovementRoutes(dependencies = {}) {
   // POST /api/stock-movements/production — must be before POST / to avoid Express conflicts
   router.post('/production',
     checkOrganizationLimit('stock_movements_per_month'),
+    validateRequest(createProductionMovementSchema),
     async (req, res, next) => {
       try {
         logger.info('POST /api/stock-movements/production', { body: req.body });
