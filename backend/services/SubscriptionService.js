@@ -44,10 +44,97 @@ class SubscriptionService {
   }
 
   /**
+   * Plans eligible for a free trial on first subscription.
+   * Enterprise is excluded — it goes through a manual sales process.
+   */
+  static get TRIAL_ELIGIBLE_PLANS() {
+    return ['starter', 'professional'];
+  }
+
+  /**
+   * Returns true if this organization can start a free trial for the given plan.
+   * Conditions:
+   *   1. Plan has trial_days > 0
+   *   2. Plan name is in TRIAL_ELIGIBLE_PLANS
+   *   3. The org has NEVER started a trial before (trial_start is null)
+   * @param {Object} plan
+   * @param {Object|null} existingSubscription
+   */
+  _canApplyTrial(plan, existingSubscription) {
+    if (!plan.trial_days || plan.trial_days <= 0) return false;
+    if (!SubscriptionService.TRIAL_ELIGIBLE_PLANS.includes(plan.name)) return false;
+    if (existingSubscription && existingSubscription.trial_start !== null) return false;
+    return true;
+  }
+
+  /**
+   * Build subscription data for a new trial period.
+   * @param {Object} plan
+   * @param {string} currency
+   * @param {Object} extraFields  - merged into the result (e.g. organization_id or reactivated_from)
+   */
+  _buildTrialData(plan, currency, extraFields = {}) {
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setDate(trialEnd.getDate() + plan.trial_days);
+
+    const { metadata: extraMetadata, ...otherExtraFields } = extraFields;
+
+    return {
+      plan_id: plan.plan_id,
+      status: 'trialing',
+      billing_cycle: 'monthly',
+      currency,
+      amount: plan.price_monthly || 0,
+      trial_start: now.toISOString(),
+      trial_end: trialEnd.toISOString(),
+      current_period_start: now.toISOString(),
+      current_period_end: trialEnd.toISOString(),
+      payment_gateway: 'mercadopago',
+      updated_at: now.toISOString(),
+      metadata: {
+        trial_applied: true,
+        trial_days: plan.trial_days,
+        created_via: 'request_plan_change',
+        ...extraMetadata
+      },
+      ...otherExtraFields
+    };
+  }
+
+  /**
+   * Sync organizations.subscription_plan and subscription_status so limit-enforcement
+   * middleware picks up the new plan immediately.
+   * @param {string} organizationId
+   * @param {Object} plan
+   * @param {string} status  - e.g. 'trialing' | 'active' | 'pending_payment'
+   */
+  async _syncOrgPlan(organizationId, plan, status) {
+    const { error } = await supabase
+      .from('organizations')
+      .update({
+        subscription_plan: plan.name,
+        subscription_status: status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('organization_id', organizationId);
+
+    if (error) {
+      this.logger.error('Failed to sync organizations.subscription_plan', {
+        organizationId,
+        planName: plan.name,
+        status,
+        error
+      });
+    }
+  }
+
+  /**
    * Request a plan change
    * - For active/trialing subscriptions: schedules change for end of period
    * - For pending_payment subscriptions: returns existing to complete payment
-   * - For no subscription: creates new pending_payment subscription
+   * - For no subscription / first-time subscriber on eligible plan: starts free trial
+   * - Otherwise: creates new pending_payment subscription
    * @param {string} organizationId
    * @param {string} planId
    * @param {string} currency
@@ -156,6 +243,31 @@ class SubscriptionService {
         // For other statuses (cancelled, expired, past_due, etc.):
         // UPDATE the existing row instead of inserting — the table has a unique
         // constraint on organization_id (one row per org, ever).
+
+        // If the org never used their trial and the plan qualifies, start a trial
+        if (this._canApplyTrial(plan, existingSubscription)) {
+          const trialData = this._buildTrialData(plan, currency, {
+            metadata: { reactivated_from: existingSubscription.status }
+          });
+
+          const subscription = await this.subscriptionRepository.update(
+            existingSubscription.subscription_id,
+            trialData
+          );
+
+          await this._syncOrgPlan(organizationId, plan, 'trialing');
+
+          this.logger.info('Started free trial on reactivation', {
+            subscriptionId: subscription.subscription_id,
+            organizationId,
+            planId,
+            trialDays: plan.trial_days,
+            trialEnd: trialData.trial_end
+          });
+
+          return subscription;
+        }
+
         const subscriptionData = {
           plan_id: planId,
           status: 'pending_payment',
@@ -189,6 +301,27 @@ class SubscriptionService {
       }
 
       // Truly no subscription row exists yet — create one
+      // If the plan qualifies for trial, start the trial immediately (no payment required)
+      if (this._canApplyTrial(plan, null)) {
+        const trialData = this._buildTrialData(plan, currency, {
+          organization_id: organizationId
+        });
+
+        const subscription = await this.subscriptionRepository.create(trialData);
+
+        await this._syncOrgPlan(organizationId, plan, 'trialing');
+
+        this.logger.info('Started free trial for new subscriber', {
+          subscriptionId: subscription.subscription_id,
+          organizationId,
+          planId,
+          trialDays: plan.trial_days,
+          trialEnd: trialData.trial_end
+        });
+
+        return subscription;
+      }
+
       const subscriptionData = {
         organization_id: organizationId,
         plan_id: planId,

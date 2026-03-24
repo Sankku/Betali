@@ -57,7 +57,7 @@ export default function Pricing() {
       });
       return { subscription, planId };
     },
-    onSuccess: ({ subscription }) => {
+    onSuccess: ({ subscription, planId }) => {
       queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
 
       // Active/trialing subscriptions get a scheduled change — no payment required now
@@ -65,6 +65,23 @@ export default function Pricing() {
         toast({
           title: 'Cambio de plan programado',
           description: `Tu plan cambiará al final del período actual (${new Date((subscription as any).effective_date).toLocaleDateString('es-AR')}).`,
+          variant: 'default',
+        });
+        setSelectedPlanId(null);
+        return;
+      }
+
+      // Free trial started — no payment required
+      if (subscription.status === 'trialing') {
+        const plan = plans?.find((p) => p.plan_id === planId);
+        const trialDays = plan?.trial_days ?? 15;
+        const trialEnd = (subscription as any).trial_end;
+        const trialEndFormatted = trialEnd
+          ? new Date(trialEnd).toLocaleDateString('es-AR')
+          : '';
+        toast({
+          title: `¡Tu prueba gratuita de ${trialDays} días comenzó!`,
+          description: `Tenés acceso completo al plan ${plan?.display_name ?? ''}${trialEndFormatted ? ` hasta el ${trialEndFormatted}` : ''}. No se te cobrará nada hasta que el período termine.`,
           variant: 'default',
         });
         setSelectedPlanId(null);
