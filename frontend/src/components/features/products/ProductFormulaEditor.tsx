@@ -16,7 +16,7 @@ interface ProductFormulaEditorProps {
 export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditorProps) {
   const [newItem, setNewItem] = useState({ raw_material_id: '', quantity_required: '' });
 
-  const { data: formula = [], isLoading } = useProductFormula(finishedProductId);
+  const { data: formula = [], isLoading, error: formulaError } = useProductFormula(finishedProductId);
   const { data: productsResult } = useProducts();
   const allProducts = productsResult?.data || [];
   const rawMaterials = allProducts.filter((p: any) => p.product_type === 'raw_material');
@@ -44,6 +44,14 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
     );
   }
 
+  if (formulaError) {
+    return (
+      <div className="text-sm text-red-500">
+        Error cargando fórmula: {(formulaError as Error).message}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-medium text-gray-700">Fórmula BOM (componentes requeridos)</h4>
@@ -55,7 +63,12 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
       <ul className="space-y-2">
         {formula.map((item) => (
           <li key={item.formula_id} className="flex items-center gap-2">
-            <span className="flex-1 text-sm">{item.raw_material?.name || item.raw_material_id}</span>
+            <span className="flex-1 text-sm">
+              {item.raw_material?.name || item.raw_material_id}
+              {item.raw_material?.unit && (
+                <span className="ml-1 text-xs text-gray-400">({item.raw_material.unit})</span>
+              )}
+            </span>
             <input
               type="number"
               step="0.0001"

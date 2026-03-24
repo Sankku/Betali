@@ -92,6 +92,12 @@ export const createProductSchema = yup.object({
     .oneOf(['standard', 'raw_material', 'finished_good'])
     .default('standard')
     .optional(),
+
+  unit: yup
+    .string()
+    .oneOf(['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'])
+    .default('unidad')
+    .optional(),
 });
 
 export const updateProductSchema = yup.object({
@@ -176,6 +182,11 @@ export const updateProductSchema = yup.object({
     .string()
     .oneOf(['standard', 'raw_material', 'finished_good'])
     .default('standard')
+    .optional(),
+
+  unit: yup
+    .string()
+    .oneOf(['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'])
     .optional(),
 });
 

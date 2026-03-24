@@ -81,6 +81,22 @@ const createProductSchema = Joi.object({
       'number.positive': 'Price must be greater than 0',
       'number.max': 'Price cannot exceed $999,999.99',
       'any.required': 'Price is required'
+    }),
+
+  product_type: Joi.string()
+    .valid('standard', 'raw_material', 'finished_good')
+    .optional()
+    .default('standard')
+    .messages({
+      'any.only': 'Product type must be one of: standard, raw_material, finished_good'
+    }),
+
+  unit: Joi.string()
+    .valid('kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena')
+    .optional()
+    .default('unidad')
+    .messages({
+      'any.only': 'Unit must be one of: kg, g, mg, l, ml, unidad, docena'
     })
 });
 
@@ -155,6 +171,20 @@ const updateProductSchema = Joi.object({
       'number.base': 'Price must be a valid number',
       'number.positive': 'Price must be greater than 0',
       'number.max': 'Price cannot exceed $999,999.99'
+    }),
+
+  product_type: Joi.string()
+    .valid('standard', 'raw_material', 'finished_good')
+    .optional()
+    .messages({
+      'any.only': 'Product type must be one of: standard, raw_material, finished_good'
+    }),
+
+  unit: Joi.string()
+    .valid('kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena')
+    .optional()
+    .messages({
+      'any.only': 'Unit must be one of: kg, g, mg, l, ml, unidad, docena'
     })
 });
 

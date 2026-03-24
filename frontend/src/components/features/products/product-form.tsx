@@ -224,19 +224,45 @@ export const ProductForm: React.FC<ProductFormProps> = ({ form, mode, isLoading 
           </div>
         )}
 
-        {/* Product type */}
-        <div className="space-y-2">
-          <Label htmlFor="product_type">Tipo de producto</Label>
-          <select
-            id="product_type"
-            disabled={isViewMode}
-            {...register('product_type')}
-            className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="standard">Estándar</option>
-            <option value="raw_material">Materia prima</option>
-            <option value="finished_good">Producto terminado (BOM)</option>
-          </select>
+        {/* Product type + Unit — 2 col grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="product_type">Tipo de producto</Label>
+            <select
+              id="product_type"
+              disabled={isViewMode}
+              {...register('product_type')}
+              className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="standard">Estándar</option>
+              <option value="raw_material">Materia prima</option>
+              <option value="finished_good">Producto terminado (BOM)</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unidad de medida</Label>
+            {isViewMode ? (
+              <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
+                <span className="text-neutral-800">{watch('unit') || 'unidad'}</span>
+              </div>
+            ) : (
+              <select
+                id="unit"
+                disabled={isLoading}
+                {...register('unit')}
+                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="unidad">Unidad (u)</option>
+                <option value="kg">Kilogramo (kg)</option>
+                <option value="g">Gramo (g)</option>
+                <option value="mg">Miligramo (mg)</option>
+                <option value="l">Litro (l)</option>
+                <option value="ml">Mililitro (ml)</option>
+                <option value="docena">Docena (doc)</option>
+              </select>
+            )}
+            {errors.unit && <p className="text-sm text-red-600">{errors.unit.message}</p>}
+          </div>
         </div>
 
         {/* Inventory Alerts Configuration */}

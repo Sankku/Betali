@@ -22,6 +22,7 @@ export interface Product {
   price?: number;
   sku?: string;
   product_type?: 'standard' | 'raw_material' | 'finished_good';
+  unit?: string;
 }
 
 export interface ProductModalProps {
@@ -57,6 +58,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       alert_enabled: true,
       tax_rate_id: '',
       product_type: product?.product_type || 'standard',
+      unit: product?.unit || 'unidad',
     },
   });
 
@@ -120,6 +122,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           max_stock: undefined,
           alert_enabled: true,
           tax_rate_id: '',
+          product_type: 'standard',
+          unit: 'unidad',
         });
       } else if (product && (mode === 'edit' || mode === 'view')) {
         form.reset({
@@ -131,6 +135,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           external_product_id: product.external_product_id || '',
           price: product.price || 0,
           product_type: product.product_type || 'standard',
+          unit: product.unit || 'unidad',
         });
       }
     }

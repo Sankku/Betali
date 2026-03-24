@@ -88,6 +88,7 @@ export function useCreateProductionMovement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['production-preview'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Elaboración registrada exitosamente');
     },
     onError: (error: Error) => {

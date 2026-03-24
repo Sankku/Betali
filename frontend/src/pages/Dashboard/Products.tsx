@@ -143,11 +143,45 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
+      accessorKey: 'product_type',
+      header: 'Tipo',
+      cell: ({ row }: { row: any }) => {
+        const type = row.original.product_type || 'standard';
+        const styles: Record<string, string> = {
+          standard:      'bg-neutral-100 text-neutral-700 border-neutral-300',
+          raw_material:  'bg-blue-100 text-blue-700 border-blue-300',
+          finished_good: 'bg-purple-100 text-purple-700 border-purple-300',
+        };
+        const labels: Record<string, string> = {
+          standard:      'Estándar',
+          raw_material:  'Mat. Prima',
+          finished_good: 'Terminado',
+        };
+        return (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles[type] || styles.standard}`}>
+            {labels[type] || type}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'unit',
+      header: 'UOM',
+      cell: ({ row }: { row: any }) => {
+        const unit = row.original.unit || '—';
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+            {unit}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: 'price',
       header: t('products.fields.price'),
       cell: ({ row }: { row: any }) => (
-        <div className="text-sm text-gray-900 font-medium">
-          ${row.original.price ? row.original.price.toFixed(2) : 'N/A'}
+        <div className="text-sm font-semibold text-green-600">
+          ${row.original.price ? row.original.price.toFixed(2) : '0.00'}
         </div>
       ),
     },
@@ -168,15 +202,6 @@ const ProductsPage: React.FC = () => {
           </div>
         );
       },
-    },
-    {
-      accessorKey: 'origin_country',
-      header: t('products.fields.origin'),
-      cell: ({ row }: { row: any }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.origin_country || 'N/A'}
-        </div>
-      ),
     },
     {
       id: 'actions',

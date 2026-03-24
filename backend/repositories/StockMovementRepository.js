@@ -185,12 +185,12 @@ class StockMovementRepository extends BaseRepository {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Calculate stock: entries - exits
+      // Calculate stock: entries - exits/production
       let totalStock = 0;
       data.forEach(movement => {
         if (movement.movement_type === 'entry') {
           totalStock += parseFloat(movement.quantity);
-        } else if (movement.movement_type === 'exit') {
+        } else if (['exit', 'production'].includes(movement.movement_type)) {
           totalStock -= parseFloat(movement.quantity);
         }
       });
@@ -239,7 +239,7 @@ class StockMovementRepository extends BaseRepository {
         
         if (movement.movement_type === 'entry') {
           stockByProduct[movement.product_id] += parseFloat(movement.quantity);
-        } else if (movement.movement_type === 'exit') {
+        } else if (['exit', 'production'].includes(movement.movement_type)) {
           stockByProduct[movement.product_id] -= parseFloat(movement.quantity);
         }
       });

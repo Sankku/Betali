@@ -33,23 +33,25 @@ export function ProductionMovementForm({ onSuccess, onCancel }: ProductionMoveme
 
   const createProduction = useCreateProductionMovement();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConfirm = async () => {
     if (!preview?.can_produce) return;
-
-    await createProduction.mutateAsync({
-      finished_product_id: form.finished_product_id,
-      quantity_to_produce: Number(form.quantity_to_produce),
-      warehouse_id: form.warehouse_id,
-      reference: form.reference || undefined,
-    });
-    onSuccess?.();
+    try {
+      await createProduction.mutateAsync({
+        finished_product_id: form.finished_product_id,
+        quantity_to_produce: Number(form.quantity_to_produce),
+        warehouse_id: form.warehouse_id,
+        reference: form.reference || undefined,
+      });
+      onSuccess?.();
+    } catch {
+      // error handled by mutation's onError toast
+    }
   };
 
   const showPreview = !!form.finished_product_id && Number(form.quantity_to_produce) > 0 && !!form.warehouse_id;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium mb-1">Producto a elaborar</label>
         <select
@@ -144,8 +146,9 @@ export function ProductionMovementForm({ onSuccess, onCancel }: ProductionMoveme
           </Button>
         )}
         <Button
-          type="submit"
-          disabled={createProduction.isPending || (showPreview && preview !== undefined && !preview?.can_produce)}
+          type="button"
+          onClick={handleConfirm}
+          disabled={createProduction.isPending || !form.finished_product_id || !form.quantity_to_produce || !form.warehouse_id || (showPreview && preview !== undefined && !preview?.can_produce)}
         >
           {createProduction.isPending ? (
             <span className="flex items-center gap-1">
@@ -154,6 +157,6 @@ export function ProductionMovementForm({ onSuccess, onCancel }: ProductionMoveme
           ) : 'Confirmar Elaboracion'}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

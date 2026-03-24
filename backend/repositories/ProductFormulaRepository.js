@@ -23,7 +23,7 @@ class ProductFormulaRepository extends BaseRepository {
           quantity_required,
           organization_id,
           created_at,
-          raw_material:products!product_formulas_raw_material_id_fkey(
+          raw_material:products!raw_material_id(
             product_id, name, unit
           )
         `)
