@@ -65,23 +65,27 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
           <li key={item.formula_id} className="flex items-center gap-2">
             <span className="flex-1 text-sm">
               {item.raw_material?.name || item.raw_material_id}
-              {item.raw_material?.unit && (
-                <span className="ml-1 text-xs text-gray-400">({item.raw_material.unit})</span>
-              )}
             </span>
-            <input
-              type="number"
-              step="0.0001"
-              min="0.0001"
-              defaultValue={item.quantity_required}
-              className="w-24 border rounded px-2 py-1 text-sm"
-              onBlur={(e) => {
-                const val = Number(e.target.value);
-                if (val > 0 && val !== item.quantity_required) {
-                  updateItem.mutate({ formulaId: item.formula_id, quantity_required: val });
-                }
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                step="0.0001"
+                min="0.0001"
+                defaultValue={item.quantity_required}
+                className="w-20 border rounded px-2 py-1 text-sm"
+                onBlur={(e) => {
+                  const val = Number(e.target.value);
+                  if (val > 0 && val !== item.quantity_required) {
+                    updateItem.mutate({ formulaId: item.formula_id, quantity_required: val });
+                  }
+                }}
+              />
+              {item.raw_material?.unit && (
+                <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                  {item.raw_material.unit}
+                </span>
+              )}
+            </div>
             <Button
               type="button"
               variant="ghost"

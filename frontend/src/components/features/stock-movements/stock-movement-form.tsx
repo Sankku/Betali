@@ -260,15 +260,25 @@ export function StockMovementForm({
               required
               error={getFieldError('quantity')}
             >
-              <input
-                {...register('quantity', { valueAsNumber: true })}
-                type="number"
-                min="0"
-                step="1"
-                placeholder="0"
-                disabled={isLoading}
-                className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  {...register('quantity', { valueAsNumber: true })}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                  disabled={isLoading}
+                  className="flex-1 rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
+                />
+                {watchedValues.product_id && (() => {
+                  const unit = validProducts.find(p => p.product_id === watchedValues.product_id)?.unit;
+                  return unit ? (
+                    <span className="text-xs font-mono font-semibold px-2 py-1.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                      {unit}
+                    </span>
+                  ) : null;
+                })()}
+              </div>
             </FormField>
 
             <FormField

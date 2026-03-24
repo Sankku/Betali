@@ -117,18 +117,26 @@ export function ProductionMovementForm({ onSuccess, onCancel }: ProductionMoveme
             </div>
           ) : preview ? (
             <>
-              {preview.materials_to_consume.map((m) => (
-                <div key={m.product_id} className="flex items-center gap-2 text-sm">
-                  {m.sufficient
-                    ? <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    : <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  }
-                  <span className="flex-1">{m.name}</span>
-                  <span className={m.sufficient ? 'text-green-700' : 'text-red-700'}>
-                    Req: {m.quantity_required} / Disp: {m.current_stock}
-                  </span>
-                </div>
-              ))}
+              {preview.materials_to_consume.map((m) => {
+                const unit = (allProducts as any[]).find(p => p.product_id === m.product_id)?.unit || '';
+                return (
+                  <div key={m.product_id} className="flex items-center gap-2 text-sm">
+                    {m.sufficient
+                      ? <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      : <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    }
+                    <span className="flex-1">{m.name}</span>
+                    {unit && (
+                      <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                        {unit}
+                      </span>
+                    )}
+                    <span className={m.sufficient ? 'text-green-700' : 'text-red-700'}>
+                      Req: {m.quantity_required} / Disp: {m.current_stock}
+                    </span>
+                  </div>
+                );
+              })}
               {!preview.can_produce && (
                 <p className="text-sm text-red-600 font-medium">
                   Stock insuficiente para completar la elaboracion.
