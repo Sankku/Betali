@@ -77,6 +77,21 @@ const searchLimiter = !isProd ? noopMiddleware : rateLimit({
 });
 
 /**
+ * Strict rate limiting for bulk import operations.
+ * Max 5 imports per user per 15 minutes.
+ */
+const bulkImportLimiter = !isProd ? noopMiddleware : rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  keyGenerator: userAwareKey,
+  message: {
+    error: 'Too many import requests',
+    message: 'Please wait before importing again',
+    timestamp: new Date().toISOString()
+  }
+});
+
+/**
  * Slow down middleware for gradual performance degradation.
  */
 const speedLimiter = !isProd ? noopMiddleware : slowDown({
@@ -111,5 +126,6 @@ module.exports = {
   createLimiter,
   searchLimiter,
   speedLimiter,
-  createUserLimiter
+  createUserLimiter,
+  bulkImportLimiter
 };
