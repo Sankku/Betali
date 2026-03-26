@@ -3,7 +3,7 @@ const { ServiceFactory } = require('../config/container');
 const { authenticateUser } = require('../middleware/auth');
 const { requireOrganizationContext } = require('../middleware/organizationContext');
 const { validateRequest, validateQuery } = require('../middleware/validation');
-const { createLimiter, searchLimiter } = require('../middleware/rateLimiting');
+const { createLimiter, searchLimiter, bulkImportLimiter } = require('../middleware/rateLimiting');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 const { sanitizeMiddleware, SANITIZATION_RULES } = require('../middleware/sanitization');
 const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
@@ -78,6 +78,21 @@ router.get(
   async (req, res, next) => {
     try {
       await productController.getProductById(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/bulk-import',
+  requirePermission(PERMISSIONS.PRODUCTS_CREATE),
+  requirePermission(PERMISSIONS.PRODUCTS_UPDATE),
+  checkOrganizationLimit('products'),
+  bulkImportLimiter,
+  async (req, res, next) => {
+    try {
+      await productController.bulkImport(req, res, next);
     } catch (error) {
       next(error);
     }
