@@ -254,6 +254,52 @@ class ProductController {
   }
 
   /**
+   * Bulk import products from CSV
+   * POST /api/products/bulk-import
+   */
+  async bulkImport(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const organizationId = req.user.currentOrganizationId;
+      const { products: rows } = req.body;
+
+      if (!organizationId) {
+        return res.status(400).json({
+          error: 'No organization context found. Please select an organization.'
+        });
+      }
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return res.status(400).json({ error: 'products array is required and must not be empty' });
+      }
+
+      if (rows.length > 500) {
+        return res.status(400).json({ error: 'Cannot import more than 500 products at once' });
+      }
+
+      if (req.organizationLimits) {
+        const { remaining } = req.organizationLimits;
+        if (rows.length > remaining) {
+          return res.status(403).json({
+            error: `This import would exceed your plan limit. You can create ${remaining} more products.`,
+            code: 'LIMIT_EXCEEDED',
+            details: req.organizationLimits
+          });
+        }
+      }
+
+      const result = await this.productService.bulkImport(rows, userId, organizationId);
+
+      res.status(200).json({
+        data: result,
+        message: `Import complete: ${result.created} created, ${result.updated} updated, ${result.failed.length} failed`
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Build query options from request query parameters
    * @param {Object} query - Request query parameters
    * @returns {Object} Query options
