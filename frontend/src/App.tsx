@@ -230,11 +230,11 @@ function AppContent() {
                             {/* 404 — must be last */}
                             <Route path="*" element={<NotFound />} />
                           </Routes>
+                          <Suspense fallback={null}><OnboardingWizard /></Suspense>
                         </Suspense>
                       </ErrorBoundary>
                     </BrowserRouter>
                   </HelmetProvider>
-                  <Suspense fallback={null}><OnboardingWizard /></Suspense>
                   <GlobalLoading />
                   <ToastContainer />
                 </OnboardingProvider>
