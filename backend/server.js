@@ -40,6 +40,7 @@ const createProductFormulaRoutes = require('./routes/productFormulas');
 const { alertChecker } = require('./jobs/inventoryAlertChecker');
 const telegramApiRoutes = require('./routes/telegram');
 const { createBot, startPolling } = require('./telegram/bot');
+const { startAlertJob } = require('./telegram/alertJob');
 
 /**
  * Application class following OOP principles
@@ -299,12 +300,25 @@ class Application {
       this.logger.info('Inventory alert checker started');
 
       // Initialize Telegram bot
-      createBot();
+      const bot = createBot();
       if (process.env.NODE_ENV !== 'production') {
         // En desarrollo usamos long polling (no necesita URL pública)
         startPolling();
+      } else if (bot) {
+        // En producción registramos el webhook con Telegram
+        const backendUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');
+        const webhookUrl = backendUrl.startsWith('http')
+          ? `${backendUrl}/webhook/telegram`
+          : `https://${backendUrl}/webhook/telegram`;
+
+        const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || undefined;
+
+        bot.api.setWebhook(webhookUrl, { secret_token: secretToken })
+          .then(() => this.logger.info('Telegram webhook registrado', { url: webhookUrl }))
+          .catch(err => this.logger.error('Error al registrar webhook de Telegram', { error: err.message }));
+
+        startAlertJob(bot);
       }
-      // En producción el bot recibe updates via webhook en /webhook/telegram
 
       this.setupGracefulShutdown(server);
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,18 +8,31 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 export function OnboardingWizard() {
   const { isOnboardingActive, currentStep, steps, nextStep, previousStep, skipOnboarding } =
     useOnboarding();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
 
   const currentStepData = steps[currentStep];
 
-  // Highlight target element
+  // Navigate to the step's route and then highlight the target element
   useEffect(() => {
-    const targetSelector = currentStepData?.target;
-    if (targetSelector && isOnboardingActive) {
-      // Small timeout to allow the DOM to render newly opened tabs/pages
-      setTimeout(() => {
+    if (!isOnboardingActive || !currentStepData) return;
+
+    const targetSelector = currentStepData.target;
+    const route = currentStepData.route;
+
+    // Navigate to the step's page if needed
+    if (route && location.pathname !== route) {
+      navigate(route);
+    }
+
+    if (targetSelector) {
+      // Use longer delay when navigating to a new page so it has time to render
+      const navigated = route && location.pathname !== route;
+      const delay = navigated ? 450 : 150;
+      const timer = setTimeout(() => {
         const element = document.querySelector(targetSelector) as HTMLElement;
         if (element) {
           setHighlightedElement(element);
@@ -26,11 +40,12 @@ export function OnboardingWizard() {
         } else {
           setHighlightedElement(null);
         }
-      }, 100);
+      }, delay);
+      return () => clearTimeout(timer);
     } else {
       setHighlightedElement(null);
     }
-  }, [currentStep, currentStepData, isOnboardingActive]);
+  }, [currentStep, currentStepData, isOnboardingActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Position the tooltip and arrow
   useEffect(() => {

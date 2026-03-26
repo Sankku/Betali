@@ -108,7 +108,11 @@ class MercadoPagoService {
           pending: `${frontendUrl}/payment/pending?subscription_id=${subscriptionId}`
         },
         external_reference: subscriptionId,
-        notification_url: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/webhooks/mercadopago`,
+        notification_url: (() => {
+          const raw = process.env.BACKEND_URL || 'http://localhost:4000';
+          const base = raw.startsWith('http') ? raw : `https://${raw}`;
+          return `${base.replace(/\/$/, '')}/api/webhooks/mercadopago`;
+        })(),
         statement_descriptor: 'BETALI SUBSCRIPTION',
         metadata: {
           subscription_id: subscriptionId,

@@ -7,6 +7,7 @@ interface OnboardingStep {
   title: string;
   description: string;
   target?: string; // CSS selector for highlighting element
+  route?: string; // React Router path to navigate to for this step
   action?: () => void;
   completed: boolean;
 }
@@ -31,41 +32,53 @@ const defaultSteps: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Bienvenido a Betali',
-    description: 'Te ayudaremos a configurar tu sistema de inventario en unos simples pasos.',
+    description: 'Te ayudaremos a configurar tu sistema de inventario en unos simples pasos. Seguí las instrucciones y estarás listo en minutos.',
     completed: false,
   },
   {
     id: 'create-warehouse',
     title: 'Crea tu primer almacén',
-    description: 'Los almacenes te permiten organizar tu inventario por ubicación física.',
+    description: 'Los almacenes te permiten organizar tu inventario por ubicación física. Hacé clic en "Nuevo almacén" para empezar.',
+    route: '/dashboard/warehouse',
     target: '#create-warehouse-button',
     completed: false,
   },
   {
     id: 'add-products',
     title: 'Agrega productos',
-    description: 'Añade los productos que vendes o gestionas en tu negocio.',
+    description: 'Añade los productos que vendés o gestionás en tu negocio. Hacé clic en "Nuevo producto" para agregar el primero.',
+    route: '/dashboard/products',
     target: '#create-product-button',
     completed: false,
   },
   {
     id: 'add-client',
     title: 'Registra un cliente',
-    description: 'Gestiona tus clientes para poder crear órdenes de venta.',
+    description: 'Gestioná tus clientes para poder crear órdenes de venta. Hacé clic en "Nuevo cliente" para registrar el primero.',
+    route: '/dashboard/clients',
     target: '#create-client-button',
     completed: false,
   },
   {
     id: 'create-order',
     title: 'Crea tu primera venta',
-    description: 'Ya estás listo para crear órdenes de venta y gestionar tu inventario.',
+    description: 'Con productos y clientes listos, ya podés crear tu primera orden de venta. Hacé clic en "Nueva orden".',
+    route: '/dashboard/orders',
     target: '#create-order-button',
     completed: false,
   },
   {
+    id: 'connect-telegram',
+    title: 'Conecta Telegram',
+    description: 'Recibí alertas de stock bajo, resúmenes diarios y notificaciones importantes directamente en tu Telegram.',
+    route: '/dashboard/settings',
+    target: '#telegram-settings-section',
+    completed: false,
+  },
+  {
     id: 'complete',
-    title: '¡Completado!',
-    description: 'Has configurado tu sistema exitosamente. Ahora puedes explorar todas las funcionalidades.',
+    title: '¡Todo listo!',
+    description: 'Configuraste tu sistema exitosamente. Ahora podés explorar todas las funcionalidades de Betali.',
     completed: false,
   },
 ];

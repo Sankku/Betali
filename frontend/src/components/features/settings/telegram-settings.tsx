@@ -129,7 +129,7 @@ export function TelegramSettings() {
 
   if (isLoading) {
     return (
-      <Card className="bg-white dark:bg-neutral-800/90 shadow-sm border border-neutral-200 dark:border-neutral-700/50 backdrop-blur-md">
+      <Card id="telegram-settings-section" className="bg-white dark:bg-neutral-800/90 shadow-sm border border-neutral-200 dark:border-neutral-700/50 backdrop-blur-md">
         <CardHeader className="border-b border-neutral-100 dark:border-neutral-700/50">
           <CardTitle className="text-base font-semibold flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
             <MessageCircle className="h-5 w-5 text-blue-500" />
@@ -147,7 +147,7 @@ export function TelegramSettings() {
   }
 
   return (
-    <Card className="bg-white dark:bg-neutral-800/90 shadow-sm border border-neutral-200 dark:border-neutral-700/50 backdrop-blur-md overflow-hidden transition-all duration-300">
+    <Card id="telegram-settings-section" className="bg-white dark:bg-neutral-800/90 shadow-sm border border-neutral-200 dark:border-neutral-700/50 backdrop-blur-md overflow-hidden transition-all duration-300">
       <CardHeader className="border-b border-neutral-100 dark:border-neutral-700/50 bg-neutral-50/50 dark:bg-neutral-900/20">
         <CardTitle className="text-base font-semibold flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
           <div className="p-1.5 bg-blue-50 dark:bg-blue-500/20 rounded-md">
