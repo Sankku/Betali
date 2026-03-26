@@ -52,6 +52,36 @@ export const GlobalSyncProvider: React.FC<GlobalSyncProviderProps> = ({ children
   const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ── Supabase Realtime: invalidate React Query cache on external changes
+  // This keeps the UI in sync when the Telegram bot (or any external source)
+  // creates stock movements or purchase orders without a frontend mutation.
+  useEffect(() => {
+    const channel = supabase
+      .channel('external-stock-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'stock_movements' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+          queryClient.invalidateQueries({ queryKey: ['warehouse-movements'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'purchase_orders' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+          queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   // Cleanup timeout on unmount to prevent memory leaks
   useEffect(() => {
     return () => {

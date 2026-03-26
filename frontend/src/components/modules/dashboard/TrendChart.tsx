@@ -41,7 +41,7 @@ export function TrendChart() {
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'week':
-        startDate.setDate(now.getDate() - 7);
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case 'month':
         startDate.setMonth(now.getMonth() - 1);
@@ -105,9 +105,9 @@ export function TrendChart() {
 
   if (isLoading) {
     return (
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-          <h3 className="text-lg font-medium leading-6 text-neutral-900">{t('trendChart.title')}</h3>
+      <div className="bg-white dark:bg-neutral-800/90 shadow-sm rounded-xl border border-neutral-100 dark:border-neutral-700/50 backdrop-blur-md h-full flex flex-col">
+        <div className="px-5 py-5 border-b border-neutral-100 dark:border-neutral-700/50">
+          <h3 className="text-lg font-semibold leading-6 text-neutral-900 dark:text-white tracking-tight">{t('trendChart.title')}</h3>
         </div>
         <div className="px-4 py-5 sm:p-6 flex items-center justify-center h-64">
           <div className="text-center">
@@ -142,11 +142,11 @@ export function TrendChart() {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg">
-      <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-        <div className="flex items-center justify-between mb-3">
+    <div className="bg-white dark:bg-neutral-800/90 shadow-sm rounded-xl border border-neutral-100 dark:border-neutral-700/50 backdrop-blur-md h-full flex flex-col">
+      <div className="px-5 py-5 border-b border-neutral-100 dark:border-neutral-700/50">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-medium leading-6 text-neutral-900">{t('trendChart.title')}</h3>
+            <h3 className="text-lg font-semibold leading-6 text-neutral-900 dark:text-white tracking-tight">{t('trendChart.title')}</h3>
             <div className="relative">
               <button
                 onClick={() => setShowInfo(!showInfo)}
@@ -175,7 +175,7 @@ export function TrendChart() {
           </div>
           <Link
             to="/dashboard/orders"
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
           >
             {t('trendChart.viewAll')}
           </Link>
@@ -188,8 +188,8 @@ export function TrendChart() {
               onClick={() => { setDateRange('today'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'today'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-sm'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
               {t('trendChart.rangeToday')}
@@ -198,8 +198,8 @@ export function TrendChart() {
               onClick={() => { setDateRange('week'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'week'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-sm'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
               {t('trendChart.rangeWeek')}
@@ -208,8 +208,8 @@ export function TrendChart() {
               onClick={() => { setDateRange('month'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'month'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-sm'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
               {t('trendChart.rangeMonth')}
@@ -218,8 +218,8 @@ export function TrendChart() {
               onClick={() => { setDateRange('year'); setShowCustomDatePicker(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 dateRange === 'year'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-sm'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
               {t('trendChart.rangeYear')}
@@ -231,8 +231,8 @@ export function TrendChart() {
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
                 dateRange === 'custom'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-sm'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
               <Calendar className="w-3 h-3" />
@@ -244,10 +244,10 @@ export function TrendChart() {
 
         {/* Custom Date Picker */}
         {showCustomDatePicker && dateRange === 'custom' && (
-          <div className="mt-3 p-3 bg-neutral-50 rounded-md border border-neutral-200">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-neutral-700 mb-1">
+          <div className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700/50 backdrop-blur-sm">
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   {t('trendChart.selectDateRange')}
                 </label>
                 <DateRangePicker

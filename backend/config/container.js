@@ -645,6 +645,9 @@ const ServiceFactory = {
   createProductFormulaService() {
     return container.get('productFormulaService');
   },
+  createSupplierService() {
+    return container.get('supplierService');
+  },
 };
 
 module.exports = { 

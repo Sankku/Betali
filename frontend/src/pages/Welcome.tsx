@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  ArrowRight, 
-  Box, 
-  BarChart3, 
-  ShieldCheck, 
-  Zap, 
-  Store, 
-  TrendingUp, 
-  Users, 
+import { useTranslation } from '../contexts/LanguageContext';
+import {
+  ArrowRight,
+  Box,
+  BarChart3,
+  ShieldCheck,
+  Zap,
+  Store,
+  TrendingUp,
+  Users,
   Smartphone,
   CheckCircle2,
-  Clock
+  Clock,
+  Bell,
+  ShoppingCart,
+  ClipboardList,
+  PackageSearch,
+  MoveVertical
 } from 'lucide-react';
 
 export default function Welcome() {
@@ -108,6 +114,9 @@ export default function Welcome() {
           </button>
         </div>
 
+        {/* ── TELEGRAM SPOTLIGHT ─────────────────────────────────── */}
+        <TelegramSpotlight />
+
         {/* Value Proposition Grid */}
         <div className="mt-32 w-full max-w-6xl mx-auto">
           <div className="text-center mb-16 px-4">
@@ -196,9 +205,11 @@ export default function Welcome() {
           </p>
           <Link 
             to="/register" 
-            className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-neutral-950 rounded-full font-bold text-lg transition-transform hover:scale-105 relative z-10"
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-primary-500 text-white rounded-full font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_var(--color-primary-500)] w-full sm:w-auto"
           >
-            Empezar ahora gratis
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out" />
+            <span className="relative">Empezar ahora gratis</span>
+            <ArrowRight size={24} className="relative group-hover:translate-x-1.5 transition-transform" />
           </Link>
         </div>
 
@@ -308,4 +319,227 @@ function BenefitItem({ title, desc }: { title: string, desc: string }) {
       </div>
     </li>
   )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TELEGRAM SPOTLIGHT SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BOT_COMMANDS: { role: 'user' | 'bot'; text: string; delay: number }[] = [
+  { role: 'user', text: '/stock', delay: 0 },
+  { role: 'bot',  text: '📦 Inventario completo\n\n🔴 Harina 000 — 0 kg (mín: 50 kg)\n🟡 Levadura — 3 kg (mín: 5 kg)\n✅ Aceite — 12 L\n✅ Azúcar — 8 kg\n\n📊 4 total | 🔴 1 | 🟡 1 | ✅ 2', delay: 600 },
+  { role: 'user', text: '/comprar', delay: 1400 },
+  { role: 'bot',  text: '🛒 Nueva orden de compra\n\n¿A cuál proveedor le comprás?\n\n🏪 Distribuidora Norte\n🏪 Molinos del Sur\n➖ Sin proveedor', delay: 2000 },
+];
+
+function TelegramMockChat() {
+  const [visible, setVisible] = useState(0);
+  const { t } = useTranslation();
+
+  React.useEffect(() => {
+    const timers = BOT_COMMANDS.map((msg, i) =>
+      setTimeout(() => setVisible(v => Math.max(v, i + 1)), msg.delay + 400)
+    );
+    // Loop animation
+    const reset = setTimeout(() => setVisible(0), 5500);
+    const restart = setTimeout(() => {
+      const retimers = BOT_COMMANDS.map((msg, i) =>
+        setTimeout(() => setVisible(v => Math.max(v, i + 1)), msg.delay + 400)
+      );
+      return () => retimers.forEach(clearTimeout);
+    }, 6200);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(reset);
+      clearTimeout(restart);
+    };
+  }, [visible === 0 ? 0 : undefined]);
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto">
+      {/* Phone frame */}
+      <div className="relative bg-neutral-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+        {/* Telegram-style header */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-white/5">
+          <div className="w-9 h-9 rounded-full bg-[#5288c1] flex items-center justify-center text-white font-bold text-sm">B</div>
+          <div>
+            <p className="text-white text-sm font-semibold leading-none">Betali_bot</p>
+            <p className="text-white/40 text-xs mt-0.5">bot</p>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="px-3 py-4 space-y-2 min-h-[280px] bg-[#0e1621]">
+          {BOT_COMMANDS.slice(0, visible).map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+            >
+              <div
+                className={`max-w-[82%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
+                  msg.role === 'user'
+                    ? 'bg-[#2b5278] text-white rounded-br-sm'
+                    : 'bg-[#182533] text-white/90 rounded-bl-sm border border-white/5'
+                }`}
+              >
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {/* Typing indicator */}
+          {visible > 0 && visible < BOT_COMMANDS.length && BOT_COMMANDS[visible]?.role === 'bot' && (
+            <div className="flex justify-start">
+              <div className="bg-[#182533] border border-white/5 px-3 py-2 rounded-2xl rounded-bl-sm">
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input bar */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#17212b] border-t border-white/5">
+          <div className="flex-1 bg-[#242f3d] rounded-full px-4 py-2 text-white/30 text-xs">{t('welcome.telegram.chatInput')}</div>
+        </div>
+      </div>
+
+      {/* Glow effect */}
+      <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full -z-10 scale-110 pointer-events-none" />
+    </div>
+  );
+}
+
+function TelegramSpotlight() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="mt-28 w-full max-w-6xl mx-auto px-4">
+
+      {/* Section badge */}
+      <div className="flex justify-center mb-8">
+        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs font-bold uppercase tracking-widest">
+          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          {t('welcome.telegram.badge')}
+        </span>
+      </div>
+
+      {/* Hook headline — the pain */}
+      <div className="text-center mb-4">
+        <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+          {t('welcome.telegram.hook1')}
+          <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500">
+            {t('welcome.telegram.hook2')}
+          </span>
+        </h2>
+      </div>
+
+      {/* Subheadline — the solution */}
+      <p className="text-center text-xl text-white/60 max-w-2xl mx-auto mb-16 leading-relaxed">
+        {t('welcome.telegram.subhead1')} <strong className="text-white">{t('welcome.telegram.subhead2')}</strong> {t('welcome.telegram.subhead3')}
+        <strong className="text-white">{' '}{t('welcome.telegram.subhead4')}</strong>{t('welcome.telegram.subhead5')}
+      </p>
+
+      {/* Two-column: capabilities + mock chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+        {/* Left: capabilities */}
+        <div className="space-y-4 order-2 lg:order-1">
+
+          <TelegramCapability
+            icon={<Bell size={18} />}
+            title={t('welcome.telegram.feature1Title')}
+            desc={t('welcome.telegram.feature1Desc')}
+            highlight
+            className="animate-slide-in-bottom"
+            style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+          />
+          <TelegramCapability
+            icon={<PackageSearch size={18} />}
+            title={t('welcome.telegram.feature2Title')}
+            desc={t('welcome.telegram.feature2Desc')}
+            className="animate-slide-in-bottom"
+            style={{ animationDelay: '200ms', animationFillMode: 'both' }}
+          />
+          <TelegramCapability
+            icon={<ShoppingCart size={18} />}
+            title={t('welcome.telegram.feature3Title')}
+            desc={t('welcome.telegram.feature3Desc')}
+            className="animate-slide-in-bottom"
+            style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+          />
+          <TelegramCapability
+            icon={<MoveVertical size={18} />}
+            title={t('welcome.telegram.feature4Title')}
+            desc={t('welcome.telegram.feature4Desc')}
+            className="animate-slide-in-bottom"
+            style={{ animationDelay: '400ms', animationFillMode: 'both' }}
+          />
+          <TelegramCapability
+            icon={<ClipboardList size={18} />}
+            title={t('welcome.telegram.feature5Title')}
+            desc={t('welcome.telegram.feature5Desc')}
+            className="animate-slide-in-bottom"
+            style={{ animationDelay: '500ms', animationFillMode: 'both' }}
+          />
+
+          <div className="pt-4">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-3 px-7 py-3.5 bg-blue-500 hover:bg-blue-400 text-white rounded-full font-bold text-base transition-all hover:scale-105 hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.6)]"
+            >
+              {t('welcome.telegram.cta')}
+              <ArrowRight size={18} />
+            </Link>
+            <p className="mt-3 text-xs text-white/30">{t('welcome.telegram.ctaSub')}</p>
+          </div>
+        </div>
+
+        {/* Right: mock chat */}
+        <div className="order-1 lg:order-2 flex justify-center">
+          <TelegramMockChat />
+        </div>
+
+      </div>
+
+      {/* Social proof bar */}
+      <div className="mt-16 flex flex-wrap justify-center gap-8 text-sm text-white/40 border-t border-white/5 pt-8">
+        <span className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-400" /> {t('welcome.telegram.proof1')}</span>
+        <span className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-400" /> {t('welcome.telegram.proof2')}</span>
+        <span className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-400" /> {t('welcome.telegram.proof3')}</span>
+      </div>
+
+    </section>
+  );
+}
+
+function TelegramCapability({ icon, title, desc, highlight = false, className, style }: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  highlight?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={style} className={`flex gap-4 p-4 rounded-2xl border transition-all ${className || ''} ${
+      highlight
+        ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50'
+        : 'border-white/5 bg-white/[0.02] hover:bg-white/5 hover:border-white/20'
+    } cursor-pointer group`}>
+      <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+        highlight ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-white/50 group-hover:text-white group-hover:bg-white/10'
+      }`}>
+        {icon}
+      </div>
+      <div>
+        <h4 className="font-semibold text-white text-sm mb-1">{title}</h4>
+        <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  );
 }

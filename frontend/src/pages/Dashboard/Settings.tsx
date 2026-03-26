@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../components/layout/Dashboard/DashboardLayo
 import { DateFormatSettings } from '../../components/features/settings/date-format-settings';
 import { LanguageSettings } from '../../components/features/settings/language-settings';
 import { ThemeSettings } from '../../components/features/settings/theme-settings';
+import { TelegramSettings } from '../../components/features/settings/telegram-settings';
 import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function Settings() {
@@ -35,6 +36,7 @@ export default function Settings() {
           <LanguageSettings />
           <ThemeSettings />
           <DateFormatSettings />
+          <TelegramSettings />
         </div>
       </div>
     </DashboardLayout>

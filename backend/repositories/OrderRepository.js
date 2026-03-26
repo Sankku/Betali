@@ -74,10 +74,17 @@ class OrderRepository extends BaseRepository {
 
       // Apply additional filters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && key !== 'organization_id') {
+        if (value !== undefined && value !== null && key !== 'organization_id' && key !== 'date_from' && key !== 'date_to' && key !== 'search') {
           query = query.eq(key, value);
         }
       });
+
+      if (filters.date_from) {
+        query = query.gte('order_date', filters.date_from);
+      }
+      if (filters.date_to) {
+        query = query.lte('order_date', filters.date_to);
+      }
 
       // Apply search if provided
       if (filters.search) {

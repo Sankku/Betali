@@ -52,6 +52,7 @@
     "express-rate-limit": "^8.0.1",
     "express-slow-down": "^2.1.0",
     "file-type": "16.5.4",
+    "grammy": "^1.41.1",
     "helmet": "^8.1.0",
     "i18next": "^25.3.2",
     "i18next-fs-backend": "^2.6.0",

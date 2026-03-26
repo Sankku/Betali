@@ -24,7 +24,9 @@ class OrderController {
         limit = 50,
         offset = 0,
         sort_by = 'created_at',
-        sort_order = 'desc'
+        sort_order = 'desc',
+        date_from,
+        date_to
       } = req.query;
 
       this.logger.info('Getting orders', { organizationId, query: req.query });
@@ -34,6 +36,8 @@ class OrderController {
       if (status) filters.status = status;
       if (client_id) filters.client_id = client_id;
       if (search) filters.search = search;
+      if (date_from) filters.date_from = date_from;
+      if (date_to) filters.date_to = date_to;
 
       // Build pagination and sorting
       const options = {

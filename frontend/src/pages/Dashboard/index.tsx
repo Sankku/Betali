@@ -41,7 +41,7 @@ export default function DashboardPage() {
       <DashboardLayout>
         <div className="space-y-6">
           {showWelcome && (
-            <div className="rounded-lg bg-gradient-to-r from-success-50 to-success-100 border border-success-200 p-6">
+            <div className="rounded-xl bg-gradient-to-r from-success-50 to-success-100 dark:from-success-900/40 dark:to-success-800/40 border border-success-200 dark:border-success-800/50 p-6 shadow-sm">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-success-500">
@@ -51,17 +51,17 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-success-800">
+                  <h3 className="text-lg font-semibold text-success-800 dark:text-success-300">
                     🎉 Welcome to Betali!
                   </h3>
-                  <p className="mt-1 text-sm text-success-700">
+                  <p className="mt-1 text-sm text-success-700 dark:text-success-400">
                     Your account has been created successfully. You can now start managing your inventory and business operations.
                   </p>
                 </div>
                 <div className="ml-auto pl-4">
                   <button
                     onClick={() => setShowWelcome(false)}
-                    className="text-success-600 hover:text-success-800 text-sm font-medium"
+                    className="text-success-600 dark:text-success-400 hover:text-success-800 dark:hover:text-success-200 text-sm font-medium"
                   >
                     Dismiss
                   </button>
@@ -70,10 +70,10 @@ export default function DashboardPage() {
             </div>
           )}
           
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
             <div>
-              <h2 className="text-lg font-medium text-neutral-900">Resumen</h2>
-              <p className="mt-1 text-sm text-neutral-500">
+              <h2 className="text-xl font-semibold tracking-tight text-neutral-900 dark:text-white">Resumen</h2>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 Vista general del sistema de gestión de stock
               </p>
             </div>

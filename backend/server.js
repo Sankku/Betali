@@ -38,6 +38,8 @@ const debugRoutes = require('./routes/debug');
 const inventoryAlertRoutes = require('./routes/inventoryAlerts');
 const createProductFormulaRoutes = require('./routes/productFormulas');
 const { alertChecker } = require('./jobs/inventoryAlertChecker');
+const telegramApiRoutes = require('./routes/telegram');
+const { createBot, startPolling } = require('./telegram/bot');
 
 /**
  * Application class following OOP principles
@@ -215,6 +217,8 @@ class Application {
     this.app.use('/api/alerts', inventoryAlertRoutes);
     this.app.use('/api/product-formulas', createProductFormulaRoutes());
     this.app.use('/api/cron', cronRoutes);
+    this.app.use('/api/telegram', telegramApiRoutes.apiRouter);
+    this.app.use('/webhook/telegram', telegramApiRoutes.webhookRouter);
 
     // Debug routes (development only)
     if (process.env.NODE_ENV === 'development') {
@@ -293,6 +297,14 @@ class Application {
       // Start inventory alert checker
       alertChecker.start();
       this.logger.info('Inventory alert checker started');
+
+      // Initialize Telegram bot
+      createBot();
+      if (process.env.NODE_ENV !== 'production') {
+        // En desarrollo usamos long polling (no necesita URL pública)
+        startPolling();
+      }
+      // En producción el bot recibe updates via webhook en /webhook/telegram
 
       this.setupGracefulShutdown(server);
 

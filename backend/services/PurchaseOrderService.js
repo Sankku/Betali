@@ -152,7 +152,7 @@ class PurchaseOrderService {
         throw new Error(`Invalid quantity for product ${item.product_id}`);
       }
 
-      if (!item.unit_price || item.unit_price < 0) {
+      if (item.unit_price === undefined || item.unit_price === null || item.unit_price < 0) {
         throw new Error(`Invalid unit price for product ${item.product_id}`);
       }
 

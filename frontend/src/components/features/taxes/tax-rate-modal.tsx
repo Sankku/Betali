@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Percent, Info, Calculator, Zap } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { 
   TaxRate, 
   CreateTaxRateData, 
@@ -107,6 +107,16 @@ export function TaxRateModal({ isOpen, onClose, mode, taxRate }: TaxRateModalPro
   };
 
   const handlePresetSelect = (presetName: string) => {
+    if (selectedPreset === presetName) {
+      // Toggle off
+      setValue('name', '');
+      setValue('description', '');
+      setValue('rate', 0);
+      setValue('is_inclusive', false);
+      setSelectedPreset('');
+      return;
+    }
+
     const preset = TAX_RATE_PRESETS.find(p => p.name === presetName);
     if (preset) {
       setValue('name', preset.name);
