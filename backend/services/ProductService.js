@@ -3,10 +3,11 @@
  * Handles business rules and validation
  */
 class ProductService {
-    constructor(productRepository, stockMovementRepository, stockReservationRepository, logger) {
+    constructor(productRepository, stockMovementRepository, stockReservationRepository, warehouseRepository, logger) {
       this.repository = productRepository;
       this.stockMovementRepository = stockMovementRepository;
       this.stockReservationRepository = stockReservationRepository;
+      this.warehouseRepository = warehouseRepository;
       this.logger = logger;
     }
 
@@ -189,6 +190,193 @@ class ProductService {
       }
     }
   
+    /**
+     * Validate a single row for bulk import.
+     * Unlike validateProductData(), past expiration dates are a warning not an error.
+     * @param {Object} row - Row data from CSV
+     * @returns {{ errors: string[], warnings: string[] }}
+     */
+    _validateRowForBulk(row) {
+      const errors = [];
+      const warnings = [];
+
+      const VALID_UNITS = ['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'];
+      const VALID_PRODUCT_TYPES = ['standard', 'raw_material', 'finished_good'];
+
+      for (const field of ['name', 'batch_number', 'origin_country', 'expiration_date', 'price']) {
+        if (row[field] == null || String(row[field]).trim() === '') {
+          errors.push(`${field} is required`);
+        }
+      }
+
+      if (row.expiration_date) {
+        const d = new Date(row.expiration_date);
+        if (isNaN(d.getTime())) {
+          errors.push('expiration_date must be a valid date (YYYY-MM-DD)');
+        } else if (d < new Date()) {
+          warnings.push('expiration_date is in the past');
+        }
+      }
+
+      if (row.price != null && String(row.price).trim() !== '') {
+        const price = parseFloat(row.price);
+        if (isNaN(price) || price <= 0) {
+          errors.push('price must be a positive number');
+        } else if (price > 999999.99) {
+          errors.push('price cannot exceed 999999.99');
+        }
+      }
+
+      if (row.initial_stock != null && String(row.initial_stock).trim() !== '') {
+        const stock = parseInt(row.initial_stock, 10);
+        if (isNaN(stock) || stock < 0 || !Number.isInteger(Number(row.initial_stock))) {
+          errors.push('initial_stock must be a non-negative integer');
+        }
+      }
+
+      if (row.unit && !VALID_UNITS.includes(row.unit)) {
+        errors.push(`unit must be one of: ${VALID_UNITS.join(', ')}`);
+      }
+
+      if (row.product_type && !VALID_PRODUCT_TYPES.includes(row.product_type)) {
+        errors.push(`product_type must be one of: ${VALID_PRODUCT_TYPES.join(', ')}`);
+      }
+
+      return { errors, warnings };
+    }
+
+    /**
+     * Bulk import products from CSV rows (upsert by batch_number).
+     * Processes each row independently (per-row commit, not all-or-nothing).
+     * @param {Array} rows - Array of parsed CSV row objects
+     * @param {string} userId - User performing the import
+     * @param {string} organizationId - Organization scope
+     * @returns {Promise<{ created: number, updated: number, failed: Array, stock_skipped: Array }>}
+     */
+    async bulkImport(rows, userId, organizationId) {
+      this.logger.info(`Starting bulk import of ${rows.length} rows for org: ${organizationId}`);
+
+      let orgWarehouses = [];
+      try {
+        orgWarehouses = await this.warehouseRepository.findByOrganizationId(organizationId);
+      } catch (err) {
+        this.logger.warn(`Could not fetch warehouses for bulk import: ${err.message}`);
+      }
+
+      const defaultWarehouse = orgWarehouses.find(w => w.is_active !== false) || orgWarehouses[0] || null;
+      const result = { created: 0, updated: 0, failed: [], stock_skipped: [] };
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 1;
+
+        const { errors, warnings } = this._validateRowForBulk(row);
+        if (errors.length > 0) {
+          result.failed.push({ row: rowNum, batch_number: row.batch_number || null, errors });
+          continue;
+        }
+
+        const productData = {
+          name: String(row.name).trim(),
+          batch_number: String(row.batch_number).trim(),
+          origin_country: String(row.origin_country).trim(),
+          expiration_date: row.expiration_date,
+          price: parseFloat(row.price),
+          description: row.description ? String(row.description).trim() : '',
+          unit: row.unit || 'unidad',
+          product_type: row.product_type || 'standard',
+        };
+
+        const initialStock = row.initial_stock ? parseInt(row.initial_stock, 10) : 0;
+        const warehouseName = row.warehouse_name ? String(row.warehouse_name).trim().toLowerCase() : null;
+
+        let resolvedWarehouse = null;
+        if (initialStock > 0) {
+          if (warehouseName) {
+            resolvedWarehouse = orgWarehouses.find(
+              w => w.name.toLowerCase().trim() === warehouseName
+            ) || null;
+          } else {
+            resolvedWarehouse = defaultWarehouse;
+          }
+        }
+
+        try {
+          const existing = await this.repository.findByBatchNumber(productData.batch_number, organizationId);
+          let savedProduct;
+
+          if (existing.length > 0) {
+            savedProduct = await this.repository.update(existing[0].product_id, {
+              ...productData,
+              updated_at: new Date().toISOString()
+            }, 'product_id');
+            result.updated++;
+          } else {
+            savedProduct = await this.repository.create({
+              ...productData,
+              owner_id: userId,
+              organization_id: organizationId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            result.created++;
+          }
+
+          if (initialStock > 0) {
+            if (!resolvedWarehouse) {
+              const reason = warehouseName
+                ? `warehouse '${row.warehouse_name}' not found`
+                : 'no default warehouse available';
+              result.stock_skipped.push({ row: rowNum, batch_number: productData.batch_number, reason });
+            } else {
+              try {
+                await this.stockMovementRepository.create({
+                  product_id: savedProduct.product_id,
+                  warehouse_id: resolvedWarehouse.warehouse_id,
+                  organization_id: organizationId,
+                  movement_type: 'receive',
+                  quantity: initialStock,
+                  reference: 'CSV Import',
+                  movement_date: new Date().toISOString()
+                });
+              } catch (stockErr) {
+                if (existing.length === 0) {
+                  try {
+                    await this.repository.delete(savedProduct.product_id, 'product_id');
+                    result.created--;
+                  } catch (deleteErr) {
+                    this.logger.error(`Failed to rollback product ${savedProduct.product_id}: ${deleteErr.message}`);
+                  }
+                } else {
+                  result.updated--;
+                }
+                result.failed.push({
+                  row: rowNum,
+                  batch_number: productData.batch_number,
+                  errors: [`Stock movement failed: ${stockErr.message}`]
+                });
+              }
+            }
+          }
+
+          if (warnings.length > 0) {
+            this.logger.warn(`Row ${rowNum} (${productData.batch_number}) warnings: ${warnings.join(', ')}`);
+          }
+
+        } catch (err) {
+          this.logger.error(`Row ${rowNum} failed: ${err.message}`);
+          result.failed.push({
+            row: rowNum,
+            batch_number: row.batch_number || null,
+            errors: [err.message]
+          });
+        }
+      }
+
+      this.logger.info(`Bulk import complete: created=${result.created}, updated=${result.updated}, failed=${result.failed.length}`);
+      return result;
+    }
+
     /**
      * Validate product data
      * @param {Object} productData - Product data to validate
