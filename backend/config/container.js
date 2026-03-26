@@ -266,8 +266,9 @@ function initializeContainer() {
     const productRepository = container.get('productRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
     const stockReservationRepository = container.get('stockReservationRepository');
+    const warehouseRepository = container.get('warehouseRepository');
     const logger = container.get('logger');
-    return new ProductService(productRepository, stockMovementRepository, stockReservationRepository, logger);
+    return new ProductService(productRepository, stockMovementRepository, stockReservationRepository, warehouseRepository, logger);
   }, true);
 
   container.register('warehouseService', () => {
