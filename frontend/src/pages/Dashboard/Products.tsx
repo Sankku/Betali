@@ -1,9 +1,10 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle, Eye, Edit, Trash } from 'lucide-react';
+import { AlertTriangle, Eye, Edit, Trash, Upload } from 'lucide-react';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '../../components/ui/table-with-bulk-actions';
 import { ProductModal, Product, ProductFormData } from '../../components/features/products';
+import { ProductImportModal } from '../../components/features/products/product-import-modal';
 import { Button } from '../../components/ui/button';
 import { ToastContainer } from '../../components/ui/toast';
 import {
@@ -49,6 +50,8 @@ const ProductsPage: React.FC = () => {
     products: [],
   });
 
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const { products, isLoading, error } = useProductManagement();
   const { atLimit: atProductLimit, limit: productLimit } = usePlanResourceLimit('max_products', products?.length ?? 0);
   const createProduct = useCreateProduct();
@@ -88,7 +91,11 @@ const ProductsPage: React.FC = () => {
   const handleSubmit = async (data: ProductFormData) => {
     try {
       if (modal.mode === 'create') {
-        await createProduct.mutateAsync(data);
+        const result = await createProduct.mutateAsync(data);
+        if (data.product_type === 'finished_good') {
+          openModal('edit', result as Product);
+          return;
+        }
       } else if (modal.mode === 'edit' && modal.product?.product_id) {
         await updateProduct.mutateAsync({
           id: modal.product.product_id,
@@ -247,6 +254,17 @@ const ProductsPage: React.FC = () => {
         error={error}
         onCreateClick={handleCreateClick}
         isAnyMutationLoading={isLoaderVisible}
+        headerActions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importar CSV
+          </Button>
+        }
         customTable={
           <TableWithBulkActions
             data={products || []}
@@ -279,6 +297,11 @@ const ProductsPage: React.FC = () => {
         product={modal.product}
         onSubmit={handleSubmit}
         isLoading={createProduct.isPending || updateProduct.isPending}
+      />
+
+      <ProductImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
 
       <Modal isOpen={showDeleteConfirm.show} onClose={closeDeleteConfirm} size="sm">
