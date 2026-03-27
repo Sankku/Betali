@@ -5,6 +5,8 @@ const { requireOrganizationContext } = require('../middleware/organizationContex
 const { validateRequest } = require('../middleware/validation');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 const { createProductTypeSchema, updateProductTypeSchema } = require('../validations/productTypeValidation');
+const { bulkImportLimiter } = require('../middleware/rateLimiting');
+const { checkOrganizationLimit } = require('../middleware/limitEnforcement');
 
 const router = express.Router();
 
@@ -29,6 +31,20 @@ router.get('/search', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, 
 router.get('/', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
   try { await getController().getTypes(req, res, next); } catch (e) { next(e); }
 });
+
+router.post(
+  '/bulk-import',
+  requirePermission(PERMISSIONS.PRODUCTS_CREATE),
+  requirePermission(PERMISSIONS.PRODUCTS_UPDATE),
+  bulkImportLimiter,
+  checkOrganizationLimit('product_types'),
+  async (req, res, next) => {
+    try {
+      const { ServiceFactory } = require('../config/container');
+      await ServiceFactory.createProductLotController().bulkImport(req, res, next);
+    } catch (e) { next(e); }
+  }
+);
 
 router.get('/:id', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
   try { await getController().getTypeById(req, res, next); } catch (e) { next(e); }
