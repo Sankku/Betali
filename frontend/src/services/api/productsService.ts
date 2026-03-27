@@ -3,6 +3,26 @@ import { Database } from "../../types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
+export interface ProductImportRow {
+  name: string;
+  batch_number: string;
+  origin_country: string;
+  expiration_date: string;
+  price: string | number;
+  description?: string;
+  unit?: string;
+  product_type?: string;
+  initial_stock?: string | number;
+  warehouse_name?: string;
+}
+
+export interface BulkImportResult {
+  created: number;
+  updated: number;
+  failed: { row: number; batch_number: string | null; errors: string[] }[];
+  stock_skipped: { row: number; batch_number: string; reason: string }[];
+}
+
 /**
  * Service for managing products
  */
@@ -69,6 +89,19 @@ export const productsService = {
       return await httpClient.delete<{ message: string }>(`/api/products/${id}`);
     } catch (error) {
       console.error(`Error deleting product ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async bulkImport(rows: ProductImportRow[]): Promise<BulkImportResult> {
+    try {
+      const response = await httpClient.post<{ data: BulkImportResult }>(
+        '/api/products/bulk-import',
+        { products: rows }
+      );
+      return (response as any).data || response;
+    } catch (error) {
+      console.error('Error in bulk import:', error);
       throw error;
     }
   },
