@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsService } from "../services/api/productsService";
-import { toast } from "../lib/toast"; 
+import type { ProductImportRow } from "../services/api/productsService";
+import { toast } from "../lib/toast";
 import { ProductFormData } from "../components/features";
 import { useOrganization } from "../context/OrganizationContext";
 export interface UseProductsOptions {
@@ -108,6 +109,23 @@ export function useDeleteProduct() {
     onError: (error: Error) => {
       toast.error('Error al eliminar el producto. Intenta de nuevo.');
       throw error;
+    },
+  });
+}
+
+export function useProductImport() {
+  const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
+
+  return useMutation({
+    mutationFn: (rows: ProductImportRow[]) => productsService.bulkImport(rows),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['products', currentOrganization?.organization_id]
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Bulk import error:', error);
     },
   });
 }
