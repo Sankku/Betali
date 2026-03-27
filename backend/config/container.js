@@ -554,6 +554,14 @@ function initializeContainer() {
     const subscriptionPlanService = container.get('subscriptionPlanService');
     return new SubscriptionPlanController(subscriptionPlanService);
   }, true);
+
+  container.register('productTypeController', () => {
+    return new ProductTypeController(container.get('productTypeService'));
+  }, true);
+
+  container.register('productLotController', () => {
+    return new ProductLotController(container.get('productLotService'));
+  }, true);
 }
 
 initializeContainer();
@@ -685,10 +693,10 @@ const ServiceFactory = {
     return container.get('supplierService');
   },
   createProductTypeController() {
-    return new ProductTypeController(container.get('productTypeService'));
+    return container.get('productTypeController');
   },
   createProductLotController() {
-    return new ProductLotController(container.get('productLotService'));
+    return container.get('productLotController');
   },
 };
 
