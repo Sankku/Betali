@@ -238,7 +238,9 @@ class ProductService {
         errors.push(`unit must be one of: ${VALID_UNITS.join(', ')}`);
       }
 
-      if (row.product_type && !VALID_PRODUCT_TYPES.includes(row.product_type)) {
+      if (!row.product_type || String(row.product_type).trim() === '') {
+        errors.push(`product_type is required (${VALID_PRODUCT_TYPES.join(', ')})`);
+      } else if (!VALID_PRODUCT_TYPES.includes(row.product_type)) {
         errors.push(`product_type must be one of: ${VALID_PRODUCT_TYPES.join(', ')}`);
       }
 

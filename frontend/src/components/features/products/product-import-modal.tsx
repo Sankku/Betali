@@ -7,7 +7,7 @@ import { useProductImport } from '../../../hooks/useProducts';
 import { useWarehouses } from '../../../hooks/useWarehouse';
 import type { ProductImportRow, BulkImportResult } from '../../../services/api/productsService';
 
-const REQUIRED_HEADERS = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price'];
+const REQUIRED_HEADERS = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price', 'product_type'];
 const VALID_UNITS = ['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'];
 const VALID_PRODUCT_TYPES = ['standard', 'raw_material', 'finished_good'];
 const MAX_ROWS = 500;
@@ -85,8 +85,10 @@ function validateRow(
     errors.push(`La ${translateField('unit')} debe ser: ${VALID_UNITS.join(', ')}`);
   }
 
-  if (row.product_type && !VALID_PRODUCT_TYPES.includes(row.product_type)) {
-    errors.push(`El ${translateField('product_type')} debe ser: Estándar, Materia prima o Producto terminado`);
+  if (!row.product_type || String(row.product_type).trim() === '') {
+    errors.push(`El ${translateField('product_type')} es requerido (standard, raw_material, finished_good)`);
+  } else if (!VALID_PRODUCT_TYPES.includes(row.product_type)) {
+    errors.push(`El ${translateField('product_type')} debe ser: standard, raw_material o finished_good`);
   }
 
   const initialStock = row.initial_stock ? parseInt(row.initial_stock, 10) : 0;
