@@ -50,10 +50,10 @@ export function OrderItemWithStockValidation({
   return (
     <div className="space-y-2">
       <Label className="text-gray-900 font-medium">
-        Quantity *
+        Cantidad *
         {shouldShowValidation && !isLoading && (
           <span className="ml-2 text-sm font-normal text-gray-600">
-            ({availableStock} available)
+            ({availableStock} disponibles)
           </span>
         )}
       </Label>
@@ -91,7 +91,7 @@ export function OrderItemWithStockValidation({
           {/* Success: Sufficient stock */}
           {isSufficient && !isLowStock && item.quantity > 0 && (
             <p className="text-sm text-green-600">
-              ✓ Stock available
+              ✓ Stock disponible
             </p>
           )}
         </>
@@ -99,7 +99,7 @@ export function OrderItemWithStockValidation({
 
       {/* Loading state */}
       {shouldShowValidation && isLoading && (
-        <p className="text-sm text-gray-500">Checking stock...</p>
+        <p className="text-sm text-gray-500">Comprobando stock...</p>
       )}
 
       {/* Form validation errors */}

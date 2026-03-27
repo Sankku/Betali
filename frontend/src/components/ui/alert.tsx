@@ -19,19 +19,19 @@ const Alert: React.FC<AlertProps> = ({ variant = 'default', title, children, cla
   };
 
   const variantClasses = {
-    default: 'bg-neutral-50 border-neutral-200 text-neutral-800',
-    success: 'bg-success-50 border-success-200 text-success-800',
-    warning: 'bg-warning-50 border-warning-200 text-warning-800',
-    error: 'bg-danger-50 border-danger-200 text-danger-800',
-    info: 'bg-primary-50 border-primary-200 text-primary-800',
+    default: 'bg-neutral-50 dark:bg-neutral-500/10 border-neutral-200 dark:border-neutral-500/20 text-neutral-800 dark:text-neutral-300',
+    success: 'bg-success-50 dark:bg-success-500/10 border-success-200 dark:border-success-500/20 text-success-800 dark:text-success-300',
+    warning: 'bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/20 text-warning-800 dark:text-warning-300',
+    error: 'bg-danger-50 dark:bg-danger-500/10 border-danger-200 dark:border-danger-500/20 text-danger-800 dark:text-danger-300',
+    info: 'bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/20 text-primary-800 dark:text-primary-300',
   };
 
   const iconColors = {
-    default: 'text-neutral-400',
-    success: 'text-green-400',
-    warning: 'text-yellow-400',
-    error: 'text-red-400',
-    info: 'text-blue-400',
+    default: 'text-neutral-400 dark:text-neutral-500',
+    success: 'text-green-500 dark:text-green-400',
+    warning: 'text-yellow-500 dark:text-yellow-400',
+    error: 'text-red-500 dark:text-red-400',
+    info: 'text-blue-500 dark:text-blue-400',
   };
 
   const Icon = icons[variant];

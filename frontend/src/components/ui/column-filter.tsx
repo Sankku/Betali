@@ -168,7 +168,9 @@ export function ColumnFilter({
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             autoFocus
           >
-            <option value="">All</option>
+            {!options.some((o) => o.value === '') && (
+              <option value="">Todos</option>
+            )}
             {options.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -178,7 +180,7 @@ export function ColumnFilter({
         ) : (
           <>
             <Input
-              type={filterType === 'date' || filterType === 'dateRange' ? 'text' : filterType}
+              type={(filterType as string) === 'date' || (filterType as string) === 'dateRange' ? 'text' : (filterType as string)}
               value={filterValue}
               onChange={e => setFilterValue(e.target.value)}
               placeholder={placeholder}

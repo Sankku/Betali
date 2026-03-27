@@ -28,19 +28,28 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { usePlanResourceLimit } from '../../hooks/useSubscriptionPlans';
 
 // ── Stock badge with per-warehouse popover ────────────────────────────────────
-function StockBadge({ product }: { product: Product & { current_stock?: number; unit?: string } }) {
+function StockBadge({ product }: { product: Product & { current_stock?: number; unit?: string; min_stock?: number; max_stock?: number } }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
-  const stock = (product as any).current_stock ?? 0;
+  const stock = product.current_stock ?? 0;
+  const maxStock = product.max_stock;
+  const minStock = product.min_stock ?? 10;
   const { data } = useProductStockByWarehouse(open ? product.product_id : undefined);
 
-  const stockClass = stock > 10
-    ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
-    : stock > 0
+  let isLowStock = false;
+  if (maxStock && maxStock > 0) {
+    isLowStock = stock <= (maxStock * 0.10) && stock > 0;
+  } else {
+    isLowStock = stock <= minStock && stock > 0;
+  }
+
+  const stockClass = stock <= 0
+    ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+    : isLowStock
       ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
-      : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200';
+      : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
 
   const multiWarehouse = data && data.warehouses.length > 1;
 
@@ -296,6 +305,34 @@ const ProductsPage: React.FC = () => {
       accessorKey: 'current_stock',
       header: t('products.fields.stock'),
       cell: ({ row }: { row: any }) => <StockBadge product={row.original} />,
+      meta: {
+        filterType: 'select',
+        filterOptions: [
+          { label: 'Todos', value: '' },
+          { label: 'En stock', value: 'in_stock' },
+          { label: 'Bajo stock', value: 'low_stock' },
+          { label: 'Sin stock', value: 'out_of_stock' }
+        ]
+      },
+      filterFn: (row: any, columnId: string, filterValue: string) => {
+        if (!filterValue) return true;
+        
+        const stock = row.original.current_stock ?? 0;
+        const maxStock = row.original.max_stock;
+        const minStock = row.original.min_stock ?? 10;
+        
+        let isLowStock = false;
+        if (maxStock && maxStock > 0) {
+          isLowStock = stock <= (maxStock * 0.10) && stock > 0;
+        } else {
+          isLowStock = stock <= minStock && stock > 0;
+        }
+
+        if (filterValue === 'out_of_stock') return stock <= 0;
+        if (filterValue === 'low_stock') return isLowStock;
+        if (filterValue === 'in_stock') return stock > 0 && !isLowStock;
+        return true;
+      }
     },
     {
       id: 'actions',

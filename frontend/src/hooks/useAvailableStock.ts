@@ -101,13 +101,13 @@ export const useStockValidation = (
   }
 
   if (queryError) {
-    error = 'Unable to check stock availability. Please try again.';
+    error = 'No se pudo verificar el stock. Por favor, intente nuevamente.';
   } else if (isOutOfStock) {
-    error = 'Product is out of stock';
+    error = 'Producto sin stock';
   } else if (!isSufficient) {
-    error = `Only ${availableStock} units available. You're trying to order ${quantity}.`;
+    error = `Solo ${availableStock} ud. disponibles, pero intenta pedir ${quantity}.`;
   } else if (isLowStock && quantity > 0) {
-    warning = `Low stock: Only ${availableStock} units available`;
+    warning = `Bajo stock: Quedan ${availableStock} disponibles`;
   }
 
   return {
