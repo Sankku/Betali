@@ -9,13 +9,13 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
-   * Find movements by product ID
-   * @param {string} productId - Product ID
+   * Find movements by lot ID
+   * @param {string} lotId - Product Lot ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
    */
-  async findByProductId(productId, options = {}) {
-    return this.findAll({ product_id: productId }, options);
+  async findByLotId(lotId, options = {}) {
+    return this.findAll({ lot_id: lotId }, options);
   }
 
   /**
@@ -40,7 +40,7 @@ class StockMovementRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          product_id(product_id, name),
+          lot_id(lot_id, lot_number),
           warehouse_id(warehouse_id, name, location)
         `); 
 
@@ -107,14 +107,14 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
-   * Find movements by product ID and organization
-   * @param {string} productId - Product ID
+   * Find movements by lot ID and organization
+   * @param {string} lotId - Product Lot ID
    * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
    * @returns {Promise<Array>}
    */
-  async findByProductIdAndOrganization(productId, organizationId, options = {}) {
-    return this.findAll({ product_id: productId, organization_id: organizationId }, options);
+  async findByLotIdAndOrganization(lotId, organizationId, options = {}) {
+    return this.findAll({ lot_id: lotId, organization_id: organizationId }, options);
   }
 
   /**
@@ -164,18 +164,18 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
-   * Get current stock for a product in a specific warehouse
-   * @param {string} productId - Product ID
+   * Get current stock for a lot in a specific warehouse
+   * @param {string} lotId - Product Lot ID
    * @param {string} warehouseId - Warehouse ID (optional, if null gets stock across all warehouses)
    * @param {string} organizationId - Organization ID
    * @returns {Promise<number>} Available stock quantity
    */
-  async getCurrentStock(productId, warehouseId, organizationId) {
+  async getCurrentStock(lotId, warehouseId, organizationId) {
     try {
       let query = this.client
         .from(this.table)
         .select('movement_type, quantity')
-        .eq('product_id', productId)
+        .eq('lot_id', lotId)
         .eq('organization_id', organizationId);
       
       if (warehouseId) {
@@ -202,20 +202,20 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
-   * Get current stock for multiple products in a specific warehouse
-   * @param {Array<string>} productIds - Array of product IDs
+   * Get current stock for multiple lots in a specific warehouse
+   * @param {Array<string>} lotIds - Array of product lot IDs
    * @param {string} warehouseId - Warehouse ID (optional)
    * @param {string} organizationId - Organization ID
-   * @returns {Promise<Object>} Object with productId as keys and stock quantities as values
+   * @returns {Promise<Object>} Object with lotId as keys and stock quantities as values
    */
-  async getCurrentStockBulk(productIds, warehouseId, organizationId) {
+  async getCurrentStockBulk(lotIds, warehouseId, organizationId) {
     try {
       let query = this.client
         .from(this.table)
-        .select('product_id, movement_type, quantity')
-        .in('product_id', productIds)
+        .select('lot_id, movement_type, quantity')
+        .in('lot_id', lotIds)
         .eq('organization_id', organizationId);
-      
+
       if (warehouseId) {
         query = query.eq('warehouse_id', warehouseId);
       }
@@ -223,54 +223,54 @@ class StockMovementRepository extends BaseRepository {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Group movements by (product_id, warehouse_id) first, then sum per-warehouse
+      // Group movements by (lot_id, warehouse_id) first, then sum per-warehouse
       // stocks clamped to 0. This avoids negative stock in one warehouse cancelling
       // positive stock in another when warehouseId is null (all warehouses).
-      const stockByProductWarehouse = {};
+      const stockByLotWarehouse = {};
 
-      productIds.forEach(productId => {
-        stockByProductWarehouse[productId] = {};
+      lotIds.forEach(lotId => {
+        stockByLotWarehouse[lotId] = {};
       });
 
       data.forEach(movement => {
-        const pid = movement.product_id;
+        const lid = movement.lot_id;
         const wid = movement.warehouse_id || '__none__';
-        if (!stockByProductWarehouse[pid]) stockByProductWarehouse[pid] = {};
-        if (!stockByProductWarehouse[pid][wid]) stockByProductWarehouse[pid][wid] = 0;
+        if (!stockByLotWarehouse[lid]) stockByLotWarehouse[lid] = {};
+        if (!stockByLotWarehouse[lid][wid]) stockByLotWarehouse[lid][wid] = 0;
 
         if (movement.movement_type === 'entry') {
-          stockByProductWarehouse[pid][wid] += parseFloat(movement.quantity);
+          stockByLotWarehouse[lid][wid] += parseFloat(movement.quantity);
         } else if (['exit', 'production'].includes(movement.movement_type)) {
-          stockByProductWarehouse[pid][wid] -= parseFloat(movement.quantity);
+          stockByLotWarehouse[lid][wid] -= parseFloat(movement.quantity);
         }
       });
 
       // Sum per-warehouse stocks, each clamped to 0 individually
-      const stockByProduct = {};
-      productIds.forEach(productId => {
-        const warehouseMap = stockByProductWarehouse[productId] || {};
-        stockByProduct[productId] = Object.values(warehouseMap)
+      const stockByLot = {};
+      lotIds.forEach(lotId => {
+        const warehouseMap = stockByLotWarehouse[lotId] || {};
+        stockByLot[lotId] = Object.values(warehouseMap)
           .reduce((total, warehouseStock) => total + Math.max(0, warehouseStock), 0);
       });
 
-      return stockByProduct;
+      return stockByLot;
     } catch (error) {
       throw new Error(`Error getting bulk stock: ${error.message}`);
     }
   }
 
   /**
-   * Get physical stock grouped by warehouse for a single product
-   * @param {string} productId - Product ID
+   * Get physical stock grouped by warehouse for a single lot
+   * @param {string} lotId - Product Lot ID
    * @param {string} organizationId - Organization ID
    * @returns {Promise<Object>} { [warehouseId]: number } — raw totals, may be negative
    */
-  async getStockGroupedByWarehouse(productId, organizationId) {
+  async getStockGroupedByWarehouse(lotId, organizationId) {
     try {
       const { data, error } = await this.client
         .from(this.table)
         .select('warehouse_id, movement_type, quantity')
-        .eq('product_id', productId)
+        .eq('lot_id', lotId)
         .eq('organization_id', organizationId);
 
       if (error) throw error;
