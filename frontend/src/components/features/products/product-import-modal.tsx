@@ -25,6 +25,23 @@ export interface ProductImportModalProps {
   onClose: () => void;
 }
 
+const fieldNamesToSpanish: Record<string, string> = {
+  name: 'nombre',
+  batch_number: 'lote',
+  origin_country: 'país de origen',
+  expiration_date: 'vencimiento',
+  price: 'precio',
+  description: 'descripción',
+  unit: 'unidad de medida',
+  product_type: 'tipo',
+  initial_stock: 'stock inicial',
+  warehouse_name: 'depósito'
+};
+
+function translateField(field: string): string {
+  return fieldNamesToSpanish[field] || field;
+}
+
 function validateRow(
   row: Record<string, string>,
   rowNum: number,
@@ -35,14 +52,14 @@ function validateRow(
 
   for (const field of REQUIRED_HEADERS) {
     if (!row[field] || String(row[field]).trim() === '') {
-      errors.push(`${field} es requerido`);
+      errors.push(`El ${translateField(field)} es requerido`);
     }
   }
 
   if (row.expiration_date) {
     const d = new Date(row.expiration_date);
     if (isNaN(d.getTime())) {
-      errors.push('expiration_date debe ser YYYY-MM-DD');
+      errors.push(`El ${translateField('expiration_date')} debe ser YYYY-MM-DD`);
     } else if (d < new Date()) {
       warnings.push('Fecha de vencimiento en el pasado');
     }
@@ -51,25 +68,25 @@ function validateRow(
   if (row.price) {
     const p = parseFloat(row.price);
     if (isNaN(p) || p <= 0) {
-      errors.push('price debe ser un número positivo');
+      errors.push(`El ${translateField('price')} debe ser un número positivo`);
     } else if (p > 999999.99) {
-      errors.push('price no puede superar 999999.99');
+      errors.push(`El ${translateField('price')} no puede superar 999999.99`);
     }
   }
 
   if (row.initial_stock) {
     const s = parseInt(row.initial_stock, 10);
     if (isNaN(s) || s < 0) {
-      errors.push('initial_stock debe ser un entero ≥ 0');
+      errors.push(`El ${translateField('initial_stock')} debe ser un entero ≥ 0`);
     }
   }
 
   if (row.unit && !VALID_UNITS.includes(row.unit)) {
-    errors.push(`unit debe ser uno de: ${VALID_UNITS.join(', ')}`);
+    errors.push(`La ${translateField('unit')} debe ser: ${VALID_UNITS.join(', ')}`);
   }
 
   if (row.product_type && !VALID_PRODUCT_TYPES.includes(row.product_type)) {
-    errors.push(`product_type debe ser uno de: ${VALID_PRODUCT_TYPES.join(', ')}`);
+    errors.push(`El ${translateField('product_type')} debe ser: Estándar, Materia prima o Producto terminado`);
   }
 
   const initialStock = row.initial_stock ? parseInt(row.initial_stock, 10) : 0;
@@ -190,6 +207,16 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
   const validRows = parsedRows.filter((r) => r.errors.length === 0);
   const invalidRows = parsedRows.filter((r) => r.errors.length > 0);
 
+  const handleCellChange = useCallback((rowIndex: number, field: string, value: string) => {
+    setParsedRows(prev => {
+      const newRows = [...prev];
+      const row = newRows[rowIndex];
+      const newData = { ...row.data, [field]: value } as unknown as Record<string, string>;
+      newRows[rowIndex] = validateRow(newData, row.rowNum, warehouseNames);
+      return newRows;
+    });
+  }, [warehouseNames]);
+
   const handleImport = async () => {
     if (validRows.length === 0) return;
     try {
@@ -213,19 +240,19 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
       <ModalBody>
         {/* Step 1: Upload */}
         {step === 'upload' && (
-          <div className="space-y-4">
+          <div className="space-y-5 py-2">
             <div
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+              className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-500/70 hover:bg-primary-50 dark:hover:bg-primary-500/5 transition-all group"
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="mx-auto h-10 w-10 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600">
+              <Upload className="mx-auto h-10 w-10 text-neutral-400 dark:text-neutral-500 mb-3 transition-transform group-hover:-translate-y-1 group-hover:text-primary-500" />
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Arrastrá tu archivo CSV aquí o{' '}
-                <span className="text-blue-600 underline">seleccioná uno</span>
+                <span className="text-primary-600 dark:text-primary-400 underline underline-offset-2 font-medium">seleccioná uno</span>
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full inline-block">
                 Solo .csv · Máx {MAX_FILE_SIZE_MB} MB · Máx {MAX_ROWS} filas
               </p>
               <input
@@ -238,8 +265,8 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
             </div>
 
             {parseError && (
-              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded">
-                <XCircle className="h-4 w-4 flex-shrink-0" />
+              <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 p-3.5 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
+                <XCircle className="h-5 w-5 flex-shrink-0" />
                 {parseError}
               </div>
             )}
@@ -248,9 +275,9 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
               variant="outline"
               size="sm"
               onClick={downloadTemplate}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 text-neutral-500" />
               Descargar plantilla CSV
             </Button>
           </div>
@@ -258,51 +285,147 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
 
         {/* Step 2: Preview */}
         {step === 'preview' && (
-          <div className="space-y-3">
+          <div className="space-y-4 pt-2">
             <div className="flex gap-3 text-sm flex-wrap">
-              <span className="flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded">
+              <span className="flex items-center gap-1.5 text-success-700 dark:text-success-400 bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/20 px-3 py-1.5 rounded-lg font-medium">
                 <CheckCircle className="h-4 w-4" /> {validRows.length} válidas
               </span>
               {invalidRows.length > 0 && (
-                <span className="flex items-center gap-1 text-red-700 bg-red-50 px-2 py-1 rounded">
+                <span className="flex items-center gap-1.5 text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 px-3 py-1.5 rounded-lg font-medium">
                   <XCircle className="h-4 w-4" /> {invalidRows.length} con errores
                 </span>
               )}
             </div>
 
-            <div className="max-h-72 overflow-y-auto border rounded">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 sticky top-0">
+            <div className="max-h-72 overflow-y-auto border border-neutral-200 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 shadow-sm">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-neutral-50 dark:bg-neutral-800/80 sticky top-0 z-10 border-b border-neutral-200 dark:border-neutral-800 backdrop-blur-md">
                   <tr>
-                    <th className="px-2 py-1 text-left text-gray-500">#</th>
-                    <th className="px-2 py-1 text-left text-gray-500">Lote</th>
-                    <th className="px-2 py-1 text-left text-gray-500">Nombre</th>
-                    <th className="px-2 py-1 text-left text-gray-500">Estado</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">#</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Lote</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Nombre</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Precio</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Stock In.</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Unidad</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Tipo</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Vencimiento</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Depósito</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400">Estado</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {parsedRows.map((row) => (
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
+                  {parsedRows.map((row, index) => (
                     <tr
                       key={row.rowNum}
-                      className={row.errors.length > 0 ? 'bg-red-50' : ''}
+                      className={`${row.errors.length > 0 ? 'bg-danger-50 dark:bg-danger-500/5 hover:bg-danger-100 dark:hover:bg-danger-500/10' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30'} transition-colors`}
                     >
-                      <td className="px-2 py-1 text-gray-400">{row.rowNum}</td>
-                      <td className="px-2 py-1">{row.data.batch_number || '—'}</td>
-                      <td className="px-2 py-1">{row.data.name || '—'}</td>
-                      <td className="px-2 py-1">
+                      <td className="px-4 py-2.5 text-neutral-400 dark:text-neutral-500 align-top whitespace-nowrap pt-3">{row.rowNum}</td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={row.data.batch_number || ''}
+                          onChange={(e) => handleCellChange(index, 'batch_number', e.target.value)}
+                          placeholder="—"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('batch_number')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all font-medium text-neutral-700 dark:text-neutral-300`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <input
+                          type="text"
+                          value={row.data.name || ''}
+                          onChange={(e) => handleCellChange(index, 'name', e.target.value)}
+                          placeholder="—"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('name')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-full min-w-[150px] transition-all font-medium text-neutral-800 dark:text-neutral-200`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2 text-neutral-400 pointer-events-none">$</span>
+                          <input
+                            type="text"
+                            value={row.data.price || ''}
+                            onChange={(e) => handleCellChange(index, 'price', e.target.value)}
+                            placeholder="—"
+                            className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('price')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md pl-6 pr-2 py-1 outline-none w-[90px] transition-all text-neutral-600 dark:text-neutral-400`}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={row.data.initial_stock || ''}
+                          onChange={(e) => handleCellChange(index, 'initial_stock', e.target.value)}
+                          placeholder="0"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('stock inicial')) ? 'border-danger-300 dark:border-danger-500/50 text-danger-700 dark:text-danger-400' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[70px] transition-all text-right text-neutral-600 dark:text-neutral-400`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <select
+                          value={row.data.unit || 'unidad'}
+                          onChange={(e) => handleCellChange(index, 'unit', e.target.value)}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('unidad de medida')) ? 'border-danger-400 dark:border-danger-500/50 text-danger-700 dark:text-danger-400' : 'border-transparent text-neutral-600 dark:text-neutral-400'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-1 py-1 outline-none min-w-[80px] w-full transition-all text-xs cursor-pointer capitalize font-mono`}
+                        >
+                          {row.data.unit && !VALID_UNITS.includes(row.data.unit) && (
+                            <option value={row.data.unit}>{row.data.unit} (Inválido)</option>
+                          )}
+                          {VALID_UNITS.map(u => (
+                            <option key={u} value={u} className="text-neutral-900 dark:text-neutral-100">{u}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <select
+                          value={row.data.product_type || ''}
+                          onChange={(e) => handleCellChange(index, 'product_type', e.target.value)}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('product_type')) ? 'border-danger-400 dark:border-danger-500/50 text-danger-700 dark:text-danger-400' : 'border-transparent text-neutral-600 dark:text-neutral-400'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-1 py-1 outline-none min-w-[120px] w-full transition-all text-xs cursor-pointer capitalize`}
+                        >
+                          <option value="">(Estándar)</option>
+                          {row.data.product_type && !['standard', 'raw_material', 'finished_good'].includes(row.data.product_type) && (
+                            <option value={row.data.product_type}>{row.data.product_type} (Inválido)</option>
+                          )}
+                          <option value="standard" className="text-neutral-900 dark:text-neutral-100">Estándar</option>
+                          <option value="raw_material" className="text-neutral-900 dark:text-neutral-100">Materia Prima</option>
+                          <option value="finished_good" className="text-neutral-900 dark:text-neutral-100">Producto Terminado</option>
+                        </select>
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <input
+                          type="date"
+                          value={row.data.expiration_date || ''}
+                          onChange={(e) => handleCellChange(index, 'expiration_date', e.target.value)}
+                          placeholder="—"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('expiration_date')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all text-neutral-500 dark:text-neutral-500 text-xs`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <select
+                          value={row.data.warehouse_name || ''}
+                          onChange={(e) => handleCellChange(index, 'warehouse_name', e.target.value)}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.warnings.some(w => w.includes('Depósito') || w.includes('depósito')) ? 'border-warning-400 dark:border-warning-500/50 text-warning-700 dark:text-warning-400' : 'border-transparent text-neutral-600 dark:text-neutral-400'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-1 py-1 outline-none min-w-[140px] w-full transition-all text-xs cursor-pointer truncate`}
+                        >
+                          <option value="">(Org default)</option>
+                          {row.data.warehouse_name && !warehouseNames.includes(row.data.warehouse_name.toLowerCase().trim()) && (
+                            <option value={row.data.warehouse_name}>{row.data.warehouse_name} (Inválido)</option>
+                          )}
+                          {warehousesData?.data?.map((w: any) => (
+                            <option key={w.id} value={w.name} className="text-neutral-900 dark:text-neutral-100">{w.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-2.5 align-top min-w-[200px] pt-3">
                         {row.errors.length > 0 ? (
-                          <span className="text-red-600 flex items-start gap-1">
-                            <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-danger-600 dark:text-danger-400 flex items-start gap-1.5 font-medium">
+                            <XCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                             {row.errors.join(' · ')}
                           </span>
                         ) : row.warnings.length > 0 ? (
-                          <span className="text-amber-600 flex items-start gap-1">
-                            <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-warning-600 dark:text-warning-500 flex items-start gap-1.5 font-medium">
+                            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                             {row.warnings.join(' · ')}
                           </span>
                         ) : (
-                          <span className="text-green-600 flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" /> OK
+                          <span className="text-success-600 dark:text-success-500 flex items-center gap-1.5 font-medium">
+                            <CheckCircle className="h-3.5 w-3.5" /> OK
                           </span>
                         )}
                       </td>
@@ -316,47 +439,49 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
 
         {/* Step 3: Result */}
         {step === 'result' && importResult && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-green-50 p-3 rounded text-center">
-                <div className="text-2xl font-bold text-green-700">{importResult.created}</div>
-                <div className="text-green-600">Creados</div>
+          <div className="space-y-5 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/20 p-4 rounded-xl text-center">
+                <div className="text-3xl font-black text-success-700 dark:text-success-400 mb-1">{importResult.created}</div>
+                <div className="text-success-600 dark:text-success-500/80 font-medium">Creados</div>
               </div>
-              <div className="bg-blue-50 p-3 rounded text-center">
-                <div className="text-2xl font-bold text-blue-700">{importResult.updated}</div>
-                <div className="text-blue-600">Actualizados</div>
+              <div className="bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/20 p-4 rounded-xl text-center">
+                <div className="text-3xl font-black text-primary-700 dark:text-primary-400 mb-1">{importResult.updated}</div>
+                <div className="text-primary-600 dark:text-primary-500/80 font-medium">Actualizados</div>
               </div>
               {importResult.failed.length > 0 && (
-                <div className="bg-red-50 p-3 rounded text-center">
-                  <div className="text-2xl font-bold text-red-700">{importResult.failed.length}</div>
-                  <div className="text-red-600">Fallidos</div>
+                <div className="bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 p-4 rounded-xl text-center">
+                  <div className="text-3xl font-black text-danger-700 dark:text-danger-400 mb-1">{importResult.failed.length}</div>
+                  <div className="text-danger-600 dark:text-danger-500/80 font-medium">Fallidos</div>
                 </div>
               )}
               {importResult.stock_skipped.length > 0 && (
-                <div className="bg-amber-50 p-3 rounded text-center">
-                  <div className="text-2xl font-bold text-amber-700">
+                <div className="bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/20 p-4 rounded-xl text-center">
+                  <div className="text-3xl font-black text-warning-700 dark:text-warning-500 mb-1">
                     {importResult.stock_skipped.length}
                   </div>
-                  <div className="text-amber-600">Stock omitido</div>
+                  <div className="text-warning-600 dark:text-warning-500/80 font-medium">Stock omitido</div>
                 </div>
               )}
             </div>
 
             {importResult.failed.length > 0 && (
-              <div className="text-xs text-red-600 bg-red-50 p-2 rounded max-h-32 overflow-y-auto">
+              <div className="text-xs text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 p-3 rounded-lg max-h-32 overflow-y-auto space-y-1.5">
                 {importResult.failed.map((f) => (
-                  <div key={f.row}>
-                    Fila {f.row} ({f.batch_number}): {f.errors.join(', ')}
+                  <div key={f.row} className="flex gap-2">
+                    <span className="font-bold flex-shrink-0">Fila {f.row}:</span>
+                    <span>{f.errors.join(', ')}</span>
                   </div>
                 ))}
               </div>
             )}
 
             {importResult.stock_skipped.length > 0 && (
-              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded max-h-24 overflow-y-auto">
+              <div className="text-xs text-warning-700 dark:text-warning-400 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/20 p-3 rounded-lg max-h-24 overflow-y-auto space-y-1.5">
                 {importResult.stock_skipped.map((s) => (
-                  <div key={s.row}>
-                    Fila {s.row} ({s.batch_number}): {s.reason}
+                  <div key={s.row} className="flex gap-2">
+                    <span className="font-bold flex-shrink-0">Fila {s.row}:</span>
+                    <span>{s.reason}</span>
                   </div>
                 ))}
               </div>
@@ -366,29 +491,31 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
       </ModalBody>
 
       <ModalFooter>
-        {step === 'upload' && (
-          <Button variant="outline" onClick={handleClose}>
-            Cancelar
-          </Button>
-        )}
-        {step === 'preview' && (
-          <>
-            <Button variant="outline" onClick={() => setStep('upload')}>
-              Volver
+        <div className="flex gap-3 justify-end w-full">
+          {step === 'upload' && (
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
             </Button>
-            <Button
-              onClick={handleImport}
-              disabled={validRows.length === 0 || importMutation.isPending}
-            >
-              {importMutation.isPending
-                ? 'Importando...'
-                : `Importar filas válidas (${validRows.length})`}
-            </Button>
-          </>
-        )}
-        {step === 'result' && (
-          <Button onClick={handleClose}>Cerrar</Button>
-        )}
+          )}
+          {step === 'preview' && (
+            <>
+              <Button variant="outline" onClick={() => setStep('upload')}>
+                Volver
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={validRows.length === 0 || importMutation.isPending}
+              >
+                {importMutation.isPending
+                  ? 'Importando...'
+                  : `Importar filas válidas (${validRows.length})`}
+              </Button>
+            </>
+          )}
+          {step === 'result' && (
+            <Button onClick={handleClose}>Cerrar</Button>
+          )}
+        </div>
       </ModalFooter>
     </Modal>
   );

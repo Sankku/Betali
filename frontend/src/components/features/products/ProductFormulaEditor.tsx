@@ -9,14 +9,33 @@ import {
   useDeleteFormulaItem,
 } from '../../../hooks/useProductFormula';
 
-interface ProductFormulaEditorProps {
-  finishedProductId: string;
+export interface LocalFormulaItem {
+  raw_material_id: string;
+  quantity_required: number;
 }
 
-export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditorProps) {
+interface ProductFormulaEditorProps {
+  finishedProductId?: string;
+  mode?: 'create' | 'edit' | 'view';
+  localItems?: LocalFormulaItem[];
+  setLocalItems?: React.Dispatch<React.SetStateAction<LocalFormulaItem[]>>;
+}
+
+export function ProductFormulaEditor({
+  finishedProductId = '',
+  mode = 'edit',
+  localItems = [],
+  setLocalItems
+}: ProductFormulaEditorProps) {
   const [newItem, setNewItem] = useState({ raw_material_id: '', quantity_required: '' });
 
-  const { data: formula = [], isLoading, error: formulaError } = useProductFormula(finishedProductId);
+  const isCreate = mode === 'create';
+
+  // We only run query if it's edit/view mode and we have an ID
+  const { data: serverFormula = [], isLoading, error: formulaError } = useProductFormula(
+    isCreate ? 'skip' : finishedProductId
+  );
+  
   const { data: productsResult } = useProducts();
   const allProducts = productsResult?.data || [];
   const rawMaterials = allProducts.filter((p: any) => p.product_type === 'raw_material');
@@ -25,17 +44,61 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
   const updateItem = useUpdateFormulaItem(finishedProductId);
   const deleteItem = useDeleteFormulaItem(finishedProductId);
 
+  // Use local items in create mode
+  const formula = isCreate ? localItems.map(item => {
+    const rm = rawMaterials.find((p: any) => p.product_id === item.raw_material_id);
+    return {
+      formula_id: `local-${item.raw_material_id}`,
+      raw_material_id: item.raw_material_id,
+      quantity_required: item.quantity_required,
+      raw_material: rm
+    };
+  }) : serverFormula;
+
   const handleAdd = async () => {
     if (!newItem.raw_material_id || !newItem.quantity_required) return;
-    await addItem.mutateAsync({
-      finished_product_id: finishedProductId,
-      raw_material_id: newItem.raw_material_id,
-      quantity_required: Number(newItem.quantity_required),
-    });
-    setNewItem({ raw_material_id: '', quantity_required: '' });
+    
+    if (isCreate && setLocalItems) {
+      // Local mode
+      setLocalItems(prev => {
+        // Update if exists, else append
+        const exists = prev.find(i => i.raw_material_id === newItem.raw_material_id);
+        if (exists) {
+          return prev.map(i => i.raw_material_id === newItem.raw_material_id ? { ...i, quantity_required: Number(newItem.quantity_required) } : i);
+        }
+        return [...prev, { raw_material_id: newItem.raw_material_id, quantity_required: Number(newItem.quantity_required) }];
+      });
+      setNewItem({ raw_material_id: '', quantity_required: '' });
+    } else {
+      // Server mode
+      await addItem.mutateAsync({
+        finished_product_id: finishedProductId,
+        raw_material_id: newItem.raw_material_id,
+        quantity_required: Number(newItem.quantity_required),
+      });
+      setNewItem({ raw_material_id: '', quantity_required: '' });
+    }
   };
 
-  if (isLoading) {
+  const handleUpdate = (id: string, newQty: number) => {
+    if (isCreate && setLocalItems) {
+      const rawMaterialId = id.replace('local-', '');
+      setLocalItems(prev => prev.map(i => i.raw_material_id === rawMaterialId ? { ...i, quantity_required: newQty } : i));
+    } else {
+      updateItem.mutate({ formulaId: id, quantity_required: newQty });
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (isCreate && setLocalItems) {
+      const rawMaterialId = id.replace('local-', '');
+      setLocalItems(prev => prev.filter(i => i.raw_material_id !== rawMaterialId));
+    } else {
+      deleteItem.mutate(id);
+    }
+  };
+
+  if (!isCreate && isLoading) {
     return (
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <Loader2 className="w-4 h-4 animate-spin" />
@@ -44,7 +107,7 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
     );
   }
 
-  if (formulaError) {
+  if (!isCreate && formulaError) {
     return (
       <div className="text-sm text-red-500">
         Error cargando fórmula: {(formulaError as Error).message}
@@ -61,7 +124,7 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
       )}
 
       <ul className="space-y-2">
-        {formula.map((item) => (
+        {formula.map((item: any) => (
           <li key={item.formula_id} className="flex items-center gap-2">
             <span className="flex-1 text-sm">
               {item.raw_material?.name || item.raw_material_id}
@@ -76,7 +139,7 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
                 onBlur={(e) => {
                   const val = Number(e.target.value);
                   if (val > 0 && val !== item.quantity_required) {
-                    updateItem.mutate({ formulaId: item.formula_id, quantity_required: val });
+                     handleUpdate(item.formula_id, val);
                   }
                 }}
               />
@@ -90,8 +153,8 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => deleteItem.mutate(item.formula_id)}
-              disabled={deleteItem.isPending}
+              onClick={() => handleDelete(item.formula_id)}
+              disabled={!isCreate && deleteItem.isPending}
             >
               <Trash className="w-4 h-4 text-red-500" />
             </Button>
@@ -103,7 +166,7 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
         <select
           value={newItem.raw_material_id}
           onChange={(e) => setNewItem(p => ({ ...p, raw_material_id: e.target.value }))}
-          className="flex-1 border rounded px-2 py-1 text-sm"
+          className="flex-1 border rounded px-2 py-1 text-sm bg-white"
         >
           <option value="">Seleccionar materia prima...</option>
           {rawMaterials.map((p: any) => (
@@ -123,7 +186,7 @@ export function ProductFormulaEditor({ finishedProductId }: ProductFormulaEditor
           type="button"
           size="sm"
           onClick={handleAdd}
-          disabled={!newItem.raw_material_id || !newItem.quantity_required || addItem.isPending}
+          disabled={!newItem.raw_material_id || !newItem.quantity_required || (!isCreate && addItem.isPending)}
         >
           <Plus className="w-4 h-4" />
         </Button>

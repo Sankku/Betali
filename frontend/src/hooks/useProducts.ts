@@ -130,6 +130,19 @@ export function useProductImport() {
   });
 }
 
+/**
+ * Fetch per-warehouse stock breakdown for a single product.
+ * Only fires when productId is set.
+ */
+export function useProductStockByWarehouse(productId: string | undefined) {
+  return useQuery({
+    queryKey: ['product-stock-by-warehouse', productId],
+    queryFn: () => productsService.getStockByWarehouse(productId!),
+    enabled: !!productId,
+    staleTime: 30 * 1000, // 30s — stock changes on movement creation
+  });
+}
+
 export function useProductManagement() {
   const queryClient = useQueryClient();
   

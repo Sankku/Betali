@@ -262,7 +262,7 @@ export default function StockMovementsPage() {
             onRowDoubleClick={(movement) => openModal('edit', movement)}
             searchable={true}
             enablePagination={true}
-            pageSize={10}
+            pageSize={25}
             emptyMessage={
               !currentOrganization
                 ? t('stockMovements.page.noOrgMessage')

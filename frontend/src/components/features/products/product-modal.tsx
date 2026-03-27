@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Package } from 'lucide-react';
+import { Package, BarChart2 } from 'lucide-react';
 import { ModalForm } from '../../templates/modal-form';
 import { ProductForm, ProductFormData } from './product-form';
-import { ProductFormulaEditor } from './ProductFormulaEditor';
+import { ProductFormulaEditor, LocalFormulaItem } from './ProductFormulaEditor';
+import { ProductStockBreakdown } from './ProductStockBreakdown';
+import { useAddFormulaItem } from '../../../hooks/useProductFormula';
 import { productFormSchema } from '../../../validations/productValidation';
 import { useTranslation } from '../../../contexts/LanguageContext';
 
@@ -30,7 +32,7 @@ export interface ProductModalProps {
   onClose: () => void;
   mode: 'create' | 'edit' | 'view';
   product?: Product;
-  onSubmit: (data: ProductFormData) => Promise<void>;
+  onSubmit: (data: ProductFormData) => Promise<void | Product | undefined>;
   isLoading?: boolean;
 }
 
@@ -43,6 +45,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   isLoading = false,
 }) => {
   const { t } = useTranslation();
+  const [localFormulaItems, setLocalFormulaItems] = React.useState<LocalFormulaItem[]>([]);
+  const addItem = useAddFormulaItem();
   const form = useForm<ProductFormData>({
     resolver: yupResolver(productFormSchema),
     defaultValues: {
@@ -92,9 +96,23 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   const handleSubmit = async (data: ProductFormData) => {
     try {
-      await onSubmit(data);
-      if (mode === 'create') {
+      const result = await onSubmit(data);
+
+      if (mode === 'create' && data.product_type === 'finished_good' && result && (result as Product).product_id) {
+        if (localFormulaItems.length > 0) {
+          await Promise.all(localFormulaItems.map(item =>
+            addItem.mutateAsync({
+              finished_product_id: (result as Product).product_id,
+              raw_material_id: item.raw_material_id,
+              quantity_required: item.quantity_required,
+            })
+          ));
+        }
+      }
+
+      if (mode === 'create' && data.product_type !== 'finished_good') {
         form.reset();
+        setLocalFormulaItems([]);
       }
     } catch (error: unknown) {
       const err = error as { status?: number; message?: string };
@@ -110,6 +128,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (mode === 'create') {
+        setLocalFormulaItems([]);
         form.reset({
           name: '',
           batch_number: '',
@@ -156,9 +175,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       size="lg"
     >
       <ProductForm form={form} mode={mode} isLoading={isLoading} />
-      {mode === 'edit' && productType === 'finished_good' && product?.product_id && (
+      {productType === 'finished_good' && (
         <div className="mt-4 border-t pt-4">
-          <ProductFormulaEditor finishedProductId={product.product_id} />
+          <ProductFormulaEditor
+            finishedProductId={product?.product_id}
+            mode={mode}
+            localItems={localFormulaItems}
+            setLocalItems={setLocalFormulaItems}
+          />
+        </div>
+      )}
+      {/* Stock by warehouse — only in view/edit mode when product exists */}
+      {mode !== 'create' && product?.product_id && (
+        <div className="mt-4 border-t pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart2 className="h-4 w-4 text-neutral-600" />
+            <h4 className="text-sm font-semibold text-neutral-800">Stock por depósito</h4>
+          </div>
+          <ProductStockBreakdown productId={product.product_id} unit={form.getValues('unit')} />
         </div>
       )}
     </ModalForm>

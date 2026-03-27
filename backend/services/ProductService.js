@@ -413,6 +413,73 @@ class ProductService {
     }
 
     /**
+     * Get stock breakdown by warehouse for a product
+     * Returns an array sorted by physical_stock desc, only warehouses with movements
+     * @param {string} productId - Product ID
+     * @param {string} organizationId - Organization ID
+     * @returns {Promise<Array>} [{ warehouse_id, warehouse_name, warehouse_location, physical_stock, reserved_stock, available_stock }]
+     */
+    async getStockByWarehouse(productId, organizationId) {
+      try {
+        this.logger.info(`Getting stock by warehouse for product ${productId}`);
+
+        // Validate product exists
+        const product = await this.repository.findById(productId, organizationId);
+        if (!product) throw new Error('Product not found');
+
+        // Get physical stock grouped by warehouse (single query)
+        const stockByWarehouseId = await this.stockMovementRepository.getStockGroupedByWarehouse(
+          productId,
+          organizationId
+        );
+
+        if (Object.keys(stockByWarehouseId).length === 0) {
+          return [];
+        }
+
+        // Resolve warehouse names in one query
+        const warehouses = await this.warehouseRepository.findByOrganizationId(organizationId);
+        const warehouseMap = {};
+        warehouses.forEach(w => { warehouseMap[w.warehouse_id] = w; });
+
+        // Build result rows
+        const rows = await Promise.all(
+          Object.entries(stockByWarehouseId).map(async ([warehouseId, physicalStock]) => {
+            const warehouse = warehouseMap[warehouseId];
+            const physical = Math.max(0, physicalStock);
+
+            // Get reserved stock (0 if repo not injected)
+            let reserved = 0;
+            if (this.stockReservationRepository) {
+              try {
+                const available = await this.stockReservationRepository.getAvailableStock(
+                  productId, warehouseId, organizationId
+                );
+                reserved = Math.max(0, physical - available);
+              } catch (_) {
+                reserved = 0;
+              }
+            }
+
+            return {
+              warehouse_id: warehouseId,
+              warehouse_name: warehouse?.name || 'Depósito desconocido',
+              warehouse_location: warehouse?.location || null,
+              physical_stock: physical,
+              reserved_stock: reserved,
+              available_stock: Math.max(0, physical - reserved),
+            };
+          })
+        );
+
+        return rows.sort((a, b) => b.physical_stock - a.physical_stock);
+      } catch (error) {
+        this.logger.error(`Error getting stock by warehouse: ${error.message}`);
+        throw error;
+      }
+    }
+
+    /**
      * Get available stock for a product (physical stock - reserved stock)
      * @param {string} productId - Product ID
      * @param {string} warehouseId - Warehouse ID

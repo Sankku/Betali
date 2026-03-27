@@ -1,0 +1,21 @@
+name,batch_number,origin_country,expiration_date,price,description,unit,product_type,initial_stock,warehouse_name
+Harina 000,LOT-2024-001,Argentina,2027-06-30,1500.00,Harina de trigo 000,kg,raw_material,200,Depósito Principal
+Aceite de Girasol,LOT-2024-002,Argentina,2026-12-31,2200.50,Aceite vegetal refinado,l,standard,150,Depósito Principal
+Azúcar Blanca,LOT-2024-003,Brasil,2028-03-15,950.00,Azúcar refinada de caña,kg,raw_material,300,
+Sal Fina,LOT-2024-004,Argentina,2030-01-01,320.00,Sal de mesa yodada,kg,standard,500,Depósito Principal
+Levadura Seca,LOT-2024-005,Francia,2025-11-30,4500.00,Levadura instantánea para panadería,g,raw_material,80,Depósito Principal
+Manteca,LOT-2024-006,Uruguay,2026-08-20,3100.00,Manteca sin sal,kg,standard,120,
+Leche en Polvo,LOT-2024-007,Argentina,2027-09-10,5800.00,Leche entera en polvo,kg,raw_material,90,Depósito Principal
+Cacao en Polvo,LOT-2024-008,Ecuador,2028-05-01,8900.00,Cacao puro sin azúcar,kg,raw_material,60,Depósito Principal
+Vainilla Extracto,LOT-2024-009,Madagascar,2026-04-15,12000.00,Extracto puro de vainilla,ml,raw_material,40,
+Bicarbonato,LOT-2024-010,Argentina,2029-12-31,780.00,Bicarbonato de sodio alimenticio,g,raw_material,200,Depósito Principal
+Pan Lactal Blanco,LOT-2024-011,Argentina,2025-07-15,850.00,Pan de molde blanco 500g,unidad,finished_good,300,Depósito Principal
+Medialunas x12,LOT-2024-012,Argentina,2025-07-10,1200.00,Medialunas de manteca,docena,finished_good,150,Depósito Principal
+Tarta de Manzana,LOT-2024-013,Argentina,2025-07-08,4500.00,Tarta familiar 8 porciones,unidad,finished_good,30,Depósito Principal
+Empanadas Carne x6,LOT-2024-014,Argentina,2025-07-12,2800.00,Empanadas de carne cortada a cuchillo,unidad,finished_good,80,
+Alfajores x3,LOT-2024-015,Argentina,2025-12-31,1800.00,Alfajores de maicena con dulce de leche,unidad,finished_good,200,Depósito Principal
+,LOT-2024-016,Chile,2027-08-20,2500.00,Queso fresco sin nombre,kg,standard,50,Depósito Principal
+Dulce de Leche,LOT-2024-017,Argentina,31/12/2027,6200.00,Dulce de leche repostero,kg,standard,100,Depósito Principal
+Mermelada Frutilla,LOT-2024-018,Argentina,2027-03-20,-350.00,Mermelada artesanal de frutilla,unidad,standard,75,
+Yogur Natural,,Argentina,2026-06-15,1400.00,Yogur entero sin azúcar,unidad,standard,120,Depósito Principal
+Queso Cremoso,LOT-2024-020,Argentina,2026-09-30,7800.00,Queso cremoso en horma,kg,tonelada,40,Depósito Principal

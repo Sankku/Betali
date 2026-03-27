@@ -1,10 +1,12 @@
 import React, { useRef } from 'react';
-import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar } from 'lucide-react';
+import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar, Info } from 'lucide-react';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { useStockMovementForm } from '../../../hooks/useStockMovementForm';
 import { StockMovementFormData } from '../../../services/api/stockMovementService';
 import { useProducts } from '../../../hooks/useProducts';
 import { useWarehouses } from '../../../hooks/useWarehouse';
+import { useQuery } from '@tanstack/react-query';
+import { productsService } from '../../../services/api/productsService';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
@@ -115,6 +117,15 @@ export function StockMovementForm({
   const { register, watch, setValue } = form;
   const watchedValues = watch();
   const isViewMode = mode === 'view';
+
+  // Fetch available stock for the selected product+warehouse combo (exit/production only)
+  const isExitType = ['exit', 'production'].includes(watchedValues.movement_type);
+  const { data: warehouseStockData } = useQuery({
+    queryKey: ['available-stock', watchedValues.product_id, watchedValues.warehouse_id],
+    queryFn: () => productsService.getAvailableStock(watchedValues.product_id!, watchedValues.warehouse_id!),
+    enabled: isExitType && !!watchedValues.product_id && !!watchedValues.warehouse_id,
+    staleTime: 30_000,
+  });
 
   // ── helpers ──────────────────────────────────────────────────────────────────
   const getProductLabel = (productId: string) => {
@@ -279,6 +290,25 @@ export function StockMovementForm({
                   ) : null;
                 })()}
               </div>
+              {/* Available stock hint — only for exit/production when both selects have a value */}
+              {isExitType && watchedValues.product_id && watchedValues.warehouse_id && (
+                <div className={`flex items-center gap-1.5 text-xs mt-1 ${
+                  warehouseStockData !== undefined
+                    ? warehouseStockData.available_stock === 0
+                      ? 'text-red-600'
+                      : warehouseStockData.available_stock < (watchedValues.quantity || 0)
+                        ? 'text-orange-600'
+                        : 'text-emerald-700'
+                    : 'text-neutral-400'
+                }`}>
+                  <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                  {warehouseStockData !== undefined
+                    ? `Disponible en este depósito: ${warehouseStockData.available_stock} ${
+                        validProducts.find(p => p.product_id === watchedValues.product_id)?.unit || 'unid.'
+                      }`
+                    : 'Consultando stock…'}
+                </div>
+              )}
             </FormField>
 
             <FormField

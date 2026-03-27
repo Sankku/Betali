@@ -223,35 +223,73 @@ class StockMovementRepository extends BaseRepository {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Group movements by product and calculate stock
-      const stockByProduct = {};
-      
-      // Initialize all products with 0 stock
+      // Group movements by (product_id, warehouse_id) first, then sum per-warehouse
+      // stocks clamped to 0. This avoids negative stock in one warehouse cancelling
+      // positive stock in another when warehouseId is null (all warehouses).
+      const stockByProductWarehouse = {};
+
       productIds.forEach(productId => {
-        stockByProduct[productId] = 0;
+        stockByProductWarehouse[productId] = {};
       });
 
-      // Calculate stock for each product
       data.forEach(movement => {
-        if (!stockByProduct[movement.product_id]) {
-          stockByProduct[movement.product_id] = 0;
-        }
-        
+        const pid = movement.product_id;
+        const wid = movement.warehouse_id || '__none__';
+        if (!stockByProductWarehouse[pid]) stockByProductWarehouse[pid] = {};
+        if (!stockByProductWarehouse[pid][wid]) stockByProductWarehouse[pid][wid] = 0;
+
         if (movement.movement_type === 'entry') {
-          stockByProduct[movement.product_id] += parseFloat(movement.quantity);
+          stockByProductWarehouse[pid][wid] += parseFloat(movement.quantity);
         } else if (['exit', 'production'].includes(movement.movement_type)) {
-          stockByProduct[movement.product_id] -= parseFloat(movement.quantity);
+          stockByProductWarehouse[pid][wid] -= parseFloat(movement.quantity);
         }
       });
 
-      // Ensure no negative stock
-      Object.keys(stockByProduct).forEach(productId => {
-        stockByProduct[productId] = Math.max(0, stockByProduct[productId]);
+      // Sum per-warehouse stocks, each clamped to 0 individually
+      const stockByProduct = {};
+      productIds.forEach(productId => {
+        const warehouseMap = stockByProductWarehouse[productId] || {};
+        stockByProduct[productId] = Object.values(warehouseMap)
+          .reduce((total, warehouseStock) => total + Math.max(0, warehouseStock), 0);
       });
 
       return stockByProduct;
     } catch (error) {
       throw new Error(`Error getting bulk stock: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get physical stock grouped by warehouse for a single product
+   * @param {string} productId - Product ID
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object>} { [warehouseId]: number } — raw totals, may be negative
+   */
+  async getStockGroupedByWarehouse(productId, organizationId) {
+    try {
+      const { data, error } = await this.client
+        .from(this.table)
+        .select('warehouse_id, movement_type, quantity')
+        .eq('product_id', productId)
+        .eq('organization_id', organizationId);
+
+      if (error) throw error;
+
+      const stockByWarehouse = {};
+      (data || []).forEach(movement => {
+        if (!stockByWarehouse[movement.warehouse_id]) {
+          stockByWarehouse[movement.warehouse_id] = 0;
+        }
+        if (movement.movement_type === 'entry') {
+          stockByWarehouse[movement.warehouse_id] += parseFloat(movement.quantity);
+        } else if (['exit', 'production'].includes(movement.movement_type)) {
+          stockByWarehouse[movement.warehouse_id] -= parseFloat(movement.quantity);
+        }
+      });
+
+      return stockByWarehouse;
+    } catch (error) {
+      throw new Error(`Error getting stock grouped by warehouse: ${error.message}`);
     }
   }
 

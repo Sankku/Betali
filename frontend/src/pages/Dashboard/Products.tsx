@@ -1,6 +1,8 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle, Eye, Edit, Trash, Upload } from 'lucide-react';
+import { AlertTriangle, Eye, Edit, Trash, Upload, Warehouse } from 'lucide-react';
+import { useProductStockByWarehouse } from '../../hooks/useProducts';
 import { CRUDPage } from '../../components/templates/crud-page';
 import { TableWithBulkActions, BulkAction } from '../../components/ui/table-with-bulk-actions';
 import { ProductModal, Product, ProductFormData } from '../../components/features/products';
@@ -24,6 +26,103 @@ import {
 import { useOrganization } from '../../context/OrganizationContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { usePlanResourceLimit } from '../../hooks/useSubscriptionPlans';
+
+// ── Stock badge with per-warehouse popover ────────────────────────────────────
+function StockBadge({ product }: { product: Product & { current_stock?: number; unit?: string } }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const stock = (product as any).current_stock ?? 0;
+  const { data } = useProductStockByWarehouse(open ? product.product_id : undefined);
+
+  const stockClass = stock > 10
+    ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
+    : stock > 0
+      ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+      : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200';
+
+  const multiWarehouse = data && data.warehouses.length > 1;
+
+  const show = () => {
+    clearTimeout(closeTimer.current);
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen(true);
+  };
+
+  const hide = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-default select-none transition-colors ${stockClass}`}
+      >
+        {stock > 0 ? stock : 'Sin stock'}
+        {multiWarehouse && (
+          <span className="opacity-60 font-normal">· {data!.warehouses.length} dep.</span>
+        )}
+      </button>
+
+      {open && createPortal(
+        <div
+          className="fixed z-[9999] bg-white border border-neutral-200 rounded-lg shadow-xl p-3 min-w-[260px]"
+          style={{ top: pos.top, left: pos.left }}
+          onMouseEnter={show}
+          onMouseLeave={hide}
+        >
+          <p className="text-xs font-semibold text-neutral-700 mb-2 flex items-center gap-1.5">
+            <Warehouse className="h-3.5 w-3.5" />
+            Stock por depósito
+          </p>
+          {!data ? (
+            <p className="text-xs text-neutral-400">Cargando…</p>
+          ) : data.warehouses.length === 0 ? (
+            <p className="text-xs text-neutral-500 italic">Sin movimientos registrados.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-neutral-100">
+                  <th className="text-left pb-1 text-neutral-500 font-medium">Depósito</th>
+                  <th className="text-right pb-1 text-neutral-500 font-medium">Disponible</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.warehouses.map(row => (
+                  <tr key={row.warehouse_id}>
+                    <td className="py-1 pr-3 text-neutral-800">{row.warehouse_name}</td>
+                    <td className="py-1 text-right font-mono font-semibold text-neutral-900">
+                      {row.available_stock}
+                      <span className="text-neutral-400 font-normal ml-0.5">{(product as any).unit || 'u'}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-neutral-200">
+                  <td className="pt-1 text-neutral-600 font-semibold">Total</td>
+                  <td className="pt-1 text-right font-mono font-bold text-neutral-900">
+                    {data.total_available}
+                    <span className="text-neutral-400 font-normal ml-0.5">{(product as any).unit || 'u'}</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 interface ModalState {
   isOpen: boolean;
@@ -94,8 +193,9 @@ const ProductsPage: React.FC = () => {
         const result = await createProduct.mutateAsync(data);
         if (data.product_type === 'finished_good') {
           openModal('edit', result as Product);
-          return;
+          return result as Product;
         }
+        return result as Product;
       } else if (modal.mode === 'edit' && modal.product?.product_id) {
         await updateProduct.mutateAsync({
           id: modal.product.product_id,
@@ -195,20 +295,7 @@ const ProductsPage: React.FC = () => {
     {
       accessorKey: 'current_stock',
       header: t('products.fields.stock'),
-      cell: ({ row }: { row: any }) => {
-        const stock = row.original.current_stock ?? 0;
-        const stockClass = stock > 10
-          ? 'bg-green-100 text-green-800 border-green-200'
-          : stock > 0
-          ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-          : 'bg-red-100 text-red-800 border-red-200';
-
-        return (
-          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${stockClass}`}>
-            {stock > 0 ? stock : t('products.outOfStock')}
-          </div>
-        );
-      },
+      cell: ({ row }: { row: any }) => <StockBadge product={row.original} />,
     },
     {
       id: 'actions',
@@ -254,17 +341,7 @@ const ProductsPage: React.FC = () => {
         error={error}
         onCreateClick={handleCreateClick}
         isAnyMutationLoading={isLoaderVisible}
-        headerActions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Importar CSV
-          </Button>
-        }
+
         customTable={
           <TableWithBulkActions
             data={products || []}
@@ -277,10 +354,20 @@ const ProductsPage: React.FC = () => {
             onCreateClick={handleCreateClick}
             createButtonDisabled={atProductLimit}
             createButtonTooltip={atProductLimit ? `You've reached the product limit (${productLimit}) for your plan. Upgrade to add more.` : undefined}
+            customToolbarRight={() => (
+              <Button
+                variant="outline"
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              >
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </Button>
+            )}
             onRowDoubleClick={(product) => openModal('edit', product)}
             searchable={true}
             enablePagination={true}
-            pageSize={10}
+            pageSize={25}
             emptyMessage={
               !currentOrganization
                 ? t('products.title')

@@ -92,7 +92,7 @@ export function DataTable<TData>({
   searchable = true,
   searchPlaceholder = 'Search...',
   searchKey,
-  pageSize = 10,
+  pageSize = 25,
   enableSorting = true,
   enablePagination = true,
   enableColumnFilters = true,
@@ -507,7 +507,7 @@ export function DataTable<TData>({
                           <td
                             key={cell.id}
                             className={cn(
-                              "px-4 py-3 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200",
+                              "px-4 py-1.5 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200",
                               cellIndex !== row.getVisibleCells().length - 1 && "border-r border-neutral-200/60"
                             )}
                           >

@@ -108,6 +108,12 @@ const ERROR_RULES: ErrorRule[] = [
     message: 'Ya existe un cupón con ese código en tu organización.',
   },
 
+  // ── Movimientos de stock ───────────────────────────────────────────────────
+  {
+    match: 'Stock insuficiente',
+    message: 'Stock insuficiente en el depósito seleccionado. Verificá el stock disponible antes de registrar la salida.',
+  },
+
   // ── Genéricos (van al final como última opción) ────────────────────────────
   {
     match: 'not found',

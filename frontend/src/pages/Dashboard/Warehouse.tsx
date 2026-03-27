@@ -271,7 +271,7 @@ const WarehousesPage: React.FC = () => {
             onRowDoubleClick={(warehouse) => openModal('edit', warehouse)}
             searchable={true}
             enablePagination={true}
-            pageSize={10}
+            pageSize={25}
             emptyMessage={
               !currentOrganization
                 ? t('warehouse.page.noOrgMessage')

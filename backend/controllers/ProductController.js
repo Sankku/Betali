@@ -209,6 +209,34 @@ class ProductController {
   }
 
   /**
+   * Get stock breakdown by warehouse for a product
+   * GET /api/products/:id/stock-by-warehouse
+   */
+  async getStockByWarehouse(req, res, next) {
+    try {
+      const { id } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+
+      const breakdown = await this.productService.getStockByWarehouse(id, organizationId);
+
+      res.json({
+        product_id: id,
+        organization_id: organizationId,
+        warehouses: breakdown,
+        total_physical: breakdown.reduce((s, r) => s + r.physical_stock, 0),
+        total_available: breakdown.reduce((s, r) => s + r.available_stock, 0),
+      });
+    } catch (error) {
+      this.logger.error(`Error getting stock by warehouse: ${error.message}`);
+      next(error);
+    }
+  }
+
+  /**
    * Get available stock for a product
    * GET /api/products/:id/available-stock?warehouse_id=xxx
    */

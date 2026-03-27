@@ -137,5 +137,25 @@ export const productsService = {
       console.error(`Error fetching available stock for product ${productId}:`, error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Get stock breakdown by warehouse for a product
+   */
+  async getStockByWarehouse(productId: string): Promise<{
+    product_id: string;
+    organization_id: string;
+    warehouses: Array<{
+      warehouse_id: string;
+      warehouse_name: string;
+      warehouse_location: string | null;
+      physical_stock: number;
+      reserved_stock: number;
+      available_stock: number;
+    }>;
+    total_physical: number;
+    total_available: number;
+  }> {
+    return httpClient.get(`/api/products/${productId}/stock-by-warehouse`);
+  },
 };

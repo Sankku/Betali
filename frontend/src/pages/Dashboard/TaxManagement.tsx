@@ -300,7 +300,7 @@ export default function TaxManagement() {
             onRowDoubleClick={(rate) => handleEdit(rate)}
             searchable={true}
             enablePagination={true}
-            pageSize={10}
+            pageSize={25}
             emptyMessage={
               !currentOrganization
                 ? t('taxManagement.page.emptyNoOrg')

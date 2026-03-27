@@ -119,7 +119,21 @@ class StockMovementService {
       
       // Validate that product and warehouse exist within organization
       await this.validateReferences(movementData, organizationId);
-      
+
+      // Validate sufficient stock in the selected warehouse for exit/production movements
+      if (['exit', 'production'].includes(movementData.movement_type)) {
+        const availableStock = await this.stockMovementRepository.getCurrentStock(
+          movementData.product_id,
+          movementData.warehouse_id,
+          organizationId
+        );
+        if (availableStock < movementData.quantity) {
+          throw new Error(
+            `Stock insuficiente en el depósito seleccionado. Disponible: ${availableStock}, Solicitado: ${movementData.quantity}`
+          );
+        }
+      }
+
       const movementToCreate = {
         ...movementData,
         organization_id: organizationId,
