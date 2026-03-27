@@ -53,5 +53,6 @@ describe('ProductLotRepository', () => {
     const result = await repo.findForFefo('pt-1', 'org-1');
     expect(result).toHaveLength(2);
     expect(result[0].lot_id).toBe('lot-1');
+    expect(mockClient.order).toHaveBeenCalledWith('expiration_date', { ascending: true });
   });
 });
