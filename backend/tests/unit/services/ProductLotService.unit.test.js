@@ -65,7 +65,7 @@ describe('ProductLotService', () => {
     test('throws 422 when no lots available at all', async () => {
       mockLotRepo.findForFefo.mockResolvedValue([]);
       await expect(service.fefoAssignLot('pt-1', 'wh-1', 5, 'org-1'))
-        .rejects.toMatchObject({ status: 422 });
+        .rejects.toMatchObject({ status: 422, code: 'no_lot_available' });
     });
   });
 
