@@ -238,7 +238,8 @@ class Application {
         endpoints: {
           health: '/health',
           auth: '/api/auth',
-          products: '/api/products',
+          productTypes: '/api/product-types',
+          productLots: '/api/product-lots',
           warehouses: '/api/warehouse',
           stockMovements: '/api/stock-movements',
           dashboard: '/api/dashboard',
