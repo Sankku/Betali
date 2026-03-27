@@ -22,6 +22,7 @@ class ProductTypeRepository extends BaseRepository {
   }
 
   async findByOrg(organizationId, options = {}) {
+    if (!organizationId) throw new Error('organizationId is required');
     return this.findAll({ organization_id: organizationId }, options);
   }
 

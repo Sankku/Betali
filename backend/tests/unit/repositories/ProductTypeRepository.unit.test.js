@@ -32,4 +32,8 @@ describe('ProductTypeRepository', () => {
     expect(repo.findAll).toHaveBeenCalledWith({ organization_id: 'org-1' }, {});
     expect(result).toHaveLength(1);
   });
+
+  test('findByOrg throws when organizationId is missing', async () => {
+    await expect(repo.findByOrg(undefined)).rejects.toThrow('organizationId is required');
+  });
 });
