@@ -26,8 +26,13 @@ const ORG_ID = 'org-test-123';
 const ORDER_ID = 'order-test-abc';
 const USER_ID = 'user-test-456';
 const WAREHOUSE_ID = 'warehouse-test-789';
-const PRODUCT_ID_A = 'product-a-111';
-const PRODUCT_ID_B = 'product-b-222';
+const PRODUCT_TYPE_ID_A = 'product-type-a-111';
+const PRODUCT_TYPE_ID_B = 'product-type-b-222';
+const LOT_ID_A = 'lot-a-111';
+const LOT_ID_B = 'lot-b-222';
+// Keep legacy aliases so factory helpers remain readable
+const PRODUCT_ID_A = PRODUCT_TYPE_ID_A;
+const PRODUCT_ID_B = PRODUCT_TYPE_ID_B;
 const CLIENT_ID = 'client-test-333';
 
 // ─── Factories ────────────────────────────────────────────────────────────────
@@ -56,7 +61,8 @@ function makeOrderDetail(overrides = {}) {
     order_detail_id: 'detail-001',
     order_id: ORDER_ID,
     organization_id: ORG_ID,
-    product_id: PRODUCT_ID_A,
+    product_type_id: PRODUCT_TYPE_ID_A,
+    lot_id: LOT_ID_A,
     quantity: 2,
     price: 50,
     line_total: 100,
@@ -66,15 +72,17 @@ function makeOrderDetail(overrides = {}) {
   };
 }
 
-function makeProduct(overrides = {}) {
+function makeProductType(overrides = {}) {
   return {
-    product_id: PRODUCT_ID_A,
+    product_type_id: PRODUCT_TYPE_ID_A,
     organization_id: ORG_ID,
-    name: 'Test Product A',
-    price: 50,
+    name: 'Test Product Type A',
     ...overrides
   };
 }
+
+// Keep legacy alias so existing test callsites compile without change
+const makeProduct = makeProductType;
 
 function makePricingResult(overrides = {}) {
   return {
@@ -86,7 +94,8 @@ function makePricingResult(overrides = {}) {
     tax_breakdown: [],
     line_items: [
       {
-        product_id: PRODUCT_ID_A,
+        product_type_id: PRODUCT_TYPE_ID_A,
+        lot_id: null,
         quantity: 2,
         unit_price: 50,
         line_total: 100,
@@ -103,7 +112,8 @@ describe('OrderService Unit Tests', () => {
   let orderService;
   let mockOrderRepository;
   let mockOrderDetailRepository;
-  let mockProductRepository;
+  let mockProductTypeRepository;
+  let mockProductLotService;
   let mockWarehouseRepository;
   let mockStockMovementRepository;
   let mockStockReservationRepository;
@@ -129,8 +139,12 @@ describe('OrderService Unit Tests', () => {
       replaceOrderDetails: jest.fn()
     };
 
-    mockProductRepository = {
+    mockProductTypeRepository = {
       findById: jest.fn()
+    };
+
+    mockProductLotService = {
+      fefoAssignLot: jest.fn()
     };
 
     mockWarehouseRepository = {
@@ -172,7 +186,8 @@ describe('OrderService Unit Tests', () => {
     orderService = new OrderService(
       mockOrderRepository,
       mockOrderDetailRepository,
-      mockProductRepository,
+      mockProductTypeRepository,
+      mockProductLotService,
       mockWarehouseRepository,
       mockStockMovementRepository,
       mockStockReservationRepository,
@@ -190,17 +205,14 @@ describe('OrderService Unit Tests', () => {
 
   describe('createOrder', () => {
     const validOrderData = {
-      items: [{ product_id: PRODUCT_ID_A, quantity: 2 }],
+      items: [{ product_type_id: PRODUCT_TYPE_ID_A, quantity: 2 }],
       user_id: USER_ID,
       warehouse_id: WAREHOUSE_ID
     };
 
     beforeEach(() => {
       mockPricingService.calculateOrderPricing.mockResolvedValue(makePricingResult());
-      mockStockMovementRepository.getCurrentStockBulk.mockResolvedValue({
-        [PRODUCT_ID_A]: 10
-      });
-      mockProductRepository.findById.mockResolvedValue(makeProduct());
+      mockProductTypeRepository.findById.mockResolvedValue(makeProductType());
       mockOrderRepository.create.mockResolvedValue(makeOrder());
       mockOrderDetailRepository.createBulk.mockResolvedValue([makeOrderDetail()]);
     });
@@ -282,22 +294,11 @@ describe('OrderService Unit Tests', () => {
       );
     });
 
-    test('should throw when stock is insufficient for a product', async () => {
-      // Stock is less than requested quantity (2)
-      mockStockMovementRepository.getCurrentStockBulk.mockResolvedValue({
-        [PRODUCT_ID_A]: 1
-      });
+    test('should throw when a product type in the order does not exist', async () => {
+      mockProductTypeRepository.findById.mockResolvedValue(null);
 
       await expect(orderService.createOrder(validOrderData, ORG_ID)).rejects.toThrow(
-        'Failed to create order: Insufficient stock for product'
-      );
-    });
-
-    test('should throw when a product in the order does not exist', async () => {
-      mockProductRepository.findById.mockResolvedValue(null);
-
-      await expect(orderService.createOrder(validOrderData, ORG_ID)).rejects.toThrow(
-        `Failed to create order: Product ${PRODUCT_ID_A} not found or access denied`
+        `Failed to create order: Product type ${PRODUCT_TYPE_ID_A} not found or access denied`
       );
     });
 
@@ -399,7 +400,11 @@ describe('OrderService Unit Tests', () => {
       mockStockReservationRepository.createBulkReservations.mockResolvedValue([]);
       mockStockReservationRepository.releaseOrderReservations.mockResolvedValue([]);
       mockOrderDetailRepository.findByOrderId.mockResolvedValue([makeOrderDetail()]);
-      mockStockMovementRepository.getCurrentStock.mockResolvedValue(10);
+      mockProductLotService.fefoAssignLot.mockResolvedValue({
+        lot_id: LOT_ID_A,
+        partial: false,
+        available_stock: 10
+      });
       mockStockMovementRepository.createBulk.mockResolvedValue([]);
       return { current, updated };
     }
@@ -504,8 +509,8 @@ describe('OrderService Unit Tests', () => {
 
   describe('reserveStockForOrder', () => {
     const details = [
-      makeOrderDetail({ product_id: PRODUCT_ID_A, quantity: 2 }),
-      makeOrderDetail({ order_detail_id: 'detail-002', product_id: PRODUCT_ID_B, quantity: 1 })
+      makeOrderDetail({ product_type_id: PRODUCT_TYPE_ID_A, lot_id: LOT_ID_A, quantity: 2 }),
+      makeOrderDetail({ order_detail_id: 'detail-002', product_type_id: PRODUCT_TYPE_ID_B, lot_id: LOT_ID_B, quantity: 1 })
     ];
 
     beforeEach(() => {
@@ -534,7 +539,7 @@ describe('OrderService Unit Tests', () => {
       expect(reservationsArg[0]).toMatchObject({
         organization_id: ORG_ID,
         order_id: ORDER_ID,
-        product_id: PRODUCT_ID_A,
+        lot_id: LOT_ID_A,
         quantity: 2,
         created_by: USER_ID
       });

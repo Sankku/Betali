@@ -389,16 +389,18 @@ function initializeContainer() {
   }, true);
 
   container.register('orderService', () => {
-    const orderRepository = container.get('orderRepository');
-    const orderDetailRepository = container.get('orderDetailRepository');
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
-    const logger = container.get('logger');
-    const stockMovementRepository = container.get('stockMovementRepository');
-    const stockReservationRepository = container.get('stockReservationRepository');
-    const clientRepository = container.get('clientRepository');
-    const pricingService = container.get('pricingService');
-    return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger);
+    return new OrderService(
+      container.get('orderRepository'),
+      container.get('orderDetailRepository'),
+      container.get('productTypeRepository'),
+      container.get('productLotService'),
+      container.get('warehouseRepository'),
+      container.get('stockMovementRepository'),
+      container.get('stockReservationRepository'),
+      container.get('clientRepository'),
+      container.get('pricingService'),
+      container.get('logger')
+    );
   }, true);
 
   container.register('purchaseOrderService', () => {

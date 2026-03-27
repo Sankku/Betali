@@ -6,10 +6,11 @@ const { incrementUsage } = require('../middleware/limitEnforcement');
  * Handles order creation, updates, status changes, and business rules
  */
 class OrderService {
-  constructor(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger) {
+  constructor(orderRepository, orderDetailRepository, productTypeRepository, productLotService, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger) {
     this.orderRepository = orderRepository;
     this.orderDetailRepository = orderDetailRepository;
-    this.productRepository = productRepository;
+    this.productTypeRepository = productTypeRepository;  // was productRepository
+    this.productLotService = productLotService;           // new: FEFO dispatch
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
     this.stockReservationRepository = stockReservationRepository;
@@ -83,7 +84,8 @@ class OrderService {
       const orderDetails = pricingResult.line_items.map(item => ({
         order_id: createdOrder.order_id,
         organization_id: organizationId,
-        product_id: item.product_id,
+        product_type_id: item.product_type_id,  // required
+        lot_id: item.lot_id || null,             // optional
         quantity: item.quantity,
         price: item.unit_price, // Map unit_price to price field expected by database
         line_total: item.line_total,
@@ -248,7 +250,8 @@ class OrderService {
 
         // Update order details
         const orderDetails = validatedItems.map(item => ({
-          product_id: item.product_id,
+          product_type_id: item.product_type_id,
+          lot_id: item.lot_id || null,
           quantity: item.quantity,
           price: item.price
         }));
@@ -391,44 +394,24 @@ class OrderService {
   // Private helper methods
 
   /**
-   * Validate order items stock availability (simplified for pricing integration)
+   * Validate order items — ensures product types exist.
+   * Stock availability is deferred to FEFO dispatch at shipment time.
    * @private
    */
   async validateOrderItems(lineItems, organizationId, warehouseId = null) {
-    // Get all product IDs for bulk stock check
-    const productIds = lineItems.map(item => item.product_id);
-    
-    // Get current stock for all products in bulk for efficiency
-    const stockByProduct = await this.stockMovementRepository.getCurrentStockBulk(
-      productIds, 
-      warehouseId, 
-      organizationId
-    );
-
     for (const item of lineItems) {
-      if (!item.product_id || !item.quantity || item.quantity <= 0) {
-        throw new Error('Each item must have a valid product_id and positive quantity');
+      if (!item.product_type_id || !item.quantity || item.quantity <= 0) {
+        throw new Error('Each item must have a valid product_type_id and positive quantity');
       }
 
-      // Get product to validate existence
-      const product = await this.productRepository.findById(item.product_id, organizationId);
-      if (!product) {
-        throw new Error(`Product ${item.product_id} not found or access denied`);
-      }
-
-      // Validate stock availability
-      const requestedQuantity = parseFloat(item.quantity);
-      const availableStock = stockByProduct[item.product_id] || 0;
-      
-      if (requestedQuantity > availableStock) {
-        throw new Error(
-          `Insufficient stock for product "${product.name}". ` +
-          `Requested: ${requestedQuantity}, Available: ${availableStock}`
-        );
+      // Validate product type exists
+      const productType = await this.productTypeRepository.findById(item.product_type_id, organizationId);
+      if (!productType) {
+        throw new Error(`Product type ${item.product_type_id} not found or access denied`);
       }
     }
 
-    this.logger.info('Order items stock validated successfully', {
+    this.logger.info('Order items validated successfully', {
       organizationId,
       warehouseId,
       itemCount: lineItems.length
@@ -530,7 +513,7 @@ class OrderService {
   }
 
   /**
-   * Handle order shipped - create stock movements for fulfillment
+   * Handle order shipped - create stock movements for fulfillment using FEFO lot assignment
    * @private
    */
   async handleOrderShipped(order, organizationId) {
@@ -539,57 +522,63 @@ class OrderService {
       organizationId
     });
 
-    // Get order details if not loaded
     const orderDetails = order.order_details ||
       await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
 
-    // Create stock exit movements for each order item
-    const stockMovements = [];
+    // Resolve lots via FEFO for each detail
+    const resolvedDetails = await this._resolveLotsForDispatch(
+      orderDetails, order.warehouse_id, organizationId
+    );
 
-    for (const detail of orderDetails) {
-      // Double-check stock availability
-      const currentStock = await this.stockMovementRepository.getCurrentStock(
-        detail.product_id,
-        order.warehouse_id,
-        organizationId
-      );
+    const stockMovements = resolvedDetails.map(detail => ({
+      organization_id: organizationId,
+      lot_id: detail.lot_id,
+      warehouse_id: order.warehouse_id,
+      movement_type: 'exit',
+      quantity: detail.quantity,
+      movement_date: new Date().toISOString(),
+      reference: `#${order.order_id.slice(-8).toUpperCase()}`
+    }));
 
-      if (currentStock < detail.quantity) {
-        const product = await this.productRepository.findById(detail.product_id, organizationId);
-        throw new Error(
-          `Insufficient stock for fulfillment of product "${product?.name || detail.product_id}". ` +
-          `Required: ${detail.quantity}, Available: ${currentStock}`
-        );
-      }
-
-      // Create stock exit movement
-      const movement = {
-        organization_id: organizationId,
-        product_id: detail.product_id,
-        warehouse_id: order.warehouse_id,
-        movement_type: 'exit',
-        quantity: detail.quantity,
-        movement_date: new Date().toISOString(),
-        reference: `#${order.order_id.slice(-8).toUpperCase()}`
-      };
-
-      stockMovements.push(movement);
-    }
-
-    // Create all stock movements in batch
     if (stockMovements.length > 0) {
       await this.stockMovementRepository.createBulk(stockMovements);
-
       this.logger.info('Stock movements created for order shipment', {
         orderId: order.order_id,
-        movementCount: stockMovements.length,
-        totalValue: stockMovements.reduce((sum, m) => sum + m.total_price, 0)
+        movementCount: stockMovements.length
       });
     }
 
-    // Release (fulfill) stock reservations
     await this.releaseStockReservations(order.order_id, organizationId, 'fulfilled');
     this.logger.info('Stock reservations fulfilled for shipped order', { orderId: order.order_id });
+  }
+
+  /**
+   * Resolve lot IDs for order details at dispatch time using FEFO algorithm.
+   * Details that already have an explicit lot_id are used as-is.
+   * @private
+   */
+  async _resolveLotsForDispatch(details, warehouseId, organizationId) {
+    return Promise.all(details.map(async (detail) => {
+      if (detail.lot_id) return detail; // explicit lot — use as-is
+
+      const assignment = await this.productLotService.fefoAssignLot(
+        detail.product_type_id,
+        warehouseId,
+        detail.quantity,
+        organizationId
+      );
+
+      if (assignment.partial) {
+        const err = new Error(
+          `Insufficient stock for product type ${detail.product_type_id}: ` +
+          `available ${assignment.available_stock}, needed ${detail.quantity}`
+        );
+        err.status = 422;
+        throw err;
+      }
+
+      return { ...detail, lot_id: assignment.lot_id };
+    }));
   }
 
   /**
@@ -650,7 +639,7 @@ class OrderService {
     for (const detail of orderDetails) {
       const movement = {
         organization_id: organizationId,
-        product_id: detail.product_id,
+        lot_id: detail.lot_id,
         warehouse_id: order.warehouse_id,
         movement_type: 'entry',
         quantity: detail.quantity,
@@ -831,7 +820,7 @@ class OrderService {
       const reservations = orderDetails.map(detail => ({
         organization_id: organizationId,
         order_id: orderId,
-        product_id: detail.product_id,
+        lot_id: detail.lot_id,  // was product_id
         warehouse_id: order.warehouse_id,
         quantity: detail.quantity,
         created_by: userId,
@@ -841,7 +830,7 @@ class OrderService {
       // Validate stock availability before reserving
       for (const reservation of reservations) {
         const availability = await this.stockReservationRepository.checkStockAvailability(
-          reservation.product_id,
+          reservation.lot_id,
           reservation.warehouse_id,
           organizationId,
           reservation.quantity
@@ -849,7 +838,7 @@ class OrderService {
 
         if (!availability.available) {
           throw new Error(
-            `Insufficient stock for product ${reservation.product_id}. ` +
+            `Insufficient stock for product ${reservation.lot_id}. ` +
             `Available: ${availability.availableStock}, Requested: ${reservation.quantity}`
           );
         }
