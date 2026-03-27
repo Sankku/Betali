@@ -63,10 +63,10 @@ async function handleConteo(ctx) {
 }
 
 async function startFreshCount(ctx, organizationId) {
-  const productService = ServiceFactory.createProductService();
-  const products = await productService.getOrganizationProducts(organizationId);
+  const productTypeService = ServiceFactory.createProductTypeService();
+  const products = await productTypeService.getTypes(organizationId);
 
-  // Only count stockable products (no elaborated)
+  // Only count stockable product types (no elaborado)
   const stockable = (products || []).filter(p => p.product_type !== 'elaborado');
 
   if (stockable.length === 0) {
@@ -87,7 +87,7 @@ async function startFreshCount(ctx, organizationId) {
 
   // Build pending list: [{ product_id, name, unit, current_stock }]
   const pending = stockable.map(p => ({
-    product_id: p.product_id,
+    product_id: p.product_type_id,
     name: p.name,
     unit: p.unit || 'unidad',
     current_stock: p.current_stock ?? 0

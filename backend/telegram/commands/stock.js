@@ -30,12 +30,11 @@ function formatStock(quantity, unit) {
 }
 
 /**
- * Obtiene los productos con stock calculado usando ProductService.
- * ProductService agrega current_stock sumando stock_movements — no es una columna directa.
+ * Obtiene los tipos de producto de la organización usando ProductTypeService.
  */
 async function fetchProducts(organizationId) {
-  const productService = ServiceFactory.createProductService();
-  const products = await productService.getOrganizationProducts(organizationId);
+  const productTypeService = ServiceFactory.createProductTypeService();
+  const products = await productTypeService.getTypes(organizationId);
   return products || [];
 }
 

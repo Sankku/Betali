@@ -9,7 +9,7 @@ class PurchaseOrderService {
     purchaseOrderRepository,
     purchaseOrderDetailRepository,
     supplierRepository,
-    productRepository,
+    productTypeRepository,
     warehouseRepository,
     stockMovementRepository,
     logger
@@ -17,7 +17,7 @@ class PurchaseOrderService {
     this.purchaseOrderRepository = purchaseOrderRepository;
     this.purchaseOrderDetailRepository = purchaseOrderDetailRepository;
     this.supplierRepository = supplierRepository;
-    this.productRepository = productRepository;
+    this.productTypeRepository = productTypeRepository;
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
     this.logger = logger || new Logger('PurchaseOrderService');
@@ -156,8 +156,8 @@ class PurchaseOrderService {
         throw new Error(`Invalid unit price for product ${item.product_id}`);
       }
 
-      // Validate product exists
-      const product = await this.productRepository.findById(item.product_id, organizationId);
+      // Validate product type exists
+      const product = await this.productTypeRepository.findById(item.product_id, organizationId);
       if (!product) {
         throw new Error(`Product not found: ${item.product_id}`);
       }

@@ -20,7 +20,7 @@ describe('OrganizationService Unit Tests', () => {
   let mockOrganizationRepository;
   let mockUserOrganizationRepository;
   let mockUserRepository;
-  let mockProductRepository;
+  let mockProductTypeRepository;
   let mockWarehouseRepository;
   let mockStockMovementRepository;
 
@@ -58,7 +58,7 @@ describe('OrganizationService Unit Tests', () => {
       create: jest.fn()
     };
 
-    mockProductRepository = {
+    mockProductTypeRepository = {
       deleteByFilter: jest.fn()
     };
 
@@ -76,7 +76,7 @@ describe('OrganizationService Unit Tests', () => {
       mockOrganizationRepository,
       mockUserOrganizationRepository,
       mockUserRepository,
-      mockProductRepository,
+      mockProductTypeRepository,
       mockWarehouseRepository,
       mockStockMovementRepository
     );
@@ -665,7 +665,7 @@ describe('OrganizationService Unit Tests', () => {
 
       // Mock deletion methods
       mockStockMovementRepository.deleteByFilter.mockResolvedValue(5);
-      mockProductRepository.deleteByFilter.mockResolvedValue(10);
+      mockProductTypeRepository.deleteByFilter.mockResolvedValue(10);
       mockWarehouseRepository.deleteByFilter.mockResolvedValue(2);
       mockUserOrganizationRepository.deleteByFilter.mockResolvedValue(3);
       mockOrganizationRepository.delete.mockResolvedValue(true);
@@ -731,7 +731,7 @@ describe('OrganizationService Unit Tests', () => {
       // Verify cascade deletion order
       expect(mockWarehouseRepository.findAll).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockStockMovementRepository.deleteByFilter).toHaveBeenCalledTimes(2); // For each warehouse
-      expect(mockProductRepository.deleteByFilter).toHaveBeenCalledTimes(1); // Once for all org products
+      expect(mockProductTypeRepository.deleteByFilter).toHaveBeenCalledTimes(1); // Once for all org products
       expect(mockWarehouseRepository.deleteByFilter).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockUserOrganizationRepository.deleteByFilter).toHaveBeenCalledWith({ organization_id: organizationId });
       expect(mockOrganizationRepository.delete).toHaveBeenCalledWith(organizationId, 'organization_id');

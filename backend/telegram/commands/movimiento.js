@@ -39,8 +39,8 @@ async function handleTypeSelected(ctx) {
   await ctx.answerCallbackQuery();
 
   try {
-    const productService = ServiceFactory.createProductService();
-    const products = await productService.getOrganizationProducts(organizationId);
+    const productTypeService = ServiceFactory.createProductTypeService();
+    const products = await productTypeService.getTypes(organizationId);
     const available = (products || []).filter(p => p.product_type !== 'elaborado');
 
     if (available.length === 0) {
@@ -59,7 +59,7 @@ async function handleTypeSelected(ctx) {
     const keyboard = new InlineKeyboard();
     available.slice(0, 12).forEach(p => {
       const stock = p.current_stock ?? 0;
-      keyboard.text(`${p.name} (${stock} ${p.unit || 'u'})`, `mov:prod:${p.product_id}`).row();
+      keyboard.text(`${p.name} (${stock} ${p.unit || 'u'})`, `mov:prod:${p.product_type_id}`).row();
     });
     keyboard.text('❌ Cancelar', 'mov:cancel');
 
@@ -86,7 +86,7 @@ async function handleProductSelected(ctx) {
   try {
     const session = await telegramRepo.getSession(ctx.chat.id);
     const data = session.flow_data || {};
-    const product = (data.products || []).find(p => p.product_id === productId);
+    const product = (data.products || []).find(p => p.product_type_id === productId);
 
     if (!product) {
       await ctx.editMessageText('❌ Producto no encontrado. Intentá de nuevo con /movimiento.');
@@ -100,7 +100,7 @@ async function handleProductSelected(ctx) {
       flow_step: 'enter_quantity',
       flow_data: {
         type: data.type,
-        product_id: product.product_id,
+        product_id: product.product_type_id,
         product_name: product.name,
         product_unit: product.unit || 'unidad',
         current_stock: product.current_stock ?? 0

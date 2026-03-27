@@ -113,14 +113,14 @@ async function handleSupplierSelected(ctx) {
 }
 
 async function showProductSelector(ctx, organizationId, supplierId, supplierName, warehouseName, currentItems) {
-  const productService = ServiceFactory.createProductService();
-  const products = await productService.getOrganizationProducts(organizationId);
+  const productTypeService = ServiceFactory.createProductTypeService();
+  const products = await productTypeService.getTypes(organizationId);
   const available = (products || []).filter(p => p.product_type !== 'elaborado');
 
   const keyboard = new InlineKeyboard();
   const shown = available.slice(0, 10);
   shown.forEach(p => {
-    keyboard.text(`📦 ${p.name}`, `comprar:prod:${p.product_id}`).row();
+    keyboard.text(`📦 ${p.name}`, `comprar:prod:${p.product_type_id}`).row();
   });
 
   if (currentItems.length > 0) {
@@ -154,9 +154,9 @@ async function handleProductSelected(ctx) {
   await ctx.answerCallbackQuery();
 
   try {
-    const productService = ServiceFactory.createProductService();
-    const products = await productService.getOrganizationProducts(organizationId);
-    const product = (products || []).find(p => p.product_id === productId);
+    const productTypeService = ServiceFactory.createProductTypeService();
+    const products = await productTypeService.getTypes(organizationId);
+    const product = (products || []).find(p => p.product_type_id === productId);
 
     if (!product) {
       await ctx.editMessageText('❌ Producto no encontrado. Intentá de nuevo.');

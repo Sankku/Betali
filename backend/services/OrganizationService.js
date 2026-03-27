@@ -5,11 +5,11 @@ const { Logger } = require('../utils/Logger');
  * Orchestrates operations between repositories
  */
 class OrganizationService {
-  constructor(organizationRepository, userOrganizationRepository, userRepository, productRepository, warehouseRepository, stockMovementRepository) {
+  constructor(organizationRepository, userOrganizationRepository, userRepository, productTypeRepository, warehouseRepository, stockMovementRepository) {
     this.organizationRepository = organizationRepository;
     this.userOrganizationRepository = userOrganizationRepository;
     this.userRepository = userRepository;
-    this.productRepository = productRepository;
+    this.productTypeRepository = productTypeRepository;
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
     this.logger = new Logger('OrganizationService');
@@ -473,9 +473,9 @@ class OrganizationService {
         }
       }
 
-      // 6. Delete products by organization_id (correct tenant isolation)
+      // 6. Delete product_types by organization_id (correct tenant isolation)
       const deletedProducts = productIds.length > 0
-        ? await this.productRepository.deleteByFilter({ organization_id: organizationId })
+        ? await this.productTypeRepository.deleteByFilter({ organization_id: organizationId })
         : 0;
 
       // 7. Delete warehouses (they reference organization)

@@ -133,7 +133,7 @@ async function runAlertCheck(bot) {
     const connections = await telegramRepo.findAllActiveWithAlerts();
     if (connections.length === 0) return;
 
-    const productService = ServiceFactory.createProductService();
+    const productTypeService = ServiceFactory.createProductTypeService();
 
     // Group by org to avoid N+1 product fetches
     const byOrg = new Map();
@@ -155,7 +155,7 @@ async function runAlertCheck(bot) {
         // Lazy-load products for this org
         if (!products) {
           try {
-            products = await productService.getOrganizationProducts(organizationId);
+            products = await productTypeService.getTypes(organizationId);
           } catch (err) {
             logger.error('Error fetching products for digest', { organizationId, error: err.message });
             break;
