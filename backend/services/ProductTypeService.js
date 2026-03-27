@@ -74,7 +74,7 @@ class ProductTypeService {
     // Single eq() to match the mock-compatible chain pattern.
     const { data: lots, error: lotsError } = await this.repo.client
       .from('product_lots')
-      .select('lot_id', { count: 'exact', head: true })
+      .select('lot_id')
       .eq('product_type_id', id);
     const lotCount = lotsError ? 0 : (lots?.length ?? 0);
     if (lotCount > 0) {
