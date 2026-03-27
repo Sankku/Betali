@@ -42,6 +42,12 @@ class ProductTypeRepository extends BaseRepository {
     }
   }
 
+  /**
+   * Search product types by name or SKU.
+   * IMPORTANT: `searchTerm` must be sanitised by the caller before passing here.
+   * Direct interpolation into the PostgREST filter string means unsanitised input
+   * could inject additional filter conditions.
+   */
   async search(searchTerm, organizationId) {
     if (!organizationId) throw new Error('organizationId is required');
     try {

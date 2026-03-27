@@ -36,4 +36,26 @@ describe('ProductTypeRepository', () => {
   test('findByOrg throws when organizationId is missing', async () => {
     await expect(repo.findByOrg(undefined)).rejects.toThrow('organizationId is required');
   });
+
+  test('findById returns type when found', async () => {
+    mockClient.single.mockResolvedValue({ data: { product_type_id: 'pt-1', name: 'Harina' }, error: null });
+    const result = await repo.findById('pt-1', 'org-1');
+    expect(result).toEqual({ product_type_id: 'pt-1', name: 'Harina' });
+  });
+
+  test('findById returns null when not found (PGRST116)', async () => {
+    mockClient.single.mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'No rows' } });
+    const result = await repo.findById('missing', 'org-1');
+    expect(result).toBeNull();
+  });
+
+  test('findById throws when organizationId is missing', async () => {
+    await expect(repo.findById('pt-1', undefined)).rejects.toThrow('organizationId is required');
+  });
+
+  test('search returns matching types', async () => {
+    mockClient.or.mockResolvedValue({ data: [{ product_type_id: 'pt-1', name: 'Harina' }], error: null });
+    const result = await repo.search('harina', 'org-1');
+    expect(result).toHaveLength(1);
+  });
 });
