@@ -63,6 +63,12 @@ const { SubscriptionPlanController } = require('../controllers/SubscriptionPlanC
 const { ProductFormulaRepository } = require('../repositories/ProductFormulaRepository');
 const { ProductFormulaService } = require('../services/ProductFormulaService');
 const { ProductFormulaController } = require('../controllers/ProductFormulaController');
+const { ProductTypeRepository } = require('../repositories/ProductTypeRepository');
+const { ProductLotRepository } = require('../repositories/ProductLotRepository');
+const { ProductTypeService } = require('../services/ProductTypeService');
+const { ProductLotService } = require('../services/ProductLotService');
+const { ProductTypeController } = require('../controllers/ProductTypeController');
+const { ProductLotController } = require('../controllers/ProductLotController');
 
 /**
  * Dependency injection container
@@ -262,6 +268,16 @@ function initializeContainer() {
     return new SubscriptionPlanRepository(dbConfig.getClient());
   }, true);
 
+  container.register('productTypeRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductTypeRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('productLotRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductLotRepository(dbConfig.getClient());
+  }, true);
+
   container.register('productService', () => {
     const productRepository = container.get('productRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
@@ -279,11 +295,13 @@ function initializeContainer() {
   }, true);
 
   container.register('stockMovementService', () => {
-    const stockMovementRepository = container.get('stockMovementRepository');
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
     const logger = container.get('logger');
-    return new StockMovementService(stockMovementRepository, productRepository, warehouseRepository, logger);
+    return new StockMovementService(
+      container.get('stockMovementRepository'),
+      container.get('productLotRepository'),
+      container.get('warehouseRepository'),
+      logger
+    );
   }, true);
 
   container.register('productFormulaService', () => {
@@ -299,14 +317,12 @@ function initializeContainer() {
   }, true);
 
   container.register('dashboardService', () => {
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
-    const stockMovementRepository = container.get('stockMovementRepository');
     const logger = container.get('logger');
     return new DashboardService(
-      productRepository, 
-      warehouseRepository, 
-      stockMovementRepository, 
+      container.get('productTypeRepository'),
+      container.get('productLotRepository'),
+      container.get('warehouseRepository'),
+      container.get('stockMovementRepository'),
       logger
     );
   }, true);
@@ -423,6 +439,25 @@ function initializeContainer() {
     const subscriptionPlanRepository = container.get('subscriptionPlanRepository');
     const logger = container.get('logger');
     return new SubscriptionPlanService(subscriptionPlanRepository, logger);
+  }, true);
+
+  container.register('productTypeService', () => {
+    const logger = container.get('logger');
+    return new ProductTypeService(
+      container.get('productTypeRepository'),
+      logger
+    );
+  }, true);
+
+  container.register('productLotService', () => {
+    const logger = container.get('logger');
+    return new ProductLotService(
+      container.get('productLotRepository'),
+      container.get('productTypeRepository'),
+      container.get('stockMovementRepository'),
+      container.get('warehouseRepository'),
+      logger
+    );
   }, true);
 
   container.register('productController', () => {
@@ -648,6 +683,12 @@ const ServiceFactory = {
   },
   createSupplierService() {
     return container.get('supplierService');
+  },
+  createProductTypeController() {
+    return new ProductTypeController(container.get('productTypeService'));
+  },
+  createProductLotController() {
+    return new ProductLotController(container.get('productLotService'));
   },
 };
 
