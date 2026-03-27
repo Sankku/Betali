@@ -55,3 +55,4 @@ next-env.d.ts
 **/.claude-flow/data/
 **/.claude-flow/sessions/
 .claude/settings.local.json
+.worktrees/
