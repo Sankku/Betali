@@ -374,16 +374,16 @@ function initializeContainer() {
     const productTaxGroupRepository = container.get('productTaxGroupRepository');
     const discountRuleRepository = container.get('discountRuleRepository');
     const appliedDiscountRepository = container.get('appliedDiscountRepository');
-    const productRepository = container.get('productRepository');
+    const productTypeRepository = container.get('productTypeRepository');
     const logger = container.get('logger');
     return new PricingService(
-      pricingTierRepository, 
-      customerPricingRepository, 
-      taxRateRepository, 
-      productTaxGroupRepository, 
-      discountRuleRepository, 
-      appliedDiscountRepository, 
-      productRepository, 
+      pricingTierRepository,
+      customerPricingRepository,
+      taxRateRepository,
+      productTaxGroupRepository,
+      discountRuleRepository,
+      appliedDiscountRepository,
+      productTypeRepository,
       logger
     );
   }, true);
