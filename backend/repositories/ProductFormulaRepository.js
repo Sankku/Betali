@@ -6,10 +6,10 @@ class ProductFormulaRepository extends BaseRepository {
   }
 
   /**
-   * Find all formula items for a finished product within an organization,
-   * joining raw material name and unit for display.
+   * Find all formula items for a finished product type within an organization,
+   * joining raw material type name and unit for display.
    */
-  async findByFinishedProduct(finishedProductId, organizationId) {
+  async findByFinishedProduct(finishedProductTypeId, organizationId) {
     if (!organizationId) {
       throw new Error('organizationId is required');
     }
@@ -18,16 +18,16 @@ class ProductFormulaRepository extends BaseRepository {
         .from(this.table)
         .select(`
           formula_id,
-          finished_product_id,
-          raw_material_id,
+          finished_product_type_id,
+          raw_material_type_id,
           quantity_required,
           organization_id,
           created_at,
-          raw_material:products!raw_material_id(
-            product_id, name, unit
+          raw_material_type:product_types!raw_material_type_id(
+            product_type_id, name, unit
           )
         `)
-        .eq('finished_product_id', finishedProductId)
+        .eq('finished_product_type_id', finishedProductTypeId)
         .eq('organization_id', organizationId)
         .order('created_at', { ascending: true });
 
@@ -39,19 +39,19 @@ class ProductFormulaRepository extends BaseRepository {
   }
 
   /**
-   * Check for direct (depth-1) cycles: returns true if adding (finishedProductId → rawMaterialId)
+   * Check for direct (depth-1) cycles: returns true if adding (finishedProductTypeId → rawMaterialTypeId)
    * would create a direct cycle (e.g., A is ingredient of B, and B is ingredient of A).
    * NOTE: This only detects 1-hop cycles. Multi-hop cycles (A→B→C→A) are NOT detected here.
    * For the current use case (shallow recipes) this is sufficient, but deeper cycle detection
    * would require a full graph traversal.
    */
-  async wouldCreateCycle(finishedProductId, rawMaterialId, organizationId) {
+  async wouldCreateCycle(finishedProductTypeId, rawMaterialTypeId, organizationId) {
     try {
       const { data } = await this.client
         .from(this.table)
         .select('formula_id')
-        .eq('finished_product_id', rawMaterialId)
-        .eq('raw_material_id', finishedProductId)
+        .eq('finished_product_type_id', rawMaterialTypeId)
+        .eq('raw_material_type_id', finishedProductTypeId)
         .eq('organization_id', organizationId)
         .limit(1);
       return (data || []).length > 0;
