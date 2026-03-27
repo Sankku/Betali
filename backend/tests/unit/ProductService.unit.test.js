@@ -10,6 +10,7 @@ describe('ProductService Unit Tests', () => {
   let mockProductRepository;
   let mockStockMovementRepository;
   let mockStockReservationRepository;
+  let mockWarehouseRepository;
   let mockLogger;
 
   beforeEach(() => {
@@ -28,12 +29,18 @@ describe('ProductService Unit Tests', () => {
     // Mock stock movement repository
     mockStockMovementRepository = {
       getCurrentStockBulk: jest.fn(),
-      getCurrentStock: jest.fn()
+      getCurrentStock: jest.fn(),
+      create: jest.fn()
     };
 
     // Mock stock reservation repository
     mockStockReservationRepository = {
       getAvailableStock: jest.fn()
+    };
+
+    // Mock warehouse repository
+    mockWarehouseRepository = {
+      findByOrganizationId: jest.fn()
     };
 
     // Mock logger
@@ -49,6 +56,7 @@ describe('ProductService Unit Tests', () => {
       mockProductRepository,
       mockStockMovementRepository,
       mockStockReservationRepository,
+      mockWarehouseRepository,
       mockLogger
     );
   });
@@ -482,10 +490,114 @@ describe('ProductService Unit Tests', () => {
 
     test('should throw error for price exceeding maximum', () => {
       const invalidData = { ...validData, price: 1000000 };
-      
+
       expect(() => {
         productService.validateProductData(invalidData);
       }).toThrow('Price cannot exceed $999,999.99');
+    });
+  });
+
+  describe('bulkImport', () => {
+    const orgId = 'org-123';
+    const userId = 'user-abc';
+
+    const validRow = {
+      name: 'Producto A',
+      batch_number: 'LOT-001',
+      origin_country: 'Argentina',
+      expiration_date: '2030-01-01',
+      price: '100.00',
+      unit: 'kg',
+      product_type: 'standard',
+      initial_stock: '0',
+      warehouse_name: ''
+    };
+
+    beforeEach(() => {
+      mockWarehouseRepository.findByOrganizationId.mockResolvedValue([]);
+      mockProductRepository.findByBatchNumber.mockResolvedValue([]);
+      mockProductRepository.create.mockResolvedValue({ product_id: 'prod-new', ...validRow });
+      mockProductRepository.update.mockResolvedValue({ product_id: 'prod-existing', ...validRow });
+    });
+
+    test('creates a new product when batch_number does not exist', async () => {
+      const result = await productService.bulkImport([validRow], userId, orgId);
+
+      expect(result.created).toBe(1);
+      expect(result.updated).toBe(0);
+      expect(result.failed).toHaveLength(0);
+      expect(mockProductRepository.create).toHaveBeenCalledTimes(1);
+    });
+
+    test('updates existing product when batch_number already exists', async () => {
+      mockProductRepository.findByBatchNumber.mockResolvedValue([{ product_id: 'prod-existing' }]);
+
+      const result = await productService.bulkImport([validRow], userId, orgId);
+
+      expect(result.updated).toBe(1);
+      expect(result.created).toBe(0);
+      expect(mockProductRepository.update).toHaveBeenCalledTimes(1);
+    });
+
+    test('marks row as failed when required field is missing', async () => {
+      const row = { ...validRow, name: '' };
+
+      const result = await productService.bulkImport([row], userId, orgId);
+
+      expect(result.failed).toHaveLength(1);
+      expect(result.failed[0].errors).toContain('name is required');
+      expect(result.created).toBe(0);
+    });
+
+    test('treats past expiration_date as warning, not error', async () => {
+      const row = { ...validRow, expiration_date: '2000-01-01' };
+
+      const result = await productService.bulkImport([row], userId, orgId);
+
+      expect(result.created).toBe(1);
+      expect(result.failed).toHaveLength(0);
+    });
+
+    test('creates stock movement when initial_stock > 0 and warehouse found', async () => {
+      const warehouse = { warehouse_id: 'wh-1', name: 'Principal', is_active: true };
+      mockWarehouseRepository.findByOrganizationId.mockResolvedValue([warehouse]);
+      mockStockMovementRepository.create.mockResolvedValue({});
+
+      const row = { ...validRow, initial_stock: '10', warehouse_name: 'Principal' };
+
+      const result = await productService.bulkImport([row], userId, orgId);
+
+      expect(result.created).toBe(1);
+      expect(mockStockMovementRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouse_id: 'wh-1',
+          quantity: 10,
+          movement_type: 'receive'
+        })
+      );
+    });
+
+    test('skips stock when warehouse_name not found', async () => {
+      mockWarehouseRepository.findByOrganizationId.mockResolvedValue([
+        { warehouse_id: 'wh-1', name: 'Principal', is_active: true }
+      ]);
+      const row = { ...validRow, initial_stock: '10', warehouse_name: 'DepositoNoExiste' };
+
+      const result = await productService.bulkImport([row], userId, orgId);
+
+      expect(result.created).toBe(1);
+      expect(result.stock_skipped).toHaveLength(1);
+      expect(result.stock_skipped[0].reason).toContain('not found');
+    });
+
+    test('processes multiple rows independently — one failure does not block others', async () => {
+      const badRow = { ...validRow, batch_number: 'BAD', price: '-1' };
+      const goodRow = { ...validRow, batch_number: 'GOOD' };
+
+      const result = await productService.bulkImport([badRow, goodRow], userId, orgId);
+
+      expect(result.created).toBe(1);
+      expect(result.failed).toHaveLength(1);
     });
   });
 });
