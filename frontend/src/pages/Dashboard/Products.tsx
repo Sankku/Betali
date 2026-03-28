@@ -144,10 +144,10 @@ const ProductsPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
               <Package className="h-6 w-6 text-primary-600" />
-              Tipos de Producto
+              Productos
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
-              Catalogo de SKUs con sus lotes de produccion
+              Catálogo de productos y sus lotes de inventario
             </p>
           </div>
           <div className="flex items-center gap-3">

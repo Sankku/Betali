@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ProductTypeRow } from './ProductTypeRow';
+import { TooltipHelp } from '../../ui/tooltip-help';
 import type { ProductType } from '../../../services/api/productTypesService';
 import type { ProductLot } from '../../../services/api/productLotsService';
 
@@ -41,7 +42,10 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
           <tr>
             <th className="px-4 py-3 w-8" />
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              SKU
+              <span className="flex items-center gap-1">
+                SKU
+                <TooltipHelp content="Identificador único del producto (ej: HAR-001). Se usa para buscarlo y referenciarlo en el sistema." position="bottom" />
+              </span>
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               Nombre
