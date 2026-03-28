@@ -174,6 +174,8 @@ CREATE POLICY "organization_isolation" ON product_lots
 -- STEP 8: Update the create_production_movement RPC function
 -- (references product_formulas columns that were renamed)
 -- ============================================================
+DROP FUNCTION IF EXISTS create_production_movement(uuid, numeric, uuid, uuid, text);
+
 CREATE OR REPLACE FUNCTION create_production_movement(
   p_finished_product_type_id UUID,
   p_quantity_to_produce       NUMERIC,
