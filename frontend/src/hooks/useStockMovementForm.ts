@@ -16,9 +16,12 @@ const stockMovementSchema = z.object({
     .number({ required_error: "Quantity is required" })
     .positive("Quantity must be greater than 0")
     .int("Quantity must be a whole number"),
-  product_id: z
+  product_type_id: z
     .string()
-    .min(1, "Product is required"),
+    .min(1, "Product type is required"),
+  lot_id: z
+    .string()
+    .min(1, "Lot is required"),
   warehouse_id: z
     .string()
     .min(1, "Warehouse is required"),
@@ -47,14 +50,15 @@ export function useStockMovementForm({
   const defaultValues = useMemo(() => ({
     movement_type: initialData?.movement_type || "",
     quantity: initialData?.quantity || 0,
-    product_id: initialData?.product_id || "",
+    product_type_id: "",
+    lot_id: initialData?.lot_id || "",
     warehouse_id: initialData?.warehouse_id || "",
     reference: initialData?.reference || "",
     movement_date: initialData?.movement_date || new Date().toISOString().split('T')[0],
   }), [
     initialData?.movement_type,
     initialData?.quantity,
-    initialData?.product_id,
+    initialData?.lot_id,
     initialData?.warehouse_id,
     initialData?.reference,
     initialData?.movement_date,
@@ -70,7 +74,8 @@ export function useStockMovementForm({
     form.reset({
       movement_type: "",
       quantity: 0,
-      product_id: "",
+      product_type_id: "",
+      lot_id: "",
       warehouse_id: "",
       reference: "",
       movement_date: new Date().toISOString().split('T')[0],
@@ -85,7 +90,7 @@ export function useStockMovementForm({
       const currentValues = form.getValues();
       const newMovementType = initialData.movement_type || "";
       const newQuantity = initialData.quantity || 0;
-      const newProductId = initialData.product_id || "";
+      const newLotId = initialData.lot_id || "";
       const newWarehouseId = initialData.warehouse_id || "";
       const newReference = initialData.reference || "";
       const newMovementDate = initialData.movement_date || new Date().toISOString().split('T')[0];
@@ -93,7 +98,7 @@ export function useStockMovementForm({
       if (
         currentValues.movement_type !== newMovementType ||
         currentValues.quantity !== newQuantity ||
-        currentValues.product_id !== newProductId ||
+        currentValues.lot_id !== newLotId ||
         currentValues.warehouse_id !== newWarehouseId ||
         currentValues.reference !== newReference ||
         currentValues.movement_date !== newMovementDate
@@ -101,7 +106,8 @@ export function useStockMovementForm({
         form.reset({
           movement_type: newMovementType,
           quantity: newQuantity,
-          product_id: newProductId,
+          product_type_id: "",
+          lot_id: newLotId,
           warehouse_id: newWarehouseId,
           reference: newReference,
           movement_date: newMovementDate,
@@ -111,7 +117,7 @@ export function useStockMovementForm({
   }, [
     initialData?.movement_type,
     initialData?.quantity,
-    initialData?.product_id,
+    initialData?.lot_id,
     initialData?.warehouse_id,
     initialData?.reference,
     initialData?.movement_date,

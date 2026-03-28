@@ -13,7 +13,7 @@ export interface StockMovementWithDetails extends StockMovement {
 export interface StockMovementFormData {
   movement_type: string;
   quantity: number;
-  product_id?: string;
+  lot_id?: string;
   warehouse_id?: string;
   reference?: string;
   movement_date?: string;

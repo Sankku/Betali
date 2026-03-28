@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { TooltipHelp } from '@/components/ui/tooltip-help';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useWarehouses } from '@/hooks/useWarehouse';
-import { useProducts } from '@/hooks/useProducts';
+import { useProductTypes } from '@/hooks/useProductTypes';
 import { PURCHASE_ORDER_STATUS_OPTIONS } from '@/hooks/usePurchaseOrders';
 import { CreatePurchaseOrderRequest, PurchaseOrderStatus, calculatePurchaseOrderTotal, calculateLineTotal } from '@/types/purchaseOrders';
 
@@ -27,7 +27,7 @@ import { CreatePurchaseOrderRequest, PurchaseOrderStatus, calculatePurchaseOrder
  * Purchase Order Item (Line Item)
  */
 interface PurchaseOrderItem {
-  product_id: string;
+  product_type_id: string;
   quantity: number;
   unit_price: number;
   product_name?: string;
@@ -64,7 +64,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
   // Load data for dropdowns
   const { data: suppliers, refetch: refetchSuppliers } = useSuppliers({ searchOptions: { active_only: true } });
   const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ enabled: true });
-  const { data: products } = useProducts();
+  const { data: productTypes } = useProductTypes();
 
   const { watch, setValue, register, formState: { errors: formErrors } } = form;
 
@@ -98,7 +98,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
         items.every((item, index) => {
           const watchedItem = watchedValues.items[index];
           return (
-            item.product_id === watchedItem?.product_id &&
+            item.product_type_id === watchedItem?.product_type_id &&
             item.quantity === watchedItem?.quantity &&
             item.unit_price === watchedItem?.unit_price
           );
@@ -106,26 +106,26 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
 
       if (!itemsInSync) {
         const purchaseOrderItems: PurchaseOrderItem[] = watchedValues.items.map((item) => {
-          const product = products?.data?.find((p) => p.product_id === item.product_id);
+          const productType = (productTypes || []).find((p) => p.product_type_id === item.product_type_id);
           return {
-            product_id: item.product_id ?? '',
+            product_type_id: item.product_type_id ?? '',
             quantity: item.quantity ?? 1,
             unit_price: item.unit_price ?? 0,
             notes: item.notes,
-            product_name: product?.name,
-            product_sku: product?.batch_number,
+            product_name: productType?.name,
+            product_sku: productType?.sku,
           };
         });
         setItems(purchaseOrderItems);
       }
     } else if (isCreateMode && items.length === 0) {
       // Add one empty item for new purchase orders
-      const initialItem: PurchaseOrderItem = { product_id: '', quantity: 1, unit_price: 0 };
+      const initialItem: PurchaseOrderItem = { product_type_id: '', quantity: 1, unit_price: 0 };
       setItems([initialItem]);
       setValue('items', [initialItem]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedValues.items, mode, products?.data]);
+  }, [watchedValues.items, mode, productTypes]);
 
   // Calculate totals
   const { subtotal, total } = calculatePurchaseOrderTotal(
@@ -139,7 +139,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
    * Add new item to purchase order
    */
   const handleAddItem = () => {
-    const newItem: PurchaseOrderItem = { product_id: '', quantity: 1, unit_price: 0 };
+    const newItem: PurchaseOrderItem = { product_type_id: '', quantity: 1, unit_price: 0 };
     const newItems = [...items, newItem];
     setItems(newItems);
     setValue('items', newItems);
@@ -171,13 +171,13 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    // If product changed, update name, SKU, and default price
-    if (field === 'product_id' && value) {
-      const product = products?.data?.find((p) => p.product_id === value);
-      if (product) {
-        newItems[index].product_name = product.name;
-        newItems[index].product_sku = product.batch_number;
-        newItems[index].unit_price = product.price || 0;
+    // If product type changed, update name and SKU
+    if (field === 'product_type_id' && value) {
+      const productType = (productTypes || []).find((p) => p.product_type_id === value);
+      if (productType) {
+        newItems[index].product_name = productType.name;
+        newItems[index].product_sku = productType.sku;
+        newItems[index].unit_price = 0;
       }
     }
 
@@ -330,22 +330,22 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
             {items.map((item, index) => (
               <div key={index} className="border rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* Product Selection */}
+                  {/* Product Type Selection */}
                   <div className="md:col-span-5">
                     <Label htmlFor={`item-product-${index}`}>{t('purchaseOrders.form.productLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
                     <Select
-                      key={`product-select-${index}-${item.product_id}-${products?.data?.length ?? 0}`}
-                      value={item.product_id || ''}
-                      onValueChange={(value) => handleItemChange(index, 'product_id', value)}
+                      key={`product-select-${index}-${item.product_type_id}-${productTypes?.length ?? 0}`}
+                      value={item.product_type_id || ''}
+                      onValueChange={(value) => handleItemChange(index, 'product_type_id', value)}
                       disabled={isViewMode}
                     >
                       <SelectTrigger id={`item-product-${index}`}>
                         <SelectValue placeholder={t('purchaseOrders.form.productPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {products?.data?.map((product) => (
-                          <SelectItem key={product.product_id} value={product.product_id}>
-                            {product.name} {product.batch_number && `(Lote: ${product.batch_number})`}
+                        {(productTypes || []).map((productType) => (
+                          <SelectItem key={productType.product_type_id} value={productType.product_type_id}>
+                            {productType.name} {productType.sku && `(SKU: ${productType.sku})`}
                           </SelectItem>
                         ))}
                       </SelectContent>

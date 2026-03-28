@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/useClients';
 import { useWarehouses } from '@/hooks/useWarehouse';
-import { useProducts } from '@/hooks/useProducts';
+import { useProductTypes } from '@/hooks/useProductTypes';
 import { useTaxRates } from '@/hooks/useTaxRates';
 import { Order } from '@/services/api/orderService';
 import { ORDER_STATUS_OPTIONS } from '@/hooks/useOrders';
@@ -19,7 +19,7 @@ import { useRealtimePricing, formatPricing } from '@/hooks/usePricing';
 import { OrderItemWithStockValidation } from './OrderItemWithStockValidation';
 
 interface OrderItem {
-  product_id: string;
+  product_type_id: string;
   quantity: number;
   price: number;
   product_name?: string;
@@ -33,7 +33,7 @@ interface OrderFormData {
   notes: string;
   tax_rate_ids: string[];
   items: Array<{
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     price: number;
   }>;
@@ -51,15 +51,15 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load hooks for dropdowns with fresh data
-  const { data: clients, refetch: refetchClients } = useClients({ 
+  const { data: clients, refetch: refetchClients } = useClients({
     enabled: true,
     refetchInterval: false, // Only refetch manually or on invalidation
   });
-  const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ 
+  const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({
     enabled: true,
     refetchInterval: false,
   });
-  const { data: products, isLoading: productsLoading, error: productsError } = useProducts();
+  const { data: productTypes, isLoading: productsLoading, error: productsError } = useProductTypes();
   const { data: taxRates } = useTaxRates({ active_only: true });
 
   const { watch, setValue, register, formState: { errors: formErrors, isSubmitted } } = form;
@@ -70,14 +70,14 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
     client_id: watchedValues.client_id && watchedValues.client_id !== 'no-client' ? watchedValues.client_id : undefined,
     warehouse_id: watchedValues.warehouse_id && watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined,
     tax_rate_ids: watchedValues.tax_rate_ids || [],
-    items: items.filter(item => item.product_id && item.quantity > 0).map(item => ({
-      product_id: item.product_id,
+    items: items.filter(item => item.product_type_id && item.quantity > 0).map(item => ({
+      product_type_id: item.product_type_id,
       quantity: item.quantity,
       price: item.price
     }))
   }), [
-    watchedValues.client_id, 
-    watchedValues.warehouse_id, 
+    watchedValues.client_id,
+    watchedValues.warehouse_id,
     watchedValues.tax_rate_ids,
     items
   ]);
@@ -104,32 +104,32 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       const itemsInSync = items.length === watchedValues.items.length &&
         items.every((item, index) => {
           const watchedItem = watchedValues.items[index];
-          return item.product_id === watchedItem.product_id &&
+          return item.product_type_id === watchedItem.product_type_id &&
             item.quantity === watchedItem.quantity &&
             item.price === watchedItem.price;
         });
 
       if (!itemsInSync) {
         const orderItems: OrderItem[] = watchedValues.items.map(item => {
-          const product = products?.data?.find(p => p.product_id === item.product_id);
+          const productType = productTypes?.find(p => p.product_type_id === item.product_type_id);
           return {
-            product_id: item.product_id,
+            product_type_id: item.product_type_id,
             quantity: item.quantity,
             price: item.price,
-            product_name: product?.name,
-            product_sku: product?.batch_number,
+            product_name: productType?.name,
+            product_sku: productType?.sku,
           };
         });
         setItems(orderItems);
       }
     } else if (mode === 'create' && items.length === 0) {
       // Add one empty item for new orders
-      const initialItem = { product_id: '', quantity: 1, price: 0 };
+      const initialItem = { product_type_id: '', quantity: 1, price: 0 };
       setItems([initialItem]);
       setValue('items', [initialItem]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedValues.items, mode, products?.data]); // Removed items.length and setValue to prevent infinite loops
+  }, [watchedValues.items, mode, productTypes]); // Removed items.length and setValue to prevent infinite loops
 
   // Recalculate pricing when items change
   useEffect(() => {
@@ -137,16 +137,16 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       const timeoutId = setTimeout(() => {
         pricingMutation.mutate(orderDataForPricing);
       }, 500); // Debounce API calls
-      
+
       return () => clearTimeout(timeoutId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     // Use serialized version of items to avoid infinite loops
-    JSON.stringify(items.map(item => ({ 
-      product_id: item.product_id, 
-      quantity: item.quantity, 
-      price: item.price 
+    JSON.stringify(items.map(item => ({
+      product_type_id: item.product_type_id,
+      quantity: item.quantity,
+      price: item.price
     }))),
     watchedValues.client_id, 
     watchedValues.warehouse_id,
@@ -158,15 +158,15 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
   const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
     const newItems = [...items];
 
-    if (field === 'product_id') {
-      const selectedProduct = products?.data?.find(p => p.product_id === value);
-      if (selectedProduct) {
+    if (field === 'product_type_id') {
+      const selectedProductType = productTypes?.find(p => p.product_type_id === value);
+      if (selectedProductType) {
         newItems[index] = {
           ...newItems[index],
-          product_id: value as string,
-          price: selectedProduct.price,
-          product_name: selectedProduct.name,
-          product_sku: selectedProduct.batch_number,
+          product_type_id: value as string,
+          price: 0,
+          product_name: selectedProductType.name,
+          product_sku: selectedProductType.sku,
         };
       }
     } else if (field === 'quantity') {
@@ -189,18 +189,18 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
     setItems(newItems);
     // Update form with simplified items data
     setValue('items', newItems.map(item => ({
-      product_id: item.product_id,
+      product_type_id: item.product_type_id,
       quantity: item.quantity,
       price: item.price,
     })));
   };
 
   const addItem = () => {
-    const newItem = { product_id: '', quantity: 1, price: 0 };
+    const newItem = { product_type_id: '', quantity: 1, price: 0 };
     const newItems = [...items, newItem];
     setItems(newItems);
     setValue('items', newItems.map(item => ({
-      product_id: item.product_id,
+      product_type_id: item.product_type_id,
       quantity: item.quantity,
       price: item.price,
     })));
@@ -211,7 +211,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       const newItems = items.filter((_, i) => i !== index);
       setItems(newItems);
       setValue('items', newItems.map(item => ({
-        product_id: item.product_id,
+        product_type_id: item.product_type_id,
         quantity: item.quantity,
         price: item.price,
       })));
@@ -376,11 +376,11 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
               <div className="md:col-span-2">
                 <Label className="text-gray-900 font-medium">{t('orders.form.product')} *</Label>
                 <Select
-                  value={item.product_id}
-                  onValueChange={(value) => handleItemChange(index, 'product_id', value)}
+                  value={item.product_type_id}
+                  onValueChange={(value) => handleItemChange(index, 'product_type_id', value)}
                   disabled={isViewMode}
                 >
-                  <SelectTrigger className={(isSubmitted && !item.product_id) ? 'border-red-500' : ''}>
+                  <SelectTrigger className={(isSubmitted && !item.product_type_id) ? 'border-red-500' : ''}>
                     <SelectValue placeholder={
                       productsLoading ? t('orders.form.loadingProducts') :
                       productsError ? t('orders.form.errorLoadingProducts') :
@@ -388,13 +388,13 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                     } />
                   </SelectTrigger>
                   <SelectContent>
-                    {products?.data && products.data.length > 0 ? (
-                      products.data.map((product) => (
-                        <SelectItem key={product.product_id} value={product.product_id}>
+                    {productTypes && productTypes.length > 0 ? (
+                      productTypes.map((productType) => (
+                        <SelectItem key={productType.product_type_id} value={productType.product_type_id}>
                           <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{product.name}</span>
+                            <span className="font-medium text-gray-900">{productType.name}</span>
                             <span className="text-sm text-gray-700">
-                              Lote: {product.batch_number} | ${product.price}
+                              SKU: {productType.sku}
                             </span>
                           </div>
                         </SelectItem>
@@ -406,7 +406,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                     )}
                   </SelectContent>
                 </Select>
-                {isSubmitted && !item.product_id && (
+                {isSubmitted && !item.product_type_id && (
                   <p className="text-sm text-red-600 mt-1">{t('orders.form.productRequired')}</p>
                 )}
               </div>

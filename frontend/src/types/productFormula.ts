@@ -19,7 +19,7 @@ export interface AddFormulaItemData {
 }
 
 export interface ProductionMovementRequest {
-  finished_product_id: string;
+  finished_product_type_id: string;
   quantity_to_produce: number;
   warehouse_id: string;
   reference?: string;

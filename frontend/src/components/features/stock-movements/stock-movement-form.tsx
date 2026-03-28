@@ -1,14 +1,12 @@
-import React, { useRef } from 'react';
-import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar, Info } from 'lucide-react';
+import React from 'react';
+import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar } from 'lucide-react';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { useStockMovementForm } from '../../../hooks/useStockMovementForm';
 import { StockMovementFormData } from '../../../services/api/stockMovementService';
-import { useProducts } from '../../../hooks/useProducts';
+import { useProductTypes } from '../../../hooks/useProductTypes';
+import { useProductLots } from '../../../hooks/useProductLots';
 import { useWarehouses } from '../../../hooks/useWarehouse';
-import { useQuery } from '@tanstack/react-query';
-import { productsService } from '../../../services/api/productsService';
 import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Textarea } from '../../ui/textarea';
 import { DatePicker } from '../../ui/date-picker';
@@ -91,22 +89,22 @@ export function StockMovementForm({
   onCancel,
 }: StockMovementFormProps) {
   const { t } = useTranslation();
-  const productsQuery   = useProducts();
-  const warehousesQuery = useWarehouses();
+  const productTypesQuery = useProductTypes();
+  const warehousesQuery   = useWarehouses();
 
-  const productsData   = productsQuery.data?.data   || [];
-  const warehousesData = warehousesQuery.data?.data || [];
+  const productTypesData = productTypesQuery.data || [];
+  const warehousesData   = warehousesQuery.data?.data || [];
 
-  const products   = Array.isArray(productsData)   ? productsData   : [];
-  const warehouses = Array.isArray(warehousesData) ? warehousesData : [];
+  const productTypes = Array.isArray(productTypesData) ? productTypesData : [];
+  const warehouses   = Array.isArray(warehousesData) ? warehousesData : [];
 
-  const productsLoading   = productsQuery.isLoading;
-  const warehousesLoading = warehousesQuery.isLoading;
-  const productsError     = productsQuery.error;
-  const warehousesError   = warehousesQuery.error;
+  const productTypesLoading = productTypesQuery.isLoading;
+  const warehousesLoading   = warehousesQuery.isLoading;
+  const productTypesError   = productTypesQuery.error;
+  const warehousesError     = warehousesQuery.error;
 
-  const validProducts   = products.filter(p => p && p.product_id && p.name);
-  const validWarehouses = warehouses.filter((w: any) => w && w.warehouse_id && w.name);
+  const validProductTypes = productTypes.filter(p => p && p.product_type_id && p.name);
+  const validWarehouses   = warehouses.filter((w: any) => w && w.warehouse_id && w.name);
 
   const { form, handleSubmit, getFieldError } = useStockMovementForm({
     initialData,
@@ -118,26 +116,27 @@ export function StockMovementForm({
   const watchedValues = watch();
   const isViewMode = mode === 'view';
 
-  // Fetch available stock for the selected product+warehouse combo (exit/production only)
-  const isExitType = ['exit', 'production'].includes(watchedValues.movement_type);
-  const { data: warehouseStockData } = useQuery({
-    queryKey: ['available-stock', watchedValues.product_id, watchedValues.warehouse_id],
-    queryFn: () => productsService.getAvailableStock(watchedValues.product_id!, watchedValues.warehouse_id!),
-    enabled: isExitType && !!watchedValues.product_id && !!watchedValues.warehouse_id,
-    staleTime: 30_000,
-  });
+  // Fetch lots for the selected product type
+  const selectedProductTypeId = watchedValues.product_type_id;
+  const productLotsQuery = useProductLots(selectedProductTypeId || undefined);
+  const productLots = productLotsQuery.data || [];
+  const validProductLots = Array.isArray(productLots) ? productLots.filter(l => l && l.lot_id) : [];
 
   // ── helpers ──────────────────────────────────────────────────────────────────
-  const getProductLabel = (productId: string) => {
-    const p = validProducts.find(p => p.product_id === productId);
+  const getProductTypeLabel = (productTypeId: string) => {
+    const p = validProductTypes.find(p => p.product_type_id === productTypeId);
     return p ? p.name : t('stockMovements.form.productNotFound');
   };
 
-  const getProductSubtitle = (productId: string) => {
-    const p = validProducts.find(p => p.product_id === productId);
+  const getProductTypeSubtitle = (productTypeId: string) => {
+    const p = validProductTypes.find(p => p.product_type_id === productTypeId);
     if (!p) return '';
-    return [p.batch_number && `Batch: ${p.batch_number}`, p.origin_country && `Country: ${p.origin_country}`]
-      .filter(Boolean).join(' | ');
+    return p.sku ? `SKU: ${p.sku}` : '';
+  };
+
+  const getLotLabel = (lotId: string) => {
+    const l = validProductLots.find(l => l.lot_id === lotId);
+    return l ? l.lot_number : lotId;
   };
 
   const getWarehouseLabel = (warehouseId: string) => {
@@ -156,7 +155,7 @@ export function StockMovementForm({
   };
 
   // ── loading / error states ───────────────────────────────────────────────────
-  if (productsLoading || warehousesLoading) {
+  if (productTypesLoading || warehousesLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center space-y-3">
@@ -167,7 +166,7 @@ export function StockMovementForm({
     );
   }
 
-  if (productsError || warehousesError) {
+  if (productTypesError || warehousesError) {
     return (
       <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
         <div className="flex items-start space-x-3">
@@ -179,7 +178,7 @@ export function StockMovementForm({
           <div>
             <h3 className="text-red-800 font-semibold">{t('stockMovements.form.errorLoadingData')}</h3>
             <p className="text-red-700 text-sm mt-1">
-              {productsError?.message || warehousesError?.message || 'Unknown error'}
+              {productTypesError?.message || warehousesError?.message || 'Unknown error'}
             </p>
           </div>
         </div>
@@ -206,7 +205,8 @@ export function StockMovementForm({
       <div className="space-y-6">
         <ViewField label={t('stockMovements.form.movementType')}  value={getMovementTypeLabel(watchedValues.movement_type)} icon={<ArrowUpDown className="h-4 w-4" />} description={t('stockMovements.form.typeOfOperation')} />
         <ViewField label={t('stockMovements.form.quantity')}        value={watchedValues.quantity?.toString() || '0'}          icon={<Hash className="h-4 w-4" />}      description={t('stockMovements.form.numberOfUnits')} />
-        <ViewField label={t('stockMovements.form.product')}         value={getProductLabel(watchedValues?.product_id || '')}   icon={<Package className="h-4 w-4" />}   description={t('stockMovements.form.affectedProduct')} />
+        <ViewField label={t('stockMovements.form.product')}         value={getProductTypeLabel(watchedValues?.product_type_id || '')}   icon={<Package className="h-4 w-4" />}   description={t('stockMovements.form.affectedProduct')} />
+        <ViewField label="Lote"                                      value={getLotLabel(watchedValues?.lot_id || '')}            icon={<Hash className="h-4 w-4" />}      description="Lote del movimiento" />
         <ViewField label={t('stockMovements.form.warehouse')}       value={getWarehouseLabel(watchedValues?.warehouse_id || '')} icon={<Warehouse className="h-4 w-4" />} description={t('stockMovements.form.sourceWarehouse')} />
         <ViewField label={t('stockMovements.form.reference')}       value={watchedValues.reference || t('stockMovements.form.noReference')}          icon={<FileText className="h-4 w-4" />}  description={t('stockMovements.form.additionalNotes')} />
         <ViewField
@@ -220,8 +220,9 @@ export function StockMovementForm({
   }
 
   // ── selected labels for tooltip ──────────────────────────────────────────────
-  const selectedProductLabel    = watchedValues.product_id   ? `${getProductLabel(watchedValues.product_id)} — ${getProductSubtitle(watchedValues.product_id)}`     : '';
-  const selectedWarehouseLabel  = watchedValues.warehouse_id ? `${getWarehouseLabel(watchedValues.warehouse_id)} — ${getWarehouseSubtitle(watchedValues.warehouse_id)}` : '';
+  const selectedProductTypeLabel = watchedValues.product_type_id ? `${getProductTypeLabel(watchedValues.product_type_id)} — ${getProductTypeSubtitle(watchedValues.product_type_id)}` : '';
+  const selectedWarehouseLabel   = watchedValues.warehouse_id ? `${getWarehouseLabel(watchedValues.warehouse_id)} — ${getWarehouseSubtitle(watchedValues.warehouse_id)}` : '';
+  const isExitType = ['exit', 'production'].includes(watchedValues.movement_type);
 
   // ── edit / create mode ───────────────────────────────────────────────────────
   const isProduction = watchedValues.movement_type === 'production';
@@ -281,8 +282,8 @@ export function StockMovementForm({
                   disabled={isLoading}
                   className="flex-1 rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-neutral-100 shadow-sm transition-all duration-200"
                 />
-                {watchedValues.product_id && (() => {
-                  const unit = validProducts.find(p => p.product_id === watchedValues.product_id)?.unit;
+                {watchedValues.product_type_id && (() => {
+                  const unit = validProductTypes.find(p => p.product_type_id === watchedValues.product_type_id)?.unit;
                   return unit ? (
                     <span className="text-xs font-mono font-semibold px-2 py-1.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
                       {unit}
@@ -290,25 +291,6 @@ export function StockMovementForm({
                   ) : null;
                 })()}
               </div>
-              {/* Available stock hint — only for exit/production when both selects have a value */}
-              {isExitType && watchedValues.product_id && watchedValues.warehouse_id && (
-                <div className={`flex items-center gap-1.5 text-xs mt-1 ${
-                  warehouseStockData !== undefined
-                    ? warehouseStockData.available_stock === 0
-                      ? 'text-red-600'
-                      : warehouseStockData.available_stock < (watchedValues.quantity || 0)
-                        ? 'text-orange-600'
-                        : 'text-emerald-700'
-                    : 'text-neutral-400'
-                }`}>
-                  <Info className="h-3.5 w-3.5 flex-shrink-0" />
-                  {warehouseStockData !== undefined
-                    ? `Disponible en este depósito: ${warehouseStockData.available_stock} ${
-                        validProducts.find(p => p.product_id === watchedValues.product_id)?.unit || 'unid.'
-                      }`
-                    : 'Consultando stock…'}
-                </div>
-              )}
             </FormField>
 
             <FormField
@@ -329,46 +311,48 @@ export function StockMovementForm({
             </FormField>
           </div>
 
-          {/* Product + Warehouse — 2 col grid */}
+          {/* Product Type + Lot + Warehouse — grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <FormField
               label={t('stockMovements.form.product')}
               description={t('stockMovements.form.productDesc')}
               icon={<Package className="h-4 w-4" />}
               required
-              error={getFieldError('product_id')}
+              error={getFieldError('product_type_id')}
             >
-              <WithTooltip label={selectedProductLabel}>
-                <Select value={watchedValues.product_id} onValueChange={v => setValue('product_id', v)} disabled={isLoading}>
+              <WithTooltip label={selectedProductTypeLabel}>
+                <Select
+                  value={watchedValues.product_type_id || ''}
+                  onValueChange={v => {
+                    setValue('product_type_id', v);
+                    // Reset lot when product type changes
+                    setValue('lot_id', '');
+                  }}
+                  disabled={isLoading}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('stockMovements.form.productPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {validProducts.length === 0 ? (
+                    {validProductTypes.length === 0 ? (
                       <div className="px-3 py-4 text-sm text-neutral-500 text-center">{t('stockMovements.form.noProductsAvailable')}</div>
                     ) : (
-                      validProducts
-                        .filter(p => p?.product_id && p?.name)
-                        .map(product => {
-                          const subtitle = [
-                            product.batch_number   && `Batch: ${product.batch_number}`,
-                            product.origin_country && `Country: ${product.origin_country}`,
-                          ].filter(Boolean).join(' | ');
-                          return (
-                            <SelectItem key={product.product_id} value={product.product_id}>
-                              <div className="flex flex-col gap-0.5 min-w-0">
-                                <span className="font-semibold text-neutral-900 truncate block" title={product.name}>
-                                  {product.name}
+                      validProductTypes
+                        .filter(p => p?.product_type_id && p?.name)
+                        .map(productType => (
+                          <SelectItem key={productType.product_type_id} value={productType.product_type_id}>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="font-semibold text-neutral-900 truncate block" title={productType.name}>
+                                {productType.name}
+                              </span>
+                              {productType.sku && (
+                                <span className="text-xs text-neutral-500 truncate block" title={`SKU: ${productType.sku}`}>
+                                  SKU: {productType.sku}
                                 </span>
-                                {subtitle && (
-                                  <span className="text-xs text-neutral-500 truncate block" title={subtitle}>
-                                    {subtitle}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          );
-                        })
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))
                     )}
                   </SelectContent>
                 </Select>
@@ -383,7 +367,7 @@ export function StockMovementForm({
               error={getFieldError('warehouse_id')}
             >
               <WithTooltip label={selectedWarehouseLabel}>
-                <Select value={watchedValues.warehouse_id} onValueChange={v => setValue('warehouse_id', v)} disabled={isLoading}>
+                <Select value={watchedValues.warehouse_id || ''} onValueChange={v => setValue('warehouse_id', v)} disabled={isLoading}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('stockMovements.form.warehousePlaceholder')} />
                   </SelectTrigger>
@@ -413,6 +397,49 @@ export function StockMovementForm({
               </WithTooltip>
             </FormField>
           </div>
+
+          {/* Lot selector — appears after a product type is selected */}
+          {watchedValues.product_type_id && (
+            <FormField
+              label="Lote"
+              description="Seleccionar el lote específico para este movimiento"
+              icon={<Hash className="h-4 w-4" />}
+              required
+              error={getFieldError('lot_id')}
+            >
+              <Select
+                value={watchedValues.lot_id || ''}
+                onValueChange={v => setValue('lot_id', v)}
+                disabled={isLoading || productLotsQuery.isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={productLotsQuery.isLoading ? 'Cargando lotes...' : 'Seleccionar lote'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {validProductLots.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-neutral-500 text-center">
+                      {productLotsQuery.isLoading ? 'Cargando lotes...' : 'No hay lotes disponibles para este producto'}
+                    </div>
+                  ) : (
+                    validProductLots.map(lot => (
+                      <SelectItem key={lot.lot_id} value={lot.lot_id}>
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-semibold text-neutral-900 truncate block">
+                            {lot.lot_number}
+                          </span>
+                          {lot.expiration_date && (
+                            <span className="text-xs text-neutral-500 truncate block">
+                              Vence: {new Date(lot.expiration_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
 
           {/* Reference — full width */}
           <FormField

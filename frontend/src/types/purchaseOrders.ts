@@ -31,7 +31,7 @@ export type PurchaseOrderStatus =
 export interface PurchaseOrderDetail {
   detail_id: string;
   purchase_order_id: string;
-  product_id: string;
+  product_type_id: string;
   organization_id: string;
   quantity: number;
   received_quantity: number;
@@ -41,7 +41,7 @@ export interface PurchaseOrderDetail {
   created_at: string;
 
   // Populated relations
-  products?: Product;
+  product_types?: Product;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface CreatePurchaseOrderRequest {
   expected_delivery_date?: string;
   status?: PurchaseOrderStatus;
   items: {
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     unit_price: number;
     notes?: string;
@@ -104,7 +104,7 @@ export interface UpdatePurchaseOrderRequest {
   expected_delivery_date?: string;
   items?: {
     detail_id?: string; // If present, update existing; if not, create new
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     unit_price: number;
     notes?: string;
