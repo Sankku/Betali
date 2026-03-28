@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Upload, AlertTriangle, Package, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { DashboardLayout } from '../../components/layout/Dashboard';
 import { ToastContainer } from '../../components/ui/toast';
 import {
   Modal,
@@ -136,7 +137,8 @@ const ProductsPage: React.FC = () => {
         <title>Tipos de Producto - Dashboard</title>
       </Helmet>
 
-      <div className="p-6 space-y-6">
+      <DashboardLayout>
+      <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
           <div>
@@ -314,6 +316,7 @@ const ProductsPage: React.FC = () => {
       </Modal>
 
       <ToastContainer />
+      </DashboardLayout>
     </>
   );
 };
