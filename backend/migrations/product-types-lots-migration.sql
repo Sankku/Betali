@@ -70,7 +70,7 @@ CREATE TABLE product_types (
   max_stock         NUMERIC(10,4),
   description       TEXT,
   alert_enabled     BOOLEAN DEFAULT true,
-  senasa_product_id UUID REFERENCES senasa_products(senasa_product_id),
+  senasa_product_id UUID, -- FK omitted: senasa_products lacks a unique constraint on senasa_product_id
   organization_id   UUID NOT NULL REFERENCES organizations(organization_id) ON DELETE CASCADE,
   branch_id         UUID REFERENCES branches(branch_id),
   created_at        TIMESTAMPTZ DEFAULT now(),
