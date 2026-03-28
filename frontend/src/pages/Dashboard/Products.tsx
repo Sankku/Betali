@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Upload, AlertTriangle, Package, Loader2 } from 'lucide-react';
+import { Plus, Upload, AlertTriangle, Package, Loader2, Search, X } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { DashboardLayout } from '../../components/layout/Dashboard';
 import { ToastContainer } from '../../components/ui/toast';
 import {
@@ -57,6 +58,9 @@ const ProductsPage: React.FC = () => {
   const [deleteTypeState, setDeleteTypeState] = useState<DeleteTypeState>({ show: false });
   const [deleteLotState, setDeleteLotState] = useState<DeleteLotState>({ show: false });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
 
   const { data: productTypes, isLoading, error } = useProductTypes();
   const createProductType = useCreateProductType();
@@ -129,7 +133,19 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const types = productTypes ?? [];
+  const types = useMemo(() => {
+    let list = productTypes ?? [];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(t =>
+        t.name.toLowerCase().includes(q) || t.sku.toLowerCase().includes(q)
+      );
+    }
+    if (typeFilter) {
+      list = list.filter(t => t.product_type === typeFilter);
+    }
+    return list;
+  }, [productTypes, searchQuery, typeFilter]);
 
   return (
     <>
@@ -163,6 +179,52 @@ const ProductsPage: React.FC = () => {
               <Plus className="h-4 w-4" />
               Nuevo Tipo
             </Button>
+          </div>
+        </div>
+
+        {/* Search + Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
+            <Input
+              placeholder="Buscar por nombre o SKU..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-9 pr-8"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {(['', 'standard', 'raw_material', 'finished_good'] as const).map((val) => {
+              const labels: Record<string, string> = {
+                '': 'Todos',
+                standard: 'Estándar',
+                raw_material: 'Mat. Prima',
+                finished_good: 'Terminado',
+              };
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setTypeFilter(val)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    typeFilter === val
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+                  }`}
+                >
+                  {labels[val]}
+                </button>
+              );
+            })}
           </div>
         </div>
 
