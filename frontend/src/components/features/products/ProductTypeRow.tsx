@@ -54,14 +54,24 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
     ? (lots ?? []).filter(l => l.lot_number.toLowerCase().includes(lotSearch.toLowerCase()))
     : (lots ?? []);
 
+  // When searching, hide this row if neither the type nor any lot matches
+  const typeMatchesSearch = lotSearch
+    ? productType.name.toLowerCase().includes(lotSearch.toLowerCase()) ||
+      productType.sku.toLowerCase().includes(lotSearch.toLowerCase())
+    : true;
+  const hidden = !!lotSearch && !typeMatchesSearch && visibleLots.length === 0;
+
   // Auto-expand when lotSearch produces matches in this row
   useEffect(() => {
     if (lotSearch && visibleLots.length > 0 && !isExpanded) {
       onAutoExpand();
     }
   }, [lotSearch, visibleLots.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const typeStyle = TYPE_STYLES[productType.product_type] || TYPE_STYLES.standard;
   const typeLabel = TYPE_LABELS[productType.product_type] || productType.product_type;
+
+  if (hidden) return null;
 
   return (
     <>

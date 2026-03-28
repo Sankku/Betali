@@ -135,17 +135,13 @@ const ProductsPage: React.FC = () => {
 
   const types = useMemo(() => {
     let list = productTypes ?? [];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(t =>
-        t.name.toLowerCase().includes(q) || t.sku.toLowerCase().includes(q)
-      );
-    }
+    // Only apply typeFilter at page level — text search is handled inside each
+    // ProductTypeRow so that lot-number matches can auto-expand the right rows.
     if (typeFilter) {
       list = list.filter(t => t.product_type === typeFilter);
     }
     return list;
-  }, [productTypes, searchQuery, typeFilter]);
+  }, [productTypes, typeFilter]);
 
   return (
     <>
