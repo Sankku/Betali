@@ -187,7 +187,7 @@ const ProductsPage: React.FC = () => {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
             <Input
-              placeholder="Buscar por nombre o SKU..."
+              placeholder="Buscar por nombre, SKU o nro. de lote..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="pl-9 pr-8"
@@ -264,6 +264,7 @@ const ProductsPage: React.FC = () => {
         ) : (
           <ProductTypeAccordion
             productTypes={types}
+            lotSearch={searchQuery.trim() || undefined}
             onEditType={openEditType}
             onDeleteType={openDeleteType}
             onAddLot={openAddLot}

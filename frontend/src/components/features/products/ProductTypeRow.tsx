@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChevronDown, ChevronRight, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { ProductLotRow } from './ProductLotRow';
@@ -9,7 +9,9 @@ import type { ProductLot } from '../../../services/api/productLotsService';
 interface ProductTypeRowProps {
   productType: ProductType;
   isExpanded: boolean;
+  lotSearch?: string;
   onToggle: () => void;
+  onAutoExpand: () => void;
   onEditType: (productType: ProductType) => void;
   onDeleteType: (productType: ProductType) => void;
   onAddLot: (productType: ProductType) => void;
@@ -32,18 +34,32 @@ const TYPE_STYLES: Record<string, string> = {
 export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   productType,
   isExpanded,
+  lotSearch,
   onToggle,
+  onAutoExpand,
   onEditType,
   onDeleteType,
   onAddLot,
   onEditLot,
   onDeleteLot,
 }) => {
-  const { data: lots, isLoading: lotsLoading } = useProductLots(
-    isExpanded ? productType.product_type_id : undefined
-  );
+  // Always fetch lots so the count is visible even when collapsed.
+  // TanStack Query caches per typeId, so expanding is instant.
+  const { data: lots, isLoading: lotsLoading } = useProductLots(productType.product_type_id);
 
   const lotCount = lots?.length ?? 0;
+
+  // Filter lots by lot_number when lotSearch is active
+  const visibleLots = lotSearch
+    ? (lots ?? []).filter(l => l.lot_number.toLowerCase().includes(lotSearch.toLowerCase()))
+    : (lots ?? []);
+
+  // Auto-expand when lotSearch produces matches in this row
+  useEffect(() => {
+    if (lotSearch && visibleLots.length > 0 && !isExpanded) {
+      onAutoExpand();
+    }
+  }, [lotSearch, visibleLots.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const typeStyle = TYPE_STYLES[productType.product_type] || TYPE_STYLES.standard;
   const typeLabel = TYPE_LABELS[productType.product_type] || productType.product_type;
 
@@ -88,8 +104,8 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
         </td>
         <td className="px-4 py-3 text-sm text-neutral-600">
           <span className="inline-flex items-center gap-1">
-            <span className="font-semibold text-neutral-800">{isExpanded ? lotCount : '—'}</span>
-            {isExpanded && <span className="text-xs text-neutral-400">lotes</span>}
+            <span className="font-semibold text-neutral-800">{lotCount}</span>
+            <span className="text-xs text-neutral-400">lotes</span>
           </span>
         </td>
         <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -135,7 +151,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Cargando lotes...
               </div>
-            ) : !lots || lots.length === 0 ? (
+            ) : lotCount === 0 ? (
               <div className="px-10 py-4 text-sm text-neutral-400 italic">
                 Sin lotes.{' '}
                 <button
@@ -144,6 +160,10 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                 >
                   Agregar el primero
                 </button>
+              </div>
+            ) : visibleLots.length === 0 ? (
+              <div className="px-10 py-4 text-sm text-neutral-400 italic">
+                Sin lotes que coincidan con la búsqueda.
               </div>
             ) : (
               <table className="w-full text-left">
@@ -167,7 +187,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {lots.map(lot => (
+                  {visibleLots.map(lot => (
                     <ProductLotRow
                       key={lot.lot_id}
                       lot={lot}
