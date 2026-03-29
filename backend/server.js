@@ -14,7 +14,7 @@ const { sanitizeMiddleware, SANITIZATION_RULES } = require('./middleware/sanitiz
 const { i18n } = require('./utils/i18n');
 
 const productTypeRoutes = require('./routes/productTypes');
-const productLotRoutes = require('./routes/productLots');
+const createProductLotRouter = require('./routes/productLots');
 const dashboardRoutes = require('./routes/dashboard');
 const warehouseRoutes = require('./routes/warehouse'); 
 const createStockMovementRoutes = require('./routes/stockMovements');
@@ -198,8 +198,8 @@ class Application {
     this.app.use('/api/auth', authRoutes);
 
     this.app.use('/api/product-types', productTypeRoutes);
-    this.app.use('/api/product-types/:typeId/lots', productLotRoutes);
-    this.app.use('/api/product-lots', productLotRoutes);
+    this.app.use('/api/product-types/:typeId/lots', createProductLotRouter());
+    this.app.use('/api/product-lots', createProductLotRouter());
     this.app.use('/api/warehouse', warehouseRoutes); 
     this.app.use('/api/stock-movements', createStockMovementRoutes());
     this.app.use('/api/dashboard', dashboardRoutes);
