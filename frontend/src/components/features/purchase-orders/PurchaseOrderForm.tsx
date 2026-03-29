@@ -32,6 +32,7 @@ interface PurchaseOrderItem {
   unit_price: number;
   product_name?: string;
   product_sku?: string;
+  product_unit?: string;
   notes?: string;
 }
 
@@ -177,6 +178,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
       if (productType) {
         newItems[index].product_name = productType.name;
         newItems[index].product_sku = productType.sku;
+        newItems[index].product_unit = productType.unit;
         newItems[index].unit_price = 0;
       }
     }
@@ -355,20 +357,25 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                   {/* Quantity */}
                   <div className="md:col-span-2">
                     <Label htmlFor={`item-quantity-${index}`}>{t('purchaseOrders.form.quantityLabel')} <span className="text-danger-500 ml-0.5">*</span></Label>
-                    <Input
-                      id={`item-quantity-${index}`}
-                      type="number"
-                      min="1"
-                      value={item.quantity || ''}
-                      onChange={(e) =>
-                        handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)
-                      }
-                      onBlur={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!val || val < 1) handleItemChange(index, 'quantity', 1);
-                      }}
-                      disabled={isViewMode}
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        id={`item-quantity-${index}`}
+                        type="number"
+                        min="1"
+                        value={item.quantity || ''}
+                        onChange={(e) =>
+                          handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)
+                        }
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (!val || val < 1) handleItemChange(index, 'quantity', 1);
+                        }}
+                        disabled={isViewMode}
+                      />
+                      {item.product_unit && (
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{item.product_unit}</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Unit Price */}

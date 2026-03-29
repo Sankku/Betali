@@ -115,7 +115,7 @@ function PurchaseOrderFormModal({
         warehouse_id: purchaseOrder.warehouse_id || '',
         expected_delivery_date: purchaseOrder.expected_delivery_date || '',
         status: purchaseOrder.status,
-        items: [{ product_id: '', quantity: 1, unit_price: 0 }],
+        items: [{ product_type_id: '', quantity: 1, unit_price: 0 }],
         discount_amount: purchaseOrder.discount_amount || 0,
         tax_amount: purchaseOrder.tax_amount || 0,
         shipping_amount: purchaseOrder.shipping_amount || 0,
@@ -126,7 +126,7 @@ function PurchaseOrderFormModal({
         warehouse_id: '',
         expected_delivery_date: '',
         status: 'draft' as const,
-        items: [{ product_id: '', quantity: 1, unit_price: 0 }],
+        items: [{ product_type_id: '', quantity: 1, unit_price: 0 }],
         discount_amount: 0,
         tax_amount: 0,
         shipping_amount: 0,
@@ -139,7 +139,7 @@ function PurchaseOrderFormModal({
     if (!isOpen || mode !== 'edit' || !resolvedOrder) return;
     // Only reset once we have real detail records (list response has [{count:N}] without product_id)
     const realDetails = resolvedOrder.purchase_order_details?.filter(
-      (d): d is NonNullable<typeof d> => 'product_id' in d && d.product_id != null
+      (d): d is NonNullable<typeof d> => 'product_type_id' in d && d.product_type_id != null
     ) ?? [];
     if (!realDetails.length) return;
     form.reset({
@@ -148,7 +148,7 @@ function PurchaseOrderFormModal({
       expected_delivery_date: resolvedOrder.expected_delivery_date || '',
       status: resolvedOrder.status,
       items: realDetails.map((detail) => ({
-        product_id: detail.product_id,
+        product_type_id: detail.product_type_id,
         quantity: detail.quantity,
         unit_price: detail.unit_price,
         notes: detail.notes || '',
@@ -166,7 +166,7 @@ function PurchaseOrderFormModal({
     if (!valid) return;
 
     const invalidItem = data.items.find(
-      (item) => !item.product_id || item.unit_price <= 0 || item.quantity <= 0
+      (item) => !item.product_type_id || item.unit_price <= 0 || item.quantity <= 0
     );
     if (invalidItem) {
       toast.error(t('purchaseOrders.modal.validationError'));
@@ -181,7 +181,7 @@ function PurchaseOrderFormModal({
           expected_delivery_date: data.expected_delivery_date || undefined,
           status: data.status,
           items: data.items.map((item) => ({
-            product_id: item.product_id,
+            product_type_id: item.product_type_id,
             quantity: item.quantity,
             unit_price: item.unit_price,
             notes: item.notes,
@@ -200,7 +200,7 @@ function PurchaseOrderFormModal({
             warehouse_id: data.warehouse_id,
             expected_delivery_date: data.expected_delivery_date || undefined,
             items: data.items.map((item) => ({
-              product_id: item.product_id,
+              product_type_id: item.product_type_id,
               quantity: item.quantity,
               unit_price: item.unit_price,
               notes: item.notes,
