@@ -10,6 +10,7 @@ import {
   UpdatePurchaseOrderStatusRequest,
   PurchaseOrderFilters,
   PurchaseOrderStatus,
+  ReceivePurchaseOrderPayload,
 } from '@/types/purchaseOrders';
 
 /**
@@ -185,26 +186,25 @@ export function useCancelPurchaseOrder() {
 }
 
 /**
- * Hook to mark purchase order as received
- * This creates stock entry movements
+ * Hook to receive a purchase order with lot assignment per line.
+ * Replaces the old simple status-change approach.
  */
 export function useReceivePurchaseOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (purchaseOrderId: string) => purchaseOrdersService.markAsReceived(purchaseOrderId),
-    onSuccess: (receivedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', receivedPurchaseOrder.purchase_order_id],
-        receivedPurchaseOrder
-      );
+    mutationFn: ({ id, lines }: ReceivePurchaseOrderPayload) =>
+      purchaseOrdersService.receive(id, lines),
+    onSuccess: (receivedPO) => {
+      // NOTE: the purchase orders query key in this codebase is camelCase 'purchaseOrders'
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-lots'] });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-stats'] });
 
-      toast.success(
-        `Orden de compra "${receivedPurchaseOrder.purchase_order_number}" recibida. Stock actualizado exitosamente.`
-      );
+      const msg = receivedPO.status === 'received'
+        ? `OC "${receivedPO.purchase_order_number}" recibida completamente. Stock actualizado.`
+        : `OC "${receivedPO.purchase_order_number}" parcialmente recibida. Stock actualizado.`;
+      toast.success(msg);
     },
     onError: (error: any) => {
       console.error('Error receiving purchase order:', error);
