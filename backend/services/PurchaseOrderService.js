@@ -109,7 +109,7 @@ class PurchaseOrderService {
       const orderDetails = lineItems.map(item => ({
         purchase_order_id: createdPurchaseOrder.purchase_order_id,
         organization_id: organizationId,
-        product_id: item.product_id,
+        product_type_id: item.product_type_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
         line_total: item.line_total,
@@ -146,28 +146,29 @@ class PurchaseOrderService {
     const lineItems = [];
 
     for (const item of items) {
-      if (!item.product_id) {
-        throw new Error('Product ID is required for all items');
+      const typeId = item.product_type_id || item.product_id;
+      if (!typeId) {
+        throw new Error('Product type ID is required for all items');
       }
 
       if (!item.quantity || item.quantity <= 0) {
-        throw new Error(`Invalid quantity for product ${item.product_id}`);
+        throw new Error(`Invalid quantity for product ${typeId}`);
       }
 
       if (item.unit_price === undefined || item.unit_price === null || item.unit_price < 0) {
-        throw new Error(`Invalid unit price for product ${item.product_id}`);
+        throw new Error(`Invalid unit price for product ${typeId}`);
       }
 
       // Validate product type exists
-      const product = await this.productTypeRepository.findById(item.product_id, organizationId);
+      const product = await this.productTypeRepository.findById(typeId, organizationId);
       if (!product) {
-        throw new Error(`Product not found: ${item.product_id}`);
+        throw new Error(`Product not found: ${typeId}`);
       }
 
       const lineTotal = item.quantity * item.unit_price;
 
       lineItems.push({
-        product_id: item.product_id,
+        product_type_id: typeId,
         quantity: item.quantity,
         unit_price: item.unit_price,
         line_total: lineTotal,
@@ -271,7 +272,7 @@ class PurchaseOrderService {
         const orderDetails = lineItems.map(item => ({
           purchase_order_id: purchaseOrderId,
           organization_id: organizationId,
-          product_id: item.product_id,
+          product_type_id: item.product_type_id,
           quantity: item.quantity,
           unit_price: item.unit_price,
           line_total: item.line_total,
