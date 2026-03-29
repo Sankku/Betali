@@ -394,7 +394,8 @@ function initializeContainer() {
     const warehouseRepository = container.get('warehouseRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
     const logger = container.get('logger');
-    return new PurchaseOrderService(purchaseOrderRepository, purchaseOrderDetailRepository, supplierRepository, productTypeRepository, warehouseRepository, stockMovementRepository, logger);
+    const productLotRepository = container.get('productLotRepository');
+    return new PurchaseOrderService(purchaseOrderRepository, purchaseOrderDetailRepository, supplierRepository, productTypeRepository, warehouseRepository, stockMovementRepository, logger, productLotRepository);
   }, true);
 
   container.register('taxRateService', () => {
@@ -430,7 +431,8 @@ function initializeContainer() {
     const logger = container.get('logger');
     return new ProductTypeService(
       container.get('productTypeRepository'),
-      logger
+      logger,
+      container.get('stockMovementRepository')
     );
   }, true);
 

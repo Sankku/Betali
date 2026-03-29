@@ -164,6 +164,37 @@ class PurchaseOrderController {
   }
 
   /**
+   * Receive a purchase order with lot assignment per line
+   * POST /api/purchase-orders/:id/receive
+   */
+  async receivePurchaseOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { lines } = req.body;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+      if (!lines || !Array.isArray(lines) || lines.length === 0) {
+        return res.status(400).json({ error: 'lines array is required and must not be empty' });
+      }
+
+      const updatedPO = await this.purchaseOrderService.receivePurchaseOrder(id, lines, organizationId);
+
+      res.json({
+        data: updatedPO,
+        message: `Purchase order ${updatedPO.status === 'received' ? 'fully received' : 'partially received'}. Stock updated.`,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Delete/cancel purchase order
    * DELETE /api/purchase-orders/:id
    */
