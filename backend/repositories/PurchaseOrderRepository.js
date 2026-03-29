@@ -29,13 +29,14 @@ class PurchaseOrderRepository extends BaseRepository {
           warehouse!purchase_orders_warehouse_id_fkey(warehouse_id, name, location),
           purchase_order_details(
             detail_id,
-            product_id,
+            product_type_id,
+            lot_id,
             quantity,
             received_quantity,
             unit_price,
             line_total,
             notes,
-            products!purchase_order_details_product_id_fkey(product_id, name)
+            product_types!purchase_order_details_product_type_id_fkey(product_type_id, name, sku, unit)
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)

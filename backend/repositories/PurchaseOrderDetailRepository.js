@@ -59,12 +59,12 @@ class PurchaseOrderDetailRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!purchase_order_details_product_id_fkey(
-            product_id,
+          product_types!purchase_order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            description,
-            expiration_date
+            sku,
+            unit,
+            description
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)
@@ -256,12 +256,12 @@ class PurchaseOrderDetailRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!purchase_order_details_product_id_fkey(
-            product_id,
+          product_types!purchase_order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            description,
-            expiration_date
+            sku,
+            unit,
+            description
           )
         `)
         .eq('detail_id', detailId)
