@@ -36,12 +36,13 @@ import {
 import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
 import { PdfPreviewModal, PdfOrderItem } from '@/components/ui/pdf-preview-modal';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
+import { ReceivePurchaseOrderModal } from './ReceivePurchaseOrderModal';
 import { formatDate } from '@/lib/utils';
+import { toast } from '@/lib/toast';
 import {
   usePurchaseOrders,
   useUpdatePurchaseOrderStatus,
   useCancelPurchaseOrder,
-  useReceivePurchaseOrder,
   useApprovePurchaseOrder,
   useSubmitPurchaseOrder,
   PURCHASE_ORDER_STATUS_OPTIONS,
@@ -86,6 +87,10 @@ export function PurchaseOrdersPage() {
     isOpen: false,
     orders: [] as PdfOrderItem[],
   });
+  const [receiveModalState, setReceiveModalState] = useState<{
+    isOpen: boolean;
+    purchaseOrder?: PurchaseOrder;
+  }>({ isOpen: false });
 
   // Build filters
   const filters = useMemo(() => {
@@ -103,7 +108,6 @@ export function PurchaseOrdersPage() {
   const { data: warehouses } = useWarehouses();
   const updateStatusMutation = useUpdatePurchaseOrderStatus();
   const cancelMutation = useCancelPurchaseOrder();
-  const receiveMutation = useReceivePurchaseOrder();
   const approveMutation = useApprovePurchaseOrder();
   const submitMutation = useSubmitPurchaseOrder();
 
@@ -132,8 +136,6 @@ export function PurchaseOrdersPage() {
     try {
       const promises = orders.map((order) => {
         switch (action) {
-          case 'receive':
-            return receiveMutation.mutateAsync(order.purchase_order_id);
           case 'approve':
             return approveMutation.mutateAsync(order.purchase_order_id);
           case 'submit':
@@ -150,7 +152,7 @@ export function PurchaseOrdersPage() {
     } catch (error) {
       // Error handled by mutation hooks
     }
-  }, [batchActionModalState, receiveMutation, approveMutation, submitMutation, cancelMutation]);
+  }, [batchActionModalState, approveMutation, submitMutation, cancelMutation]);
 
   /**
    * Get status badge color
@@ -214,9 +216,14 @@ export function PurchaseOrdersPage() {
           text: 'text-purple-700',
           hoverBg: 'hover:bg-purple-50',
         },
-        onClick: (orders) =>
-          setBatchActionModalState({ isOpen: true, action: 'receive', purchaseOrders: orders }),
-        getValidItems: (orders) => orders.filter((o) => o.status === 'approved'),
+        onClick: (orders) => {
+          if (orders.length > 1) {
+            toast.info('Solo se puede recibir una OC a la vez. Procesando la primera seleccionada.');
+          }
+          setReceiveModalState({ isOpen: true, purchaseOrder: orders[0] });
+        },
+        getValidItems: (orders) =>
+          orders.filter((o) => o.status === 'approved' || o.status === 'partially_received'),
       },
       {
         key: 'download-pdf',
@@ -557,6 +564,16 @@ export function PurchaseOrdersPage() {
         getBatchPdfBlob={purchaseOrdersService.getBatchPdfBlob}
         downloadBatchPdf={purchaseOrdersService.downloadBatchPdf}
       />
+
+      {/* Receive PO Modal */}
+      {receiveModalState.isOpen && receiveModalState.purchaseOrder && (
+        <ReceivePurchaseOrderModal
+          key={receiveModalState.purchaseOrder.purchase_order_id}
+          isOpen={receiveModalState.isOpen}
+          onClose={() => setReceiveModalState({ isOpen: false })}
+          purchaseOrder={receiveModalState.purchaseOrder}
+        />
+      )}
     </>
   );
 }
