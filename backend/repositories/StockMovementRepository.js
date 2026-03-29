@@ -327,6 +327,19 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
+   * Delete a stock movement by ID (used for compensating rollback only)
+   * @param {string} movementId
+   */
+  async delete(movementId) {
+    const { error } = await this.client
+      .from('stock_movements')
+      .delete()
+      .eq('movement_id', movementId);
+
+    if (error) throw new Error(`Error deleting stock movement: ${error.message}`);
+  }
+
+  /**
    * Update movement by ID (override to not add updated_at)
    * @param {string} id - Movement ID
    * @param {Object} updates - Update data
