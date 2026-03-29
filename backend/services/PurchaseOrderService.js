@@ -322,11 +322,12 @@ class PurchaseOrderService {
         await this.handlePurchaseOrderCancelled(purchaseOrder, organizationId);
       }
 
-      // Update status
+      // Update status (no receivedDate — this path does not handle lot reception)
       const updatedPurchaseOrder = await this.purchaseOrderRepository.updateStatus(
         purchaseOrderId,
         newStatus,
-        organizationId
+        organizationId,
+        null
       );
 
       this.logger.info('Purchase order status updated successfully', {

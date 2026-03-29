@@ -189,21 +189,18 @@ class PurchaseOrderRepository extends BaseRepository {
    * @param {string} purchaseOrderId - Purchase Order ID
    * @param {string} newStatus - New status
    * @param {string} organizationId - Organization ID for tenant isolation
+   * @param {string|null} receivedDate - ISO string when received, null to clear
    * @returns {Promise<Object>}
    */
-  async updateStatus(purchaseOrderId, newStatus, organizationId) {
+  async updateStatus(purchaseOrderId, newStatus, organizationId, receivedDate = null) {
     try {
       this.logger.info('Updating purchase order status', { purchaseOrderId, newStatus, organizationId });
 
       const updateData = {
         status: newStatus,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        received_date: receivedDate
       };
-
-      // If status is 'received', set received_date
-      if (newStatus === 'received') {
-        updateData.received_date = new Date().toISOString();
-      }
 
       const { data, error } = await this.client
         .from(this.table)
