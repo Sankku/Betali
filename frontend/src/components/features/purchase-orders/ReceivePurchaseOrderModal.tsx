@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter } from '@/components/ui/modal';
 import { PurchaseOrder, ReceiptLine } from '@/types/purchaseOrders';
 import { ReceiptLineRow } from './ReceiptLineRow';
-import { useReceivePurchaseOrder } from '@/hooks/usePurchaseOrders';
+import { useReceivePurchaseOrder, usePurchaseOrder } from '@/hooks/usePurchaseOrders';
 
 interface ReceivePurchaseOrderModalProps {
   isOpen: boolean;
@@ -19,37 +19,50 @@ export function ReceivePurchaseOrderModal({
 }: ReceivePurchaseOrderModalProps) {
   const receiveMutation = useReceivePurchaseOrder();
 
+  // Fetch full PO so we get real detail rows (list response has [{count:N}] aggregates)
+  const { data: fullPO, isLoading } = usePurchaseOrder(purchaseOrder.purchase_order_id, isOpen);
+  const resolvedPO = fullPO ?? purchaseOrder;
+
   // Only show lines that are not yet fully received
   const pendingDetails = useMemo(
     () =>
-      (purchaseOrder.purchase_order_details ?? []).filter(
-        (d) => d.received_quantity < d.quantity
+      (resolvedPO.purchase_order_details ?? []).filter(
+        (d): d is NonNullable<typeof d> =>
+          'detail_id' in d && d.detail_id != null && d.received_quantity < d.quantity
       ),
-    [purchaseOrder.purchase_order_details]
+    [resolvedPO.purchase_order_details]
   );
 
   // Local state: map of detail_id → partial ReceiptLine
-  const [lineState, setLineState] = useState<Record<string, Partial<ReceiptLine>>>(() =>
-    Object.fromEntries(
-      pendingDetails.map((d) => [
-        d.detail_id,
-        {
-          detail_id: d.detail_id,
-          received_quantity: d.quantity - (d.received_quantity || 0),
-          // If lot already assigned, no lot field needed
-          lot: d.lot_id
-            ? undefined
-            : {
-                mode: 'new',
-                lot_number: '',
-                expiration_date: '',
-                origin_country: '',
-                price: d.unit_price,
-              },
-        },
-      ])
-    )
-  );
+  // Derived from pendingDetails; re-initializes whenever the full PO loads
+  const [lineState, setLineState] = useState<Record<string, Partial<ReceiptLine>>>({});
+
+  // Populate lineState once real detail rows are available
+  const detailsKey = pendingDetails.map((d) => d.detail_id).join(',');
+  React.useEffect(() => {
+    if (pendingDetails.length === 0) return;
+    setLineState(
+      Object.fromEntries(
+        pendingDetails.map((d) => [
+          d.detail_id,
+          {
+            detail_id: d.detail_id,
+            received_quantity: d.quantity - (d.received_quantity || 0),
+            lot: d.lot_id
+              ? undefined
+              : {
+                  mode: 'new' as const,
+                  lot_number: '',
+                  expiration_date: '',
+                  origin_country: '',
+                  price: d.unit_price,
+                },
+          },
+        ])
+      )
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsKey]);
 
   const hasAtLeastOneLine = Object.values(lineState).some(
     (l) => (l.received_quantity ?? 0) > 0
@@ -109,7 +122,9 @@ export function ReceivePurchaseOrderModal({
         </ModalHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {pendingDetails.length === 0 ? (
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Cargando detalles...</p>
+          ) : pendingDetails.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               Todos los productos ya fueron recibidos completamente.
             </p>
