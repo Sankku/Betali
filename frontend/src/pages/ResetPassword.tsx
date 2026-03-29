@@ -14,19 +14,27 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { BetaliLogo } from '../components/ui/BetaliLogo';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../contexts/LanguageContext';
 
-function PasswordStrength({ password }: { password: string }) {
+type TFunction = (key: string) => string;
+
+function PasswordStrength({ password, t }: { password: string; t: TFunction }) {
   const checks = [
-    { label: 'At least 8 characters', ok: password.length >= 8 },
-    { label: 'One uppercase letter', ok: /[A-Z]/.test(password) },
-    { label: 'One lowercase letter', ok: /[a-z]/.test(password) },
-    { label: 'One number', ok: /\d/.test(password) },
+    { label: t('auth.resetPasswordPage.requireAtLeast8'), ok: password.length >= 8 },
+    { label: t('auth.resetPasswordPage.requireUppercase'), ok: /[A-Z]/.test(password) },
+    { label: t('auth.resetPasswordPage.requireLowercase'), ok: /[a-z]/.test(password) },
+    { label: t('auth.resetPasswordPage.requireNumber'), ok: /\d/.test(password) },
   ];
 
   const passed = checks.filter(c => c.ok).length;
   const strength = passed <= 1 ? 'weak' : passed <= 2 ? 'fair' : passed === 3 ? 'good' : 'strong';
   const colors = { weak: 'bg-red-400', fair: 'bg-orange-400', good: 'bg-yellow-400', strong: 'bg-green-500' };
-  const labels = { weak: 'Weak', fair: 'Fair', good: 'Good', strong: 'Strong' };
+  const labels = {
+    weak: t('auth.resetPasswordPage.strengthWeak'),
+    fair: t('auth.resetPasswordPage.strengthFair'),
+    good: t('auth.resetPasswordPage.strengthGood'),
+    strong: t('auth.resetPasswordPage.strengthStrong'),
+  };
 
   if (!password) return null;
 
@@ -73,6 +81,7 @@ export default function ResetPassword() {
 
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Session can come from two sources:
   // 1. Recovery link → Supabase fires PASSWORD_RECOVERY on auth state change
@@ -97,12 +106,12 @@ export default function ResetPassword() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth.resetPasswordPage.passwordsNoMatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('auth.resetPasswordPage.passwordTooShort'));
       return;
     }
 
@@ -110,7 +119,7 @@ export default function ResetPassword() {
     const { error } = await updatePassword(password);
 
     if (error) {
-      setError(error.message || 'Could not update password. Try requesting a new link.');
+      setError(error.message || t('auth.resetPasswordPage.updateError'));
     } else {
       setDone(true);
     }
@@ -130,15 +139,15 @@ export default function ResetPassword() {
               <div className="rounded-full bg-green-50 p-4">
                 <CheckCircle2 className="h-10 w-10 text-green-500" />
               </div>
-              <h2 className="text-xl font-semibold text-neutral-900">Password updated!</h2>
+              <h2 className="text-xl font-semibold text-neutral-900">{t('auth.resetPasswordPage.successTitle')}</h2>
               <p className="text-sm text-neutral-600 text-center">
-                Your password has been changed successfully. You can now sign in with your new password.
+                {t('auth.resetPasswordPage.successDesc')}
               </p>
               <Button
                 className="w-full h-11 bg-primary-600 hover:bg-primary-700 text-white font-medium mt-2"
                 onClick={() => navigate('/login')}
               >
-                Go to Sign In
+                {t('auth.resetPasswordPage.goToSignIn')}
               </Button>
             </CardContent>
           </Card>
@@ -157,8 +166,8 @@ export default function ResetPassword() {
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <BetaliLogo variant="icon" size="xl" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
-          <p className="text-gray-500 mt-1">Business inventory management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('auth.resetPasswordPage.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('auth.resetPasswordPage.subtitle')}</p>
         </div>
 
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
@@ -169,10 +178,10 @@ export default function ResetPassword() {
               </div>
             </div>
             <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-              Set new password
+              {t('auth.resetPasswordPage.pageTitle')}
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Choose a strong password to protect your account
+              {t('auth.resetPasswordPage.pageDesc')}
             </CardDescription>
           </CardHeader>
 
@@ -180,7 +189,7 @@ export default function ResetPassword() {
             {!sessionReady && (
               <div className="mb-4 rounded-md bg-amber-50 border border-amber-200 p-3">
                 <p className="text-xs text-amber-700">
-                  Waiting for your recovery link to be validated... If this message persists, try clicking the link from your email again.
+                  {t('auth.resetPasswordPage.waitingValidation')}
                 </p>
               </div>
             )}
@@ -199,13 +208,13 @@ export default function ResetPassword() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-neutral-700">
-                  New password
+                  {t('auth.resetPasswordPage.newPasswordLabel')}
                 </Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.resetPasswordPage.passwordPlaceholder')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500 pr-10"
@@ -221,18 +230,18 @@ export default function ResetPassword() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <PasswordStrength password={password} />
+                <PasswordStrength password={password} t={t} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirm" className="text-neutral-700">
-                  Confirm new password
+                  {t('auth.resetPasswordPage.confirmPasswordLabel')}
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirm"
                     type={showConfirm ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.resetPasswordPage.passwordPlaceholder')}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     className={`h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500 pr-10 ${
@@ -252,7 +261,7 @@ export default function ResetPassword() {
                   </button>
                 </div>
                 {confirmPassword && confirmPassword !== password && (
-                  <p className="text-xs text-red-500">Passwords do not match</p>
+                  <p className="text-xs text-red-500">{t('auth.resetPasswordPage.passwordsNoMatchInline')}</p>
                 )}
               </div>
 
@@ -261,7 +270,7 @@ export default function ResetPassword() {
                 className="w-full h-11 bg-primary-600 hover:bg-primary-700 text-white font-medium"
                 disabled={loading || !sessionReady}
               >
-                {loading ? 'Updating...' : 'Update password'}
+                {loading ? t('auth.resetPasswordPage.updating') : t('auth.resetPasswordPage.updateButton')}
               </Button>
             </form>
           </CardContent>
@@ -272,7 +281,7 @@ export default function ResetPassword() {
             to="/login"
             className="text-sm text-neutral-500 hover:text-primary-600 transition-colors"
           >
-            Back to Sign In
+            {t('auth.resetPasswordPage.backToSignIn')}
           </Link>
         </div>
       </div>

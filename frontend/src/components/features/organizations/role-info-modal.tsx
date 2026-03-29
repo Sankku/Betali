@@ -3,89 +3,61 @@ import { useAuth } from "../../../context/AuthContext";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { UserRole } from "../../../types/organization";
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalCloseButton } from "../../ui/modal";
+import { useTranslation } from "../../../contexts/LanguageContext";
 
 interface RoleInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const roleConfig: Record<UserRole, { 
-  label: string; 
-  icon: JSX.Element; 
-  color: string; 
-  description: string;
-  permissions: string[];
-}> = {
-  super_admin: {
-    label: 'Super Administrator',
-    icon: <ShieldCheck className="w-5 h-5" />,
-    color: 'text-red-600 bg-red-100',
-    description: 'Full system access with unrestricted privileges',
-    permissions: [
-      'Manage all organizations',
-      'Create and delete organizations',
-      'Manage all users across organizations',
-      'Access all system features',
-      'System configuration'
-    ]
-  },
-  admin: {
-    label: 'Administrator',
-    icon: <Shield className="w-5 h-5" />,
-    color: 'text-purple-600 bg-purple-100',
-    description: 'Full administrative privileges within the organization',
-    permissions: [
-      'Manage organization settings',
-      'Manage all users in organization',
-      'Access all features within organization',
-      'View all data and reports',
-      'Configure organization preferences'
-    ]
-  },
-  manager: {
-    label: 'Manager',
-    icon: <Settings className="w-5 h-5" />,
-    color: 'text-blue-600 bg-blue-100',
-    description: 'Management-level access with limited administrative features',
-    permissions: [
-      'Manage employees and viewers',
-      'Access management features',
-      'View detailed reports',
-      'Manage inventory and stock',
-      'Configure department settings'
-    ]
-  },
-  employee: {
-    label: 'Employee',
-    icon: <User className="w-5 h-5" />,
-    color: 'text-green-600 bg-green-100',
-    description: 'Standard user access for day-to-day operations',
-    permissions: [
-      'Access core features',
-      'Create and edit records',
-      'View assigned data',
-      'Generate basic reports',
-      'Update inventory information'
-    ]
-  },
-  viewer: {
-    label: 'Viewer',
-    icon: <Eye className="w-5 h-5" />,
-    color: 'text-gray-600 bg-gray-100',
-    description: 'Read-only access to view information',
-    permissions: [
-      'View data and reports',
-      'Export information',
-      'Access dashboard',
-      'View inventory status',
-      'Read-only access to features'
-    ]
-  }
-};
-
 export function RoleInfoModal({ isOpen, onClose }: RoleInfoModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { currentOrganization, currentUserRole } = useOrganization();
+
+  const roleConfig: Record<UserRole, {
+    label: string;
+    icon: JSX.Element;
+    color: string;
+    description: string;
+    permissions: string[];
+  }> = {
+    super_admin: {
+      label: t('users.roleSwitcher.roleLabels.super_admin'),
+      icon: <ShieldCheck className="w-5 h-5" />,
+      color: 'text-red-600 bg-red-100',
+      description: t('users.roleSwitcher.roleDescriptions.super_admin'),
+      permissions: t('users.roleSwitcher.rolePermissions.super_admin', { returnObjects: true }) as string[]
+    },
+    admin: {
+      label: t('users.roleSwitcher.roleLabels.admin'),
+      icon: <Shield className="w-5 h-5" />,
+      color: 'text-purple-600 bg-purple-100',
+      description: t('users.roleSwitcher.roleDescriptions.admin'),
+      permissions: t('users.roleSwitcher.rolePermissions.admin', { returnObjects: true }) as string[]
+    },
+    manager: {
+      label: t('users.roleSwitcher.roleLabels.manager'),
+      icon: <Settings className="w-5 h-5" />,
+      color: 'text-blue-600 bg-blue-100',
+      description: t('users.roleSwitcher.roleDescriptions.manager'),
+      permissions: t('users.roleSwitcher.rolePermissions.manager', { returnObjects: true }) as string[]
+    },
+    employee: {
+      label: t('users.roleSwitcher.roleLabels.employee'),
+      icon: <User className="w-5 h-5" />,
+      color: 'text-green-600 bg-green-100',
+      description: t('users.roleSwitcher.roleDescriptions.employee'),
+      permissions: t('users.roleSwitcher.rolePermissions.employee', { returnObjects: true }) as string[]
+    },
+    viewer: {
+      label: t('users.roleSwitcher.roleLabels.viewer'),
+      icon: <Eye className="w-5 h-5" />,
+      color: 'text-gray-600 bg-gray-100',
+      description: t('users.roleSwitcher.roleDescriptions.viewer'),
+      permissions: t('users.roleSwitcher.rolePermissions.viewer', { returnObjects: true }) as string[]
+    }
+  };
 
   if (!currentUserRole) {
     return null;
@@ -102,9 +74,9 @@ export function RoleInfoModal({ isOpen, onClose }: RoleInfoModalProps) {
             {roleInfo.icon}
           </div>
           <div>
-            <ModalTitle>Your Role & Permissions</ModalTitle>
+            <ModalTitle>{t('organizations.roleInfo.title')}</ModalTitle>
             <ModalDescription>
-              Current access level and capabilities
+              {t('organizations.roleInfo.desc')}
             </ModalDescription>
           </div>
         </div>
@@ -119,12 +91,12 @@ export function RoleInfoModal({ isOpen, onClose }: RoleInfoModalProps) {
                 <Building2 className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Current Organization</h3>
+                <h3 className="font-medium text-gray-900">{t('organizations.roleInfo.currentOrganization')}</h3>
                 <p className="text-sm text-gray-600">{currentOrganization?.name}</p>
               </div>
             </div>
             <div className="text-xs text-gray-500">
-              Slug: {currentOrganization?.slug}
+              {t('organizations.roleInfo.slugLabel')}{currentOrganization?.slug}
             </div>
           </div>
 
@@ -143,7 +115,7 @@ export function RoleInfoModal({ isOpen, onClose }: RoleInfoModalProps) {
 
           {/* Permissions */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Your Permissions</h4>
+            <h4 className="font-medium text-gray-900 mb-3">{t('organizations.roleInfo.yourPermissions')}</h4>
             <ul className="space-y-2">
               {roleInfo.permissions.map((permission, index) => (
                 <li key={index} className="flex items-center space-x-2 text-sm">
@@ -157,9 +129,9 @@ export function RoleInfoModal({ isOpen, onClose }: RoleInfoModalProps) {
           {/* User Information */}
           <div className="pt-4 border-t border-gray-200">
             <div className="text-xs text-gray-500">
-              <div><strong>User:</strong> {user?.email}</div>
-              <div><strong>Role:</strong> {roleInfo.label}</div>
-              <div><strong>Organization:</strong> {currentOrganization?.name}</div>
+              <div><strong>{t('organizations.roleInfo.userLabel')}</strong> {user?.email}</div>
+              <div><strong>{t('organizations.roleInfo.roleLabel')}</strong> {roleInfo.label}</div>
+              <div><strong>{t('organizations.roleInfo.organizationLabel')}</strong> {currentOrganization?.name}</div>
             </div>
           </div>
         </div>

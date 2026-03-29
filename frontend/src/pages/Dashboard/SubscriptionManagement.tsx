@@ -16,11 +16,13 @@ import { Button } from '../../components/ui/button';
 import { subscriptionService } from '../../services/api/subscriptionService';
 import { mercadoPagoService } from '../../services/api/mercadoPagoService';
 import { useToast } from '../../hooks/useToast';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function SubscriptionManagement() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
@@ -52,8 +54,8 @@ export default function SubscriptionManagement() {
       mercadoPagoService.cancelSubscription(subscriptionId, reason),
     onSuccess: () => {
       toast({
-        title: 'Suscripción Cancelada',
-        description: 'Tu suscripción ha sido cancelada exitosamente',
+        title: t('subscriptionManagement.cancelSuccess'),
+        description: t('subscriptionManagement.cancelSuccessDesc'),
         variant: 'default',
       });
       queryClient.invalidateQueries({ queryKey: ['current-subscription'] });
@@ -62,7 +64,7 @@ export default function SubscriptionManagement() {
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'No pudimos cancelar tu suscripción',
+        description: error.message || t('subscriptionManagement.cancelError'),
         variant: 'destructive',
       });
     },
@@ -90,31 +92,31 @@ export default function SubscriptionManagement() {
         icon: CheckCircle,
         color: 'text-green-700',
         bg: 'bg-green-100',
-        text: 'Activa',
+        text: t('subscriptionManagement.statusActive'),
       },
       trialing: {
         icon: Clock,
         color: 'text-blue-700',
         bg: 'bg-blue-100',
-        text: 'Período de Prueba',
+        text: t('subscriptionManagement.statusTrial'),
       },
       pending_payment: {
         icon: AlertCircle,
         color: 'text-yellow-700',
         bg: 'bg-yellow-100',
-        text: 'Pago Pendiente',
+        text: t('subscriptionManagement.statusPaymentPending'),
       },
       past_due: {
         icon: AlertCircle,
         color: 'text-red-700',
         bg: 'bg-red-100',
-        text: 'Pago Vencido',
+        text: t('subscriptionManagement.statusPaymentOverdue'),
       },
       canceled: {
         icon: XCircle,
         color: 'text-gray-700',
         bg: 'bg-gray-100',
-        text: 'Cancelada',
+        text: t('subscriptionManagement.statusCancelled'),
       },
     };
 
@@ -164,7 +166,7 @@ export default function SubscriptionManagement() {
         <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
           <div className="text-center">
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
-            <p className="mt-4 text-lg text-gray-600">Cargando suscripción...</p>
+            <p className="mt-4 text-lg text-gray-600">{t('subscriptionManagement.loading')}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -178,16 +180,16 @@ export default function SubscriptionManagement() {
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              No tienes una suscripción activa
+              {t('subscriptionManagement.noSubscription')}
             </h2>
             <p className="text-gray-600 mb-8">
-              Selecciona un plan para comenzar a usar todas las funcionalidades
+              {t('subscriptionManagement.noSubscriptionDesc')}
             </p>
             <Button
               onClick={() => navigate('/dashboard/pricing')}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              Ver Planes
+              {t('subscriptionManagement.viewPlans')}
             </Button>
           </div>
         </div>
@@ -200,9 +202,9 @@ export default function SubscriptionManagement() {
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Mi Suscripción</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('subscriptionManagement.title')}</h1>
           <p className="mt-2 text-gray-600">
-            Gestiona tu plan y revisa tu historial de pagos
+            {t('subscriptionManagement.subtitle')}
           </p>
         </div>
 
@@ -212,19 +214,20 @@ export default function SubscriptionManagement() {
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
             <div>
               <p className="text-sm font-semibold text-amber-800">
-                Tu suscripción está cancelada
+                {t('subscriptionManagement.cancelledBanner')}
               </p>
               <p className="mt-0.5 text-sm text-amber-700">
-                Aún puedes usar todas las funcionalidades del plan{' '}
-                <span className="font-medium">{plan?.display_name || plan?.name}</span> hasta el{' '}
-                <span className="font-medium">{formatDate(subscription!.current_period_end)}</span>.
-                Después de esa fecha, tu cuenta pasará al plan gratuito.
+                {t('subscriptionManagement.cancelledBannerDesc')}{' '}
+                <span className="font-medium">{plan?.display_name || plan?.name}</span>{' '}
+                {t('subscriptionManagement.cancelledBannerUntil')}{' '}
+                <span className="font-medium">{formatDate(subscription!.current_period_end)}</span>.{' '}
+                {t('subscriptionManagement.cancelledBannerAfter')}
               </p>
               <button
                 onClick={() => navigate('/dashboard/pricing')}
                 className="mt-2 text-sm font-medium text-amber-800 underline hover:text-amber-900"
               >
-                Volver a suscribirte →
+                {t('subscriptionManagement.resubscribe')} →
               </button>
             </div>
           </div>
@@ -236,10 +239,10 @@ export default function SubscriptionManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  {plan?.display_name || plan?.name || 'Plan Actual'}
+                  {plan?.display_name || plan?.name || t('subscriptionManagement.currentPlan')}
                 </h2>
                 <p className="text-blue-100 mt-1">
-                  {formatCurrency(subscription.amount, subscription.currency)} / {subscription.billing_cycle === 'monthly' ? 'mes' : 'año'}
+                  {formatCurrency(subscription.amount, subscription.currency)} / {subscription.billing_cycle === 'monthly' ? t('subscriptionManagement.perMonth') : t('subscriptionManagement.perYear')}
                 </p>
               </div>
               <div>
@@ -254,7 +257,7 @@ export default function SubscriptionManagement() {
               <div>
                 <div className="flex items-center text-sm text-gray-600 mb-2">
                   <Calendar className="h-4 w-4 mr-2" />
-                  Período Actual
+                  {t('subscriptionManagement.currentPeriod')}
                 </div>
                 <div className="text-sm font-medium text-gray-900">
                   {formatDate(subscription.current_period_start)} - {formatDate(subscription.current_period_end)}
@@ -266,7 +269,7 @@ export default function SubscriptionManagement() {
                 <div>
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <Clock className="h-4 w-4 mr-2" />
-                    Prueba Termina
+                    {t('subscriptionManagement.trialEnds')}
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     {formatDate(subscription.trial_end)}
@@ -279,7 +282,7 @@ export default function SubscriptionManagement() {
                 <div>
                   <div className="flex items-center text-sm text-amber-600 mb-2">
                     <Clock className="h-4 w-4 mr-2" />
-                    Acceso hasta
+                    {t('subscriptionManagement.accessUntil')}
                   </div>
                   <div className="text-sm font-medium text-amber-700">
                     {formatDate(subscription.current_period_end)}
@@ -289,7 +292,7 @@ export default function SubscriptionManagement() {
                 <div>
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Próximo Pago
+                    {t('subscriptionManagement.nextPayment')}
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     {formatDate(subscription.current_period_end)}
@@ -301,10 +304,10 @@ export default function SubscriptionManagement() {
               <div>
                 <div className="flex items-center text-sm text-gray-600 mb-2">
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Método de Pago
+                  {t('subscriptionManagement.paymentMethod')}
                 </div>
                 <div className="text-sm font-medium text-gray-900 capitalize">
-                  {subscription.payment_gateway || 'MercadoPago'}
+                  {subscription.payment_gateway || t('subscriptionManagement.methodMercadoPago')}
                 </div>
               </div>
             </div>
@@ -317,7 +320,7 @@ export default function SubscriptionManagement() {
                 className="flex items-center"
               >
                 <ArrowUpCircle className="h-4 w-4 mr-2" />
-                Cambiar Plan
+                {t('subscriptionManagement.changePlan')}
               </Button>
 
               {(subscription.status === 'active' || subscription.status === 'trialing') && !isCanceledButActive && (
@@ -326,7 +329,7 @@ export default function SubscriptionManagement() {
                   variant="outline"
                   className="text-red-600 border-red-300 hover:bg-red-50"
                 >
-                  Cancelar Suscripción
+                  {t('subscriptionManagement.cancelSubscription')}
                 </Button>
               )}
 
@@ -336,14 +339,14 @@ export default function SubscriptionManagement() {
                     onClick={() => navigate('/dashboard/pricing')}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    Completar Pago
+                    {t('subscriptionManagement.completePayment')}
                   </Button>
                   <Button
                     onClick={handleCancelClick}
                     variant="outline"
                     className="text-red-600 border-red-300 hover:bg-red-50"
                   >
-                    Cancelar
+                    {t('subscriptionManagement.cancelButton')}
                   </Button>
                 </>
               )}
@@ -354,20 +357,20 @@ export default function SubscriptionManagement() {
         {/* Payment History */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-900">Historial de Pagos</h3>
+            <h3 className="text-xl font-bold text-gray-900">{t('subscriptionManagement.paymentHistoryTitle')}</h3>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard/payments')}
             >
-              Ver todo
+              {t('subscriptionManagement.viewAll')}
             </Button>
           </div>
 
           {isLoadingPayments ? (
             <div className="px-8 py-12 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">Cargando pagos...</p>
+              <p className="text-sm text-gray-600">{t('subscriptionManagement.loadingPayments')}</p>
             </div>
           ) : payments && payments.length > 0 ? (
             <div className="overflow-x-auto">
@@ -375,19 +378,19 @@ export default function SubscriptionManagement() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
+                      {t('subscriptionManagement.colDate')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Monto
+                      {t('subscriptionManagement.colAmount')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Método
+                      {t('subscriptionManagement.colMethod')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estado
+                      {t('subscriptionManagement.colStatus')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Referencia
+                      {t('subscriptionManagement.colRef')}
                     </th>
                   </tr>
                 </thead>
@@ -413,7 +416,11 @@ export default function SubscriptionManagement() {
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {payment.status === 'confirmed' ? 'Confirmado' : payment.status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                          {payment.status === 'confirmed'
+                            ? t('subscriptionManagement.statusConfirmed')
+                            : payment.status === 'pending'
+                            ? t('subscriptionManagement.statusPending')
+                            : t('subscriptionManagement.statusRejected')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
@@ -427,7 +434,7 @@ export default function SubscriptionManagement() {
           ) : (
             <div className="px-8 py-12 text-center">
               <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">No hay pagos registrados</p>
+              <p className="text-sm text-gray-600">{t('subscriptionManagement.noPayments')}</p>
             </div>
           )}
         </div>
@@ -437,22 +444,22 @@ export default function SubscriptionManagement() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                ¿Cancelar Suscripción?
+                {t('subscriptionManagement.cancelDialogTitle')}
               </h3>
               <p className="text-gray-600 mb-6">
-                Tu suscripción permanecerá activa hasta el final del período actual ({formatDate(subscription.current_period_end)}).
+                {t('subscriptionManagement.cancelDialogDesc')} ({formatDate(subscription.current_period_end)}).
               </p>
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cuéntanos por qué cancelas (opcional)
+                  {t('subscriptionManagement.cancelReasonLabel')}
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400"
                   rows={3}
-                  placeholder="Tu feedback nos ayuda a mejorar..."
+                  placeholder={t('subscriptionManagement.cancelReasonPlaceholder')}
                 />
               </div>
 
@@ -463,7 +470,7 @@ export default function SubscriptionManagement() {
                   className="flex-1"
                   disabled={isCanceling}
                 >
-                  Mantener Suscripción
+                  {t('subscriptionManagement.keepSubscription')}
                 </Button>
                 <Button
                   onClick={handleConfirmCancel}
@@ -473,10 +480,10 @@ export default function SubscriptionManagement() {
                   {isCanceling ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Cancelando...
+                      {t('subscriptionManagement.cancelling')}
                     </>
                   ) : (
-                    'Confirmar Cancelación'
+                    t('subscriptionManagement.confirmCancel')
                   )}
                 </Button>
               </div>
