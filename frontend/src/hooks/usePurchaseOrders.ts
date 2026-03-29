@@ -198,6 +198,7 @@ export function useReceivePurchaseOrder() {
     onSuccess: (receivedPO) => {
       // NOTE: the purchase orders query key in this codebase is camelCase 'purchaseOrders'
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', receivedPO.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['product-lots'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stats'] });
 
