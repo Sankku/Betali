@@ -426,7 +426,7 @@ export const es = {
     actions: {
       submit: 'Enviar para Aprobación',
       approve: 'Aprobar',
-      receive: 'Marcar como Recibido',
+      receive: 'Recibir',
       cancel: 'Cancelar',
     },
     page: {

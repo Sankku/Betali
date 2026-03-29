@@ -428,7 +428,7 @@ export const en: TranslationKeys = {
     actions: {
       submit: 'Submit for Approval',
       approve: 'Approve',
-      receive: 'Mark as Received',
+      receive: 'Receive',
       cancel: 'Cancel',
     },
     page: {
