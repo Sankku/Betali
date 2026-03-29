@@ -12,7 +12,8 @@ class PurchaseOrderService {
     productTypeRepository,
     warehouseRepository,
     stockMovementRepository,
-    logger
+    logger,
+    productLotRepository   // 8th argument
   ) {
     this.purchaseOrderRepository = purchaseOrderRepository;
     this.purchaseOrderDetailRepository = purchaseOrderDetailRepository;
@@ -21,6 +22,7 @@ class PurchaseOrderService {
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
     this.logger = logger || new Logger('PurchaseOrderService');
+    this.productLotRepository = productLotRepository;
   }
 
   /**
@@ -316,9 +318,7 @@ class PurchaseOrderService {
       this.validateStatusTransition(currentStatus, newStatus);
 
       // Handle status-specific logic
-      if (newStatus === 'received') {
-        await this.handlePurchaseOrderReceived(purchaseOrder, organizationId);
-      } else if (newStatus === 'cancelled') {
+      if (newStatus === 'cancelled') {
         await this.handlePurchaseOrderCancelled(purchaseOrder, organizationId);
       }
 
@@ -351,8 +351,8 @@ class PurchaseOrderService {
     const allowedTransitions = {
       'draft': ['pending', 'cancelled'],
       'pending': ['approved', 'cancelled'],
-      'approved': ['received', 'partially_received', 'cancelled'],
-      'partially_received': ['received', 'cancelled'],
+      'approved': ['partially_received', 'cancelled'],
+      'partially_received': ['cancelled'],
       'received': [], // Cannot transition from received
       'cancelled': [] // Cannot transition from cancelled
     };
@@ -361,6 +361,173 @@ class PurchaseOrderService {
 
     if (!validTransitions.includes(newStatus)) {
       throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+    }
+  }
+
+  /**
+   * Receive a purchase order: assign lots and create stock entry movements.
+   * @param {string} purchaseOrderId
+   * @param {Array}  lines - [{ detail_id, received_quantity, lot? }]
+   * @param {string} organizationId
+   * @returns {Promise<Object>} updated purchase order
+   */
+  async receivePurchaseOrder(purchaseOrderId, lines, organizationId) {
+    this.logger.info('Processing purchase order reception', { purchaseOrderId, organizationId });
+
+    // 1. Load PO
+    const po = await this.purchaseOrderRepository.findById(purchaseOrderId, organizationId);
+    if (!po) {
+      const err = new Error('Purchase order not found');
+      err.status = 404;
+      throw err;
+    }
+
+    // 2. Validate status
+    if (!['approved', 'partially_received'].includes(po.status)) {
+      const err = new Error(`Cannot receive purchase order with status "${po.status}"`);
+      err.status = 409;
+      throw err;
+    }
+
+    // 3. Validate no duplicate detail_ids
+    const detailIds = lines.map(l => l.detail_id);
+    if (new Set(detailIds).size !== detailIds.length) {
+      const err = new Error('Duplicate detail_id entries in payload');
+      err.status = 400;
+      throw err;
+    }
+
+    // 4. Load all details for this PO
+    const allDetails = await this.purchaseOrderDetailRepository.findByPurchaseOrderId(purchaseOrderId, organizationId);
+    const detailMap = Object.fromEntries(allDetails.map(d => [d.detail_id, d]));
+
+    // 5. Pre-write validations
+    for (const line of lines) {
+      const detail = detailMap[line.detail_id];
+      if (!detail) {
+        const err = new Error(`detail_id not found: ${line.detail_id}`);
+        err.status = 400;
+        throw err;
+      }
+      if (!line.received_quantity || line.received_quantity <= 0) {
+        const err = new Error(`received_quantity must be > 0 for detail ${line.detail_id}`);
+        err.status = 400;
+        throw err;
+      }
+      const remaining = detail.quantity - (detail.received_quantity || 0);
+      if (line.received_quantity > remaining) {
+        const err = new Error(`received_quantity (${line.received_quantity}) exceeds remaining (${remaining}) for detail ${line.detail_id}`);
+        err.status = 400;
+        throw err;
+      }
+      // Lot validations (only needed when detail has no lot yet)
+      if (!detail.lot_id) {
+        if (!line.lot) {
+          const err = new Error(`lot is required for detail ${line.detail_id} (no lot assigned yet)`);
+          err.status = 400;
+          throw err;
+        }
+        if (line.lot.mode === 'new') {
+          const existing = await this.productLotRepository.findByLotNumber(line.lot.lot_number, organizationId);
+          if (existing) {
+            const err = new Error(`Lot number already exists: ${line.lot.lot_number}`);
+            err.status = 409;
+            throw err;
+          }
+        } else if (line.lot.mode === 'existing') {
+          const lot = await this.productLotRepository.findById(line.lot.lot_id, organizationId);
+          if (!lot || lot.product_type_id !== detail.product_type_id) {
+            const err = new Error('Lot not found, wrong organization, or product type mismatch');
+            err.status = 404;
+            throw err;
+          }
+        } else {
+          const err = new Error(`Invalid lot.mode: ${line.lot?.mode}`);
+          err.status = 400;
+          throw err;
+        }
+      }
+    }
+
+    // 6. Execute writes with compensating rollback
+    const insertedLotIds = [];
+    const insertedMovementIds = [];
+
+    try {
+      for (const line of lines) {
+        const detail = detailMap[line.detail_id];
+        let lotId = detail.lot_id;
+
+        // Create lot if needed
+        if (!lotId) {
+          if (line.lot.mode === 'new') {
+            const newLot = await this.productLotRepository.create({
+              lot_number: line.lot.lot_number,
+              product_type_id: detail.product_type_id,
+              expiration_date: line.lot.expiration_date,
+              origin_country: line.lot.origin_country,
+              price: line.lot.price,
+              organization_id: organizationId,
+            }, organizationId);
+            lotId = newLot.lot_id;
+            insertedLotIds.push(lotId);
+          } else {
+            lotId = line.lot.lot_id;
+          }
+        }
+
+        // Create stock movement
+        const movement = await this.stockMovementRepository.create({
+          lot_id: lotId,
+          warehouse_id: po.warehouse_id,
+          organization_id: organizationId,
+          movement_type: 'entry',
+          quantity: line.received_quantity,
+          reference: po.purchase_order_number || `PO-${po.purchase_order_id.slice(0, 8).toUpperCase()}`,
+          reference_type: 'purchase_order',
+          reference_id: po.purchase_order_id,
+          notes: `Received from purchase order ${po.purchase_order_number || po.purchase_order_id}`,
+        });
+        insertedMovementIds.push(movement.movement_id);
+
+        // Update detail
+        const newReceivedQty = (detail.received_quantity || 0) + line.received_quantity;
+        await this.purchaseOrderDetailRepository.updateReceivedQuantityAndLot(
+          line.detail_id,
+          newReceivedQty,
+          lotId,
+          organizationId
+        );
+      }
+
+      // 7. Derive new status from full detail set
+      const updatedDetails = await this.purchaseOrderDetailRepository.findByPurchaseOrderId(purchaseOrderId, organizationId);
+      const allComplete = updatedDetails.every(d => d.received_quantity >= d.quantity);
+      const newStatus = allComplete ? 'received' : 'partially_received';
+      const receivedDate = allComplete ? new Date().toISOString() : null;
+
+      await this.purchaseOrderRepository.updateStatus(purchaseOrderId, newStatus, organizationId, receivedDate);
+
+      this.logger.info('Purchase order reception completed', { purchaseOrderId, newStatus });
+      return await this.purchaseOrderRepository.findById(purchaseOrderId, organizationId);
+
+    } catch (err) {
+      // Compensating rollback in reverse order
+      for (const movId of [...insertedMovementIds].reverse()) {
+        try {
+          await this.stockMovementRepository.delete(movId);
+        } catch (cErr) {
+          this.logger.error('Compensation failed: could not delete stock movement', { movId, error: cErr.message });
+        }
+      }
+      for (const lotId of [...insertedLotIds].reverse()) {
+        try {
+          await this.productLotRepository.delete(lotId, organizationId);
+        } catch (cErr) {
+          this.logger.error('Compensation failed: could not delete lot', { lotId, error: cErr.message });
+        }
+      }
+      throw err;
     }
   }
 

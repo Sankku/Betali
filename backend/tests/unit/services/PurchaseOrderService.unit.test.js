@@ -129,7 +129,9 @@ describe('PurchaseOrderService.receivePurchaseOrder', () => {
 
   describe('happy path', () => {
     test('creates new lot, stock movement, updates detail, sets status=received when all complete', async () => {
-      mockPoRepo.findById.mockResolvedValue(makePo());
+      mockPoRepo.findById
+        .mockResolvedValueOnce(makePo())           // step 1: load PO
+        .mockResolvedValueOnce(makePo('received')); // step 7: return updated PO
       mockDetailRepo.findByPurchaseOrderId
         .mockResolvedValueOnce([makeDetail()])
         .mockResolvedValueOnce([makeDetail({ received_quantity: 10 })]);
@@ -138,7 +140,6 @@ describe('PurchaseOrderService.receivePurchaseOrder', () => {
       mockStockRepo.create.mockResolvedValue({ movement_id: 'mov-1' });
       mockDetailRepo.updateReceivedQuantityAndLot.mockResolvedValue({});
       mockPoRepo.updateStatus.mockResolvedValue({});
-      mockPoRepo.findById.mockResolvedValueOnce(makePo('received'));
 
       const lines = [{
         detail_id: 'det-1',
@@ -160,8 +161,10 @@ describe('PurchaseOrderService.receivePurchaseOrder', () => {
     });
 
     test('sets status=partially_received when not all lines complete', async () => {
-      mockPoRepo.findById.mockResolvedValue(makePo());
       const details = [makeDetail(), makeDetail({ detail_id: 'det-2', received_quantity: 0 })];
+      mockPoRepo.findById
+        .mockResolvedValueOnce(makePo())                   // step 1: load PO
+        .mockResolvedValueOnce(makePo('partially_received')); // step 7: return updated PO
       mockDetailRepo.findByPurchaseOrderId
         .mockResolvedValueOnce(details)
         .mockResolvedValueOnce([makeDetail({ received_quantity: 5 }), makeDetail({ detail_id: 'det-2', received_quantity: 0 })]);
@@ -170,7 +173,6 @@ describe('PurchaseOrderService.receivePurchaseOrder', () => {
       mockStockRepo.create.mockResolvedValue({ movement_id: 'mov-1' });
       mockDetailRepo.updateReceivedQuantityAndLot.mockResolvedValue({});
       mockPoRepo.updateStatus.mockResolvedValue({});
-      mockPoRepo.findById.mockResolvedValueOnce(makePo('partially_received'));
 
       const lines = [{
         detail_id: 'det-1',
@@ -183,14 +185,15 @@ describe('PurchaseOrderService.receivePurchaseOrder', () => {
     });
 
     test('skips lot creation when detail already has lot_id', async () => {
-      mockPoRepo.findById.mockResolvedValue(makePo('partially_received'));
+      mockPoRepo.findById
+        .mockResolvedValueOnce(makePo('partially_received')) // step 1: load PO
+        .mockResolvedValueOnce(makePo('received'));           // step 7: return updated PO
       mockDetailRepo.findByPurchaseOrderId
         .mockResolvedValueOnce([makeDetail({ received_quantity: 5, lot_id: 'existing-lot-1' })])
         .mockResolvedValueOnce([makeDetail({ received_quantity: 10, lot_id: 'existing-lot-1' })]);
       mockStockRepo.create.mockResolvedValue({ movement_id: 'mov-1' });
       mockDetailRepo.updateReceivedQuantityAndLot.mockResolvedValue({});
       mockPoRepo.updateStatus.mockResolvedValue({});
-      mockPoRepo.findById.mockResolvedValueOnce(makePo('received'));
 
       const lines = [{ detail_id: 'det-1', received_quantity: 5 }];
 
