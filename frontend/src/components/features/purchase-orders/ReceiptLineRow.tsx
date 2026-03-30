@@ -217,11 +217,19 @@ export function ReceiptLineRow({ detail, value, onChange }: ReceiptLineRowProps)
                         Sin lotes disponibles
                       </div>
                     ) : (
-                      existingLots.map((lot) => (
-                        <SelectItem key={lot.lot_id} value={lot.lot_id}>
-                          {lot.lot_number} — vence {lot.expiration_date ?? '—'}
-                        </SelectItem>
-                      ))
+                      existingLots.map((lot) => {
+                        const isExpired =
+                          !!lot.expiration_date &&
+                          new Date(lot.expiration_date) < new Date(new Date().toDateString());
+                        return (
+                          <SelectItem key={lot.lot_id} value={lot.lot_id}>
+                            <span className={isExpired ? 'text-red-500' : undefined}>
+                              {lot.lot_number} — vence {lot.expiration_date ?? '—'}
+                              {isExpired && ' ⚠ Vencido'}
+                            </span>
+                          </SelectItem>
+                        );
+                      })
                     )}
                   </SelectContent>
                 </Select>
