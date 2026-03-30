@@ -20,10 +20,17 @@ export function ReceivePurchaseOrderModal({
   const receiveMutation = useReceivePurchaseOrder();
 
   // Fetch full PO so we get real detail rows (list response has [{count:N}] aggregates).
-  // Use isFetching (not isFetching) so stale cache data doesn't flash "already received"
+  // Use isFetching (not isLoading) so stale cache data doesn't flash "already received"
   // while the background refetch completes.
   const { data: fullPO, isFetching } = usePurchaseOrder(purchaseOrder.purchase_order_id, isOpen);
   const resolvedPO = fullPO ?? purchaseOrder;
+
+  // True only when the cache has real detail rows (with detail_id).
+  // Protects against the 1-render flash where isFetching hasn't started yet
+  // but the cached data only has count aggregates (no detail_id).
+  const hasRealDetails = (resolvedPO.purchase_order_details ?? []).some(
+    (d) => 'detail_id' in d && d.detail_id != null
+  );
 
   // Only show lines that are not yet fully received
   const pendingDetails = useMemo(
@@ -124,7 +131,7 @@ export function ReceivePurchaseOrderModal({
         </ModalHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {isFetching ? (
+          {isFetching || !hasRealDetails ? (
             <p className="text-sm text-muted-foreground text-center py-8">Cargando detalles...</p>
           ) : pendingDetails.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
@@ -156,7 +163,7 @@ export function ReceivePurchaseOrderModal({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={!isValid || receiveMutation.isPending || pendingDetails.length === 0}
+            disabled={!isValid || receiveMutation.isPending || pendingDetails.length === 0 || isFetching || !hasRealDetails}
           >
             {receiveMutation.isPending ? 'Procesando...' : 'Confirmar recepcion'}
           </Button>

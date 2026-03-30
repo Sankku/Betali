@@ -50,7 +50,8 @@ export function ReceiptLineRow({ detail, value, onChange }: ReceiptLineRowProps)
   const isZero = qty === 0;
 
   const handleQtyChange = (next: number) => {
-    onChange({ ...value, received_quantity: next });
+    const clamped = Math.min(Math.max(0, next), remaining);
+    onChange({ ...value, received_quantity: clamped });
   };
 
   const handleModeChange = (mode: 'new' | 'existing') => {
