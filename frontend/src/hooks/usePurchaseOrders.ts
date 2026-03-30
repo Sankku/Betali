@@ -225,10 +225,7 @@ export function useApprovePurchaseOrder() {
   return useMutation({
     mutationFn: (purchaseOrderId: string) => purchaseOrdersService.approve(purchaseOrderId),
     onSuccess: (approvedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', approvedPurchaseOrder.purchase_order_id],
-        approvedPurchaseOrder
-      );
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', approvedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(
@@ -251,10 +248,7 @@ export function useSubmitPurchaseOrder() {
   return useMutation({
     mutationFn: (purchaseOrderId: string) => purchaseOrdersService.submit(purchaseOrderId),
     onSuccess: (submittedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', submittedPurchaseOrder.purchase_order_id],
-        submittedPurchaseOrder
-      );
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', submittedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(
