@@ -116,10 +116,8 @@ export function useUpdatePurchaseOrder() {
     mutationFn: ({ id, data }: { id: string; data: UpdatePurchaseOrderRequest }) =>
       purchaseOrdersService.update(id, data),
     onSuccess: (updatedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', updatedPurchaseOrder.purchase_order_id],
-        updatedPurchaseOrder
-      );
+      // Remove stale partial cache (update response has no joins)
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', updatedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(
@@ -143,10 +141,10 @@ export function useUpdatePurchaseOrderStatus() {
     mutationFn: ({ id, data }: { id: string; data: UpdatePurchaseOrderStatusRequest }) =>
       purchaseOrdersService.updateStatus(id, data),
     onSuccess: (updatedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', updatedPurchaseOrder.purchase_order_id],
-        updatedPurchaseOrder
-      );
+      // Remove (not setQueryData/invalidate) — the status endpoint returns no joins.
+      // Removing the cache entry forces isLoading=true on next open, so view/receive
+      // modals never flash partial (joinless) data.
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', updatedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       const statusMessage =
