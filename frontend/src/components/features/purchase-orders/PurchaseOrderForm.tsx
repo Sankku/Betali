@@ -65,7 +65,9 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
   // Load data for dropdowns
   const { data: suppliers, refetch: refetchSuppliers } = useSuppliers({ searchOptions: { active_only: true } });
   const { data: warehouses, refetch: refetchWarehouses } = useWarehouses({ enabled: true });
-  const { data: productTypes } = useProductTypes();
+  const { data: allProductTypes } = useProductTypes();
+  // Finished goods are produced internally — exclude them from purchase orders
+  const productTypes = (allProductTypes ?? []).filter((p) => p.product_type !== 'finished_good');
 
   const { watch, setValue, register, formState: { errors: formErrors } } = form;
 

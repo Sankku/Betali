@@ -201,6 +201,10 @@ export function useReceivePurchaseOrder() {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', receivedPO.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['product-lots'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stats'] });
+      // Reception creates stock movements — refresh product stock views
+      queryClient.invalidateQueries({ queryKey: ['product-types'] });
+      queryClient.invalidateQueries({ queryKey: ['available-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
 
       const msg = receivedPO.status === 'received'
         ? `OC "${receivedPO.purchase_order_number}" recibida completamente. Stock actualizado.`
