@@ -19,8 +19,10 @@ export function ReceivePurchaseOrderModal({
 }: ReceivePurchaseOrderModalProps) {
   const receiveMutation = useReceivePurchaseOrder();
 
-  // Fetch full PO so we get real detail rows (list response has [{count:N}] aggregates)
-  const { data: fullPO, isLoading } = usePurchaseOrder(purchaseOrder.purchase_order_id, isOpen);
+  // Fetch full PO so we get real detail rows (list response has [{count:N}] aggregates).
+  // Use isFetching (not isFetching) so stale cache data doesn't flash "already received"
+  // while the background refetch completes.
+  const { data: fullPO, isFetching } = usePurchaseOrder(purchaseOrder.purchase_order_id, isOpen);
   const resolvedPO = fullPO ?? purchaseOrder;
 
   // Only show lines that are not yet fully received
@@ -122,7 +124,7 @@ export function ReceivePurchaseOrderModal({
         </ModalHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {isLoading ? (
+          {isFetching ? (
             <p className="text-sm text-muted-foreground text-center py-8">Cargando detalles...</p>
           ) : pendingDetails.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
