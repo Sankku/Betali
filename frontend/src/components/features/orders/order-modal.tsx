@@ -24,7 +24,7 @@ interface OrderFormData {
   notes: string;
   tax_rate_ids: string[];
   items: Array<{
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     price: number;
   }>;
@@ -103,12 +103,12 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
         return;
       }
 
-      const itemsWithProduct = data.items.filter(item => item.product_id && item.quantity > 0);
+      const itemsWithProduct = data.items.filter(item => item.product_type_id && item.quantity > 0);
       if (itemsWithProduct.length === 0) {
         toast.error(t('orders.validation.addProduct'));
         return;
       }
-      if (data.items.some(item => !item.product_id)) {
+      if (data.items.some(item => !item.product_type_id)) {
         toast.error(t('orders.validation.allItemsNeedProduct'));
         return;
       }

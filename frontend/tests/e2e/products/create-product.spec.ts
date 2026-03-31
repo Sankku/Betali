@@ -85,8 +85,12 @@ test.describe('Create Product Type', () => {
     await page.waitForSelector('input[name="sku"]', { timeout: 8000 });
 
     // Bypass browser's native required validation so React's custom errors render
-    await page.locator('form').evaluate((el: HTMLFormElement) => { el.noValidate = true; });
-    await page.click('button[type="submit"]');
+    await page.evaluate(() => {
+      document.querySelectorAll('form').forEach((f) => {
+        (f as HTMLFormElement).noValidate = true;
+      });
+    });
+    await page.locator('button:has-text("Crear tipo")').click();
 
     // Should show React custom validation errors (.text-danger-600)
     await expect(
