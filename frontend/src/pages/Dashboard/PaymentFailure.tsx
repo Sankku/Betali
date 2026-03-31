@@ -4,10 +4,12 @@ import { XCircle, ArrowLeft, RefreshCcw, HelpCircle } from 'lucide-react';
 import { mercadoPagoService } from '../../services/api/mercadoPagoService';
 import { Button } from '../../components/ui/button';
 import { DashboardLayout } from '../../components/layout/Dashboard';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function PaymentFailure() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const status = searchParams.get('status') || 'rejected';
   const subscriptionId = searchParams.get('subscription_id') || searchParams.get('external_reference');
@@ -19,20 +21,20 @@ export default function PaymentFailure() {
   const getRejectionHelp = () => {
     return [
       {
-        title: 'Fondos Insuficientes',
-        description: 'Verifica que tu tarjeta tenga saldo disponible'
+        title: t('payments.failure.causeInsufficientFunds'),
+        description: t('payments.failure.causeInsufficientFundsDesc')
       },
       {
-        title: 'Datos Incorrectos',
-        description: 'Revisa que los datos de tu tarjeta sean correctos'
+        title: t('payments.failure.causeIncorrectData'),
+        description: t('payments.failure.causeIncorrectDataDesc')
       },
       {
-        title: 'Límite Excedido',
-        description: 'Puede que hayas alcanzado tu límite de compras'
+        title: t('payments.failure.causeLimitExceeded'),
+        description: t('payments.failure.causeLimitExceededDesc')
       },
       {
-        title: 'Tarjeta Vencida',
-        description: 'Verifica la fecha de vencimiento de tu tarjeta'
+        title: t('payments.failure.causeExpiredCard'),
+        description: t('payments.failure.causeExpiredCardDesc')
       }
     ];
   };
@@ -62,17 +64,17 @@ export default function PaymentFailure() {
               {paymentId && (
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Detalles del Intento de Pago
+                    {t('payments.failure.detailsTitle')}
                   </h2>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">ID de Pago:</span>
+                      <span className="text-gray-600">{t('payments.failure.paymentId')}</span>
                       <span className="font-mono text-sm text-gray-900">{paymentId}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Estado:</span>
+                      <span className="text-gray-600">{t('payments.failure.statusLabel')}</span>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        {status === 'cancelled' ? 'Cancelado' : 'Rechazado'}
+                        {status === 'cancelled' ? t('payments.failure.statusCancelled') : t('payments.failure.statusRejected')}
                       </span>
                     </div>
                   </div>
@@ -86,10 +88,10 @@ export default function PaymentFailure() {
                     <HelpCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">
-                        Posibles Causas del Rechazo
+                        {t('payments.failure.causesTitle')}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Aquí hay algunas razones comunes por las que un pago puede ser rechazado:
+                        {t('payments.failure.causesDesc')}
                       </p>
                     </div>
                   </div>
@@ -106,23 +108,23 @@ export default function PaymentFailure() {
 
               {/* What to Do Next */}
               <div className="bg-blue-50 rounded-lg p-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">¿Qué puedes hacer?</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">{t('payments.failure.whatToDoTitle')}</h3>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">→</span>
-                    <span>Verifica los datos de tu tarjeta y vuelve a intentarlo</span>
+                    <span>{t('payments.failure.step1')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">→</span>
-                    <span>Intenta con otro método de pago</span>
+                    <span>{t('payments.failure.step2')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">→</span>
-                    <span>Contacta a tu banco para verificar que no haya restricciones</span>
+                    <span>{t('payments.failure.step3')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">→</span>
-                    <span>Si el problema persiste, contáctanos para ayudarte</span>
+                    <span>{t('payments.failure.step4')}</span>
                   </li>
                 </ul>
               </div>
@@ -134,7 +136,7 @@ export default function PaymentFailure() {
                   className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
-                  Intentar Nuevamente
+                  {t('payments.failure.retryButton')}
                 </Button>
                 <Button
                   onClick={() => navigate('/dashboard')}
@@ -142,7 +144,7 @@ export default function PaymentFailure() {
                   className="flex-1"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver al Dashboard
+                  {t('payments.failure.backToDashboard')}
                 </Button>
               </div>
 
@@ -157,7 +159,7 @@ export default function PaymentFailure() {
                     }}
                     className="text-blue-600 hover:text-blue-700 font-medium"
                   >
-                    Contacta a Soporte
+                    {t('payments.failure.contactSupport')}
                   </button>
                 </p>
               </div>

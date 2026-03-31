@@ -5,6 +5,7 @@ import { Input } from '../../ui/input';
 import { Textarea } from '../../ui/textarea';
 import { ClientFormData } from './client-modal';
 import { clientService } from '../../../services/api/clientService';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 export interface ClientFormProps {
   form: UseFormReturn<ClientFormData>;
@@ -13,6 +14,7 @@ export interface ClientFormProps {
 }
 
 export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = false }) => {
+  const { t } = useTranslation();
   const isViewMode = mode === 'view';
   const isEditing = mode === 'edit';
   const {
@@ -48,7 +50,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
       </label>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
       <div className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
-        <span className="text-neutral-800">{value || 'No especificado'}</span>
+        <span className="text-neutral-800">{value || t('clients.form.notSpecified')}</span>
       </div>
     </div>
   );
@@ -58,41 +60,40 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ViewField
-            label="Nombre/Razón Social"
+            label={t('clients.form.legalNameLabel')}
             value={currentName}
             icon={<Building className="w-4 h-4" />}
           />
           <ViewField
-            label="CUIT"
+            label={t('clients.form.cuitLabel')}
             value={currentCuit}
             icon={<FileText className="w-4 h-4" />}
-            description="Código Único de Identificación Tributaria"
+            description={t('clients.form.cuitDesc')}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ViewField
-            label="Email"
+            label={t('clients.form.emailLabel')}
             value={currentEmail}
             icon={<Mail className="w-4 h-4" />}
           />
           <ViewField
-            label="Teléfono"
+            label={t('clients.form.phoneLabel')}
             value={currentPhone}
             icon={<Phone className="w-4 h-4" />}
           />
         </div>
 
         <ViewField
-          label="Dirección"
+          label={t('clients.form.addressLabel')}
           value={currentAddress}
           icon={<MapPin className="w-4 h-4" />}
         />
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            <strong>Nota:</strong> Este cliente está asociado a su organización actual. 
-            Los datos fiscales son utilizados para la generación de facturas y reportes.
+            <strong>{t('clients.form.orgNotePrefix')}</strong> {t('clients.form.orgNoteDesc')}
           </p>
         </div>
       </div>
@@ -106,11 +107,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
         <div className="space-y-2">
           <label htmlFor="name" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Building className="w-4 h-4" />
-            Nombre/Razón Social *
+            {t('clients.form.legalNameRequired')}
           </label>
           <Input
             id="name"
-            placeholder="Ingrese el nombre o razón social"
+            placeholder={t('clients.form.legalNamePlaceholder')}
             {...register('name')}
             disabled={isLoading}
             className={errors.name ? 'border-red-500' : ''}
@@ -123,11 +124,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
         <div className="space-y-2">
           <label htmlFor="cuit" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            CUIT *
+            {t('clients.form.cuitRequired')}
           </label>
           <Input
             id="cuit"
-            placeholder="XX-XXXXXXXX-X"
+            placeholder={t('clients.form.cuitPlaceholder')}
             value={currentCuit}
             onChange={handleCuitChange}
             disabled={isLoading}
@@ -138,7 +139,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
             <p className="text-xs text-red-500">{errors.cuit.message}</p>
           )}
           <p className="text-xs text-neutral-500">
-            Formato: 11 dígitos (se formatea automáticamente)
+            {t('clients.form.cuitFormat')}
           </p>
         </div>
       </div>
@@ -148,12 +149,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Mail className="w-4 h-4" />
-            Email *
+            {t('clients.form.emailRequired')}
           </label>
           <Input
             id="email"
             type="email"
-            placeholder="cliente@empresa.com"
+            placeholder={t('clients.form.emailPlaceholder')}
             {...register('email')}
             disabled={isLoading}
             className={errors.email ? 'border-red-500' : ''}
@@ -166,11 +167,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
         <div className="space-y-2">
           <label htmlFor="phone" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
             <Phone className="w-4 h-4" />
-            Teléfono
+            {t('clients.form.phoneLabel')}
           </label>
           <Input
             id="phone"
-            placeholder="+54 11 1234-5678"
+            placeholder={t('clients.form.phonePlaceholder')}
             {...register('phone')}
             disabled={isLoading}
             className={errors.phone ? 'border-red-500' : ''}
@@ -185,11 +186,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
       <div className="space-y-2">
         <label htmlFor="address" className="text-sm font-medium text-neutral-700 flex items-center gap-2">
           <MapPin className="w-4 h-4" />
-          Dirección
+          {t('clients.form.addressLabel')}
         </label>
         <Textarea
           id="address"
-          placeholder="Ingrese la dirección completa"
+          placeholder={t('clients.form.addressPlaceholder')}
           {...register('address')}
           disabled={isLoading}
           className={errors.address ? 'border-red-500' : ''}
@@ -205,10 +206,9 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
         <div className="flex items-start gap-3">
           <FileText className="w-5 h-5 text-amber-600 mt-0.5" />
           <div>
-            <h4 className="font-medium text-amber-800 mb-1">Información Fiscal</h4>
+            <h4 className="font-medium text-amber-800 mb-1">{t('clients.form.taxInfoTitle')}</h4>
             <p className="text-sm text-amber-700">
-              El CUIT es requerido para la facturación electrónica y cumplimiento fiscal. 
-              Asegúrese de que los datos coincidan con los registros de AFIP.
+              {t('clients.form.taxInfoDesc')}
             </p>
           </div>
         </div>
@@ -216,7 +216,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ form, mode, isLoading = 
 
       {/* Required Fields Notice */}
       <div className="text-xs text-neutral-500">
-        * Campos requeridos
+        {t('clients.form.requiredFields')}
       </div>
     </div>
   );

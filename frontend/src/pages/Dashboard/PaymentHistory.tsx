@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { mercadoPagoService, Payment } from '@/services/api/mercadoPagoService';
 import { subscriptionService } from '@/services/api/subscriptionService';
 import { toast } from '@/lib/toast';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 const PaymentHistory: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get current subscription
   const { data: currentSubscription, isLoading: isLoadingSubscription } = useQuery({
@@ -28,7 +30,7 @@ const PaymentHistory: React.FC = () => {
       await mercadoPagoService.downloadReceipt(paymentId);
     } catch (error) {
       console.error('Error downloading receipt:', error);
-      toast.error('Error al descargar el recibo. Por favor intenta de nuevo.');
+      toast.error(t('payments.history.downloadError'));
     }
   };
 
@@ -55,9 +57,9 @@ const PaymentHistory: React.FC = () => {
     };
 
     const labels: Record<string, string> = {
-      confirmed: 'Confirmado',
-      pending: 'Pendiente',
-      failed: 'Fallido'
+      confirmed: t('payments.history.statusConfirmed'),
+      pending: t('payments.history.statusPending'),
+      failed: t('payments.history.statusFailed')
     };
 
     return (
@@ -69,13 +71,13 @@ const PaymentHistory: React.FC = () => {
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      'credit_card': 'Tarjeta de Credito',
-      'debit_card': 'Tarjeta de Debito',
-      'bank_transfer': 'Transferencia',
-      'mercadopago': 'MercadoPago',
-      'cash': 'Efectivo'
+      'credit_card': t('payments.history.methodCreditCard'),
+      'debit_card': t('payments.history.methodDebitCard'),
+      'bank_transfer': t('payments.history.methodTransfer'),
+      'mercadopago': t('payments.history.methodMercadoPago'),
+      'cash': t('payments.history.methodCash')
     };
-    return labels[method] || method || 'MercadoPago';
+    return labels[method] || method || t('payments.history.methodMercadoPago');
   };
 
   if (isLoadingSubscription || isLoadingPayments) {
@@ -106,16 +108,16 @@ const PaymentHistory: React.FC = () => {
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay suscripcion activa</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('payments.history.noSubscription')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Necesitas una suscripcion para ver el historial de pagos.
+              {t('payments.history.noSubscriptionDesc')}
             </p>
             <div className="mt-6">
               <button
                 onClick={() => navigate('/dashboard/pricing')}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                Ver Planes
+                {t('payments.history.viewPlans')}
               </button>
             </div>
           </div>
@@ -136,11 +138,11 @@ const PaymentHistory: React.FC = () => {
             <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver a Suscripcion
+            {t('payments.history.backToSubscription')}
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Historial de Pagos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('payments.history.title')}</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Revisa todos tus pagos y descarga los recibos.
+            {t('payments.history.subtitle')}
           </p>
         </div>
 
@@ -149,17 +151,17 @@ const PaymentHistory: React.FC = () => {
           <div className="bg-white rounded-lg shadow mb-6 p-6">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Total de pagos</p>
+                <p className="text-sm text-gray-500">{t('payments.history.totalPayments')}</p>
                 <p className="text-2xl font-semibold text-gray-900">{payments.length}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Pagos confirmados</p>
+                <p className="text-sm text-gray-500">{t('payments.history.confirmedPayments')}</p>
                 <p className="text-2xl font-semibold text-green-600">
                   {payments.filter(p => p.status === 'confirmed').length}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Monto total pagado</p>
+                <p className="text-sm text-gray-500">{t('payments.history.totalAmountPaid')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {formatCurrency(
                     payments
@@ -177,27 +179,27 @@ const PaymentHistory: React.FC = () => {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {error ? (
             <div className="p-6 text-center">
-              <p className="text-red-600">Error al cargar el historial de pagos</p>
+              <p className="text-red-600">{t('payments.history.loadError')}</p>
             </div>
           ) : !payments || payments.length === 0 ? (
             <div className="p-6 text-center">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No hay pagos registrados</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">{t('payments.history.noPayments')}</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Los pagos apareceran aqui una vez que realices tu primera compra.
+                {t('payments.history.noPaymentsDesc')}
               </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {/* Table Header */}
               <div className="bg-gray-50 px-6 py-3 hidden sm:grid sm:grid-cols-5 gap-4">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</span>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Metodo</span>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</span>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</span>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Acciones</span>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('payments.history.colDate')}</span>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('payments.history.colMethod')}</span>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('payments.history.colAmount')}</span>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('payments.history.colStatus')}</span>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider text-right">{t('payments.history.colActions')}</span>
               </div>
 
               {/* Table Rows */}
@@ -218,7 +220,7 @@ const PaymentHistory: React.FC = () => {
                     <div className="hidden sm:block">
                       <p className="text-sm text-gray-900">{getPaymentMethodLabel(payment.payment_method)}</p>
                       {payment.transaction_reference && (
-                        <p className="text-xs text-gray-500">Ref: {payment.transaction_reference}</p>
+                        <p className="text-xs text-gray-500">{t('payments.history.refPrefix')}{payment.transaction_reference}</p>
                       )}
                     </div>
 
@@ -244,7 +246,7 @@ const PaymentHistory: React.FC = () => {
                           <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          Recibo
+                          {t('payments.history.receiptButton')}
                         </button>
                       )}
                     </div>
@@ -253,7 +255,7 @@ const PaymentHistory: React.FC = () => {
                   {/* Notes (if any) */}
                   {payment.notes && (
                     <div className="mt-2 text-xs text-gray-500">
-                      <span className="font-medium">Nota:</span> {payment.notes}
+                      <span className="font-medium">{t('payments.history.noteLabel')}</span> {payment.notes}
                     </div>
                   )}
                 </div>
@@ -272,14 +274,11 @@ const PaymentHistory: React.FC = () => {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800">
-                Necesitas ayuda?
+                {t('payments.history.helpTitle')}
               </h3>
               <div className="mt-2 text-sm text-blue-700">
                 <p>
-                  Si tienes alguna pregunta sobre tus pagos o necesitas una factura, contactanos a{' '}
-                  <a href="mailto:soporte@betali.app" className="font-medium underline">
-                    soporte@betali.app
-                  </a>
+                  {t('payments.history.helpDesc')}
                 </p>
               </div>
             </div>

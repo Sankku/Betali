@@ -1,6 +1,7 @@
 import React from 'react';
 import { Package, Calendar, Activity } from 'lucide-react';
 import { StatsSection, StatItem } from '../../templates/stats-section';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 export interface WarehouseStatsData {
   totalMovements: number;
@@ -25,8 +26,10 @@ export interface WarehouseStatsProps {
 }
 
 export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => {
+  const { t } = useTranslation();
+
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('warehouse.stats.noDate');
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -36,23 +39,23 @@ export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => 
 
   const stats: StatItem[] = [
     {
-      title: 'Total Movements',
+      title: t('warehouse.stats.totalMovements'),
       value: warehouse.stats?.totalMovements || 0,
-      description: 'Registered movements',
+      description: t('warehouse.stats.totalMovementsDesc'),
       icon: Package,
       variant: 'primary',
     },
     {
-      title: 'Creation Date',
+      title: t('warehouse.stats.creationDate'),
       value: formatDate(warehouse.created_at),
-      description: 'Warehouse created',
+      description: t('warehouse.stats.creationDateDesc'),
       icon: Calendar,
       variant: 'success',
     },
     {
-      title: 'Recent Movements',
+      title: t('warehouse.stats.recentMovements'),
       value: warehouse.stats?.recentMovements?.length || 0,
-      description: 'Recent movements',
+      description: t('warehouse.stats.recentMovementsDesc'),
       icon: Activity,
       variant: 'warning',
     },
@@ -60,8 +63,8 @@ export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ warehouse }) => 
 
   return (
     <StatsSection
-      title="Warehouse Statistics"
-      description="Activity information and warehouse metrics"
+      title={t('warehouse.stats.statsTitle')}
+      description={t('warehouse.stats.statsSubtitle')}
       stats={stats}
       columns={3}
     />

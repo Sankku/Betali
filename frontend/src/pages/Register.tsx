@@ -16,6 +16,7 @@ import {
 import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
 import { Input } from '../components/ui/input';
+import { useTranslation } from '../contexts/LanguageContext';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +32,7 @@ export default function Register() {
 
   const navigate = useNavigate();
   const { signUp, signInWithGoogle, user } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (user) {
@@ -45,19 +47,19 @@ export default function Register() {
 
     // Validation
     if (!name.trim()) {
-      setError('Name is required');
+      setError(t('auth.registerPage.nameRequired'));
       setLoading(false);
       return;
     }
 
     if (!agreeTerms) {
-      setError('You must accept the terms and conditions to continue');
+      setError(t('auth.registerPage.acceptTermsRequired'));
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.registerPage.passwordsNoMatch'));
       setLoading(false);
       return;
     }
@@ -69,7 +71,7 @@ export default function Register() {
       if (authError) throw authError;
 
       if (!authData.user) {
-        throw new Error('Signup failed - no user returned');
+        throw new Error(t('auth.registerPage.signupFailed'));
       }
 
       // Step 2: Complete SaaS signup by creating organization
@@ -103,7 +105,7 @@ export default function Register() {
       } else {
         navigate('/login?verify=true');
       }
-      
+
     } catch (err: any) {
       setError(err.message || 'Registration error');
     } finally {
@@ -121,17 +123,17 @@ export default function Register() {
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <BetaliLogo variant="icon" size="xl" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
-          <p className="text-gray-500 mt-1">Business inventory management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('auth.registerPage.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('auth.registerPage.subtitle')}</p>
         </div>
 
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-              Create Account
+              {t('auth.registerPage.cardTitle')}
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Create your account and start your organization
+              {t('auth.registerPage.cardDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -158,7 +160,7 @@ export default function Register() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Sign up with Google
+              {t('auth.registerPage.googleButton')}
             </Button>
 
             <div className="relative mb-4">
@@ -166,19 +168,19 @@ export default function Register() {
                 <span className="w-full border-t border-neutral-200" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-2 text-neutral-500">or register with email</span>
+                <span className="bg-white px-2 text-neutral-500">{t('auth.registerPage.dividerText')}</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-neutral-700">
-                  Full Name
+                  {t('auth.registerPage.fullNameLabel')}
                 </Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder={t('auth.registerPage.fullNamePlaceholder')}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
@@ -193,7 +195,7 @@ export default function Register() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="example@example.com"
+                  placeholder={t('auth.registerPage.emailPlaceholder')}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
@@ -203,19 +205,19 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="organizationName" className="text-neutral-700">
-                  Organization Name
-                  <span className="text-xs text-neutral-500 ml-1">(optional)</span>
+                  {t('auth.registerPage.orgNameLabel')}
+                  <span className="text-xs text-neutral-500 ml-1">{t('auth.registerPage.orgNameOptional')}</span>
                 </Label>
                 <Input
                   id="organizationName"
                   type="text"
-                  placeholder="My Company"
+                  placeholder={t('auth.registerPage.orgNamePlaceholder')}
                   value={organizationName}
                   onChange={e => setOrganizationName(e.target.value)}
                   className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
                 />
                 <p className="text-xs text-neutral-500">
-                  Leave empty to use "{name ? `${name}'s Organization` : 'Your Organization'}"
+                  {t('auth.registerPage.orgNameHint')}
                 </p>
               </div>
 
@@ -227,7 +229,7 @@ export default function Register() {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.registerPage.passwordPlaceholder')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
@@ -245,13 +247,13 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-neutral-700">
-                  Confirm password
+                  {t('auth.registerPage.confirmPasswordLabel')}
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.registerPage.confirmPasswordPlaceholder')}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     className="h-11 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
@@ -281,9 +283,9 @@ export default function Register() {
                   htmlFor="terms"
                   className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  I accept the{' '}
+                  {t('auth.registerPage.acceptTermsText')}{' '}
                   <Link to="/terms" className="text-primary-600 hover:text-primary-700 underline">
-                    terms and conditions
+                    {t('auth.registerPage.termsLink')}
                   </Link>
                 </label>
               </div>
@@ -296,11 +298,11 @@ export default function Register() {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Creating account...
+                    {t('auth.registerPage.creating')}
                   </div>
                 ) : (
                   <>
-                    Create account
+                    {t('auth.registerPage.createButton')}
                     <ArrowRight className="ml-2 h-4 w-4 text-white" />
                   </>
                 )}
@@ -309,19 +311,19 @@ export default function Register() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 border-t border-neutral-100 bg-neutral-50/50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
-              Already have an account?{' '}
+              {t('auth.registerPage.alreadyHaveAccount')}{' '}
               <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
-                Sign in
+                {t('auth.registerPage.signInLink')}
               </Link>
             </div>
             <div className="text-center text-xs text-neutral-500">
-              By registering, you accept our{' '}
+              {t('auth.registerPage.termsAccept')}{' '}
               <Link to="/terms" className="underline hover:text-neutral-700">
-                Terms of service
+                {t('auth.registerPage.termsOfService')}
               </Link>{' '}
               and{' '}
               <Link to="/privacy" className="underline hover:text-neutral-700">
-                Privacy policy
+                {t('auth.registerPage.privacyPolicy')}
               </Link>
             </div>
           </CardFooter>

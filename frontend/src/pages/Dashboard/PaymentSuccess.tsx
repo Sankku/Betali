@@ -6,11 +6,13 @@ import { mercadoPagoService } from '../../services/api/mercadoPagoService';
 import { subscriptionService } from '../../services/api/subscriptionService';
 import { Button } from '../../components/ui/button';
 import { DashboardLayout } from '../../components/layout/Dashboard';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function PaymentSuccess() {
   const [searchParams]  = useSearchParams();
   const navigate        = useNavigate();
   const queryClient     = useQueryClient();
+  const { t }           = useTranslation();
   const [verificationComplete, setVerificationComplete] = useState(false);
 
   const paymentId      = searchParams.get('payment_id');
@@ -54,14 +56,14 @@ export default function PaymentSuccess() {
             /* ── Loading ── */
             <div className="bg-white modal-card rounded-2xl shadow-xl p-10 text-center">
               <Loader2 className="h-12 w-12 text-green-500 animate-spin mx-auto mb-4" />
-              <h1 className="text-xl font-bold text-neutral-900 mb-2">Verificando tu pago…</h1>
+              <h1 className="text-xl font-bold text-neutral-900 mb-2">{t('payments.success.verifying')}</h1>
               <p className="text-sm text-neutral-600 mb-6">
-                Confirmando con Mercado Pago. Un momento.
+                {t('payments.success.verifyingDesc')}
               </p>
               <div className="space-y-2 text-sm">
-                <Step done={!!paymentId}       label="Pago registrado" />
-                <Step done={!!paymentStatus}   label="Estado del pago confirmado" />
-                <Step done={verificationComplete} label="Suscripción activada" />
+                <Step done={!!paymentId}           label={t('payments.success.paymentRegistered')} />
+                <Step done={!!paymentStatus}       label={t('payments.success.statusConfirmed')} />
+                <Step done={verificationComplete}  label={t('payments.success.subscriptionActivated')} />
               </div>
             </div>
 
@@ -74,8 +76,8 @@ export default function PaymentSuccess() {
                 <div className="inline-flex items-center justify-center bg-white/20 rounded-full p-3 mb-3">
                   <CheckCircle className="h-10 w-10 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">¡Pago Exitoso!</h1>
-                <p className="text-green-100 text-sm mt-1">Tu suscripción ha sido activada correctamente</p>
+                <h1 className="text-2xl font-bold text-white">{t('payments.success.title')}</h1>
+                <p className="text-green-100 text-sm mt-1">{t('payments.success.subtitle')}</p>
               </div>
 
               {/* Details grid */}
@@ -85,25 +87,25 @@ export default function PaymentSuccess() {
                   {/* Payment details */}
                   <div className="col-span-2 bg-neutral-100 rounded-xl p-4">
                     <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                      <CreditCard className="h-3.5 w-3.5" /> Pago
+                      <CreditCard className="h-3.5 w-3.5" /> {t('payments.success.paymentSection')}
                     </p>
                     <div className="space-y-2">
                       {paymentStatus && (
                         <>
-                          <Row label="ID" value={
+                          <Row label={t('payments.success.labelId')} value={
                             <span className="font-mono text-xs">{paymentStatus.id}</span>
                           } />
-                          <Row label="Monto" value={
+                          <Row label={t('payments.success.labelAmount')} value={
                             <span className="font-semibold">
                               {mercadoPagoService.formatAmount(paymentStatus.amount, paymentStatus.currency)}
                             </span>
                           } />
-                          <Row label="Método" value={
+                          <Row label={t('payments.success.labelMethod')} value={
                             <span className="capitalize">{paymentStatus.paymentMethod}</span>
                           } />
-                          <Row label="Estado" value={
+                          <Row label={t('payments.success.labelStatus')} value={
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <Check className="h-3 w-3" /> Aprobado
+                              <Check className="h-3 w-3" /> {t('payments.success.statusApproved')}
                             </span>
                           } />
                         </>
@@ -115,19 +117,19 @@ export default function PaymentSuccess() {
                   {subscription?.subscription && (
                     <div className="col-span-2 bg-neutral-100 rounded-xl p-4">
                       <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5" /> Suscripción
+                        <Calendar className="h-3.5 w-3.5" /> {t('payments.success.subscriptionSection')}
                       </p>
                       <div className="space-y-2">
                         {planName && (
-                          <Row label="Plan" value={<span className="font-semibold">{planName}</span>} />
+                          <Row label={t('payments.success.labelPlan')} value={<span className="font-semibold">{planName}</span>} />
                         )}
-                        <Row label="Estado" value={
+                        <Row label={t('payments.success.labelStatus')} value={
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <Check className="h-3 w-3" /> Activo
+                            <Check className="h-3 w-3" /> {t('payments.success.statusActive')}
                           </span>
                         } />
                         {nextBilling && (
-                          <Row label="Próximo cobro" value={
+                          <Row label={t('payments.success.labelNextCharge')} value={
                             new Date(nextBilling).toLocaleDateString('es-AR', {
                               day: 'numeric', month: 'short', year: 'numeric'
                             })
@@ -145,14 +147,14 @@ export default function PaymentSuccess() {
                     className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
                   >
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Ir al Dashboard
+                    {t('payments.success.goToDashboard')}
                   </Button>
                   <Button
                     onClick={() => navigate('/dashboard/subscription')}
                     variant="outline"
                     className="flex-1"
                   >
-                    Mi Suscripción
+                    {t('payments.success.mySubscription')}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>

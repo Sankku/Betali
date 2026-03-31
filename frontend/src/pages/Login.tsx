@@ -15,6 +15,7 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
+import { useTranslation } from '../contexts/LanguageContext';
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -32,6 +33,7 @@ export default function Login() {
   const navigate = useNavigate();
   const query = useQuery();
   const { signIn, signInWithGoogle, user } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (user) {
@@ -42,9 +44,9 @@ export default function Login() {
   useEffect(() => {
     const messageParam = query.get('message');
     const verifyParam = query.get('verify');
-    
+
     if (verifyParam === 'true') {
-      setMessage('Registration successful! Please check your email and click the confirmation link to log in.');
+      setMessage(t('auth.loginPage.registrationSuccess'));
     } else if (messageParam) {
       setMessage(messageParam);
     }
@@ -60,7 +62,7 @@ export default function Login() {
 
       if (error) throw error;
     } catch (err: any) {
-      setError(err.message || 'Login error');
+      setError(err.message || t('auth.loginPage.loginError'));
     } finally {
       setLoading(false);
     }
@@ -76,8 +78,8 @@ export default function Login() {
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <BetaliLogo variant="icon" size="xl" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
-          <p className="text-gray-500 mt-1">Business inventory management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('auth.loginPage.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('auth.loginPage.subtitle')}</p>
         </div>
 
         {message && (
@@ -89,10 +91,10 @@ export default function Login() {
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-              Sign In
+              {t('auth.loginPage.cardTitle')}
             </CardTitle>
             <CardDescription className="text-center text-neutral-600">
-              Enter your credentials to access the panel
+              {t('auth.loginPage.cardDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -115,7 +117,7 @@ export default function Login() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Continue with Google
+              {t('auth.loginPage.googleButton')}
             </Button>
 
             <div className="relative mb-4">
@@ -123,19 +125,19 @@ export default function Login() {
                 <span className="w-full border-t border-neutral-200" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-2 text-neutral-500">or continue with email</span>
+                <span className="bg-white px-2 text-neutral-500">{t('auth.loginPage.dividerText')}</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-neutral-700">
-                  Email
+                  {t('auth.loginPage.emailLabel')}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="example@example.com"
+                  placeholder={t('auth.loginPage.emailPlaceholder')}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="h-11 border-neutral-200 focus:ring-primary-500"
@@ -145,20 +147,20 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-neutral-700">
-                    Password
+                    {t('auth.loginPage.passwordLabel')}
                   </Label>
                   <Link
                     to="/forgot-password"
                     className="text-xs text-neutral-500 hover:text-primary-600 transition-colors"
                   >
-                    Forgot your password?
+                    {t('auth.loginPage.forgotPasswordLink')}
                   </Link>
                 </div>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.loginPage.passwordPlaceholder')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="h-11 border-neutral-200 focus:ring-primary-500"
@@ -184,7 +186,7 @@ export default function Login() {
                   htmlFor="remember"
                   className="text-sm text-neutral-700 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  Remember me
+                  {t('auth.loginPage.rememberMe')}
                 </label>
               </div>
 
@@ -193,28 +195,28 @@ export default function Login() {
                 disabled={loading}
                 className="w-full h-11 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
               >
-                {loading ? 'Loading...' : 'Sign In'}{' '}
+                {loading ? t('auth.loginPage.loading') : t('auth.loginPage.submitButton')}{' '}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4 text-white" />}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 border-t border-gray-100 bg-gray-50 rounded-b-lg pt-6">
             <div className="text-center text-neutral-700 text-sm">
-              Don't have an account?
+              {t('auth.loginPage.noAccount')}
               <span className="ml-1"></span>
               <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
-                Create account
+                {t('auth.loginPage.createAccount')}
               </Link>
             </div>
             <div className="text-center text-xs text-gray-500">
-              By signing in, you accept our
+              {t('auth.loginPage.termsAccept')}
               <span className="ml-1"></span>
               <Link to="/terms" className="underline hover:text-gray-700">
-                Terms of service
+                {t('auth.loginPage.termsOfService')}
               </Link>
               <span className="ml-1"></span>
               <Link to="/privacy" className="underline hover:text-gray-700">
-                Privacy policy
+                {t('auth.loginPage.privacyPolicy')}
               </Link>
             </div>
           </CardFooter>

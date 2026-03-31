@@ -86,8 +86,10 @@ function validateRow(
     errors.push(`La ${translateField('unit')} debe ser: ${VALID_UNITS.join(', ')}`);
   }
 
-  if (row.product_type && !VALID_PRODUCT_TYPES.includes(row.product_type)) {
-    errors.push(`El ${translateField('product_type')} debe ser: ${VALID_PRODUCT_TYPES.join(', ')}`);
+  if (!row.product_type || String(row.product_type).trim() === '') {
+    errors.push(`El ${translateField('product_type')} es requerido (standard, raw_material, finished_good)`);
+  } else if (!VALID_PRODUCT_TYPES.includes(row.product_type)) {
+    errors.push(`El ${translateField('product_type')} debe ser: standard, raw_material o finished_good`);
   }
 
   const initialStock = row.initial_stock ? parseInt(row.initial_stock, 10) : 0;
