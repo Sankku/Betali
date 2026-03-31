@@ -115,10 +115,8 @@ async function seed() {
         name: 'PRODUCTO-FIXED',
         sku: 'FIXED-SKU',
         unit: 'unidad',
-        price: 1000,
         organization_id: orgId,
-        created_by: userId,
-        type: 'standard',
+        product_type: 'standard',
         alert_enabled: false,
         min_stock: 0
       }).select().single();
@@ -134,8 +132,7 @@ async function seed() {
         lot_number: 'FIXED-LOT',
         expiration_date: '2030-01-01',
         origin_country: 'Argentina',
-        organization_id: orgId,
-        created_by: userId
+        organization_id: orgId
       }).select().single();
       if (error) throw new Error('ProductLot creation failed: ' + error.message);
       lot = data;

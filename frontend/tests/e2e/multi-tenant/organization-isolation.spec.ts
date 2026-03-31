@@ -58,12 +58,10 @@ test.describe('Multi-Tenant Data Isolation', () => {
     const org1ProductName = `Org1-Product-${Date.now()}`;
     await createProductType(org1ProductName, `ORG1-SKU-${Date.now()}`);
 
-    // Logout: clear Supabase auth tokens
-    await page.evaluate(() => {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith('sb-') || k === 'betali_current_org')
-        .forEach(k => localStorage.removeItem(k));
-    });
+    // Logout: clear all storage and navigate to login to reset Supabase in-memory state
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
     // --- ORG 2: login as second pre-seeded user (different org) ---
     await authHelper.login(testData.users.user.email, testData.users.user.password);

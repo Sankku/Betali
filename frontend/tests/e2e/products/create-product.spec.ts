@@ -82,12 +82,15 @@ test.describe('Create Product Type', () => {
     await createBtn.waitFor({ state: 'visible', timeout: 10000 });
     await createBtn.click();
 
-    await page.waitForSelector('button[type="submit"]', { timeout: 8000 });
+    await page.waitForSelector('input[name="sku"]', { timeout: 8000 });
+
+    // Bypass browser's native required validation so React's custom errors render
+    await page.locator('form').evaluate((el: HTMLFormElement) => { el.noValidate = true; });
     await page.click('button[type="submit"]');
 
-    // Should show some validation error (form validates on submit)
+    // Should show React custom validation errors (.text-danger-600)
     await expect(
-      page.locator('text=/required|requerido|obligatorio/i, .text-danger-600, .text-red-600').first()
+      page.locator('.text-danger-600').first()
     ).toBeVisible({ timeout: 8000 });
   });
 });
