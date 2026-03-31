@@ -54,17 +54,20 @@ export function StockMovementModal({
   };
 
   // Convert initialData to form format
+  const raw = initialData as any;
   const formInitialData: Partial<StockMovementFormData> | undefined = initialData
     ? {
         movement_type: initialData.movement_type,
         quantity: initialData.quantity,
-        product_id: initialData.product_id || undefined,
+        // product_type_id comes from the nested lot relation returned by the API
+        product_type_id: raw.lot?.product_type_id?.product_type_id || undefined,
+        lot_id: initialData.lot_id || undefined,
         warehouse_id: initialData.warehouse_id || undefined,
         reference: initialData.reference || undefined,
         movement_date: initialData.movement_date
           ? new Date(initialData.movement_date).toISOString().split('T')[0]
           : undefined,
-      }
+      } as any
     : undefined;
 
   return (

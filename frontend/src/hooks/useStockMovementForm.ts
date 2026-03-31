@@ -50,7 +50,7 @@ export function useStockMovementForm({
   const defaultValues = useMemo(() => ({
     movement_type: initialData?.movement_type || "",
     quantity: initialData?.quantity || 0,
-    product_type_id: "",
+    product_type_id: (initialData as any)?.product_type_id || "",
     lot_id: initialData?.lot_id || "",
     warehouse_id: initialData?.warehouse_id || "",
     reference: initialData?.reference || "",
@@ -58,6 +58,7 @@ export function useStockMovementForm({
   }), [
     initialData?.movement_type,
     initialData?.quantity,
+    (initialData as any)?.product_type_id,
     initialData?.lot_id,
     initialData?.warehouse_id,
     initialData?.reference,

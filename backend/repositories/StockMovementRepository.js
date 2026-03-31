@@ -40,7 +40,7 @@ class StockMovementRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          lot_id(lot_id, lot_number),
+          lot_id(lot_id, lot_number, product_type_id(product_type_id, name, sku)),
           warehouse_id(warehouse_id, name, location)
         `); 
 

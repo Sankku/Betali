@@ -167,11 +167,11 @@ export function PurchaseOrderDetails({ order, onClose }: PurchaseOrderDetailsPro
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm">
-                          {detail.products?.name ?? detail.product_id}
+                          {detail.product_types?.name ?? detail.product_type_id}
                         </p>
-                        {detail.products?.sku && (
+                        {detail.product_types?.sku && (
                           <p className="text-xs text-neutral-500 mt-0.5">
-                            SKU: {detail.products.sku}
+                            SKU: {detail.product_types.sku}
                           </p>
                         )}
                         {detail.notes && (
