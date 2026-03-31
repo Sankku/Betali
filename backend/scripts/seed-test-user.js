@@ -6,12 +6,30 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 async function seedUser({ email, password, name, orgName, slug, role }) {
-  const { data: usersData } = await supabase.auth.admin.listUsers();
-  let user = usersData.users.find(u => u.email === email);
-  if (!user) {
+  // Try to get existing user first (avoids listUsers pagination issues)
+  let user;
+  try {
     const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
-    if (error) throw new Error(`Auth creation failed for ${email}: ` + error.message);
-    user = data.user;
+    if (error) {
+      if (error.message.includes('already been registered') || error.message.includes('already exists')) {
+        // User exists — find via listUsers with filter
+        const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        user = usersData?.users?.find(u => u.email === email);
+        if (!user) throw new Error(`User ${email} exists in Auth but could not be retrieved`);
+      } else {
+        throw new Error(`Auth creation failed for ${email}: ` + error.message);
+      }
+    } else {
+      user = data.user;
+    }
+  } catch (e) {
+    if (e.message.includes('already been registered') || e.message.includes('already exists')) {
+      const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      user = usersData?.users?.find(u => u.email === email);
+      if (!user) throw new Error(`User ${email} not found after duplicate error`);
+    } else {
+      throw e;
+    }
   }
   const userId = user.id;
 

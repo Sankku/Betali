@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { productsService } from '../../../services/api/productsService';
+import { supabase } from '../../../lib/supabase';
 import { useOrganization } from '../../../context/OrganizationContext';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Calendar, ArrowRight } from 'lucide-react';
@@ -12,24 +12,30 @@ export function ExpiringProducts() {
   const orgId = currentOrganization?.organization_id;
 
   const { data: expiringProducts, isLoading } = useQuery({
-    queryKey: ['expiringProducts', orgId],
+    queryKey: ['expiringLots', orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const products = await productsService.getAll();
-      const today = new Date();
+      const today = new Date().toISOString().split('T')[0];
       const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      const maxDate = thirtyDaysFromNow.toISOString().split('T')[0];
 
-      return products
-        .filter((product: any) => {
-          if (!product.expiration_date) return false;
-          const expDate = parseISO(product.expiration_date);
-          return expDate >= today && expDate <= thirtyDaysFromNow;
-        })
-        .sort((a: any, b: any) => 
-          new Date(a.expiration_date).getTime() - new Date(b.expiration_date).getTime()
-        )
-        .slice(0, 5); // Take top 5
+      const { data, error } = await supabase
+        .from('product_lots')
+        .select('lot_id, lot_number, expiration_date, product_type_id(name)')
+        .eq('organization_id', orgId!)
+        .gte('expiration_date', today)
+        .lte('expiration_date', maxDate)
+        .order('expiration_date', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      return (data || []).map((lot: any) => ({
+        product_id: lot.lot_id,
+        name: lot.product_type_id?.name || 'N/A',
+        batch_number: lot.lot_number,
+        expiration_date: lot.expiration_date,
+      }));
     },
   });
 

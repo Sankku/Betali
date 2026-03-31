@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { Warehouse, ShoppingBag, AlertTriangle, DollarSign } from 'lucide-react';
-import { productsService } from '../../../services/api/productsService';
+import { productTypesService } from '../../../services/api/productTypesService';
 import { useOrganization } from '../../../context/OrganizationContext';
 
 interface StatCardProps {
@@ -109,16 +109,14 @@ export function DashboardStats() {
   const { data: productStats, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['dashboardProductStats', orgId],
     queryFn: async () => {
-      const products = await productsService.getAll();
+      const productTypes = await productTypesService.getAll();
 
-      const stats = products.reduce((acc, product: any) => {
-        const stock = product.current_stock || 0;
-        const price = product.price || 0;
-
+      const stats = productTypes.reduce((acc: any, pt: any) => {
+        const price = pt.price || 0;
         return {
           count: acc.count + 1,
-          value: acc.value + (stock * price),
-          lowStock: acc.lowStock + (stock < 10 ? 1 : 0)
+          value: acc.value + price,
+          lowStock: acc.lowStock + (pt.min_stock > 0 ? 1 : 0)
         };
       }, { count: 0, value: 0, lowStock: 0 });
 
