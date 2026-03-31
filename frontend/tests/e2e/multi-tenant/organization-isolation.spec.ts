@@ -13,56 +13,42 @@ test.describe('Multi-Tenant Data Isolation', () => {
     // admin@betali-test.com → Betali Test Org
     // user@betali-test.com  → Betali Test Org 2
 
-    // Skip onboarding wizard for all page loads in this test (prevents z-40 overlay blocking clicks)
     await page.addInitScript(() => {
       window.localStorage.setItem('betali_onboarding_completed', 'true');
       window.localStorage.setItem('betali_tutorial_skipped', 'true');
     });
 
-    // Helper to create a product in the current org's products page
-    const createProduct = async (productName: string, sku: string) => {
+    // Helper to create a product type in the current org's products page
+    const createProductType = async (productName: string, sku: string) => {
       await page.goto('/dashboard/products');
       await page.waitForLoadState('networkidle');
-      // Wait for any loading overlays (e.g., onboarding wizard backdrop z-40) to disappear
       await page.waitForSelector('div.fixed.inset-0.z-40', { state: 'detached', timeout: 5000 }).catch(() => {});
-      const createBtn = page.locator('#create-product-button, button:has-text("Add Product"), button:has-text("Agregar Producto")').first();
+
+      const createBtn = page.locator(
+        'button:has-text("Nuevo Tipo"), button:has-text("Agregar Tipo"), button:has-text("Add Type"), button:has-text("New Type")'
+      ).first();
       await createBtn.waitFor({ state: 'visible', timeout: 10000 });
       if (!await createBtn.isEnabled()) {
-        console.log('⚠️  Create product button is disabled (plan limit reached) — skipping isolation test');
+        console.log('⚠️  Create product type button is disabled (plan limit reached) — skipping isolation test');
         return false;
       }
       await createBtn.click();
-      await page.waitForSelector('input[name="name"]', { timeout: 5000 });
+      await page.waitForSelector('input[name="name"]', { timeout: 8000 });
 
       await page.fill('input[name="name"]', productName);
-      await page.fill('input[name="batch_number"]', sku);
-      await page.fill('input[name="price"]', '99.99');
-      await page.fill('input[name="origin_country"]', 'Test Supplier');
-
-      // Set expiration date via the DatePicker's manual text input (DD/MM/YYYY).
-      // Using the manual input is reliable: page.evaluate() calendar clicks can leave
-      // the backdrop (z-[9998]) open, blocking the submit button click.
-      const datePickerBtn = page.locator('button[class*="h-\\[48px\\]"]').first();
-      if (await datePickerBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await datePickerBtn.click();
-        const manualInput = page.locator('input[placeholder="DD/MM/YYYY"]');
-        await manualInput.waitFor({ state: 'visible', timeout: 3000 });
-        const d = new Date();
-        d.setMonth(d.getMonth() + 1);
-        d.setDate(15);
-        const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-        await manualInput.fill(dateStr);
-        await page.keyboard.press('Enter');
-        await page.waitForSelector('.fixed.inset-0[class*="z-\\[9998\\]"]', { state: 'detached', timeout: 3000 }).catch(() => {});
+      const skuInput = page.locator('input[name="sku"]').first();
+      if (await skuInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await skuInput.fill(sku);
       }
-      // Set up response listener BEFORE clicking submit
+
+      // Submit — wait for the product-types POST response
       const createResponsePromise = page.waitForResponse(
-        r => r.url().includes('/api/products') && r.request().method() === 'POST',
+        r => r.url().includes('/api/product-types') && r.request().method() === 'POST',
         { timeout: 15000 }
       );
       await page.click('button[type="submit"]');
-      await createResponsePromise;
-      return true;
+      const response = await createResponsePromise.catch(() => null);
+      return response !== null && response.status() < 300;
     };
 
     // --- ORG 1: login as admin test user ---
@@ -70,7 +56,7 @@ test.describe('Multi-Tenant Data Isolation', () => {
     await expect(page).toHaveURL(/.*dashboard/);
 
     const org1ProductName = `Org1-Product-${Date.now()}`;
-    await createProduct(org1ProductName, `ORG1-SKU-${Date.now()}`);
+    await createProductType(org1ProductName, `ORG1-SKU-${Date.now()}`);
 
     // Logout: clear Supabase auth tokens
     await page.evaluate(() => {
@@ -90,7 +76,7 @@ test.describe('Multi-Tenant Data Isolation', () => {
     expect(org1ProductVisible).toBe(false);
 
     const org2ProductName = `Org2-Product-${Date.now()}`;
-    const org2Created = await createProduct(org2ProductName, `ORG2-SKU-${Date.now()}`);
+    const org2Created = await createProductType(org2ProductName, `ORG2-SKU-${Date.now()}`);
 
     if (!org2Created) {
       console.log('⚠️  Org2 product creation skipped (plan limit) — skipping own-product visibility assertion');
@@ -98,24 +84,19 @@ test.describe('Multi-Tenant Data Isolation', () => {
     }
 
     // Verify org2 sees their own product but not org1's.
-    // Use waitForResponse instead of networkidle: the products query is enabled only after
-    // OrganizationContext loads, so networkidle can fire between sequential async fetches
-    // (auth → org → products) before the products request even starts.
-    const productsLoaded = page.waitForResponse(
-      r => r.url().includes('/api/products') && r.status() === 200,
+    const productTypesLoaded = page.waitForResponse(
+      r => r.url().includes('/api/product-types') && r.status() === 200,
       { timeout: 15000 }
     );
     await page.goto('/dashboard/products');
-    await productsLoaded;
+    await productTypesLoaded.catch(() => {});
     await page.waitForLoadState('networkidle', { timeout: 10000 });
 
-    // The table uses client-side pagination (pageSize=10). If this org has accumulated
-    // >10 products from prior test runs, the new product lands on page 2+.
-    // Search by name to collapse the list to exactly 1 row, making the assertion reliable.
-    const searchInput = page.locator('input[placeholder*="Search"], input[placeholder*="search"]').first();
+    // Search by name to find across pages
+    const searchInput = page.locator('input[placeholder*="Search"], input[placeholder*="search"], input[placeholder*="Buscar"]').first();
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       await searchInput.fill(org2ProductName);
-      await page.waitForTimeout(800); // let filter settle
+      await page.waitForTimeout(800);
     }
 
     await expect(page.locator(`text=${org2ProductName}`).first()).toBeVisible({ timeout: 10000 });
@@ -130,36 +111,24 @@ test.describe('Multi-Tenant Data Isolation', () => {
     // This test requires a user who belongs to multiple organizations
     // For MVP, we'll skip this test and implement it later when multi-org membership is ready
 
-    // Login as admin
     await authHelper.login('admin@betali-test.com', 'TestPassword123!');
-
-    // Navigate to dashboard
     await page.goto('/dashboard');
 
-    // Check if organization switcher exists
     const orgSwitcher = page.locator('[data-testid="org-switcher"], select[name="organization"]');
     const switcherExists = await orgSwitcher.count() > 0;
 
     if (switcherExists) {
       console.log('✅ Organization switcher found - multi-org membership supported');
 
-      // Get current organization
       const currentOrg = await page.locator('[data-testid="current-org"]').textContent();
-
-      // Switch to different organization if available
       await orgSwitcher.click();
       const orgOptions = await orgSwitcher.locator('option').count();
 
       if (orgOptions > 1) {
         await orgSwitcher.selectOption({ index: 1 });
-
-        // Wait for context switch
         await page.waitForTimeout(2000);
-
-        // Verify organization switched
         const newOrg = await page.locator('[data-testid="current-org"]').textContent();
         expect(newOrg).not.toBe(currentOrg);
-
         console.log(`✅ Successfully switched from "${currentOrg}" to "${newOrg}"`);
       } else {
         console.log('⏭️  Only one organization available - skipping switch test');

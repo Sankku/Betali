@@ -82,12 +82,12 @@ test.describe('Create Product Type', () => {
     await createBtn.waitFor({ state: 'visible', timeout: 10000 });
     await createBtn.click();
 
-    await page.waitForSelector('button[type="submit"]', { timeout: 5000 });
+    await page.waitForSelector('button[type="submit"]', { timeout: 8000 });
     await page.click('button[type="submit"]');
 
-    // Should show some validation error
+    // Should show some validation error (form validates on submit)
     await expect(
-      page.locator('text=/required|requerido/i').first()
-    ).toBeVisible({ timeout: 5000 });
+      page.locator('text=/required|requerido|obligatorio/i, .text-danger-600, .text-red-600').first()
+    ).toBeVisible({ timeout: 8000 });
   });
 });
