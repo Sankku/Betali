@@ -38,13 +38,13 @@ describe('Order Smoke Tests', () => {
     // For this smoke test, we'll assume the existence of some test data or 
     // we would use the repositories to create them.
     
-    // Let's at least try to fetch a real product to make it a true integration test
-    const { data: products } = await supabase.from('products').select('product_id').limit(1);
+    // Fetch a real product_type and client to make it a true integration test
+    const { data: productTypes } = await supabase.from('product_types').select('product_type_id').limit(1);
     const { data: clients } = await supabase.from('clients').select('client_id').limit(1);
-    const { data: warehouses } = await supabase.from('warehouses').select('warehouse_id').limit(1);
+    const { data: warehouses } = await supabase.from('warehouse').select('warehouse_id').limit(1);
 
-    if (!products?.[0] || !clients?.[0] || !warehouses?.[0]) {
-      console.warn('⚠️  Skipping test: No test data found in database (products/clients/warehouses)');
+    if (!productTypes?.[0] || !clients?.[0] || !warehouses?.[0]) {
+      console.warn('⚠️  Skipping test: No test data found in database (product_types/clients/warehouses)');
       return;
     }
 
@@ -52,7 +52,7 @@ describe('Order Smoke Tests', () => {
       client_id: clients[0].client_id,
       items: [
         {
-          product_id: products[0].product_id,
+          product_type_id: productTypes[0].product_type_id,
           quantity: 1,
           unit_price: 100,
           warehouse_id: warehouses[0].warehouse_id

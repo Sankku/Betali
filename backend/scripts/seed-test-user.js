@@ -90,26 +90,48 @@ async function seed() {
       wh = data;
     }
 
-    // 5. Product (Get or Create)
-    let { data: prod } = await supabase.from('products').select('*').eq('organization_id', orgId).filter('name', 'eq', 'PRODUCTO-FIXED').maybeSingle();
-    if (!prod) {
-      const { data, error } = await supabase.from('products').insert({
+    // 5. Product Type (Get or Create) — replaces old `products` table
+    let { data: prodType } = await supabase.from('product_types').select('*').eq('organization_id', orgId).filter('name', 'eq', 'PRODUCTO-FIXED').maybeSingle();
+    if (!prodType) {
+      const { data, error } = await supabase.from('product_types').insert({
         name: 'PRODUCTO-FIXED',
-        batch_number: 'FIXED-BATCH',
-        expiration_date: '2030-01-01',
-        origin_country: 'Argentina',
+        sku: 'FIXED-SKU',
+        unit: 'unidad',
         price: 1000,
         organization_id: orgId,
-        owner_id: userId
+        created_by: userId,
+        type: 'standard',
+        alert_enabled: false,
+        min_stock: 0
       }).select().single();
-      if (error) throw error;
-      prod = data;
+      if (error) throw new Error('ProductType creation failed: ' + error.message);
+      prodType = data;
     }
 
-    // 6. Inject Stock (movement_type must be 'entry' to match getCurrentStockBulk logic)
+    // 5b. Product Lot (Get or Create)
+    let { data: lot } = await supabase.from('product_lots').select('*').eq('organization_id', orgId).filter('lot_number', 'eq', 'FIXED-LOT').maybeSingle();
+    if (!lot) {
+      const { data, error } = await supabase.from('product_lots').insert({
+        product_type_id: prodType.product_type_id,
+        lot_number: 'FIXED-LOT',
+        expiration_date: '2030-01-01',
+        origin_country: 'Argentina',
+        organization_id: orgId,
+        created_by: userId
+      }).select().single();
+      if (error) throw new Error('ProductLot creation failed: ' + error.message);
+      lot = data;
+    }
+
+    // 6. Inject Stock via lot_id (movement_type must be 'entry')
     await supabase.from('stock_movements').insert({
-      product_id: prod.product_id, warehouse_id: wh.warehouse_id, quantity: 1000,
-      movement_type: 'entry', movement_date: new Date().toISOString(), organization_id: orgId, created_by: userId
+      lot_id: lot.lot_id,
+      warehouse_id: wh.warehouse_id,
+      quantity: 1000,
+      movement_type: 'entry',
+      movement_date: new Date().toISOString(),
+      organization_id: orgId,
+      created_by: userId
     });
 
     // 7. Client (Get or Create)
@@ -123,7 +145,8 @@ async function seed() {
     console.log('✅ SEEDING SUCCESSFUL');
     console.log('Org:', orgId);
     console.log('Warehouse:', wh.warehouse_id);
-    console.log('Product:', prod.product_id);
+    console.log('ProductType:', prodType.product_type_id);
+    console.log('Lot:', lot.lot_id);
     console.log('Client:', cli.client_id);
 
   } catch (e) {

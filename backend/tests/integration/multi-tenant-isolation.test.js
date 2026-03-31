@@ -266,23 +266,24 @@ async function setupTestOrganizations() {
     testData.testEntities.push({ table: 'warehouse', idField: 'warehouse_id', id: wh1.warehouse_id });
     logSuccess(`Warehouse 1 created: ${wh1.warehouse_id}`);
 
-    // Create test product for Org 1
+    // Create test product type for Org 1
     const { data: prod1 } = await supabase
-      .from('products')
+      .from('product_types')
       .insert({
         organization_id: testData.org1.organization_id,
         name: `TEST Multi-Tenant Product Org1 ${Date.now()}`,
-        batch_number: `ORG1-${Date.now()}`,
-        expiration_date: '2025-12-31',
-        origin_country: 'Argentina',
-        owner_id: testData.user1
+        sku: `ORG1-${Date.now()}`,
+        unit: 'unidad',
+        price: 100,
+        type: 'standard',
+        created_by: testData.user1
       })
       .select()
       .single();
 
     testData.product1 = prod1;
-    testData.testEntities.push({ table: 'products', idField: 'product_id', id: prod1.product_id });
-    logSuccess(`Product 1 created: ${prod1.product_id}`);
+    testData.testEntities.push({ table: 'product_types', idField: 'product_type_id', id: prod1.product_type_id });
+    logSuccess(`Product 1 created: ${prod1.product_type_id}`);
 
     // Create test client for Org 1
     const { data: client1, error: client1Error } = await supabase
@@ -328,23 +329,24 @@ async function setupTestOrganizations() {
       testData.testEntities.push({ table: 'warehouse', idField: 'warehouse_id', id: wh2.warehouse_id });
       logSuccess(`Warehouse 2 created: ${wh2.warehouse_id}`);
 
-      // Product for Org 2
+      // Product type for Org 2
       const { data: prod2 } = await supabase
-        .from('products')
+        .from('product_types')
         .insert({
           organization_id: testData.org2.organization_id,
           name: `TEST Multi-Tenant Product Org2 ${Date.now()}`,
-          batch_number: `ORG2-${Date.now()}`,
-          expiration_date: '2025-12-31',
-          origin_country: 'Argentina',
-          owner_id: testData.user2 || testData.user1
+          sku: `ORG2-${Date.now()}`,
+          unit: 'unidad',
+          price: 100,
+          type: 'standard',
+          created_by: testData.user2 || testData.user1
         })
         .select()
         .single();
 
       testData.product2 = prod2;
-      testData.testEntities.push({ table: 'products', idField: 'product_id', id: prod2.product_id });
-      logSuccess(`Product 2 created: ${prod2.product_id}`);
+      testData.testEntities.push({ table: 'product_types', idField: 'product_type_id', id: prod2.product_type_id });
+      logSuccess(`Product 2 created: ${prod2.product_type_id}`);
 
       // Client for Org 2
       const { data: client2, error: client2Error } = await supabase
@@ -389,16 +391,16 @@ async function test1_ProductIsolation() {
   }
 
   try {
-    // Query products for Org 1 - should only see Org 1 products
+    // Query product types for Org 1 - should only see Org 1 products
     const { data: org1Products } = await supabase
-      .from('products')
+      .from('product_types')
       .select('*')
       .eq('organization_id', testData.org1.organization_id);
 
     logInfo(`Org 1 query found ${org1Products.length} products`);
 
     // Check that Org 1 products don't include Org 2 product
-    const hasOrg2Product = org1Products.some(p => p.product_id === testData.product2.product_id);
+    const hasOrg2Product = org1Products.some(p => p.product_type_id === testData.product2.product_type_id);
 
     if (hasOrg2Product) {
       logError('CRITICAL: Org 1 can see Org 2 products!');
@@ -407,16 +409,16 @@ async function test1_ProductIsolation() {
 
     logSuccess('Org 1 cannot see Org 2 products ✓');
 
-    // Query products for Org 2 - should only see Org 2 products
+    // Query product types for Org 2 - should only see Org 2 products
     const { data: org2Products } = await supabase
-      .from('products')
+      .from('product_types')
       .select('*')
       .eq('organization_id', testData.org2.organization_id);
 
     logInfo(`Org 2 query found ${org2Products.length} products`);
 
     // Check that Org 2 products don't include Org 1 product
-    const hasOrg1Product = org2Products.some(p => p.product_id === testData.product1.product_id);
+    const hasOrg1Product = org2Products.some(p => p.product_type_id === testData.product1.product_type_id);
 
     if (hasOrg1Product) {
       logError('CRITICAL: Org 2 can see Org 1 products!');
@@ -427,9 +429,9 @@ async function test1_ProductIsolation() {
 
     // Try to directly access Org 2 product with Org 1 context
     const { data: directAccess } = await supabase
-      .from('products')
+      .from('product_types')
       .select('*')
-      .eq('product_id', testData.product2.product_id)
+      .eq('product_type_id', testData.product2.product_type_id)
       .eq('organization_id', testData.org1.organization_id)
       .single();
 
@@ -559,12 +561,40 @@ async function test4_StockMovementIsolation() {
   }
 
   try {
+    // Create lots for each org's product type before creating movements
+    const { data: lot1 } = await supabase
+      .from('product_lots')
+      .insert({
+        product_type_id: testData.product1.product_type_id,
+        lot_number: `TEST-LOT-ORG1-${Date.now()}`,
+        organization_id: testData.org1.organization_id,
+        expiration_date: '2030-01-01',
+        origin_country: 'Argentina'
+      })
+      .select()
+      .single();
+    testData.testEntities.push({ table: 'product_lots', idField: 'lot_id', id: lot1.lot_id });
+
+    const { data: lot2 } = await supabase
+      .from('product_lots')
+      .insert({
+        product_type_id: testData.product2.product_type_id,
+        lot_number: `TEST-LOT-ORG2-${Date.now()}`,
+        organization_id: testData.org2.organization_id,
+        expiration_date: '2030-01-01',
+        origin_country: 'Argentina'
+      })
+      .select()
+      .single();
+    testData.testEntities.push({ table: 'product_lots', idField: 'lot_id', id: lot2.lot_id });
+
     // Create stock movement for Org 1
     const { data: movement1 } = await supabase
       .from('stock_movements')
       .insert({
-        product_id: testData.product1.product_id,
+        lot_id: lot1.lot_id,
         warehouse_id: testData.warehouse1.warehouse_id,
+        organization_id: testData.org1.organization_id,
         movement_type: 'entry',
         quantity: 100,
         reference: 'TEST Org1 Movement'
@@ -578,8 +608,9 @@ async function test4_StockMovementIsolation() {
     const { data: movement2 } = await supabase
       .from('stock_movements')
       .insert({
-        product_id: testData.product2.product_id,
+        lot_id: lot2.lot_id,
         warehouse_id: testData.warehouse2.warehouse_id,
+        organization_id: testData.org2.organization_id,
         movement_type: 'entry',
         quantity: 50,
         reference: 'TEST Org2 Movement'
