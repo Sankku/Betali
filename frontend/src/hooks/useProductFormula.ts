@@ -36,7 +36,7 @@ export function useAddFormulaItem() {
   return useMutation({
     mutationFn: (data: AddFormulaItemData) => productFormulaService.addFormulaItem(data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['product-formula', variables.finished_product_id] });
+      queryClient.invalidateQueries({ queryKey: ['product-formula', variables.finished_product_type_id] });
       toast.success('Componente agregado a la fórmula');
     },
     onError: (error: Error) => {

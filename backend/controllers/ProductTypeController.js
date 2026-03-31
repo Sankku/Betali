@@ -58,6 +58,17 @@ class ProductTypeController {
     } catch (error) { next(error); }
   }
 
+  async getAvailableStock(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { warehouse_id } = req.query;
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+      const result = await this.service.getAvailableStock(id, warehouse_id, organizationId);
+      res.json({ data: result });
+    } catch (error) { next(error); }
+  }
+
   async deleteType(req, res, next) {
     try {
       const { id } = req.params;

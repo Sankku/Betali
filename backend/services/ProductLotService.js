@@ -10,7 +10,12 @@ class ProductLotService {
   }
 
   async getLotsByType(productTypeId, organizationId, options = {}) {
-    return this.lotRepo.findByType(productTypeId, organizationId, options);
+    const lots = await this.lotRepo.findByType(productTypeId, organizationId, options);
+    if (!lots.length) return lots;
+
+    const lotIds = lots.map(l => l.lot_id);
+    const stockByLot = await this.stockRepo.getCurrentStockBulk(lotIds, null, organizationId);
+    return lots.map(lot => ({ ...lot, current_stock: stockByLot[lot.lot_id] ?? 0 }));
   }
 
   async getLotById(id, organizationId) {

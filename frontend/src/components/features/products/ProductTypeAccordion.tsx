@@ -62,6 +62,9 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
               Lotes
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+              Stock Total
+            </th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               Acciones
             </th>
           </tr>

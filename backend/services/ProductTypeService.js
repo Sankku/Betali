@@ -1,9 +1,10 @@
 const { Logger } = require('../utils/Logger');
 
 class ProductTypeService {
-  constructor(productTypeRepository, logger) {
+  constructor(productTypeRepository, logger, stockMovementRepository) {
     this.repo = productTypeRepository;
     this.logger = logger || new Logger('ProductTypeService');
+    this.stockMovementRepo = stockMovementRepository || null;
   }
 
   async getTypes(organizationId, options = {}) {
@@ -60,6 +61,35 @@ class ProductTypeService {
     }
 
     return this.repo.update(id, data, 'product_type_id');
+  }
+
+  async getAvailableStock(productTypeId, warehouseId, organizationId) {
+    if (!this.stockMovementRepo) {
+      throw new Error('Stock movement repository not available');
+    }
+    // Get all lots for this product type
+    const { data: lots, error } = await this.repo.client
+      .from('product_lots')
+      .select('lot_id')
+      .eq('product_type_id', productTypeId)
+      .eq('organization_id', organizationId);
+
+    if (error) throw new Error(`Error fetching lots: ${error.message}`);
+    if (!lots || lots.length === 0) {
+      return { product_type_id: productTypeId, warehouse_id: warehouseId, available_stock: 0 };
+    }
+
+    const lotIds = lots.map(l => l.lot_id);
+    const stockByLot = await this.stockMovementRepo.getCurrentStockBulk(lotIds, warehouseId, organizationId);
+    const total = Object.values(stockByLot).reduce((sum, s) => sum + s, 0);
+
+    return {
+      product_type_id: productTypeId,
+      warehouse_id: warehouseId,
+      organization_id: organizationId,
+      available_stock: total,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async deleteType(id, organizationId) {

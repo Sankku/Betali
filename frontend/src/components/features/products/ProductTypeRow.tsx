@@ -48,6 +48,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   const { data: lots, isLoading: lotsLoading } = useProductLots(productType.product_type_id);
 
   const lotCount = lots?.length ?? 0;
+  const totalStock = (lots ?? []).reduce((sum, l) => sum + (l.current_stock ?? 0), 0);
 
   // Filter lots by lot_number when lotSearch is active
   const visibleLots = lotSearch
@@ -118,6 +119,16 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
             <span className="text-xs text-neutral-400">lotes</span>
           </span>
         </td>
+        <td className="px-4 py-3 text-sm text-neutral-600">
+          {lotsLoading ? (
+            <span className="text-neutral-400">—</span>
+          ) : (
+            <span className="inline-flex items-center gap-1">
+              <span className="font-semibold text-neutral-800">{totalStock.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+              <span className="text-xs text-neutral-400 font-mono">{productType.unit}</span>
+            </span>
+          )}
+        </td>
         <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             <Button
@@ -155,7 +166,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
       {/* Expanded lots section */}
       {isExpanded && (
         <tr>
-          <td colSpan={7} className="p-0 bg-neutral-50 border-b border-neutral-200">
+          <td colSpan={8} className="p-0 bg-neutral-50 border-b border-neutral-200">
             {lotsLoading ? (
               <div className="flex items-center gap-2 px-10 py-4 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -187,6 +198,9 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Origen
+                    </th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                      Stock
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Precio

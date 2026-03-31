@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
-import { X, Package, Tag, Ruler, AlertTriangle, Bell } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Package, Tag, Ruler, AlertTriangle, Bell, FlaskConical } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
+import { ProductFormulaEditor, type LocalFormulaItem } from './ProductFormulaEditor';
 import type { ProductType, ProductTypeFormData } from '../../../services/api/productTypesService';
 
 interface ProductTypeSidePanelProps {
@@ -34,6 +35,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
   const [form, setForm] = React.useState<ProductTypeFormData>(defaultForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProductTypeFormData, string>>>({});
   const [submitting, setSubmitting] = React.useState(false);
+  const [localFormulaItems, setLocalFormulaItems] = useState<LocalFormulaItem[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +52,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
         });
       } else {
         setForm(defaultForm);
+        setLocalFormulaItems([]);
       }
       setErrors({});
     }
@@ -215,6 +218,22 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                 className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60 resize-none"
               />
             </div>
+
+            {/* Formula BOM — only for finished goods */}
+            {form.product_type === 'finished_good' && (
+              <div className="border-t pt-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="h-5 w-5 text-purple-500" />
+                  <h3 className="text-sm font-semibold text-neutral-800">Fórmula de producción</h3>
+                </div>
+                <ProductFormulaEditor
+                  finishedProductTypeId={productType?.product_type_id}
+                  mode={productType ? 'edit' : 'create'}
+                  localItems={localFormulaItems}
+                  setLocalItems={setLocalFormulaItems}
+                />
+              </div>
+            )}
 
             {/* Alertas de inventario */}
             <div className="border-t pt-5 space-y-4">

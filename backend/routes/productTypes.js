@@ -46,6 +46,10 @@ router.post(
   }
 );
 
+router.get('/:id/available-stock', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
+  try { await getController().getAvailableStock(req, res, next); } catch (e) { next(e); }
+});
+
 router.get('/:id', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
   try { await getController().getTypeById(req, res, next); } catch (e) { next(e); }
 });

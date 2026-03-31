@@ -7,6 +7,7 @@ export interface ProductLot {
   expiration_date: string;
   origin_country: string;
   price: number;
+  current_stock: number;
   organization_id: string;
   created_at: string;
   updated_at: string;
