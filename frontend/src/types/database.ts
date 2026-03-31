@@ -264,7 +264,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           price: number
-          product_id: string
+          product_type_id: string
           updated_at: string | null
           valid_from: string | null
           valid_to: string | null
@@ -277,7 +277,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           price: number
-          product_id: string
+          product_type_id: string
           updated_at?: string | null
           valid_from?: string | null
           valid_to?: string | null
@@ -290,7 +290,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           price?: number
-          product_id?: string
+          product_type_id?: string
           updated_at?: string | null
           valid_from?: string | null
           valid_to?: string | null
@@ -311,11 +311,11 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "customer_pricing_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "customer_pricing_product_type_id_fkey"
+            columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
         ]
       }
@@ -325,21 +325,21 @@ export type Database = {
           discount_rule_id: string
           discount_rule_product_id: string
           organization_id: string
-          product_id: string
+          product_type_id: string
         }
         Insert: {
           created_at?: string | null
           discount_rule_id: string
           discount_rule_product_id?: string
           organization_id: string
-          product_id: string
+          product_type_id: string
         }
         Update: {
           created_at?: string | null
           discount_rule_id?: string
           discount_rule_product_id?: string
           organization_id?: string
-          product_id?: string
+          product_type_id?: string
         }
         Relationships: [
           {
@@ -357,11 +357,11 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "discount_rule_products_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "discount_rule_products_product_type_id_fkey"
+            columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
         ]
       }
@@ -465,7 +465,7 @@ export type Database = {
           metadata: Json | null
           min_stock: number | null
           organization_id: string
-          product_id: string
+          product_type_id: string
           resolved_at: string | null
           severity: string
           status: string
@@ -485,7 +485,7 @@ export type Database = {
           metadata?: Json | null
           min_stock?: number | null
           organization_id: string
-          product_id: string
+          product_type_id: string
           resolved_at?: string | null
           severity?: string
           status?: string
@@ -505,7 +505,7 @@ export type Database = {
           metadata?: Json | null
           min_stock?: number | null
           organization_id?: string
-          product_id?: string
+          product_type_id?: string
           resolved_at?: string | null
           severity?: string
           status?: string
@@ -529,11 +529,11 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "inventory_alerts_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "inventory_alerts_product_type_id_fkey"
+            columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
           {
             foreignKeyName: "inventory_alerts_warehouse_id_fkey"
@@ -710,12 +710,13 @@ export type Database = {
           created_at: string | null
           discount_amount: number | null
           line_total: number
+          lot_id: string | null
           order_detail_id: string
           order_id: string | null
           order_item_id: string | null
           organization_id: string | null
           price: number
-          product_id: string | null
+          product_type_id: string | null
           quantity: number
           tax_amount: number | null
           unit_price: number
@@ -725,12 +726,13 @@ export type Database = {
           created_at?: string | null
           discount_amount?: number | null
           line_total?: number
+          lot_id?: string | null
           order_detail_id?: string
           order_id?: string | null
           order_item_id?: string | null
           organization_id?: string | null
           price: number
-          product_id?: string | null
+          product_type_id?: string | null
           quantity: number
           tax_amount?: number | null
           unit_price?: number
@@ -740,18 +742,26 @@ export type Database = {
           created_at?: string | null
           discount_amount?: number | null
           line_total?: number
+          lot_id?: string | null
           order_detail_id?: string
           order_id?: string | null
           order_item_id?: string | null
           organization_id?: string | null
           price?: number
-          product_id?: string | null
+          product_type_id?: string | null
           quantity?: number
           tax_amount?: number | null
           unit_price?: number
           warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_details_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "product_lots"
+            referencedColumns: ["lot_id"]
+          },
           {
             foreignKeyName: "order_details_order_id_fkey"
             columns: ["order_id"]
@@ -767,11 +777,11 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "order_details_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "order_details_product_type_id_fkey"
+            columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
           {
             foreignKeyName: "order_details_warehouse_id_fkey"
@@ -1035,43 +1045,43 @@ export type Database = {
             foreignKeyName: "pricing_tiers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_lots"
+            referencedColumns: ["lot_id"]
           },
         ]
       }
       product_formulas: {
         Row: {
           created_at: string | null
-          finished_product_id: string
+          finished_product_type_id: string
           formula_id: string
           organization_id: string
           quantity_required: number
-          raw_material_id: string
+          raw_material_type_id: string
         }
         Insert: {
           created_at?: string | null
-          finished_product_id: string
+          finished_product_type_id: string
           formula_id?: string
           organization_id: string
           quantity_required: number
-          raw_material_id: string
+          raw_material_type_id: string
         }
         Update: {
           created_at?: string | null
-          finished_product_id?: string
+          finished_product_type_id?: string
           formula_id?: string
           organization_id?: string
           quantity_required?: number
-          raw_material_id?: string
+          raw_material_type_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "product_formulas_finished_product_id_fkey"
-            columns: ["finished_product_id"]
+            foreignKeyName: "product_formulas_finished_product_type_id_fkey"
+            columns: ["finished_product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
           {
             foreignKeyName: "product_formulas_organization_id_fkey"
@@ -1081,128 +1091,74 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "product_formulas_raw_material_id_fkey"
-            columns: ["raw_material_id"]
+            foreignKeyName: "product_formulas_raw_material_type_id_fkey"
+            columns: ["raw_material_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
         ]
       }
-      product_tax_groups: {
+      product_lots: {
         Row: {
-          created_at: string | null
-          organization_id: string
-          product_id: string
-          product_tax_group_id: string
-          tax_rate_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          organization_id: string
-          product_id: string
-          product_tax_group_id?: string
-          tax_rate_id: string
-        }
-        Update: {
-          created_at?: string | null
-          organization_id?: string
-          product_id?: string
-          product_tax_group_id?: string
-          tax_rate_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_tax_groups_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["organization_id"]
-          },
-          {
-            foreignKeyName: "product_tax_groups_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "product_tax_groups_tax_rate_id_fkey"
-            columns: ["tax_rate_id"]
-            isOneToOne: false
-            referencedRelation: "tax_rates"
-            referencedColumns: ["tax_rate_id"]
-          },
-        ]
-      }
-      products: {
-        Row: {
-          alert_enabled: boolean | null
-          batch_number: string
           branch_id: string | null
           created_at: string | null
           description: string | null
           destination_id: string | null
           expiration_date: string
           external_product_id: string | null
-          max_stock: number | null
-          min_stock: number | null
-          name: string
+          lot_id: string
+          lot_number: string
           organization_id: string | null
           origin_country: string
           owner_id: string | null
           price: number | null
-          product_id: string
-          product_type: string
+          product_type_id: string
           senasa_product_id: string | null
-          unit: string
           updated_at: string | null
         }
         Insert: {
-          alert_enabled?: boolean | null
-          batch_number: string
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
           destination_id?: string | null
           expiration_date: string
           external_product_id?: string | null
-          max_stock?: number | null
-          min_stock?: number | null
-          name: string
+          lot_id?: string
+          lot_number: string
           organization_id?: string | null
           origin_country: string
           owner_id?: string | null
           price?: number | null
-          product_id?: string
-          product_type?: string
+          product_type_id: string
           senasa_product_id?: string | null
-          unit?: string
           updated_at?: string | null
         }
         Update: {
-          alert_enabled?: boolean | null
-          batch_number?: string
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
           destination_id?: string | null
           expiration_date?: string
           external_product_id?: string | null
-          max_stock?: number | null
-          min_stock?: number | null
-          name?: string
+          lot_id?: string
+          lot_number?: string
           organization_id?: string | null
           origin_country?: string
           owner_id?: string | null
           price?: number | null
-          product_id?: string
-          product_type?: string
+          product_type_id?: string
           senasa_product_id?: string | null
-          unit?: string
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_lots_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
+          },
           {
             foreignKeyName: "products_branch_id_fkey"
             columns: ["branch_id"]
@@ -1219,6 +1175,118 @@ export type Database = {
           },
         ]
       }
+      product_tax_groups: {
+        Row: {
+          created_at: string | null
+          organization_id: string
+          product_tax_group_id: string
+          product_type_id: string
+          tax_rate_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          organization_id: string
+          product_tax_group_id?: string
+          product_type_id: string
+          tax_rate_id: string
+        }
+        Update: {
+          created_at?: string | null
+          organization_id?: string
+          product_tax_group_id?: string
+          product_type_id?: string
+          tax_rate_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tax_groups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_tax_groups_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
+          },
+          {
+            foreignKeyName: "product_tax_groups_tax_rate_id_fkey"
+            columns: ["tax_rate_id"]
+            isOneToOne: false
+            referencedRelation: "tax_rates"
+            referencedColumns: ["tax_rate_id"]
+          },
+        ]
+      }
+      product_types: {
+        Row: {
+          alert_enabled: boolean | null
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          max_stock: number | null
+          min_stock: number | null
+          name: string
+          organization_id: string
+          product_type: string
+          product_type_id: string
+          senasa_product_id: string | null
+          sku: string
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          alert_enabled?: boolean | null
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          max_stock?: number | null
+          min_stock?: number | null
+          name: string
+          organization_id: string
+          product_type?: string
+          product_type_id?: string
+          senasa_product_id?: string | null
+          sku: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Update: {
+          alert_enabled?: boolean | null
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          max_stock?: number | null
+          min_stock?: number | null
+          name?: string
+          organization_id?: string
+          product_type?: string
+          product_type_id?: string
+          senasa_product_id?: string | null
+          sku?: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_types_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "product_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       purchase_order_details: {
         Row: {
           created_at: string | null
@@ -1226,7 +1294,7 @@ export type Database = {
           line_total: number
           notes: string | null
           organization_id: string
-          product_id: string
+          product_type_id: string
           purchase_order_id: string
           quantity: number
           received_quantity: number | null
@@ -1238,7 +1306,7 @@ export type Database = {
           line_total: number
           notes?: string | null
           organization_id: string
-          product_id: string
+          product_type_id: string
           purchase_order_id: string
           quantity: number
           received_quantity?: number | null
@@ -1250,7 +1318,7 @@ export type Database = {
           line_total?: number
           notes?: string | null
           organization_id?: string
-          product_id?: string
+          product_type_id?: string
           purchase_order_id?: string
           quantity?: number
           received_quantity?: number | null
@@ -1265,11 +1333,11 @@ export type Database = {
             referencedColumns: ["organization_id"]
           },
           {
-            foreignKeyName: "purchase_order_details_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "purchase_order_details_product_type_id_fkey"
+            columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
+            referencedRelation: "product_types"
+            referencedColumns: ["product_type_id"]
           },
           {
             foreignKeyName: "purchase_order_details_purchase_order_id_fkey"
@@ -1459,12 +1527,12 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           created_by: string | null
+          lot_id: string | null
           movement_date: string | null
           movement_id: string
           movement_type: string
           notes: string | null
           organization_id: string | null
-          product_id: string | null
           quantity: number
           reference: string | null
           reference_id: string | null
@@ -1475,12 +1543,12 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          lot_id?: string | null
           movement_date?: string | null
           movement_id?: string
           movement_type: string
           notes?: string | null
           organization_id?: string | null
-          product_id?: string | null
           quantity: number
           reference?: string | null
           reference_id?: string | null
@@ -1491,12 +1559,12 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          lot_id?: string | null
           movement_date?: string | null
           movement_id?: string
           movement_type?: string
           notes?: string | null
           organization_id?: string | null
-          product_id?: string | null
           quantity?: number
           reference?: string | null
           reference_id?: string | null
@@ -1519,18 +1587,18 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "stock_movements_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "product_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
             foreignKeyName: "stock_movements_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["organization_id"]
-          },
-          {
-            foreignKeyName: "stock_movements_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "stock_movements_warehouse_id_fkey"
@@ -1545,10 +1613,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          lot_id: string
           notes: string | null
           order_id: string
           organization_id: string
-          product_id: string
           quantity: number
           released_at: string | null
           reservation_id: string
@@ -1560,10 +1628,10 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          lot_id: string
           notes?: string | null
           order_id: string
           organization_id: string
-          product_id: string
           quantity: number
           released_at?: string | null
           reservation_id?: string
@@ -1575,10 +1643,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          lot_id?: string
           notes?: string | null
           order_id?: string
           organization_id?: string
-          product_id?: string
           quantity?: number
           released_at?: string | null
           reservation_id?: string
@@ -1596,6 +1664,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "stock_reservations_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "product_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
             foreignKeyName: "stock_reservations_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -1608,13 +1683,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["organization_id"]
-          },
-          {
-            foreignKeyName: "stock_reservations_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "stock_reservations_warehouse_id_fkey"
@@ -2423,7 +2491,7 @@ export type Database = {
       }
       create_production_movement: {
         Args: {
-          p_finished_product_id: string
+          p_finished_product_type_id: string
           p_organization_id: string
           p_quantity_to_produce: number
           p_user_reference?: string
@@ -2645,5 +2713,3 @@ export const Constants = {
     },
   },
 } as const
-A new version of Supabase CLI is available: v2.84.2 (currently installed v2.20.5)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

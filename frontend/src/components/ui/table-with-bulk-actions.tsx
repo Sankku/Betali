@@ -135,9 +135,20 @@ export function TableWithBulkActions<T = any>({
     onSelectionChange?.(selected);
   }, [onSelectionChange]);
 
-  // Clear selection when filters/data change
+  // When data changes, keep selections that still exist (re-mapped to new row objects)
+  // so that refetches after bulk actions don't silently deselect rows.
   useEffect(() => {
-    setSelectedItems([]);
+    setSelectedItems((prev) => {
+      if (prev.length === 0) return prev;
+      const dataById = new Map(data.map((row) => [getRowId(row), row]));
+      const next = prev.reduce<T[]>((acc, item) => {
+        const fresh = dataById.get(getRowId(item));
+        if (fresh) acc.push(fresh);
+        return acc;
+      }, []);
+      return next.length === prev.length ? next : next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   // Get valid items for a specific action

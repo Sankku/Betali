@@ -3,11 +3,11 @@ import Papa from 'papaparse';
 import { Upload, Download, CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../../ui/modal';
 import { Button } from '../../ui/button';
-import { useProductImport } from '../../../hooks/useProducts';
+import { useProductTypeImport } from '../../../hooks/useProductTypes';
 import { useWarehouses } from '../../../hooks/useWarehouse';
-import type { ProductImportRow, BulkImportResult } from '../../../services/api/productsService';
+import type { BulkImportRow, BulkImportResult } from '../../../services/api/productTypesService';
 
-const REQUIRED_HEADERS = ['name', 'batch_number', 'origin_country', 'expiration_date', 'price', 'product_type'];
+const REQUIRED_HEADERS = ['sku', 'name', 'product_type', 'unit', 'lot_number', 'origin_country', 'expiration_date', 'price'];
 const VALID_UNITS = ['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'];
 const VALID_PRODUCT_TYPES = ['standard', 'raw_material', 'finished_good'];
 const MAX_ROWS = 500;
@@ -15,7 +15,7 @@ const MAX_FILE_SIZE_MB = 5;
 
 interface ParsedRow {
   rowNum: number;
-  data: ProductImportRow;
+  data: BulkImportRow;
   errors: string[];
   warnings: string[];
 }
@@ -26,8 +26,9 @@ export interface ProductImportModalProps {
 }
 
 const fieldNamesToSpanish: Record<string, string> = {
+  sku: 'SKU',
   name: 'nombre',
-  batch_number: 'lote',
+  lot_number: 'nro de lote',
   origin_country: 'país de origen',
   expiration_date: 'vencimiento',
   price: 'precio',
@@ -103,24 +104,24 @@ function validateRow(
     }
   }
 
-  return { rowNum, data: row as unknown as ProductImportRow, errors, warnings };
+  return { rowNum, data: row as unknown as BulkImportRow, errors, warnings };
 }
 
 function downloadTemplate() {
   const headers = [
-    'name', 'batch_number', 'origin_country', 'expiration_date',
-    'price', 'description', 'unit', 'product_type', 'initial_stock', 'warehouse_name'
+    'sku', 'name', 'product_type', 'unit', 'lot_number', 'origin_country',
+    'expiration_date', 'price', 'description', 'initial_stock', 'warehouse_name'
   ];
   const example = [
-    'Harina 000', 'LOT-2024-001', 'Argentina', '2027-12-31',
-    '1500.00', 'Harina de trigo 000', 'kg', 'standard', '100', 'Depósito Principal'
+    'HAR-000-KG', 'Harina 000', 'standard', 'kg', 'LOT-2025-001', 'Argentina',
+    '2027-12-31', '1500.00', 'Harina de trigo 000', '100', 'Depósito Principal'
   ];
   const csv = [headers.join(','), example.join(',')].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'plantilla_productos.csv';
+  a.download = 'plantilla_tipos_productos.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -135,11 +136,11 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: warehousesData } = useWarehouses();
-  const warehouseNames = (warehousesData?.data ?? []).map((w: any) =>
+  const warehouseNames = (warehousesData?.data ?? []).map((w: { name: string }) =>
     String(w.name).toLowerCase().trim()
   );
 
-  const importMutation = useProductImport();
+  const importMutation = useProductTypeImport();
 
   const handleClose = useCallback(() => {
     setStep('upload');
@@ -304,7 +305,8 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                 <thead className="bg-neutral-50 dark:bg-neutral-800/80 sticky top-0 z-10 border-b border-neutral-200 dark:border-neutral-800 backdrop-blur-md">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">#</th>
-                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Lote</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">SKU</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Nro Lote</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Nombre</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Precio</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Stock In.</th>
@@ -325,10 +327,19 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                       <td className="px-2 py-1.5 align-top whitespace-nowrap">
                         <input
                           type="text"
-                          value={row.data.batch_number || ''}
-                          onChange={(e) => handleCellChange(index, 'batch_number', e.target.value)}
+                          value={row.data.sku || ''}
+                          onChange={(e) => handleCellChange(index, 'sku', e.target.value)}
                           placeholder="—"
-                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('batch_number')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all font-medium text-neutral-700 dark:text-neutral-300`}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('SKU')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all font-mono font-medium text-neutral-700 dark:text-neutral-300`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={row.data.lot_number || ''}
+                          onChange={(e) => handleCellChange(index, 'lot_number', e.target.value)}
+                          placeholder="—"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('nro de lote')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[120px] transition-all font-medium text-neutral-700 dark:text-neutral-300`}
                         />
                       </td>
                       <td className="px-2 py-1.5 align-top">
@@ -409,8 +420,8 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           {row.data.warehouse_name && !warehouseNames.includes(row.data.warehouse_name.toLowerCase().trim()) && (
                             <option value={row.data.warehouse_name}>{row.data.warehouse_name} (Inválido)</option>
                           )}
-                          {warehousesData?.data?.map((w: any) => (
-                            <option key={w.id} value={w.name} className="text-neutral-900 dark:text-neutral-100">{w.name}</option>
+                          {warehousesData?.data?.map((w: { warehouse_id?: string; id?: string; name: string }) => (
+                            <option key={w.warehouse_id ?? w.id} value={w.name} className="text-neutral-900 dark:text-neutral-100">{w.name}</option>
                           ))}
                         </select>
                       </td>

@@ -12,7 +12,7 @@ class PricingService {
     productTaxGroupRepository,
     discountRuleRepository,
     appliedDiscountRepository,
-    productRepository,
+    productTypeRepository,
     logger
   ) {
     this.pricingTierRepository = pricingTierRepository;
@@ -21,7 +21,7 @@ class PricingService {
     this.productTaxGroupRepository = productTaxGroupRepository;
     this.discountRuleRepository = discountRuleRepository;
     this.appliedDiscountRepository = appliedDiscountRepository;
-    this.productRepository = productRepository;
+    this.productTypeRepository = productTypeRepository;
     this.logger = logger || new Logger('PricingService');
   }
 
@@ -124,7 +124,7 @@ class PricingService {
         unitPrice = Math.max(0, parseFloat(item.price));
       } else {
         unitPrice = await this.getApplicablePrice(
-          item.product_id,
+          item.product_type_id,
           item.quantity,
           clientId,
           organizationId,
@@ -147,7 +147,7 @@ class PricingService {
       const lineSubtotal = lineTotal - lineDiscounts.total_discount;
 
       lineItems.push({
-        product_id: item.product_id,
+        product_type_id: item.product_type_id,
         quantity: item.quantity,
         unit_price: parseFloat(unitPrice.toFixed(2)),
         line_total: parseFloat(lineTotal.toFixed(2)),
@@ -165,7 +165,7 @@ class PricingService {
    * Get the applicable price for a product considering all pricing rules
    * @private
    */
-  async getApplicablePrice(productId, quantity, clientId, organizationId, orderDate = new Date()) {
+  async getApplicablePrice(productTypeId, quantity, clientId, organizationId, orderDate = new Date()) {
     try {
       let applicablePrice = null;
       let priceSource = 'base_price';
@@ -174,18 +174,18 @@ class PricingService {
       if (clientId) {
         const customerPrice = await this.customerPricingRepository.getActiveCustomerPrice(
           clientId,
-          productId,
+          productTypeId,
           organizationId,
           orderDate
         );
-        
+
         if (customerPrice) {
           applicablePrice = customerPrice.price;
           priceSource = 'customer_pricing';
-          this.logger.debug('Using customer-specific pricing', { 
-            productId, 
-            clientId, 
-            price: applicablePrice 
+          this.logger.debug('Using customer-specific pricing', {
+            productTypeId,
+            clientId,
+            price: applicablePrice
           });
         }
       }
@@ -193,7 +193,7 @@ class PricingService {
       // 2. Check tiered pricing (second priority)
       if (!applicablePrice) {
         const tierPrice = await this.pricingTierRepository.getApplicableTierPrice(
-          productId,
+          productTypeId,
           quantity,
           organizationId,
           orderDate
@@ -202,20 +202,20 @@ class PricingService {
         if (tierPrice) {
           applicablePrice = tierPrice.price;
           priceSource = `tier_pricing_${tierPrice.tier_name}`;
-          this.logger.debug('Using tiered pricing', { 
-            productId, 
-            quantity, 
-            tier: tierPrice.tier_name, 
-            price: applicablePrice 
+          this.logger.debug('Using tiered pricing', {
+            productTypeId,
+            quantity,
+            tier: tierPrice.tier_name,
+            price: applicablePrice
           });
         }
       }
 
-      // 3. Fall back to base product price
+      // 3. Fall back to base product type price
       if (!applicablePrice) {
-        const product = await this.productRepository.findById(productId, organizationId);
+        const product = await this.productTypeRepository.findById(productTypeId, organizationId);
         if (!product) {
-          throw new Error(`Product ${productId} not found`);
+          throw new Error(`Product ${productTypeId} not found`);
         }
         applicablePrice = product.price || 0;
         priceSource = 'base_price';
@@ -223,10 +223,10 @@ class PricingService {
 
       return applicablePrice;
     } catch (error) {
-      this.logger.error('Error getting applicable price', { 
+      this.logger.error('Error getting applicable price', {
         error: error.message,
-        productId,
-        quantity 
+        productTypeId,
+        quantity
       });
       throw error;
     }
@@ -369,10 +369,10 @@ class PricingService {
       let totalTax = 0;
       const taxBreakdown = [];
 
-      // Get tax rates for products in the order
-      const productIds = lineItems.map(item => item.product_id);
+      // Get tax rates for product types in the order
+      const productTypeIds = lineItems.map(item => item.product_type_id);
       const productTaxRates = await this.productTaxGroupRepository.getProductTaxRates(
-        productIds,
+        productTypeIds,
         organizationId
       );
 
@@ -409,7 +409,7 @@ class PricingService {
       } else {
         // Calculate tax for each product based on its assigned tax rates
         for (const item of lineItems) {
-          const itemTaxRates = productTaxRates.filter(ptr => ptr.product_id === item.product_id);
+          const itemTaxRates = productTaxRates.filter(ptr => ptr.product_type_id === item.product_type_id);
           
           if (itemTaxRates.length > 0) {
             for (const taxRate of itemTaxRates) {

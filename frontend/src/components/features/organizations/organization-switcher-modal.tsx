@@ -3,48 +3,17 @@ import { useAuth } from "../../../context/AuthContext";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { UserRole } from "../../../types/organization";
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalCloseButton } from "../../ui/modal";
+import { useTranslation } from "../../../contexts/LanguageContext";
 
 interface OrganizationSwitcherModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const roleConfig: Record<UserRole, { label: string; icon: JSX.Element; color: string; description: string }> = {
-  super_admin: {
-    label: 'Super Admin',
-    icon: <ShieldCheck className="w-4 h-4" />,
-    color: 'text-red-600 bg-red-100',
-    description: 'Full system access'
-  },
-  admin: {
-    label: 'Administrator',
-    icon: <Shield className="w-4 h-4" />,
-    color: 'text-purple-600 bg-purple-100',
-    description: 'Administrative privileges'
-  },
-  manager: {
-    label: 'Manager',
-    icon: <Settings className="w-4 h-4" />,
-    color: 'text-blue-600 bg-blue-100',
-    description: 'Management access'
-  },
-  employee: {
-    label: 'Employee',
-    icon: <User className="w-4 h-4" />,
-    color: 'text-green-600 bg-green-100',
-    description: 'Standard user access'
-  },
-  viewer: {
-    label: 'Viewer',
-    icon: <Eye className="w-4 h-4" />,
-    color: 'text-gray-600 bg-gray-100',
-    description: 'Read-only access'
-  }
-};
-
 export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitcherModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
-  const { 
+  const {
     currentOrganization,
     currentUserRole,
     userOrganizations,
@@ -52,7 +21,39 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
     switching,
     switchOrganization
   } = useOrganization();
-  
+
+  const roleConfig: Record<UserRole, { label: string; icon: JSX.Element; color: string; description: string }> = {
+    super_admin: {
+      label: t('users.roleSwitcher.roleLabels.super_admin'),
+      icon: <ShieldCheck className="w-4 h-4" />,
+      color: 'text-red-600 bg-red-100',
+      description: t('users.roleSwitcher.roleDescriptions.super_admin')
+    },
+    admin: {
+      label: t('users.roleSwitcher.roleLabels.admin'),
+      icon: <Shield className="w-4 h-4" />,
+      color: 'text-purple-600 bg-purple-100',
+      description: t('users.roleSwitcher.roleDescriptions.admin')
+    },
+    manager: {
+      label: t('users.roleSwitcher.roleLabels.manager'),
+      icon: <Settings className="w-4 h-4" />,
+      color: 'text-blue-600 bg-blue-100',
+      description: t('users.roleSwitcher.roleDescriptions.manager')
+    },
+    employee: {
+      label: t('users.roleSwitcher.roleLabels.employee'),
+      icon: <User className="w-4 h-4" />,
+      color: 'text-green-600 bg-green-100',
+      description: t('users.roleSwitcher.roleDescriptions.employee')
+    },
+    viewer: {
+      label: t('users.roleSwitcher.roleLabels.viewer'),
+      icon: <Eye className="w-4 h-4" />,
+      color: 'text-gray-600 bg-gray-100',
+      description: t('users.roleSwitcher.roleDescriptions.viewer')
+    }
+  };
 
   // Ensure userOrganizations is always an array
   const safeUserOrganizations = userOrganizations || [];
@@ -84,8 +85,8 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
             <Building2 className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <ModalTitle>Switch Organization</ModalTitle>
-            <ModalDescription>Choose an organization to work with</ModalDescription>
+            <ModalTitle>{t('organizations.switcher.title')}</ModalTitle>
+            <ModalDescription>{t('organizations.switcher.desc')}</ModalDescription>
           </div>
         </div>
       </ModalHeader>
@@ -101,16 +102,16 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
             {safeUserOrganizations.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-neutral-500 text-sm">
-                  No organizations found. Contact your administrator.
+                  {t('organizations.switcher.noOrganizations')}
                 </div>
               </div>
             ) : (
               safeUserOrganizations.filter(Boolean).map((userOrg) => {
               if (!userOrg?.organization?.organization_id) return null;
-              
+
               const roleInfo = roleConfig[userOrg.userRole] || roleConfig.viewer;
               const isCurrentOrg = userOrg.organization.organization_id === currentOrganization?.organization_id;
-              
+
               return (
                 <button
                   key={userOrg.organization.organization_id}
@@ -132,7 +133,7 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
                           {userOrg.organization.name}
                           {isCurrentOrg && (
                             <span className="ml-2 text-xs text-blue-600 font-normal">
-                              (Current)
+                              {t('organizations.switcher.currentBadge')}
                             </span>
                           )}
                         </div>
@@ -141,7 +142,7 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <div className={`flex items-center space-x-1 px-2 py-1 rounded-full ${roleInfo.color}`}>
                         {roleInfo.icon}
@@ -158,7 +159,7 @@ export function OrganizationSwitcherModal({ isOpen, onClose }: OrganizationSwitc
 
         <div className="mt-6 pt-4 border-t border-neutral-200">
           <div className="text-xs text-neutral-500">
-            <strong>Current Organization:</strong> {currentOrganization?.name || 'Loading...'}
+            <strong>{t('organizations.switcher.currentOrganization')}</strong> {currentOrganization?.name || t('organizations.switcher.loading')}
             {currentUserRole && (
               <span className="ml-1">
                 ({roleConfig[currentUserRole]?.label || 'Unknown Role'})

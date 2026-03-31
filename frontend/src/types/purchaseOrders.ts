@@ -31,7 +31,7 @@ export type PurchaseOrderStatus =
 export interface PurchaseOrderDetail {
   detail_id: string;
   purchase_order_id: string;
-  product_id: string;
+  product_type_id: string;
   organization_id: string;
   quantity: number;
   received_quantity: number;
@@ -40,8 +40,17 @@ export interface PurchaseOrderDetail {
   notes?: string | null;
   created_at: string;
 
+  lot_id?: string | null;
+  product_lot?: {
+    lot_id: string;
+    lot_number: string;
+    expiration_date: string;
+    origin_country: string;
+    price: number;
+  } | null;
+
   // Populated relations
-  products?: Product;
+  product_types?: Product;
 }
 
 /**
@@ -83,7 +92,7 @@ export interface CreatePurchaseOrderRequest {
   expected_delivery_date?: string;
   status?: PurchaseOrderStatus;
   items: {
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     unit_price: number;
     notes?: string;
@@ -104,7 +113,7 @@ export interface UpdatePurchaseOrderRequest {
   expected_delivery_date?: string;
   items?: {
     detail_id?: string; // If present, update existing; if not, create new
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     unit_price: number;
     notes?: string;
@@ -227,6 +236,26 @@ export function getAvailableStatusTransitions(
  */
 export function calculateLineTotal(quantity: number, unitPrice: number): number {
   return quantity * unitPrice;
+}
+
+/**
+ * A single line in a reception payload
+ */
+export interface ReceiptLine {
+  detail_id: string;
+  received_quantity: number;
+  /** Required only when detail has no existing lot_id */
+  lot?:
+    | { mode: 'new'; lot_number: string; expiration_date: string; origin_country: string; price: number }
+    | { mode: 'existing'; lot_id: string };
+}
+
+/**
+ * Payload for POST /api/purchase-orders/:id/receive
+ */
+export interface ReceivePurchaseOrderPayload {
+  id: string;
+  lines: ReceiptLine[];
 }
 
 /**

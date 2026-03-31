@@ -6,7 +6,7 @@ import { useStockValidation } from '@/hooks/useAvailableStock';
 
 interface OrderItemWithStockValidationProps {
   item: {
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     price: number;
   };
@@ -39,13 +39,13 @@ export function OrderItemWithStockValidation({
     error,
     availableStock,
   } = useStockValidation(
-    item.product_id,
+    item.product_type_id,
     warehouseId,
     item.quantity
   );
 
   // Don't show validation if no product or warehouse selected
-  const shouldShowValidation = item.product_id && warehouseId;
+  const shouldShowValidation = item.product_type_id && warehouseId;
 
   return (
     <div className="space-y-2">

@@ -24,8 +24,8 @@ async function handleResumen(ctx) {
   const { organizationId } = ctx.betali;
 
   try {
-    const productService = ServiceFactory.createProductService();
-    const products = await productService.getOrganizationProducts(organizationId);
+    const productTypeService = ServiceFactory.createProductTypeService();
+    const products = await productTypeService.getTypes(organizationId);
 
     if (!products || products.length === 0) {
       await ctx.reply('📦 No tenés productos registrados en el inventario.');
@@ -95,8 +95,8 @@ async function handleResumenRefresh(ctx) {
   const { organizationId } = ctx.betali;
 
   try {
-    const productService = ServiceFactory.createProductService();
-    const products = await productService.getOrganizationProducts(organizationId);
+    const productTypeService = ServiceFactory.createProductTypeService();
+    const products = await productTypeService.getTypes(organizationId);
 
     if (!products || products.length === 0) {
       await ctx.editMessageText('📦 No tenés productos registrados.');

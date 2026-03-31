@@ -14,7 +14,7 @@ describe('PricingService Unit Tests', () => {
   let mockProductTaxGroupRepository;
   let mockDiscountRuleRepository;
   let mockAppliedDiscountRepository;
-  let mockProductRepository;
+  let mockProductTypeRepository;
   let mockLogger;
 
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('PricingService Unit Tests', () => {
       delete: jest.fn()
     };
 
-    mockProductRepository = {
+    mockProductTypeRepository = {
       findById: jest.fn(),
       findByOrganizationId: jest.fn()
     };
@@ -90,7 +90,7 @@ describe('PricingService Unit Tests', () => {
       mockProductTaxGroupRepository,
       mockDiscountRuleRepository,
       mockAppliedDiscountRepository,
-      mockProductRepository,
+      mockProductTypeRepository,
       mockLogger
     );
   });
@@ -398,7 +398,7 @@ describe('PricingService Unit Tests', () => {
 
       mockCustomerPricingRepository.getActiveCustomerPrice.mockResolvedValue(customerPricing);
       mockPricingTierRepository.getApplicableTierPrice.mockResolvedValue(null);
-      mockProductRepository.findById.mockResolvedValue(product);
+      mockProductTypeRepository.findById.mockResolvedValue(product);
 
       const price = await pricingService.getApplicablePrice(productId, 10, clientId, orgId);
 
@@ -419,7 +419,7 @@ describe('PricingService Unit Tests', () => {
 
       mockCustomerPricingRepository.getActiveCustomerPrice.mockResolvedValue(null);
       mockPricingTierRepository.getApplicableTierPrice.mockResolvedValue(tierPrice);
-      mockProductRepository.findById.mockResolvedValue(product);
+      mockProductTypeRepository.findById.mockResolvedValue(product);
 
       const price = await pricingService.getApplicablePrice(productId, 100, clientId, orgId);
 
@@ -439,7 +439,7 @@ describe('PricingService Unit Tests', () => {
 
       mockCustomerPricingRepository.getActiveCustomerPrice.mockResolvedValue(null);
       mockPricingTierRepository.getApplicableTierPrice.mockResolvedValue(null);
-      mockProductRepository.findById.mockResolvedValue(product);
+      mockProductTypeRepository.findById.mockResolvedValue(product);
 
       const price = await pricingService.getApplicablePrice(productId, 10, clientId, orgId);
 
@@ -449,7 +449,7 @@ describe('PricingService Unit Tests', () => {
     test('should throw error if product not found', async () => {
       mockCustomerPricingRepository.getActiveCustomerPrice.mockResolvedValue(null);
       mockPricingTierRepository.getApplicableTierPrice.mockResolvedValue(null);
-      mockProductRepository.findById.mockResolvedValue(null);
+      mockProductTypeRepository.findById.mockResolvedValue(null);
 
       await expect(pricingService.getApplicablePrice(productId, 10, clientId, orgId))
         .rejects.toThrow('Product');

@@ -162,7 +162,7 @@ export default function StockMovementsPage() {
         <div className="flex items-center">
           <Package className="w-4 h-4 text-gray-400 mr-2" />
           <span className="text-sm font-medium text-gray-900">
-            {row.original.product?.name || 'N/A'}
+            {(row.original as any).lot?.product_type_id?.name || 'N/A'}
           </span>
         </div>
       ),

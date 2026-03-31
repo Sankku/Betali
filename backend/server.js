@@ -13,7 +13,8 @@ const { generalLimiter, speedLimiter } = require('./middleware/rateLimiting');
 const { sanitizeMiddleware, SANITIZATION_RULES } = require('./middleware/sanitization');
 const { i18n } = require('./utils/i18n');
 
-const productRoutes = require('./routes/products');
+const productTypeRoutes = require('./routes/productTypes');
+const createProductLotRouter = require('./routes/productLots');
 const dashboardRoutes = require('./routes/dashboard');
 const warehouseRoutes = require('./routes/warehouse'); 
 const createStockMovementRoutes = require('./routes/stockMovements');
@@ -196,7 +197,9 @@ class Application {
     this.app.use('/health', healthRoutes);
     this.app.use('/api/auth', authRoutes);
 
-    this.app.use('/api/products', productRoutes);
+    this.app.use('/api/product-types', productTypeRoutes);
+    this.app.use('/api/product-types/:typeId/lots', createProductLotRouter());
+    this.app.use('/api/product-lots', createProductLotRouter());
     this.app.use('/api/warehouse', warehouseRoutes); 
     this.app.use('/api/stock-movements', createStockMovementRoutes());
     this.app.use('/api/dashboard', dashboardRoutes);
@@ -235,7 +238,8 @@ class Application {
         endpoints: {
           health: '/health',
           auth: '/api/auth',
-          products: '/api/products',
+          productTypes: '/api/product-types',
+          productLots: '/api/product-lots',
           warehouses: '/api/warehouse',
           stockMovements: '/api/stock-movements',
           dashboard: '/api/dashboard',

@@ -1,6 +1,7 @@
 class DashboardService {
-  constructor(productRepository, warehouseRepository, stockMovementRepository, logger) {
-    this.productRepository = productRepository;
+  constructor(productTypeRepository, productLotRepository, warehouseRepository, stockMovementRepository, logger) {
+    this.productTypeRepository = productTypeRepository;
+    this.productLotRepository = productLotRepository;
     this.warehouseRepository = warehouseRepository;
     this.stockMovementRepository = stockMovementRepository;
     this.logger = logger;
@@ -22,10 +23,10 @@ class DashboardService {
         expiringProducts,
         lowStockAlerts
       ] = await Promise.all([
-        this.productRepository.count({ organization_id: organizationId }),
+        this.productTypeRepository.count({ organization_id: organizationId }),
         this.warehouseRepository.count({ organization_id: organizationId }),
         this.getRecentMovements(organizationId, 5),
-        this.productRepository.findExpiringSoon(30, organizationId),
+        this.productLotRepository.findExpiringByOrg(30, organizationId),
         this.getLowStockAlerts(organizationId)
       ]);
 
@@ -63,7 +64,7 @@ class DashboardService {
         productsThisMonth,
         movementsThisMonth
       ] = await Promise.all([
-        this.productRepository.count({ organization_id: organizationId }),
+        this.productTypeRepository.count({ organization_id: organizationId }),
         this.warehouseRepository.count({ organization_id: organizationId }),
         this.stockMovementRepository.count({ organization_id: organizationId }),
         this.warehouseRepository.count({ organization_id: organizationId, is_active: true }),
@@ -106,13 +107,13 @@ class DashboardService {
 
       if (movements.length === 0) return [];
 
-      const productIds = [...new Set(movements.map(m => m.product_id).filter(Boolean))];
+      const lotIds = [...new Set(movements.map(m => m.lot_id).filter(Boolean))];
       const warehouseIds = [...new Set(movements.map(m => m.warehouse_id).filter(Boolean))];
 
-      const [products, warehouses] = await Promise.all([
-        productIds.length > 0
-          ? this.productRepository.findAll({ organization_id: organizationId }, { limit: productIds.length + 10 })
-              .then(all => all.filter(p => productIds.includes(p.product_id)))
+      const [lots, warehouses] = await Promise.all([
+        lotIds.length > 0
+          ? this.productLotRepository.findAll({ organization_id: organizationId }, { limit: lotIds.length + 10 })
+              .then(all => all.filter(l => lotIds.includes(l.lot_id)))
           : Promise.resolve([]),
         warehouseIds.length > 0
           ? this.warehouseRepository.findAll({ organization_id: organizationId }, { limit: warehouseIds.length + 10 })
@@ -120,12 +121,12 @@ class DashboardService {
           : Promise.resolve([]),
       ]);
 
-      const productMap = new Map(products.map(p => [p.product_id, p.name]));
+      const lotMap = new Map(lots.map(l => [l.lot_id, l.lot_number || l.lot_id]));
       const warehouseMap = new Map(warehouses.map(w => [w.warehouse_id, w.name]));
 
       return movements.map(movement => ({
         ...movement,
-        product_name: productMap.get(movement.product_id) || 'Unknown Product',
+        lot_number: lotMap.get(movement.lot_id) || 'Unknown Lot',
         warehouse_name: warehouseMap.get(movement.warehouse_id) || 'Unknown Warehouse',
       }));
     } catch (error) {
@@ -142,7 +143,7 @@ class DashboardService {
    */
   async getExpiringProducts(organizationId, days = 30) {
     try {
-      return await this.productRepository.findExpiringSoon(days, organizationId);
+      return await this.productLotRepository.findExpiringByOrg(days, organizationId);
     } catch (error) {
       this.logger.error(`Error fetching expiring products: ${error.message}`);
       throw error;
@@ -225,9 +226,9 @@ class DashboardService {
     try {
       const { startDate } = this.calculateDateRange(period);
       
-      const products = await this.productRepository.findByOrganizationId(organizationId);
+      const products = await this.productTypeRepository.findByOrg(organizationId);
 
-      return products.filter(product => 
+      return products.filter(product =>
         new Date(product.created_at) >= startDate
       ).length;
     } catch (error) {
@@ -310,18 +311,18 @@ class DashboardService {
    */
   async getProductAnalytics(organizationId, startDate, endDate) {
     try {
-      const products = await this.productRepository.findByOrganizationId(organizationId);
-      
+      const lots = await this.productLotRepository.findByOrg(organizationId);
+
       const analytics = {
         period: {
           start: startDate.toISOString(),
           end: endDate.toISOString()
         },
-        totalProducts: products.length,
-        productsByCountry: this.groupProductsByCountry(products),
-        expirationDistribution: this.calculateExpirationDistribution(products),
-        recentlyAdded: products.filter(p => 
-          new Date(p.created_at) >= startDate
+        totalProducts: lots.length,
+        productsByCountry: this.groupProductsByCountry(lots),
+        expirationDistribution: this.calculateExpirationDistribution(lots),
+        recentlyAdded: lots.filter(l =>
+          new Date(l.created_at) >= startDate
         ).length
       };
 
@@ -402,7 +403,7 @@ class DashboardService {
    */
   
   async getProductsCreatedInDateRange(organizationId, startDate, endDate) {
-    const products = await this.productRepository.findByOrganizationId(organizationId);
+    const products = await this.productTypeRepository.findByOrg(organizationId);
     return products.filter(p => {
       const createdDate = new Date(p.created_at);
       return createdDate >= startDate && createdDate <= endDate;

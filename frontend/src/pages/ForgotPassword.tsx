@@ -13,6 +13,7 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { BetaliLogo } from '../components/ui/BetaliLogo';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const OTP_LENGTH = 6;
 
@@ -91,6 +92,7 @@ export default function ForgotPassword() {
 
   const { sendPasswordResetEmail, verifyPasswordOtp } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +102,7 @@ export default function ForgotPassword() {
     const { error } = await sendPasswordResetEmail(email);
 
     if (error) {
-      setError(error.message || 'Error sending recovery email. Try again.');
+      setError(error.message || t('auth.forgotPasswordPage.sendError'));
     } else {
       setStep('sent');
     }
@@ -115,7 +117,7 @@ export default function ForgotPassword() {
     const { error } = await verifyPasswordOtp(email, code);
 
     if (error) {
-      setError(error.message || 'Invalid or expired code. Try again.');
+      setError(error.message || t('auth.forgotPasswordPage.invalidCode'));
       setStep('otp');
     } else {
       // Session is now set — go to reset password form
@@ -139,8 +141,8 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <BetaliLogo variant="icon" size="xl" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900">Betali</h1>
-          <p className="text-gray-500 mt-1">Business inventory management</p>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('auth.forgotPasswordPage.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('auth.forgotPasswordPage.subtitle')}</p>
         </div>
 
         <Card className="bg-white/90 backdrop-blur-xl border border-neutral-200/50 shadow-xl">
@@ -149,10 +151,10 @@ export default function ForgotPassword() {
             <>
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-                  Forgot your password?
+                  {t('auth.forgotPasswordPage.pageTitle')}
                 </CardTitle>
                 <CardDescription className="text-center text-neutral-600">
-                  Enter your email and we'll send you a recovery code and link
+                  {t('auth.forgotPasswordPage.pageDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -163,13 +165,13 @@ export default function ForgotPassword() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-neutral-700">Email</Label>
+                    <Label htmlFor="email" className="text-neutral-700">{t('auth.forgotPasswordPage.emailLabel')}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <Input
                         id="email"
                         type="email"
-                        placeholder="example@example.com"
+                        placeholder={t('auth.forgotPasswordPage.emailPlaceholder')}
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         className="h-11 pl-10 bg-neutral-50/50 border-neutral-200 focus:ring-primary-500"
@@ -183,7 +185,7 @@ export default function ForgotPassword() {
                     className="w-full h-11 bg-primary-600 hover:bg-primary-700 text-white font-medium"
                     disabled={loading}
                   >
-                    {loading ? 'Sending...' : 'Send recovery email'}
+                    {loading ? 'Sending...' : t('auth.forgotPasswordPage.sendButton')}
                   </Button>
                 </form>
               </CardContent>
@@ -195,10 +197,10 @@ export default function ForgotPassword() {
             <>
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-                  Check your email
+                  {t('auth.forgotPasswordPage.checkEmailTitle')}
                 </CardTitle>
                 <CardDescription className="text-center text-neutral-600">
-                  We sent a recovery link and code to <span className="font-medium text-neutral-800">{email}</span>
+                  {t('auth.forgotPasswordPage.sentTo')} <span className="font-medium text-neutral-800">{email}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -208,9 +210,9 @@ export default function ForgotPassword() {
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-neutral-900">Click the link in the email</p>
+                    <p className="text-sm font-medium text-neutral-900">{t('auth.forgotPasswordPage.clickLinkTitle')}</p>
                     <p className="text-xs text-neutral-500 mt-0.5">
-                      Open the email and click "Reset password". It will redirect you here automatically.
+                      {t('auth.forgotPasswordPage.clickLinkDetail')}
                     </p>
                   </div>
                 </div>
@@ -218,7 +220,7 @@ export default function ForgotPassword() {
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-neutral-200" />
-                  <span className="text-xs text-neutral-400 font-medium">or</span>
+                  <span className="text-xs text-neutral-400 font-medium">{t('auth.forgotPasswordPage.orText')}</span>
                   <div className="flex-1 h-px bg-neutral-200" />
                 </div>
 
@@ -228,15 +230,15 @@ export default function ForgotPassword() {
                     <KeyRound className="h-4 w-4 text-primary-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Enter the 6-digit code</p>
+                    <p className="text-sm font-medium">{t('auth.forgotPasswordPage.enterCodeTitle')}</p>
                     <p className="text-xs text-neutral-500 mt-0.5">
-                      The email also includes a one-time code you can type here directly.
+                      {t('auth.forgotPasswordPage.enterCodeDesc')}
                     </p>
                     <Button
                       className="mt-3 h-9 px-4 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
                       onClick={() => setStep('otp')}
                     >
-                      Enter code
+                      {t('auth.forgotPasswordPage.enterCodePlaceholder')}
                     </Button>
                   </div>
                 </div>
@@ -246,7 +248,7 @@ export default function ForgotPassword() {
                   className="w-full text-xs text-neutral-400 hover:text-neutral-600 transition-colors pt-1"
                   onClick={resetFlow}
                 >
-                  Use a different email
+                  {t('auth.forgotPasswordPage.useDifferentEmail')}
                 </button>
               </CardContent>
             </>
@@ -257,10 +259,10 @@ export default function ForgotPassword() {
             <>
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-2xl font-semibold text-center text-neutral-900">
-                  Enter your code
+                  {t('auth.forgotPasswordPage.codeStepTitle')}
                 </CardTitle>
                 <CardDescription className="text-center text-neutral-600">
-                  Type the 6-digit code from the email sent to <span className="font-medium text-neutral-800">{email}</span>
+                  {t('auth.forgotPasswordPage.codeStepDesc')} <span className="font-medium text-neutral-800">{email}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -276,7 +278,7 @@ export default function ForgotPassword() {
                 />
 
                 {step === 'verifying' && (
-                  <p className="text-center text-sm text-neutral-500 animate-pulse">Verifying code...</p>
+                  <p className="text-center text-sm text-neutral-500 animate-pulse">{t('auth.forgotPasswordPage.verifying')}</p>
                 )}
 
                 <div className="flex flex-col gap-2 pt-1">
@@ -286,7 +288,7 @@ export default function ForgotPassword() {
                     onClick={() => setStep('sent')}
                     disabled={step === 'verifying'}
                   >
-                    ← Back
+                    {t('auth.forgotPasswordPage.backButton')}
                   </button>
                 </div>
               </CardContent>
@@ -300,7 +302,7 @@ export default function ForgotPassword() {
             className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-primary-600 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Sign In
+            {t('auth.forgotPasswordPage.backToSignIn')}
           </Link>
         </div>
       </div>

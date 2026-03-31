@@ -3,50 +3,52 @@ import { Building2, Settings, Shield, ShieldCheck, Eye, User, ChevronUp } from "
 import { useAuth } from "../../../context/AuthContext";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { UserRole } from "../../../types/organization";
+import { useTranslation } from "../../../contexts/LanguageContext";
 
 interface UnifiedContextSelectorProps {
   onClick: () => void;
   className?: string;
 }
 
-const roleConfig: Record<UserRole, { 
-  label: string; 
-  icon: JSX.Element; 
-  color: string;
-}> = {
-  super_admin: {
-    label: 'Super Admin',
-    icon: <ShieldCheck className="w-3 h-3" />,
-    color: 'text-red-600 bg-red-100'
-  },
-  admin: {
-    label: 'Administrator',
-    icon: <Shield className="w-3 h-3" />,
-    color: 'text-purple-600 bg-purple-100'
-  },
-  manager: {
-    label: 'Manager',
-    icon: <Settings className="w-3 h-3" />,
-    color: 'text-blue-600 bg-blue-100'
-  },
-  employee: {
-    label: 'Employee',
-    icon: <User className="w-3 h-3" />,
-    color: 'text-green-600 bg-green-100'
-  },
-  viewer: {
-    label: 'Viewer',
-    icon: <Eye className="w-3 h-3" />,
-    color: 'text-gray-600 bg-gray-100'
-  }
-};
-
 export function UnifiedContextSelector({ onClick, className = "" }: UnifiedContextSelectorProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { currentOrganization, currentUserRole, loading, userOrganizations } = useOrganization();
-  
+
+  const roleConfig: Record<UserRole, {
+    label: string;
+    icon: JSX.Element;
+    color: string;
+  }> = {
+    super_admin: {
+      label: t('users.roleSwitcher.roleLabels.super_admin'),
+      icon: <ShieldCheck className="w-3 h-3" />,
+      color: 'text-red-600 bg-red-100'
+    },
+    admin: {
+      label: t('users.roleSwitcher.roleLabels.admin'),
+      icon: <Shield className="w-3 h-3" />,
+      color: 'text-purple-600 bg-purple-100'
+    },
+    manager: {
+      label: t('users.roleSwitcher.roleLabels.manager'),
+      icon: <Settings className="w-3 h-3" />,
+      color: 'text-blue-600 bg-blue-100'
+    },
+    employee: {
+      label: t('users.roleSwitcher.roleLabels.employee'),
+      icon: <User className="w-3 h-3" />,
+      color: 'text-green-600 bg-green-100'
+    },
+    viewer: {
+      label: t('users.roleSwitcher.roleLabels.viewer'),
+      icon: <Eye className="w-3 h-3" />,
+      color: 'text-gray-600 bg-gray-100'
+    }
+  };
+
   const roleInfo = currentUserRole ? roleConfig[currentUserRole] : null;
-  
+
   // Show loading state
   if (loading) {
     return (
@@ -61,7 +63,7 @@ export function UnifiedContextSelector({ onClick, className = "" }: UnifiedConte
       </div>
     );
   }
-  
+
   // Show "no organizations" state
   if (!loading && (!userOrganizations || userOrganizations.length === 0)) {
     return (
@@ -76,10 +78,10 @@ export function UnifiedContextSelector({ onClick, className = "" }: UnifiedConte
           </div>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-medium text-orange-700">
-              No Organization
+              {t('organizations.unifiedSelector.noOrganization')}
             </p>
             <p className="text-xs text-orange-600">
-              Click to create or join
+              {t('organizations.unifiedSelector.clickToCreate')}
             </p>
           </div>
           <ChevronUp className="h-4 w-4 text-orange-400 group-hover:text-orange-600 flex-shrink-0" />
@@ -99,12 +101,12 @@ export function UnifiedContextSelector({ onClick, className = "" }: UnifiedConte
         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
           <Building2 className="h-5 w-5 text-blue-600" />
         </div>
-        
+
         {/* Organization and Role Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {currentOrganization?.name || 'No Organization'}
+              {currentOrganization?.name || t('organizations.unifiedSelector.noOrganization')}
             </p>
             {roleInfo && (
               <div className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-full ${roleInfo.color}`}>
@@ -114,10 +116,10 @@ export function UnifiedContextSelector({ onClick, className = "" }: UnifiedConte
             )}
           </div>
           <p className="text-xs text-gray-500 truncate">
-            {user?.email || 'No user'}
+            {user?.email || t('organizations.unifiedSelector.noUser')}
           </p>
         </div>
-        
+
         {/* Chevron */}
         <ChevronUp className="h-4 w-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
       </div>

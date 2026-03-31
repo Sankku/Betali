@@ -1,25 +1,25 @@
 export interface ProductFormulaItem {
   formula_id: string;
-  finished_product_id: string;
-  raw_material_id: string;
+  finished_product_type_id: string;
+  raw_material_type_id: string;
   quantity_required: number;
   organization_id: string;
   created_at?: string;
-  raw_material?: {
-    product_id: string;
+  raw_material_type?: {
+    product_type_id: string;
     name: string;
     unit?: string;
   };
 }
 
 export interface AddFormulaItemData {
-  finished_product_id: string;
-  raw_material_id: string;
+  finished_product_type_id: string;
+  raw_material_type_id: string;
   quantity_required: number;
 }
 
 export interface ProductionMovementRequest {
-  finished_product_id: string;
+  finished_product_type_id: string;
   quantity_to_produce: number;
   warehouse_id: string;
   reference?: string;

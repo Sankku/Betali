@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home } from 'lucide-react';
 import { BetaliLogo } from '../components/ui/BetaliLogo';
+import { useTranslation } from '../contexts/LanguageContext';
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 flex items-center justify-center p-4">
@@ -27,10 +29,10 @@ export default function NotFound() {
 
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-            Page not found
+            {t('notFound.title')}
           </h1>
           <p className="text-neutral-500 text-sm leading-relaxed max-w-xs mx-auto">
-            The page you're looking for doesn't exist or has been moved.
+            {t('notFound.message')}
           </p>
         </div>
 
@@ -40,14 +42,14 @@ export default function NotFound() {
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            Go back
+            {t('notFound.goBack')}
           </button>
           <Link
             to="/dashboard"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
           >
             <Home className="h-4 w-4" />
-            Dashboard
+            {t('notFound.dashboard')}
           </Link>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   UpdatePurchaseOrderStatusRequest,
   PurchaseOrderFilters,
   PurchaseOrderSummary,
+  ReceiptLine,
 } from '../../types/purchaseOrders';
 
 // Helper to get auth headers for PDF requests
@@ -234,6 +235,25 @@ export const purchaseOrdersService = {
    */
   async markAsReceived(id: string): Promise<PurchaseOrder> {
     return this.updateStatus(id, { status: 'received' });
+  },
+
+  /**
+   * Receive a purchase order with lot assignment per line
+   * @param id - Purchase Order ID
+   * @param lines - Array of ReceiptLine
+   * @returns Promise<PurchaseOrder>
+   */
+  async receive(id: string, lines: ReceiptLine[]): Promise<PurchaseOrder> {
+    try {
+      const response = await httpClient.post<{ data: PurchaseOrder }>(
+        `/api/purchase-orders/${id}/receive`,
+        { lines }
+      );
+      return response.data || response;
+    } catch (error) {
+      console.error(`Error receiving purchase order ${id}:`, error);
+      throw error;
+    }
   },
 
   /**

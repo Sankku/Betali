@@ -59,12 +59,12 @@ class PurchaseOrderDetailRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!purchase_order_details_product_id_fkey(
-            product_id,
+          product_types!purchase_order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            description,
-            expiration_date
+            sku,
+            unit,
+            description
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)
@@ -112,6 +112,39 @@ class PurchaseOrderDetailRepository extends BaseRepository {
       return data;
     } catch (error) {
       this.logger.error('Error updating received quantity', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Update both received_quantity and lot_id for a detail line
+   * @param {string} detailId
+   * @param {number} newReceivedQuantity - Total received so far (not delta)
+   * @param {string} lotId
+   * @param {string} organizationId
+   * @returns {Promise<Object>}
+   */
+  async updateReceivedQuantityAndLot(detailId, newReceivedQuantity, lotId, organizationId) {
+    try {
+      this.logger.info('Updating received quantity and lot', { detailId, newReceivedQuantity, lotId, organizationId });
+
+      const { data, error } = await this.client
+        .from(this.table)
+        .update({ received_quantity: newReceivedQuantity, lot_id: lotId })
+        .eq('detail_id', detailId)
+        .eq('organization_id', organizationId)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error('Error updating received quantity and lot', { error: error.message, detailId });
+        throw new Error(`Error updating detail: ${error.message}`);
+      }
+
+      this.logger.info('Received quantity and lot updated successfully', { detailId, newReceivedQuantity, lotId });
+      return data;
+    } catch (error) {
+      this.logger.error('Error updating received quantity and lot', { error: error.message });
       throw error;
     }
   }
@@ -223,12 +256,12 @@ class PurchaseOrderDetailRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!purchase_order_details_product_id_fkey(
-            product_id,
+          product_types!purchase_order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            description,
-            expiration_date
+            sku,
+            unit,
+            description
           )
         `)
         .eq('detail_id', detailId)

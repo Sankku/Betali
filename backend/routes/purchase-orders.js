@@ -168,6 +168,23 @@ router.delete(
 );
 
 /**
+ * POST /api/purchase-orders/:id/receive
+ * Receive purchase order with lot assignment per line
+ */
+router.post(
+  '/:id/receive',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_UPDATE || PERMISSIONS.PRODUCTS_UPDATE),
+  async (req, res, next) => {
+    try {
+      const controller = getPurchaseOrderController();
+      await controller.receivePurchaseOrder(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * GET /api/purchase-orders/:id/pdf
  * Download purchase order as PDF
  */

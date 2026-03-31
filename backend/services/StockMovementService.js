@@ -5,9 +5,9 @@ const { incrementUsage } = require('../middleware/limitEnforcement');
  * Handles business rules and validation for stock movements
  */
 class StockMovementService {
-  constructor(stockMovementRepository, productRepository, warehouseRepository, logger) {
+  constructor(stockMovementRepository, productLotRepository, warehouseRepository, logger) {
     this.stockMovementRepository = stockMovementRepository;
-    this.productRepository = productRepository;
+    this.productLotRepository = productLotRepository;
     this.warehouseRepository = warehouseRepository;
     this.logger = logger;
   }
@@ -38,8 +38,8 @@ class StockMovementService {
       // We re-map them to `product` and `warehouse` so the frontend can access them as
       // movement.product?.name and movement.warehouse?.name consistently.
       return movements.map(movement => {
-        const productObj = movement.product_id && typeof movement.product_id === 'object'
-          ? movement.product_id
+        const lotObj = movement.lot_id && typeof movement.lot_id === 'object'
+          ? movement.lot_id
           : null;
         const warehouseObj = movement.warehouse_id && typeof movement.warehouse_id === 'object'
           ? movement.warehouse_id
@@ -48,14 +48,13 @@ class StockMovementService {
         return {
           ...movement,
           // Restore scalar FK IDs (Supabase overwrites them with the nested object)
-          product_id: productObj?.product_id ?? movement.product_id,
+          lot_id: lotObj?.lot_id ?? movement.lot_id,
           warehouse_id: warehouseObj?.warehouse_id ?? movement.warehouse_id,
           // Nested objects expected by the frontend
-          product: productObj,
+          lot: lotObj,
           warehouse: warehouseObj,
-          // Flat convenience fields kept for backwards compatibility
-          product_name: productObj?.name || 'Unknown Product',
-          product_category: productObj?.category || 'Unknown Category',
+          // Flat convenience fields
+          lot_number: lotObj?.lot_number || 'Unknown Lot',
           warehouse_name: warehouseObj?.name || 'Unknown Warehouse',
           warehouse_location: warehouseObj?.location || 'Unknown Location',
         };
@@ -87,15 +86,15 @@ class StockMovementService {
         throw new Error('Access denied: Movement does not belong to your organization');
       }
       
-      // Enrich with product and warehouse information
-      const [product, warehouse] = await Promise.all([
-        movement.product_id ? this.productRepository.findById(movement.product_id, 'product_id') : null,
+      // Enrich with lot and warehouse information
+      const [lot, warehouse] = await Promise.all([
+        movement.lot_id ? this.productLotRepository.findById(movement.lot_id, organizationId) : null,
         movement.warehouse_id ? this.warehouseRepository.findById(movement.warehouse_id, 'warehouse_id') : null
       ]);
-      
+
       return {
         ...movement,
-        product,
+        lot,
         warehouse
       };
     } catch (error) {
@@ -123,7 +122,7 @@ class StockMovementService {
       // Validate sufficient stock in the selected warehouse for exit/production movements
       if (['exit', 'production'].includes(movementData.movement_type)) {
         const availableStock = await this.stockMovementRepository.getCurrentStock(
-          movementData.product_id,
+          movementData.lot_id,
           movementData.warehouse_id,
           organizationId
         );
@@ -180,9 +179,9 @@ class StockMovementService {
       }
       
       // Validate references if they are being updated
-      if (updateData.product_id || updateData.warehouse_id) {
+      if (updateData.lot_id || updateData.warehouse_id) {
         await this.validateReferences({
-          product_id: updateData.product_id || existingMovement.product_id,
+          lot_id: updateData.lot_id || existingMovement.lot_id,
           warehouse_id: updateData.warehouse_id || existingMovement.warehouse_id
         }, organizationId);
       }
@@ -229,22 +228,22 @@ class StockMovementService {
   }
 
   /**
-   * Get movements by product ID within organization
-   * @param {string} productId - Product ID
+   * Get movements by lot ID within organization
+   * @param {string} lotId - Product Lot ID
    * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options
-   * @returns {Promise<Array>} Product movements
+   * @returns {Promise<Array>} Lot movements
    */
-  async getMovementsByProduct(productId, organizationId, options = {}) {
+  async getMovementsByLot(lotId, organizationId, options = {}) {
     try {
-      this.logger.info(`Fetching movements for product: ${productId} in organization: ${organizationId}`);
-      
-      return await this.stockMovementRepository.findByProductIdAndOrganization(productId, organizationId, {
+      this.logger.info(`Fetching movements for lot: ${lotId} in organization: ${organizationId}`);
+
+      return await this.stockMovementRepository.findByLotIdAndOrganization(lotId, organizationId, {
         orderBy: { column: 'movement_date', ascending: false },
         ...options
       });
     } catch (error) {
-      this.logger.error(`Error fetching movements for product ${productId} in organization ${organizationId}: ${error.message}`);
+      this.logger.error(`Error fetching movements for lot ${lotId}: ${error.message}`);
       throw error;
     }
   }
@@ -300,7 +299,7 @@ class StockMovementService {
    * @throws {Error} If validation fails
    */
   validateMovementData(movementData) {
-    const required = ['movement_type', 'quantity', 'product_id', 'warehouse_id'];
+    const required = ['movement_type', 'quantity', 'lot_id', 'warehouse_id'];
     
     for (const field of required) {
       if (!movementData[field]) {
@@ -325,13 +324,13 @@ class StockMovementService {
    * @throws {Error} If references don't exist or don't belong to organization
    */
   async validateReferences(movementData, organizationId) {
-    if (movementData.product_id) {
-      const product = await this.productRepository.findById(movementData.product_id, organizationId);
-      if (!product) {
-        throw new Error('Product not found');
+    if (movementData.lot_id) {
+      const lot = await this.productLotRepository.findById(movementData.lot_id, organizationId);
+      if (!lot) {
+        throw new Error('Product lot not found');
       }
-      if (product.organization_id !== organizationId) {
-        throw new Error('Product does not belong to your organization');
+      if (lot.organization_id !== organizationId) {
+        throw new Error('Lot does not belong to your organization');
       }
     }
 
@@ -356,10 +355,10 @@ class StockMovementService {
     try {
       this.logger.info(`Creating production movement for org: ${organizationId}`, { data });
 
-      const { finished_product_id, quantity_to_produce, warehouse_id, reference } = data;
+      const { finished_product_type_id, quantity_to_produce, warehouse_id, reference } = data;
 
-      if (!finished_product_id || !quantity_to_produce || !warehouse_id) {
-        throw new Error('finished_product_id, quantity_to_produce, and warehouse_id are required');
+      if (!finished_product_type_id || !quantity_to_produce || !warehouse_id) {
+        throw new Error('finished_product_type_id, quantity_to_produce, and warehouse_id are required');
       }
       if (typeof quantity_to_produce !== 'number' || quantity_to_produce <= 0) {
         throw new Error('quantity_to_produce must be a number greater than 0');
@@ -371,7 +370,7 @@ class StockMovementService {
       }
 
       const result = await this.stockMovementRepository.callRpc('create_production_movement', {
-        p_finished_product_id: finished_product_id,
+        p_finished_product_type_id: finished_product_type_id,
         p_quantity_to_produce: quantity_to_produce,
         p_warehouse_id: warehouse_id,
         p_organization_id: organizationId,

@@ -10,6 +10,7 @@ import {
   UpdatePurchaseOrderStatusRequest,
   PurchaseOrderFilters,
   PurchaseOrderStatus,
+  ReceivePurchaseOrderPayload,
 } from '@/types/purchaseOrders';
 
 /**
@@ -115,10 +116,8 @@ export function useUpdatePurchaseOrder() {
     mutationFn: ({ id, data }: { id: string; data: UpdatePurchaseOrderRequest }) =>
       purchaseOrdersService.update(id, data),
     onSuccess: (updatedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', updatedPurchaseOrder.purchase_order_id],
-        updatedPurchaseOrder
-      );
+      // Remove stale partial cache (update response has no joins)
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', updatedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(
@@ -142,10 +141,10 @@ export function useUpdatePurchaseOrderStatus() {
     mutationFn: ({ id, data }: { id: string; data: UpdatePurchaseOrderStatusRequest }) =>
       purchaseOrdersService.updateStatus(id, data),
     onSuccess: (updatedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', updatedPurchaseOrder.purchase_order_id],
-        updatedPurchaseOrder
-      );
+      // Remove (not setQueryData/invalidate) — the status endpoint returns no joins.
+      // Removing the cache entry forces isLoading=true on next open, so view/receive
+      // modals never flash partial (joinless) data.
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', updatedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       const statusMessage =
@@ -185,26 +184,30 @@ export function useCancelPurchaseOrder() {
 }
 
 /**
- * Hook to mark purchase order as received
- * This creates stock entry movements
+ * Hook to receive a purchase order with lot assignment per line.
+ * Replaces the old simple status-change approach.
  */
 export function useReceivePurchaseOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (purchaseOrderId: string) => purchaseOrdersService.markAsReceived(purchaseOrderId),
-    onSuccess: (receivedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', receivedPurchaseOrder.purchase_order_id],
-        receivedPurchaseOrder
-      );
+    mutationFn: ({ id, lines }: ReceivePurchaseOrderPayload) =>
+      purchaseOrdersService.receive(id, lines),
+    onSuccess: (receivedPO) => {
+      // NOTE: the purchase orders query key in this codebase is camelCase 'purchaseOrders'
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', receivedPO.purchase_order_id] });
+      queryClient.invalidateQueries({ queryKey: ['product-lots'] });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-stats'] });
+      // Reception creates stock movements — refresh product stock views
+      queryClient.invalidateQueries({ queryKey: ['product-types'] });
+      queryClient.invalidateQueries({ queryKey: ['available-stock'] });
       queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
 
-      toast.success(
-        `Orden de compra "${receivedPurchaseOrder.purchase_order_number}" recibida. Stock actualizado exitosamente.`
-      );
+      const msg = receivedPO.status === 'received'
+        ? `OC "${receivedPO.purchase_order_number}" recibida completamente. Stock actualizado.`
+        : `OC "${receivedPO.purchase_order_number}" parcialmente recibida. Stock actualizado.`;
+      toast.success(msg);
     },
     onError: (error: any) => {
       console.error('Error receiving purchase order:', error);
@@ -222,10 +225,7 @@ export function useApprovePurchaseOrder() {
   return useMutation({
     mutationFn: (purchaseOrderId: string) => purchaseOrdersService.approve(purchaseOrderId),
     onSuccess: (approvedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', approvedPurchaseOrder.purchase_order_id],
-        approvedPurchaseOrder
-      );
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', approvedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(
@@ -248,10 +248,7 @@ export function useSubmitPurchaseOrder() {
   return useMutation({
     mutationFn: (purchaseOrderId: string) => purchaseOrdersService.submit(purchaseOrderId),
     onSuccess: (submittedPurchaseOrder) => {
-      queryClient.setQueryData(
-        ['purchaseOrder', submittedPurchaseOrder.purchase_order_id],
-        submittedPurchaseOrder
-      );
+      queryClient.removeQueries({ queryKey: ['purchaseOrder', submittedPurchaseOrder.purchase_order_id] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
 
       toast.success(

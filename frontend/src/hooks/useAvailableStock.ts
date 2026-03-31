@@ -1,8 +1,8 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { productsService } from '../services/api/productsService';
+import { productTypesService } from '../services/api/productTypesService';
 
 interface AvailableStockResponse {
-  product_id: string;
+  product_type_id: string;
   warehouse_id: string;
   organization_id: string;
   available_stock: number;
@@ -28,7 +28,7 @@ interface AvailableStockResponse {
  * ```
  */
 export const useAvailableStock = (
-  productId?: string,
+  productTypeId?: string,
   warehouseId?: string,
   options?: {
     enabled?: boolean;
@@ -37,14 +37,14 @@ export const useAvailableStock = (
   }
 ): UseQueryResult<AvailableStockResponse, Error> => {
   return useQuery<AvailableStockResponse, Error>({
-    queryKey: ['available-stock', productId, warehouseId],
+    queryKey: ['available-stock', productTypeId, warehouseId],
     queryFn: () => {
-      if (!productId || !warehouseId) {
-        throw new Error('Product ID and Warehouse ID are required');
+      if (!productTypeId || !warehouseId) {
+        throw new Error('Product type ID and Warehouse ID are required');
       }
-      return productsService.getAvailableStock(productId, warehouseId);
+      return productTypesService.getAvailableStock(productTypeId, warehouseId);
     },
-    enabled: !!productId && !!warehouseId && (options?.enabled !== false),
+    enabled: !!productTypeId && !!warehouseId && (options?.enabled !== false),
     staleTime: options?.staleTime ?? 30000, // 30 seconds cache (increased from 10s)
     gcTime: 5 * 60 * 1000, // Keep data in cache for 5 minutes
     refetchInterval: options?.refetchInterval, // Optional auto-refresh (disabled by default)
@@ -75,12 +75,12 @@ export const useAvailableStock = (
  * ```
  */
 export const useStockValidation = (
-  productId?: string,
+  productTypeId?: string,
   warehouseId?: string,
   requestedQuantity?: number
 ) => {
   const { data: stock, isLoading, error: queryError } = useAvailableStock(
-    productId,
+    productTypeId,
     warehouseId
   );
 

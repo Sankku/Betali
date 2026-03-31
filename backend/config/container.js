@@ -1,7 +1,6 @@
 const { Logger } = require('../utils/Logger');
 const { DatabaseConfig } = require('./database');
 
-const { ProductRepository } = require('../repositories/ProductRepository');
 const { WarehouseRepository } = require('../repositories/WarehouseRepository');
 const { StockMovementRepository } = require('../repositories/StockMovementRepository');
 const { TableConfigRepository } = require('../repositories/TableConfigRepository');
@@ -25,7 +24,6 @@ const { InventoryAlertRepository } = require('../repositories/InventoryAlertRepo
 const { SubscriptionRepository } = require('../repositories/SubscriptionRepository');
 const { SubscriptionPlanRepository } = require('../repositories/SubscriptionPlanRepository');
 
-const { ProductService } = require('../services/ProductService');
 const { DashboardService } = require('../services/DashboardService');
 const { WarehouseService } = require('../services/WarehouseService');
 const { StockMovementService } = require('../services/StockMovementService');
@@ -41,7 +39,6 @@ const { InventoryAlertService } = require('../services/InventoryAlertService');
 const { SubscriptionService } = require('../services/SubscriptionService');
 const { SubscriptionPlanService } = require('../services/SubscriptionPlanService');
 
-const { ProductController } = require('../controllers/ProductController');
 const { DashboardController } = require('../controllers/DashboardController');
 const { WarehouseController } = require('../controllers/WarehouseController');
 const { StockMovementController } = require('../controllers/StockMovementController');
@@ -63,6 +60,12 @@ const { SubscriptionPlanController } = require('../controllers/SubscriptionPlanC
 const { ProductFormulaRepository } = require('../repositories/ProductFormulaRepository');
 const { ProductFormulaService } = require('../services/ProductFormulaService');
 const { ProductFormulaController } = require('../controllers/ProductFormulaController');
+const { ProductTypeRepository } = require('../repositories/ProductTypeRepository');
+const { ProductLotRepository } = require('../repositories/ProductLotRepository');
+const { ProductTypeService } = require('../services/ProductTypeService');
+const { ProductLotService } = require('../services/ProductLotService');
+const { ProductTypeController } = require('../controllers/ProductTypeController');
+const { ProductLotController } = require('../controllers/ProductLotController');
 
 /**
  * Dependency injection container
@@ -141,11 +144,6 @@ const container = new Container();
 function initializeContainer() {
   container.register('logger', () => new Logger('Application'), true);
   container.register('dbConfig', () => new DatabaseConfig(), true);
-
-  container.register('productRepository', () => {
-    const dbConfig = container.get('dbConfig');
-    return new ProductRepository(dbConfig.getClient());
-  }, true);
 
   container.register('warehouseRepository', () => {
     const dbConfig = container.get('dbConfig');
@@ -262,13 +260,14 @@ function initializeContainer() {
     return new SubscriptionPlanRepository(dbConfig.getClient());
   }, true);
 
-  container.register('productService', () => {
-    const productRepository = container.get('productRepository');
-    const stockMovementRepository = container.get('stockMovementRepository');
-    const stockReservationRepository = container.get('stockReservationRepository');
-    const warehouseRepository = container.get('warehouseRepository');
-    const logger = container.get('logger');
-    return new ProductService(productRepository, stockMovementRepository, stockReservationRepository, warehouseRepository, logger);
+  container.register('productTypeRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductTypeRepository(dbConfig.getClient());
+  }, true);
+
+  container.register('productLotRepository', () => {
+    const dbConfig = container.get('dbConfig');
+    return new ProductLotRepository(dbConfig.getClient());
   }, true);
 
   container.register('warehouseService', () => {
@@ -279,34 +278,34 @@ function initializeContainer() {
   }, true);
 
   container.register('stockMovementService', () => {
-    const stockMovementRepository = container.get('stockMovementRepository');
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
     const logger = container.get('logger');
-    return new StockMovementService(stockMovementRepository, productRepository, warehouseRepository, logger);
+    return new StockMovementService(
+      container.get('stockMovementRepository'),
+      container.get('productLotRepository'),
+      container.get('warehouseRepository'),
+      logger
+    );
   }, true);
 
   container.register('productFormulaService', () => {
     const formulaRepository = container.get('productFormulaRepository');
-    const productRepository = container.get('productRepository');
+    const productTypeRepository = container.get('productTypeRepository');
     const warehouseRepository = container.get('warehouseRepository');
     const dbConfig = container.get('dbConfig');
     const logger = container.get('logger');
     return new ProductFormulaService(
-      formulaRepository, productRepository, warehouseRepository,
+      formulaRepository, productTypeRepository, warehouseRepository,
       dbConfig.getClient(), logger
     );
   }, true);
 
   container.register('dashboardService', () => {
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
-    const stockMovementRepository = container.get('stockMovementRepository');
     const logger = container.get('logger');
     return new DashboardService(
-      productRepository, 
-      warehouseRepository, 
-      stockMovementRepository, 
+      container.get('productTypeRepository'),
+      container.get('productLotRepository'),
+      container.get('warehouseRepository'),
+      container.get('stockMovementRepository'),
       logger
     );
   }, true);
@@ -326,14 +325,14 @@ function initializeContainer() {
     const organizationRepository = container.get('organizationRepository');
     const userOrganizationRepository = container.get('userOrganizationRepository');
     const userRepository = container.get('userRepository');
-    const productRepository = container.get('productRepository');
+    const productTypeRepository = container.get('productTypeRepository');
     const warehouseRepository = container.get('warehouseRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
     return new OrganizationService(
-      organizationRepository, 
-      userOrganizationRepository, 
+      organizationRepository,
+      userOrganizationRepository,
       userRepository,
-      productRepository,
+      productTypeRepository,
       warehouseRepository,
       stockMovementRepository
     );
@@ -358,42 +357,45 @@ function initializeContainer() {
     const productTaxGroupRepository = container.get('productTaxGroupRepository');
     const discountRuleRepository = container.get('discountRuleRepository');
     const appliedDiscountRepository = container.get('appliedDiscountRepository');
-    const productRepository = container.get('productRepository');
+    const productTypeRepository = container.get('productTypeRepository');
     const logger = container.get('logger');
     return new PricingService(
-      pricingTierRepository, 
-      customerPricingRepository, 
-      taxRateRepository, 
-      productTaxGroupRepository, 
-      discountRuleRepository, 
-      appliedDiscountRepository, 
-      productRepository, 
+      pricingTierRepository,
+      customerPricingRepository,
+      taxRateRepository,
+      productTaxGroupRepository,
+      discountRuleRepository,
+      appliedDiscountRepository,
+      productTypeRepository,
       logger
     );
   }, true);
 
   container.register('orderService', () => {
-    const orderRepository = container.get('orderRepository');
-    const orderDetailRepository = container.get('orderDetailRepository');
-    const productRepository = container.get('productRepository');
-    const warehouseRepository = container.get('warehouseRepository');
-    const logger = container.get('logger');
-    const stockMovementRepository = container.get('stockMovementRepository');
-    const stockReservationRepository = container.get('stockReservationRepository');
-    const clientRepository = container.get('clientRepository');
-    const pricingService = container.get('pricingService');
-    return new OrderService(orderRepository, orderDetailRepository, productRepository, warehouseRepository, stockMovementRepository, stockReservationRepository, clientRepository, pricingService, logger);
+    return new OrderService(
+      container.get('orderRepository'),
+      container.get('orderDetailRepository'),
+      container.get('productTypeRepository'),
+      container.get('productLotService'),
+      container.get('warehouseRepository'),
+      container.get('stockMovementRepository'),
+      container.get('stockReservationRepository'),
+      container.get('clientRepository'),
+      container.get('pricingService'),
+      container.get('logger')
+    );
   }, true);
 
   container.register('purchaseOrderService', () => {
     const purchaseOrderRepository = container.get('purchaseOrderRepository');
     const purchaseOrderDetailRepository = container.get('purchaseOrderDetailRepository');
     const supplierRepository = container.get('supplierRepository');
-    const productRepository = container.get('productRepository');
+    const productTypeRepository = container.get('productTypeRepository');
     const warehouseRepository = container.get('warehouseRepository');
     const stockMovementRepository = container.get('stockMovementRepository');
     const logger = container.get('logger');
-    return new PurchaseOrderService(purchaseOrderRepository, purchaseOrderDetailRepository, supplierRepository, productRepository, warehouseRepository, stockMovementRepository, logger);
+    const productLotRepository = container.get('productLotRepository');
+    return new PurchaseOrderService(purchaseOrderRepository, purchaseOrderDetailRepository, supplierRepository, productTypeRepository, warehouseRepository, stockMovementRepository, logger, productLotRepository);
   }, true);
 
   container.register('taxRateService', () => {
@@ -425,9 +427,24 @@ function initializeContainer() {
     return new SubscriptionPlanService(subscriptionPlanRepository, logger);
   }, true);
 
-  container.register('productController', () => {
-    const productService = container.get('productService');
-    return new ProductController(productService);
+  container.register('productTypeService', () => {
+    const logger = container.get('logger');
+    return new ProductTypeService(
+      container.get('productTypeRepository'),
+      logger,
+      container.get('stockMovementRepository')
+    );
+  }, true);
+
+  container.register('productLotService', () => {
+    const logger = container.get('logger');
+    return new ProductLotService(
+      container.get('productLotRepository'),
+      container.get('productTypeRepository'),
+      container.get('stockMovementRepository'),
+      container.get('warehouseRepository'),
+      logger
+    );
   }, true);
 
   container.register('warehouseController', () => {
@@ -519,6 +536,14 @@ function initializeContainer() {
     const subscriptionPlanService = container.get('subscriptionPlanService');
     return new SubscriptionPlanController(subscriptionPlanService);
   }, true);
+
+  container.register('productTypeController', () => {
+    return new ProductTypeController(container.get('productTypeService'));
+  }, true);
+
+  container.register('productLotController', () => {
+    return new ProductLotController(container.get('productLotService'));
+  }, true);
 }
 
 initializeContainer();
@@ -528,10 +553,6 @@ initializeContainer();
  * Useful for routes that need specific instances
  */
 const ServiceFactory = {
-  createProductController() {
-    return container.get('productController');
-  },
-
   createWarehouseController() {
     return container.get('warehouseController');
   },
@@ -542,10 +563,6 @@ const ServiceFactory = {
 
   createDashboardController() {
     return container.get('dashboardController');
-  },
-
-  createProductService() {
-    return container.get('productService');
   },
 
   createWarehouseService() {
@@ -648,6 +665,15 @@ const ServiceFactory = {
   },
   createSupplierService() {
     return container.get('supplierService');
+  },
+  createProductTypeController() {
+    return container.get('productTypeController');
+  },
+  createProductTypeService() {
+    return container.get('productTypeService');
+  },
+  createProductLotController() {
+    return container.get('productLotController');
   },
 };
 

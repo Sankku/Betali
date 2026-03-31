@@ -29,7 +29,7 @@ class InventoryAlertRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!inventory_alerts_product_id_fkey(product_id, name),
+          product_types!inventory_alerts_product_type_id_fkey(product_type_id, name),
           warehouse!inventory_alerts_warehouse_id_fkey(warehouse_id, name)
         `)
         .eq('organization_id', organizationId)
@@ -58,7 +58,7 @@ class InventoryAlertRepository extends BaseRepository {
           *,
           warehouse!inventory_alerts_warehouse_id_fkey(warehouse_id, name)
         `)
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .order('triggered_at', { ascending: false });
 
       if (status) {
@@ -86,7 +86,7 @@ class InventoryAlertRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!inventory_alerts_product_id_fkey(product_id, name)
+          product_types!inventory_alerts_product_type_id_fkey(product_type_id, name)
         `)
         .eq('warehouse_id', warehouseId)
         .order('triggered_at', { ascending: false });
@@ -213,10 +213,10 @@ class InventoryAlertRepository extends BaseRepository {
 
       if (warehouseError) throw warehouseError;
 
-      // 2. Fetch products with alerting enabled and min_stock > 0
+      // 2. Fetch product types with alerting enabled and min_stock > 0
       const { data: products, error: productError } = await this.client
-        .from('products')
-        .select('product_id, name, min_stock, max_stock')
+        .from('product_types')
+        .select('product_type_id, name, min_stock, max_stock')
         .eq('organization_id', organizationId)
         .eq('alert_enabled', true)
         .gt('min_stock', 0);
@@ -229,31 +229,44 @@ class InventoryAlertRepository extends BaseRepository {
           return [];
       }
 
-      // 3. Fetch all stock movements for these products
-      const productIds = products.map(p => p.product_id);
-      const { data: movements, error: movementError } = await this.client
-        .from('stock_movements')
-        .select('product_id, warehouse_id, movement_type, quantity')
-        .in('product_id', productIds)
+      // 3. Stock is now tracked through lots. Fetch lots for these product types,
+      //    then aggregate movements by product_type via lot_id.
+      const productTypeIds = products.map(p => p.product_type_id);
+      const { data: lots, error: lotsError } = await this.client
+        .from('product_lots')
+        .select('lot_id, product_type_id')
+        .in('product_type_id', productTypeIds)
         .eq('organization_id', organizationId);
 
-      if (movementError) throw movementError;
+      if (lotsError) throw lotsError;
 
-      // Map movements to determine stock per product per warehouse
-      const stockMap = {}; // { productId: { warehouseId: quantity } }
+      const lotToProductType = {};
+      (lots || []).forEach(l => { lotToProductType[l.lot_id] = l.product_type_id; });
+      const lotIds = Object.keys(lotToProductType);
 
-      // Initialize with 0 for all combinations that have movements or just build on fly
-      // We will iterate products/warehouses so we just need lookup
+      const movements = lotIds.length > 0 ? await (() => {
+        return this.client
+          .from('stock_movements')
+          .select('lot_id, warehouse_id, movement_type, quantity')
+          .in('lot_id', lotIds)
+          .eq('organization_id', organizationId)
+          .then(({ data, error }) => { if (error) throw error; return data || []; });
+      })() : [];
+
+      // Map movements to determine stock per product_type per warehouse
+      const stockMap = {}; // { productTypeId: { warehouseId: quantity } }
+
       movements.forEach(m => {
-        if (!stockMap[m.product_id]) stockMap[m.product_id] = {};
-        if (!stockMap[m.product_id][m.warehouse_id]) stockMap[m.product_id][m.warehouse_id] = 0;
+        const productTypeId = lotToProductType[m.lot_id];
+        if (!productTypeId) return;
+        if (!stockMap[productTypeId]) stockMap[productTypeId] = {};
+        if (!stockMap[productTypeId][m.warehouse_id]) stockMap[productTypeId][m.warehouse_id] = 0;
 
         const qty = parseFloat(m.quantity);
-        // Match logic from StockMovementRepository/Service: usage of 'entry' and 'exit'
         if (['entry', 'IN', 'ADJUSTMENT_IN'].includes(m.movement_type)) {
-          stockMap[m.product_id][m.warehouse_id] += qty;
+          stockMap[productTypeId][m.warehouse_id] += qty;
         } else if (['exit', 'OUT', 'ADJUSTMENT_OUT'].includes(m.movement_type)) {
-          stockMap[m.product_id][m.warehouse_id] -= qty;
+          stockMap[productTypeId][m.warehouse_id] -= qty;
         }
       });
 
@@ -263,7 +276,7 @@ class InventoryAlertRepository extends BaseRepository {
       // 4. Evaluate Alerts
       for (const product of products) {
         for (const warehouse of warehouses) {
-          const currentStock = Math.max(0, stockMap[product.product_id]?.[warehouse.warehouse_id] || 0);
+          const currentStock = Math.max(0, stockMap[product.product_type_id]?.[warehouse.warehouse_id] || 0);
           
           let alertType = null;
           let severity = null;
@@ -280,15 +293,12 @@ class InventoryAlertRepository extends BaseRepository {
           }
 
           if (alertType) {
-            const key = `${product.product_id}:${warehouse.warehouse_id}:${alertType}`;
+            const key = `${product.product_type_id}:${warehouse.warehouse_id}:${alertType}`;
             activeAlertKeys.add(key);
 
-            // Check if active alert already exists in DB to avoid duplicate insert?
-            // We'll filter later or use upsert logic if possible, but standard is insert if not exists.
-            // For now, let's prepare the object. We will Upsert or query existing first.
             newAlerts.push({
               organization_id: organizationId,
-              product_id: product.product_id,
+              product_type_id: product.product_type_id,
               warehouse_id: warehouse.warehouse_id,
               alert_type: alertType,
               severity,
@@ -318,7 +328,7 @@ class InventoryAlertRepository extends BaseRepository {
       // A. Resolve stale
       if (existingAlerts) {
         for (const alert of existingAlerts) {
-           const key = `${alert.product_id}:${alert.warehouse_id}:${alert.alert_type}`;
+           const key = `${alert.product_type_id}:${alert.warehouse_id}:${alert.alert_type}`;
            if (!activeAlertKeys.has(key)) {
              // Resolving this alert
              promises.push(
@@ -333,10 +343,10 @@ class InventoryAlertRepository extends BaseRepository {
       }
 
       // B. Create new (only if not existing)
-      const existingKeys = new Set(existingAlerts?.map(a => `${a.product_id}:${a.warehouse_id}:${a.alert_type}`));
-      
+      const existingKeys = new Set(existingAlerts?.map(a => `${a.product_type_id}:${a.warehouse_id}:${a.alert_type}`));
+
       for (const alert of newAlerts) {
-        const key = `${alert.product_id}:${alert.warehouse_id}:${alert.alert_type}`;
+        const key = `${alert.product_type_id}:${alert.warehouse_id}:${alert.alert_type}`;
         if (!existingKeys.has(key)) {
            promises.push(
              this.client.from(this.table).insert(alert).select().then(({data}) => {
