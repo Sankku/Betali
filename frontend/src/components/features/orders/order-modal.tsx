@@ -71,7 +71,7 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
           status: 'draft',
           notes: '',
           tax_rate_ids: [],
-          items: [{ product_id: '', quantity: 1, price: 0 }],
+          items: [{ product_type_id: '', quantity: 1, price: 0 }],
         });
       } else if (mode === 'edit' && resolvedFullOrder) {
         const details = resolvedFullOrder.order_details ?? [];

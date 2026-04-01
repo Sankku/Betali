@@ -29,10 +29,10 @@ class OrderRepository extends BaseRepository {
           warehouse!orders_warehouse_id_fkey(warehouse_id, name, location),
           order_details(
             order_detail_id,
-            product_id,
+            product_type_id,
             quantity,
             price,
-            products!order_details_product_id_fkey(product_id, name, batch_number, price)
+            product_types!order_details_product_type_id_fkey(product_type_id, name, sku)
           )
         `)
         .eq('order_id', orderId)

@@ -9,6 +9,7 @@ test.describe('Create Order Flow (Fixed Data)', () => {
     });
     await authHelper.login(testData.users.admin.email, testData.users.admin.password);
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 20000 });
+    await authHelper.ensureOrganization(testData.users.admin.organizationName);
   });
 
   test('should create order with fixed seeded data', async ({ page }) => {
@@ -64,7 +65,29 @@ test.describe('Create Order Flow (Fixed Data)', () => {
     console.log('Submitting...');
     const submitBtn = page.locator('button[type="submit"]').filter({ hasText: /create|save|crear|guardar/i }).first();
     await expect(submitBtn).toBeEnabled();
+
+    // Capture the API response for debugging
+    const createResponsePromise = page.waitForResponse(
+      r => r.url().includes('/api/orders') && r.request().method() === 'POST',
+      { timeout: 25000 }
+    ).catch(() => null);
+
     await submitBtn.click();
+
+    const createApiResponse = await createResponsePromise;
+    if (createApiResponse) {
+      const status = createApiResponse.status();
+      const body = await createApiResponse.json().catch(() => null);
+      console.log(`📡 API POST /api/orders → ${status}`, JSON.stringify(body)?.substring(0, 400));
+    } else {
+      console.log('📡 No API response captured (request may not have been made)');
+      // Log form state for debugging
+      const formValues = await page.evaluate(() => {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        return Array.from(inputs).map(i => ({ type: (i as HTMLInputElement).type, value: (i as HTMLInputElement).value }));
+      });
+      console.log('Number inputs:', JSON.stringify(formValues));
+    }
 
     // 9. Wait for Success (custom toast with border-l-success-500 class)
     console.log('Waiting for feedback...');

@@ -25,11 +25,10 @@ class OrderDetailRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!order_details_product_id_fkey(
-            product_id,
+          product_types!order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            price,
+            sku,
             description
           )
         `)
@@ -84,11 +83,10 @@ class OrderDetailRepository extends BaseRepository {
         .insert(detailsToCreate)
         .select(`
           *,
-          products!order_details_product_id_fkey(
-            product_id,
+          product_types!order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            price
+            sku
           )
         `);
 
@@ -132,11 +130,10 @@ class OrderDetailRepository extends BaseRepository {
         .eq('organization_id', organizationId)
         .select(`
           *,
-          products!order_details_product_id_fkey(
-            product_id,
+          product_types!order_details_product_type_id_fkey(
+            product_type_id,
             name,
-            batch_number,
-            price
+            sku
           )
         `)
         .single();

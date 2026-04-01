@@ -58,14 +58,30 @@ test.describe('Multi-Tenant Data Isolation', () => {
     const org1ProductName = `Org1-Product-${Date.now()}`;
     await createProductType(org1ProductName, `ORG1-SKU-${Date.now()}`);
 
-    // Logout: clear all storage and navigate to login to reset Supabase in-memory state
-    await page.evaluate(() => localStorage.clear());
-    await page.goto('/login');
+    // Logout: clear all storage and reload to fully reset Supabase and React state
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    // Navigate to login - full page reload resets all JS state including Supabase in-memory session
+    // Wrap in try-catch: clearing localStorage can trigger competing navigations causing ERR_ABORTED
+    try {
+      await page.goto('/login');
+    } catch (e) {
+      // ERR_ABORTED is expected if another navigation fired simultaneously; wait for /login URL
+      await page.waitForURL(/.*login/, { timeout: 8000 });
+    }
     await page.waitForLoadState('networkidle');
+    // Wait briefly for any pending state cleanup
+    await page.waitForTimeout(500);
+    // Ensure we're on the login page (not redirected to dashboard)
+    await page.waitForURL(/.*login/, { timeout: 8000 });
 
     // --- ORG 2: login as second pre-seeded user (different org) ---
+    // Wait for login form to be ready before attempting second login
+    await page.waitForSelector('#email', { state: 'visible', timeout: 8000 });
     await authHelper.login(testData.users.user.email, testData.users.user.password);
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*dashboard/, { timeout: 20000 });
 
     // Verify org2 cannot see org1's product
     await page.goto('/dashboard/products');

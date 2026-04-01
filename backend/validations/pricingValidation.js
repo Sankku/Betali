@@ -15,12 +15,12 @@ const calculatePricingSchema = Joi.object({
     }),
   items: Joi.array()
     .items(Joi.object({
-      product_id: Joi.string()
+      product_type_id: Joi.string()
         .uuid()
         .required()
         .messages({
-          'string.guid': 'Product ID must be a valid UUID',
-          'any.required': 'Product ID is required'
+          'string.guid': 'Product type ID must be a valid UUID',
+          'any.required': 'Product type ID is required'
         }),
       quantity: Joi.number()
         .positive()
