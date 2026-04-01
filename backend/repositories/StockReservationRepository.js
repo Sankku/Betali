@@ -27,14 +27,14 @@ class StockReservationRepository extends BaseRepository {
     try {
       this.logger.info('Creating stock reservation', {
         order_id: reservationData.order_id,
-        product_id: reservationData.product_id,
+        lot_id: reservationData.lot_id,
         quantity: reservationData.quantity
       });
 
       const reservation = {
         organization_id: reservationData.organization_id,
         order_id: reservationData.order_id,
-        product_id: reservationData.product_id,
+        lot_id: reservationData.lot_id,
         warehouse_id: reservationData.warehouse_id || null,
         quantity: reservationData.quantity,
         status: 'active',
@@ -159,7 +159,7 @@ class StockReservationRepository extends BaseRepository {
       let query = this.client
         .from(this.table)
         .select('quantity')
-        .eq('product_id', productId)
+        .eq('lot_id', productId)
         .eq('organization_id', organizationId)
         .eq('status', 'active');
 
@@ -300,21 +300,34 @@ class StockReservationRepository extends BaseRepository {
    * @param {string} organizationId - Organization ID
    * @returns {Promise<number>}
    */
-  async getAvailableStock(productId, warehouseId, organizationId) {
+  async getAvailableStock(lotId, warehouseId, organizationId) {
     try {
-      const { data, error } = await this.client
-        .rpc('get_available_stock', {
-          p_product_id: productId,
-          p_warehouse_id: warehouseId,
-          p_organization_id: organizationId
-        });
+      // Calculate physical stock from movements
+      let movQuery = this.client
+        .from('stock_movements')
+        .select('quantity, movement_type')
+        .eq('lot_id', lotId)
+        .eq('organization_id', organizationId);
 
-      if (error) throw error;
-      return data || 0;
+      if (warehouseId) {
+        movQuery = movQuery.eq('warehouse_id', warehouseId);
+      }
+
+      const { data: movements, error: movErr } = await movQuery;
+      if (movErr) throw movErr;
+
+      const physical = (movements || []).reduce((sum, m) => {
+        return m.movement_type === 'entry' ? sum + m.quantity : sum - m.quantity;
+      }, 0);
+
+      // Calculate reserved stock
+      const reserved = await this.getReservedQuantity(lotId, organizationId, warehouseId);
+
+      return Math.max(0, physical - reserved);
     } catch (error) {
       this.logger.error('Error getting available stock', {
         error: error.message,
-        productId,
+        lotId,
         warehouseId
       });
       throw new Error(`Error getting available stock: ${error.message}`);

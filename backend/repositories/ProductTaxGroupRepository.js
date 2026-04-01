@@ -27,7 +27,7 @@ class ProductTaxGroupRepository extends BaseRepository {
       const { data, error } = await this.client
         .from(this.table)
         .select(`
-          product_id,
+          product_type_id,
           tax_rates!product_tax_groups_tax_rate_id_fkey(
             tax_rate_id,
             name,
@@ -36,7 +36,7 @@ class ProductTaxGroupRepository extends BaseRepository {
             is_active
           )
         `)
-        .in('product_id', productIds)
+        .in('product_type_id', productIds)
         .eq('organization_id', organizationId);
 
       if (error) {
@@ -50,7 +50,7 @@ class ProductTaxGroupRepository extends BaseRepository {
         data.forEach(item => {
           if (item.tax_rates && item.tax_rates.is_active) {
             flattenedData.push({
-              product_id: item.product_id,
+              product_type_id: item.product_type_id,
               tax_rate_id: item.tax_rates.tax_rate_id,
               name: item.tax_rates.name,
               rate: item.tax_rates.rate,
@@ -97,7 +97,7 @@ class ProductTaxGroupRepository extends BaseRepository {
             is_active
           )
         `)
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .eq('organization_id', organizationId);
 
       if (error) {
@@ -127,20 +127,20 @@ class ProductTaxGroupRepository extends BaseRepository {
    */
   async assignTaxToProduct(assignmentData) {
     try {
-      this.logger.info('Assigning tax to product', { 
-        productId: assignmentData.product_id,
+      this.logger.info('Assigning tax to product', {
+        productId: assignmentData.product_type_id,
         taxRateId: assignmentData.tax_rate_id,
-        organizationId: assignmentData.organization_id 
+        organizationId: assignmentData.organization_id
       });
 
       // Validate required fields
-      if (!assignmentData.product_id || !assignmentData.tax_rate_id || !assignmentData.organization_id) {
-        throw new Error('Missing required fields: product_id, tax_rate_id, organization_id');
+      if (!assignmentData.product_type_id || !assignmentData.tax_rate_id || !assignmentData.organization_id) {
+        throw new Error('Missing required fields: product_type_id, tax_rate_id, organization_id');
       }
 
       // Check if assignment already exists
       const existingAssignment = await this.findExistingAssignment(
-        assignmentData.product_id,
+        assignmentData.product_type_id,
         assignmentData.tax_rate_id,
         assignmentData.organization_id
       );
@@ -165,16 +165,16 @@ class ProductTaxGroupRepository extends BaseRepository {
         throw error;
       }
 
-      this.logger.info('Tax assigned to product successfully', { 
+      this.logger.info('Tax assigned to product successfully', {
         assignmentId: data.product_tax_group_id,
-        productId: assignmentData.product_id 
+        productId: assignmentData.product_type_id
       });
 
       return data;
     } catch (error) {
-      this.logger.error('Error assigning tax to product', { 
+      this.logger.error('Error assigning tax to product', {
         error: error.message,
-        productId: assignmentData.product_id 
+        productId: assignmentData.product_type_id 
       });
       throw new Error(`Error assigning tax to product: ${error.message}`);
     }
@@ -239,7 +239,7 @@ class ProductTaxGroupRepository extends BaseRepository {
 
       // Check for existing assignments to avoid duplicates
       const existingAssignments = await this.getExistingAssignments(taxRateId, productIds, organizationId);
-      const existingProductIds = existingAssignments.map(a => a.product_id);
+      const existingProductIds = existingAssignments.map(a => a.product_type_id);
       const newProductIds = productIds.filter(pid => !existingProductIds.includes(pid));
 
       if (newProductIds.length === 0) {
@@ -250,7 +250,7 @@ class ProductTaxGroupRepository extends BaseRepository {
       const now = new Date().toISOString();
       const assignments = newProductIds.map(productId => ({
         organization_id: organizationId,
-        product_id: productId,
+        product_type_id: productId,
         tax_rate_id: taxRateId,
         created_at: now
       }));
@@ -294,7 +294,7 @@ class ProductTaxGroupRepository extends BaseRepository {
       const { data, error } = await this.client
         .from(this.table)
         .delete()
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .eq('organization_id', organizationId)
         .select();
 
@@ -334,14 +334,14 @@ class ProductTaxGroupRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!product_tax_groups_product_id_fkey(product_id, name, sku),
+          product_types!product_tax_groups_product_type_id_fkey(product_type_id, name, sku),
           tax_rates!product_tax_groups_tax_rate_id_fkey(tax_rate_id, name, rate)
         `)
         .eq('organization_id', organizationId);
 
       // Apply filters
-      if (options.product_id) {
-        query = query.eq('product_id', options.product_id);
+      if (options.product_type_id) {
+        query = query.eq('product_type_id', options.product_type_id);
       }
 
       if (options.tax_rate_id) {
@@ -392,7 +392,7 @@ class ProductTaxGroupRepository extends BaseRepository {
       const { data, error } = await this.client
         .from(this.table)
         .select('product_tax_group_id')
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .eq('tax_rate_id', taxRateId)
         .eq('organization_id', organizationId)
         .single();
@@ -416,10 +416,10 @@ class ProductTaxGroupRepository extends BaseRepository {
     try {
       const { data, error } = await this.client
         .from(this.table)
-        .select('product_id')
+        .select('product_type_id')
         .eq('tax_rate_id', taxRateId)
         .eq('organization_id', organizationId)
-        .in('product_id', productIds);
+        .in('product_type_id', productIds);
 
       if (error) {
         throw error;

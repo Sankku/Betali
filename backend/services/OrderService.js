@@ -456,7 +456,7 @@ class OrderService {
       'draft': ['pending', 'cancelled'],
       'pending': ['processing', 'cancelled'],
       'processing': ['shipped', 'cancelled'],
-      'shipped': ['completed'],
+      'shipped': ['completed', 'cancelled'],
       'completed': [], // Final state
       'cancelled': ['draft'] // Can reactivate cancelled orders
     };
@@ -624,37 +624,53 @@ class OrderService {
    * @private
    */
   async restoreStockForCancelledOrder(order, organizationId) {
-    this.logger.info('Restoring stock for cancelled order', { 
-      orderId: order.order_id, 
-      organizationId 
+    this.logger.info('Restoring stock for cancelled order', {
+      orderId: order.order_id,
+      organizationId
     });
 
-    // Get order details
-    const orderDetails = order.order_details || 
-      await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
+    // Use fulfilled reservations to identify which lots to restore
+    const reservations = await this.stockReservationRepository.getReservationsByOrder(
+      order.order_id, organizationId
+    );
 
-    // Create stock entry movements to restore inventory
-    const restorationMovements = [];
-    
-    for (const detail of orderDetails) {
-      const movement = {
-        organization_id: organizationId,
-        lot_id: detail.lot_id,
-        warehouse_id: order.warehouse_id,
-        movement_type: 'entry',
-        quantity: detail.quantity,
-        movement_date: new Date().toISOString(),
-        reference: `#${order.order_id.slice(-8).toUpperCase()} ↩`
-      };
-
-      restorationMovements.push(movement);
+    const lotMap = new Map(); // lot_id → quantity
+    for (const res of reservations) {
+      if (res.lot_id) {
+        lotMap.set(res.lot_id, (lotMap.get(res.lot_id) || 0) + res.quantity);
+      }
     }
 
-    // Create restoration movements
+    // Fall back to FEFO lookup if no reservations found
+    if (lotMap.size === 0) {
+      const orderDetails = order.order_details ||
+        await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
+      const resolvedDetails = await this._resolveLotsForDispatch(
+        orderDetails, order.warehouse_id, organizationId
+      );
+      for (const detail of resolvedDetails) {
+        if (detail.lot_id) {
+          lotMap.set(detail.lot_id, (lotMap.get(detail.lot_id) || 0) + detail.quantity);
+        }
+      }
+    }
+
+    const restorationMovements = [];
+    for (const [lot_id, quantity] of lotMap) {
+      restorationMovements.push({
+        organization_id: organizationId,
+        lot_id,
+        warehouse_id: order.warehouse_id,
+        movement_type: 'entry',
+        quantity,
+        movement_date: new Date().toISOString(),
+        reference: `#${order.order_id.slice(-8).toUpperCase()} ↩`
+      });
+    }
+
     if (restorationMovements.length > 0) {
       await this.stockMovementRepository.createBulk(restorationMovements);
-      
-      this.logger.info('Stock restored for cancelled order', { 
+      this.logger.info('Stock restored for cancelled order', {
         orderId: order.order_id,
         restoredItems: restorationMovements.length
       });
@@ -816,32 +832,32 @@ class OrderService {
         throw new Error('No order details found');
       }
 
-      // Create reservations for each item
-      const reservations = orderDetails.map(detail => ({
-        organization_id: organizationId,
-        order_id: orderId,
-        lot_id: detail.lot_id,  // was product_id
-        warehouse_id: order.warehouse_id,
-        quantity: detail.quantity,
-        created_by: userId,
-        notes: `Auto-reserved for order ${orderId}`
-      }));
-
-      // Validate stock availability before reserving
-      for (const reservation of reservations) {
-        const availability = await this.stockReservationRepository.checkStockAvailability(
-          reservation.lot_id,
-          reservation.warehouse_id,
-          organizationId,
-          reservation.quantity
+      // Create reservations for each item using FEFO lot assignment
+      const reservations = [];
+      for (const detail of orderDetails) {
+        const lotAssignment = await this.productLotService.fefoAssignLot(
+          detail.product_type_id,
+          order.warehouse_id,
+          detail.quantity,
+          organizationId
         );
 
-        if (!availability.available) {
+        if (lotAssignment.partial) {
           throw new Error(
-            `Insufficient stock for product ${reservation.lot_id}. ` +
-            `Available: ${availability.availableStock}, Requested: ${reservation.quantity}`
+            `Insufficient stock for product type ${detail.product_type_id}. ` +
+            `Available: ${lotAssignment.available_stock}, Requested: ${detail.quantity}`
           );
         }
+
+        reservations.push({
+          organization_id: organizationId,
+          order_id: orderId,
+          lot_id: lotAssignment.lot_id,
+          warehouse_id: order.warehouse_id,
+          quantity: detail.quantity,
+          created_by: userId,
+          notes: `Auto-reserved for order ${orderId}`
+        });
       }
 
       // Create bulk reservations

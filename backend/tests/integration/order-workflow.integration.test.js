@@ -339,8 +339,9 @@ async function test1_CreateOrderWithValidStock() {
 }
 
 async function test2_RejectInsufficientStock() {
-  logInfo('TEST 2: Rejecting order with insufficient stock');
+  logInfo('TEST 2: Rejecting order with insufficient stock at processing time');
 
+  let oversizedOrderId = null;
   try {
     const orderData = {
       user_id: testData.userId,
@@ -355,17 +356,27 @@ async function test2_RejectInsufficientStock() {
       ]
     };
 
+    // Creating a large pending order should succeed (no stock check at creation)
+    const oversizedOrder = await orderService.createOrder(orderData, testData.organizationId);
+    oversizedOrderId = oversizedOrder.order_id;
+
     try {
-      await orderService.createOrder(orderData, testData.organizationId);
-      logError('Order was created with insufficient stock - should have been rejected!');
+      // Moving to processing should fail (insufficient stock)
+      await orderService.updateOrderStatus(oversizedOrderId, testData.organizationId, 'processing');
+      logError('Order was processed with insufficient stock - should have been rejected!');
       return false;
     } catch (error) {
-      logSuccess(`Order correctly rejected: ${error.message}`);
+      logSuccess(`Order correctly rejected at processing: ${error.message}`);
       return true;
     }
   } catch (error) {
     logError(`TEST 2 FAILED: ${error.message}`);
     return false;
+  } finally {
+    if (oversizedOrderId) {
+      await supabase.from('order_details').delete().eq('order_id', oversizedOrderId);
+      await supabase.from('orders').delete().eq('order_id', oversizedOrderId);
+    }
   }
 }
 
@@ -421,7 +432,7 @@ async function test4_CalculateAvailableStock() {
 
   try {
     const availableStock = await stockReservationRepository.getAvailableStock(
-      testData.productId,
+      testData.lotId,
       testData.warehouseId,
       testData.organizationId
     );
@@ -565,13 +576,12 @@ async function test8_RestoreStockWhenCancelled() {
     );
     testData.cancelOrderId = cancelOrder.order_id;
 
-    // Get available stock before moving to processing
-    const availableBeforeResult = await productTypeService.getAvailableStock(
-      testData.productId,
+    // Get available stock (physical - reserved) before moving to processing
+    const availableBefore = await stockReservationRepository.getAvailableStock(
+      testData.lotId,
       testData.warehouseId,
       testData.organizationId
     );
-    const availableBefore = availableBeforeResult.available_stock;
 
     // Move to processing — this reserves stock
     await orderService.updateOrderStatus(
@@ -581,12 +591,11 @@ async function test8_RestoreStockWhenCancelled() {
     );
 
     // Verify reservation was created (available stock decreased)
-    const availableAfterReserveResult = await productTypeService.getAvailableStock(
-      testData.productId,
+    const availableAfterReserve = await stockReservationRepository.getAvailableStock(
+      testData.lotId,
       testData.warehouseId,
       testData.organizationId
     );
-    const availableAfterReserve = availableAfterReserveResult.available_stock;
 
     if (availableAfterReserve >= availableBefore) {
       logError(`Stock not reserved: available was ${availableBefore}, still ${availableAfterReserve}`);
@@ -603,12 +612,11 @@ async function test8_RestoreStockWhenCancelled() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Available stock should be restored
-    const availableAfterCancelResult = await productTypeService.getAvailableStock(
-      testData.productId,
+    const availableAfterCancel = await stockReservationRepository.getAvailableStock(
+      testData.lotId,
       testData.warehouseId,
       testData.organizationId
     );
-    const availableAfterCancel = availableAfterCancelResult.available_stock;
 
     if (availableAfterCancel !== availableBefore) {
       logError(`Available stock not restored: expected ${availableBefore}, got ${availableAfterCancel}`);

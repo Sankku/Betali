@@ -31,7 +31,7 @@ class CustomerPricingRepository extends BaseRepository {
         .from(this.table)
         .select('*')
         .eq('client_id', clientId)
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .eq('organization_id', organizationId)
         .eq('is_active', true)
         .lte('valid_from', orderDate.toISOString())
@@ -75,7 +75,7 @@ class CustomerPricingRepository extends BaseRepository {
         .from(this.table)
         .select(`
           *,
-          products!customer_pricing_product_id_fkey(product_id, name, sku, price)
+          product_types!customer_pricing_product_type_id_fkey(product_type_id, name, sku)
         `)
         .eq('client_id', clientId)
         .eq('organization_id', organizationId)
@@ -115,8 +115,8 @@ class CustomerPricingRepository extends BaseRepository {
       });
 
       // Validate pricing data
-      if (!pricingData.client_id || !pricingData.product_id || !pricingData.organization_id || pricingData.price === undefined) {
-        throw new Error('Missing required fields: client_id, product_id, organization_id, price');
+      if (!pricingData.client_id || !pricingData.product_type_id || !pricingData.organization_id || pricingData.price === undefined) {
+        throw new Error('Missing required fields: client_id, product_type_id, organization_id, price');
       }
 
       if (pricingData.price < 0) {
@@ -255,7 +255,7 @@ class CustomerPricingRepository extends BaseRepository {
         .select(`
           *,
           clients!customer_pricing_client_id_fkey(client_id, name, email),
-          products!customer_pricing_product_id_fkey(product_id, name, sku, price)
+          product_types!customer_pricing_product_type_id_fkey(product_type_id, name, sku)
         `)
         .eq('organization_id', organizationId);
 
@@ -264,8 +264,8 @@ class CustomerPricingRepository extends BaseRepository {
         query = query.eq('client_id', options.client_id);
       }
 
-      if (options.product_id) {
-        query = query.eq('product_id', options.product_id);
+      if (options.product_type_id) {
+        query = query.eq('product_type_id', options.product_type_id);
       }
 
       if (options.is_active !== undefined) {
@@ -364,7 +364,7 @@ class CustomerPricingRepository extends BaseRepository {
         .from(this.table)
         .select('customer_pricing_id')
         .eq('client_id', clientId)
-        .eq('product_id', productId)
+        .eq('product_type_id', productId)
         .eq('organization_id', organizationId)
         .eq('is_active', true)
         .limit(1);

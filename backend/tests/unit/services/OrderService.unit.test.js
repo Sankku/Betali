@@ -480,12 +480,17 @@ describe('OrderService Unit Tests', () => {
       ).rejects.toThrow('Failed to update order status: Cannot transition from completed to cancelled');
     });
 
-    test('should throw when transitioning from shipped to cancelled (invalid)', async () => {
+    test('should transition from shipped to cancelled (for order recall/reversal)', async () => {
       mockOrderRepository.findById.mockResolvedValue(makeOrder({ status: 'shipped' }));
+      mockOrderRepository.updateStatus.mockResolvedValue(makeOrder({ status: 'cancelled' }));
+      mockStockReservationRepository.releaseOrderReservations.mockResolvedValue([]);
+      mockStockReservationRepository.getReservationsByOrder.mockResolvedValue([
+        { lot_id: LOT_ID_A, quantity: 2 }
+      ]);
+      mockStockMovementRepository.createBulk.mockResolvedValue([]);
 
-      await expect(
-        orderService.updateOrderStatus(ORDER_ID, ORG_ID, 'cancelled')
-      ).rejects.toThrow('Failed to update order status: Cannot transition from shipped to cancelled');
+      const result = await orderService.updateOrderStatus(ORDER_ID, ORG_ID, 'cancelled');
+      expect(result.status).toBe('cancelled');
     });
 
     test('should throw when transitioning from processing to pending (backwards)', async () => {
@@ -518,10 +523,10 @@ describe('OrderService Unit Tests', () => {
       mockOrderRepository.findById.mockResolvedValue(makeOrder());
       mockOrderDetailRepository.findByOrderId.mockResolvedValue(details);
       mockStockReservationRepository.getActiveReservationsByOrder.mockResolvedValue([]);
-      mockStockReservationRepository.checkStockAvailability.mockResolvedValue({
-        available: true,
-        availableStock: 10
-      });
+      // fefoAssignLot replaces checkStockAvailability for lot-level availability
+      mockProductLotService.fefoAssignLot
+        .mockResolvedValueOnce({ lot_id: LOT_ID_A, partial: false, available_stock: 10 })
+        .mockResolvedValueOnce({ lot_id: LOT_ID_B, partial: false, available_stock: 10 });
       mockStockReservationRepository.createBulkReservations.mockResolvedValue([
         { reservation_id: 'res-001' },
         { reservation_id: 'res-002' }
@@ -605,9 +610,11 @@ describe('OrderService Unit Tests', () => {
     });
 
     test('should throw when stock availability check fails for a product', async () => {
-      mockStockReservationRepository.checkStockAvailability.mockResolvedValue({
-        available: false,
-        availableStock: 0
+      mockProductLotService.fefoAssignLot.mockReset();
+      mockProductLotService.fefoAssignLot.mockResolvedValue({
+        lot_id: null,
+        partial: true,
+        available_stock: 0
       });
 
       await expect(

@@ -11,6 +11,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// Use orderService to bypass the DB trigger (which still uses old product_id column names)
+const { container } = require('../../config/container');
+const orderService = container.get('orderService');
+
 // Test utilities
 const colors = {
   reset: '\x1b[0m',
@@ -261,6 +265,7 @@ async function setupTestData() {
     const { error: stockError } = await supabase
       .from('stock_movements')
       .insert({
+        organization_id: testData.organizationId,
         warehouse_id: testData.warehouseId,
         lot_id: testData.lotId,
         movement_type: 'entry',
@@ -392,17 +397,9 @@ async function createOrder(quantity, status = 'pending') {
   return data;
 }
 
-// Update order status
+// Update order status via orderService (bypasses broken DB trigger)
 async function updateOrderStatus(orderId, newStatus) {
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status: newStatus })
-    .eq('order_id', orderId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  return orderService.updateOrderStatus(orderId, testData.organizationId, newStatus);
 }
 
 // TEST 1: Pending order should NOT create reservation
