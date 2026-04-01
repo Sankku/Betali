@@ -46,7 +46,8 @@ function logWarning(message) {
 let testData = {
   organizationId: null,
   userId: null,
-  productId: null,
+  productId: null,  // product_type_id (for order items)
+  lotId: null,      // lot_id (for stock movements)
   warehouseId: null,
   orderId: null,
   createdOrganization: false,
@@ -55,7 +56,7 @@ let testData = {
 };
 
 let orderService;
-let productService;
+let productTypeService;
 let warehouseService;
 let stockReservationRepository;
 
@@ -68,7 +69,7 @@ async function setupTestData() {
   try {
     // Initialize services
     orderService = container.get('orderService');
-    productService = container.get('productService');
+    productTypeService = container.get('productTypeService');
     warehouseService = container.get('warehouseService');
     stockReservationRepository = container.get('stockReservationRepository');
 
@@ -178,31 +179,48 @@ async function setupTestData() {
       logSuccess(`Test warehouse created: ${newWarehouse.warehouse_id}`);
     }
 
-    // Create test product with initial stock
-    const { data: newProduct, error: prodError } = await supabase
-      .from('products')
+    // Create test product type
+    const { data: newProductType, error: prodTypeError } = await supabase
+      .from('product_types')
       .insert({
         organization_id: testData.organizationId,
         name: 'Test Product - Order Workflow',
-        batch_number: `TEST-ORDER-${Date.now()}`,
-        expiration_date: '2027-12-31',
-        origin_country: 'Argentina',
-        owner_id: testData.userId
+        sku: `TEST-ORDER-SKU-${Date.now()}`,
+        unit: 'unidad',
+        product_type: 'standard'
       })
       .select()
       .single();
 
-    if (prodError) throw prodError;
+    if (prodTypeError) throw prodTypeError;
 
-    testData.productId = newProduct.product_id;
-    logSuccess(`Test product created: ${newProduct.product_id}`);
+    testData.productId = newProductType.product_type_id;
+    logSuccess(`Test product type created: ${newProductType.product_type_id}`);
+
+    // Create test product lot for stock movements
+    const { data: newLot, error: lotError } = await supabase
+      .from('product_lots')
+      .insert({
+        organization_id: testData.organizationId,
+        product_type_id: testData.productId,
+        lot_number: `TEST-ORDER-LOT-${Date.now()}`,
+        expiration_date: '2027-12-31',
+        origin_country: 'Argentina'
+      })
+      .select()
+      .single();
+
+    if (lotError) throw lotError;
+
+    testData.lotId = newLot.lot_id;
+    logSuccess(`Test product lot created: ${newLot.lot_id}`);
 
     // Add initial stock (100 units)
     const { error: stockError } = await supabase
       .from('stock_movements')
       .insert({
         organization_id: testData.organizationId,
-        product_id: testData.productId,
+        lot_id: testData.lotId,
         warehouse_id: testData.warehouseId,
         movement_type: 'entry',
         quantity: 100,
@@ -227,12 +245,20 @@ async function cleanupTestData() {
   logInfo('Cleaning up test data...');
 
   try {
+    if (testData.lotId) {
+      await supabase
+        .from('product_lots')
+        .delete()
+        .eq('lot_id', testData.lotId);
+      logInfo('Deleted test product lot');
+    }
+
     if (testData.productId) {
       await supabase
-        .from('products')
+        .from('product_types')
         .delete()
-        .eq('product_id', testData.productId);
-      logInfo('Deleted test product');
+        .eq('product_type_id', testData.productId);
+      logInfo('Deleted test product type');
     }
 
     if (testData.createdWarehouse && testData.warehouseId) {
@@ -279,7 +305,7 @@ async function test1_CreateOrderWithValidStock() {
       status: 'pending',
       items: [
         {
-          product_id: testData.productId,
+          product_type_id: testData.productId,
           quantity: 10,
           price: 100.00
         }
@@ -322,7 +348,7 @@ async function test2_RejectInsufficientStock() {
       status: 'pending',
       items: [
         {
-          product_id: testData.productId,
+          product_type_id: testData.productId,
           quantity: 1000, // More than available (100)
           price: 100.00
         }
@@ -450,7 +476,7 @@ async function test6_FulfillOrderAndDeductStock() {
     const { data: stockBefore } = await supabase
       .from('stock_movements')
       .select('*')
-      .eq('product_id', testData.productId)
+      .eq('lot_id', testData.lotId)
       .eq('warehouse_id', testData.warehouseId);
 
     // Fulfill the order
@@ -471,7 +497,7 @@ async function test6_FulfillOrderAndDeductStock() {
     const { data: stockAfter } = await supabase
       .from('stock_movements')
       .select('*')
-      .eq('product_id', testData.productId)
+      .eq('lot_id', testData.lotId)
       .eq('warehouse_id', testData.warehouseId);
 
     if (stockAfter.length <= stockBefore.length) {
@@ -532,7 +558,7 @@ async function test8_RestoreStockWhenCancelled() {
       {
         client_id: testData.clientId,
         warehouse_id: testData.warehouseId,
-        items: [{ product_id: testData.productId, quantity: 5, price: 10 }],
+        items: [{ product_type_id: testData.productId, quantity: 5, price: 10 }],
         notes: 'Cancellation test order'
       },
       testData.organizationId
@@ -540,11 +566,12 @@ async function test8_RestoreStockWhenCancelled() {
     testData.cancelOrderId = cancelOrder.order_id;
 
     // Get available stock before moving to processing
-    const availableBefore = await productService.getAvailableStock(
+    const availableBeforeResult = await productTypeService.getAvailableStock(
       testData.productId,
       testData.warehouseId,
       testData.organizationId
     );
+    const availableBefore = availableBeforeResult.available_stock;
 
     // Move to processing — this reserves stock
     await orderService.updateOrderStatus(
@@ -554,11 +581,12 @@ async function test8_RestoreStockWhenCancelled() {
     );
 
     // Verify reservation was created (available stock decreased)
-    const availableAfterReserve = await productService.getAvailableStock(
+    const availableAfterReserveResult = await productTypeService.getAvailableStock(
       testData.productId,
       testData.warehouseId,
       testData.organizationId
     );
+    const availableAfterReserve = availableAfterReserveResult.available_stock;
 
     if (availableAfterReserve >= availableBefore) {
       logError(`Stock not reserved: available was ${availableBefore}, still ${availableAfterReserve}`);
@@ -575,11 +603,12 @@ async function test8_RestoreStockWhenCancelled() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Available stock should be restored
-    const availableAfterCancel = await productService.getAvailableStock(
+    const availableAfterCancelResult = await productTypeService.getAvailableStock(
       testData.productId,
       testData.warehouseId,
       testData.organizationId
     );
+    const availableAfterCancel = availableAfterCancelResult.available_stock;
 
     if (availableAfterCancel !== availableBefore) {
       logError(`Available stock not restored: expected ${availableBefore}, got ${availableAfterCancel}`);
@@ -636,14 +665,15 @@ async function test9_MarkReservationsAsCancelled() {
 // ========================================================================
 
 async function test10_AvailableStockAPI() {
-  logInfo('TEST 10: Testing productService.getAvailableStock API returns a valid number');
+  logInfo('TEST 10: Testing productTypeService.getAvailableStock API returns a valid number');
 
   try {
-    const availableStock = await productService.getAvailableStock(
+    const result = await productTypeService.getAvailableStock(
       testData.productId,
       testData.warehouseId,
       testData.organizationId
     );
+    const availableStock = result.available_stock;
 
     // Available stock should be a non-negative number
     if (typeof availableStock !== 'number' || availableStock < 0) {

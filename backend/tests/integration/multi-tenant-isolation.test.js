@@ -274,9 +274,7 @@ async function setupTestOrganizations() {
         name: `TEST Multi-Tenant Product Org1 ${Date.now()}`,
         sku: `ORG1-${Date.now()}`,
         unit: 'unidad',
-        price: 100,
-        type: 'standard',
-        created_by: testData.user1
+        product_type: 'standard'
       })
       .select()
       .single();
@@ -337,9 +335,7 @@ async function setupTestOrganizations() {
           name: `TEST Multi-Tenant Product Org2 ${Date.now()}`,
           sku: `ORG2-${Date.now()}`,
           unit: 'unidad',
-          price: 100,
-          type: 'standard',
-          created_by: testData.user2 || testData.user1
+          product_type: 'standard'
         })
         .select()
         .single();

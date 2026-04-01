@@ -52,7 +52,8 @@ let testData = {
   organizationId: null,
   userId: null,
   warehouseId: null,
-  productId: null,
+  productId: null,   // product_type_id (used for order items)
+  lotId: null,       // lot_id (used for stock movements / reservations)
   clientId: null,
   testOrders: [],
   createdOrganization: false,
@@ -71,9 +72,12 @@ async function cleanup() {
       await supabase.from('orders').delete().eq('order_id', orderId);
     }
 
-    // Delete test product
+    // Delete test product lot then product type
+    if (testData.lotId) {
+      await supabase.from('product_lots').delete().eq('lot_id', testData.lotId);
+    }
     if (testData.productId) {
-      await supabase.from('products').delete().eq('product_id', testData.productId);
+      await supabase.from('product_types').delete().eq('product_type_id', testData.productId);
     }
 
     // Delete test warehouse if we created it
@@ -218,30 +222,47 @@ async function setupTestData() {
 
     testData.warehouseId = warehouses.warehouse_id;
 
-    // Create test product
-    const { data: product, error: prodError } = await supabase
-      .from('products')
+    // Create test product type
+    const { data: productType, error: prodTypeError } = await supabase
+      .from('product_types')
       .insert({
         name: `TEST Product - Stock Reservation ${Date.now()}`,
-        batch_number: `BATCH-${Date.now()}`,
-        expiration_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        origin_country: 'Test Country',
-        owner_id: testData.userId,
+        sku: `SKU-SR-${Date.now()}`,
+        organization_id: testData.organizationId,
+        unit: 'unidad',
+        product_type: 'standard',
         description: 'Test product for stock reservation tests'
       })
       .select()
       .single();
 
-    if (prodError) throw new Error(`Failed to create product: ${prodError.message}`);
-    testData.productId = product.product_id;
-    logSuccess(`Product created: ${testData.productId}`);
+    if (prodTypeError) throw new Error(`Failed to create product type: ${prodTypeError.message}`);
+    testData.productId = productType.product_type_id;
+    logSuccess(`Product type created: ${testData.productId}`);
+
+    // Create test product lot for stock movements
+    const { data: lot, error: lotError } = await supabase
+      .from('product_lots')
+      .insert({
+        organization_id: testData.organizationId,
+        product_type_id: testData.productId,
+        lot_number: `LOT-SR-${Date.now()}`,
+        expiration_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        origin_country: 'Test Country'
+      })
+      .select()
+      .single();
+
+    if (lotError) throw new Error(`Failed to create product lot: ${lotError.message}`);
+    testData.lotId = lot.lot_id;
+    logSuccess(`Product lot created: ${testData.lotId}`);
 
     // Add initial stock (100 units)
     const { error: stockError } = await supabase
       .from('stock_movements')
       .insert({
         warehouse_id: testData.warehouseId,
-        product_id: testData.productId,
+        lot_id: testData.lotId,
         movement_type: 'entry',
         quantity: 100,
         reference: 'Initial stock for testing'
@@ -293,26 +314,13 @@ async function setupTestData() {
   }
 }
 
-// Get available stock
-async function getAvailableStock() {
-  const { data, error } = await supabase
-    .rpc('get_available_stock', {
-      p_product_id: testData.productId,
-      p_warehouse_id: testData.warehouseId,
-      p_organization_id: testData.organizationId
-    });
-
-  if (error) throw error;
-  return data;
-}
-
-// Get physical stock
+// Get physical stock (via lot_id after migration)
 async function getPhysicalStock() {
   const { data, error } = await supabase
     .from('stock_movements')
     .select('quantity, movement_type')
     .eq('warehouse_id', testData.warehouseId)
-    .eq('product_id', testData.productId);
+    .eq('lot_id', testData.lotId);
 
   if (error) throw error;
 
@@ -323,13 +331,13 @@ async function getPhysicalStock() {
   }, 0);
 }
 
-// Get active reservations count
+// Get active reservations count (via lot_id after migration)
 async function getActiveReservations(orderId = null) {
   let query = supabase
     .from('stock_reservations')
     .select('*')
     .eq('organization_id', testData.organizationId)
-    .eq('product_id', testData.productId)
+    .eq('lot_id', testData.lotId)
     .eq('status', 'active');
 
   if (orderId) {
@@ -339,6 +347,14 @@ async function getActiveReservations(orderId = null) {
   const { data, error } = await query;
   if (error) throw error;
   return data;
+}
+
+// Get available stock (physical - active reservations)
+async function getAvailableStock() {
+  const physical = await getPhysicalStock();
+  const reservations = await getActiveReservations();
+  const reserved = reservations.reduce((sum, r) => sum + (r.quantity || 0), 0);
+  return physical - reserved;
 }
 
 // Create order
@@ -364,7 +380,7 @@ async function createOrder(quantity, status = 'pending') {
     .from('order_details')
     .insert({
       order_id: data.order_id,
-      product_id: testData.productId,
+      product_type_id: testData.productId,
       organization_id: testData.organizationId,
       quantity: quantity,
       price: 100.00
@@ -781,11 +797,11 @@ describe('Stock Reservation System - Integration Tests', () => {
         await supabase.from('orders').delete().eq('order_id', orderId);
       }
 
-      // Delete all stock movements for this product
-      if (testData.productId && testData.warehouseId) {
+      // Delete all stock movements for this lot (keep initial stock)
+      if (testData.lotId && testData.warehouseId) {
         await supabase.from('stock_movements')
           .delete()
-          .eq('product_id', testData.productId)
+          .eq('lot_id', testData.lotId)
           .eq('warehouse_id', testData.warehouseId)
           .neq('reference', 'Initial stock for testing'); // Keep initial stock
       }
