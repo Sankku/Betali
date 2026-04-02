@@ -1,4 +1,4 @@
-const { ServiceFactory } = require('../../config/container');
+const { ServiceFactory, container } = require('../../config/container');
 const { Logger } = require('../../utils/Logger');
 const { InlineKeyboard } = require('grammy');
 const telegramRepo = require('../../repositories/TelegramRepository');
@@ -254,6 +254,7 @@ async function handleApplyCount(ctx) {
     }
 
     const stockMovementService = ServiceFactory.createStockMovementService();
+    const productLotService = container.get('productLotService');
     const countRef = `CONTEO-${new Date().toISOString().slice(0, 10)}`;
 
     let applied = 0;
@@ -261,8 +262,25 @@ async function handleApplyCount(ctx) {
       const movement_type = p.diff > 0 ? 'entry' : 'exit';
       const quantity = Math.abs(p.diff);
 
+      // Resolve lot via FEFO (skip products with no lots)
+      let lotAssignment;
+      try {
+        lotAssignment = await productLotService.fefoAssignLot(
+          p.product_id,
+          data.warehouse_id,
+          quantity,
+          organizationId
+        );
+      } catch (lotErr) {
+        if (lotErr.code === 'no_lot_available') {
+          logger.warn('Skipping stock count adjustment — no lots for product', { product: p.name });
+          continue;
+        }
+        throw lotErr;
+      }
+
       await stockMovementService.createMovement({
-        product_id: p.product_id,
+        lot_id: lotAssignment.lot_id,
         warehouse_id: data.warehouse_id,
         organization_id: organizationId,
         movement_type,

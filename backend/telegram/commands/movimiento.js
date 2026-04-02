@@ -1,4 +1,4 @@
-const { ServiceFactory } = require('../../config/container');
+const { ServiceFactory, container } = require('../../config/container');
 const { Logger } = require('../../utils/Logger');
 const { InlineKeyboard } = require('grammy');
 const telegramRepo = require('../../repositories/TelegramRepository');
@@ -199,10 +199,28 @@ async function handleConfirmMovement(ctx) {
       return;
     }
 
+    // Resolve lot via FEFO
+    const productLotService = container.get('productLotService');
+    let lotAssignment;
+    try {
+      lotAssignment = await productLotService.fefoAssignLot(
+        data.product_id,
+        warehouse.warehouse_id,
+        data.quantity,
+        organizationId
+      );
+    } catch (lotErr) {
+      if (lotErr.code === 'no_lot_available') {
+        await ctx.editMessageText('❌ No hay lotes registrados para este producto. Registrá un lote primero desde el panel web.');
+        return;
+      }
+      throw lotErr;
+    }
+
     const stockMovementService = ServiceFactory.createStockMovementService();
 
     await stockMovementService.createMovement({
-      product_id: data.product_id,
+      lot_id: lotAssignment.lot_id,
       warehouse_id: warehouse.warehouse_id,
       organization_id: organizationId,
       movement_type: data.type,
