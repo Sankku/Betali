@@ -50,6 +50,13 @@ router.get('/:id/available-stock', requirePermission(PERMISSIONS.PRODUCTS_READ),
   try { await getController().getAvailableStock(req, res, next); } catch (e) { next(e); }
 });
 
+router.get('/:id/available-lots', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
+  try {
+    const { ServiceFactory } = require('../config/container');
+    await ServiceFactory.createProductLotController().getAvailableLots(req, res, next);
+  } catch (e) { next(e); }
+});
+
 router.get('/:id', requirePermission(PERMISSIONS.PRODUCTS_READ), async (req, res, next) => {
   try { await getController().getTypeById(req, res, next); } catch (e) { next(e); }
 });

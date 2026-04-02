@@ -124,6 +124,13 @@ class OrderService {
         total: pricingResult.total
       });
 
+      // For direct sales created as shipped or completed, apply stock movement rules immediately.
+      // Normally movements are created via updateOrderStatus transitions, but createOrder skips
+      // those transitions, so we trigger handleOrderShipped here for these statuses.
+      if (['shipped', 'completed'].includes(finalStatus)) {
+        await this.handleOrderShipped(completeOrder, organizationId);
+      }
+
       // Track monthly usage (fire-and-forget, must not fail the operation)
       incrementUsage(organizationId, 'orders_per_month').catch(err =>
         this.logger.error('Failed to increment order usage', { error: err.message })
@@ -453,7 +460,7 @@ class OrderService {
    */
   validateStatusTransition(currentStatus, newStatus) {
     const validTransitions = {
-      'draft': ['pending', 'cancelled'],
+      'draft': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
       'pending': ['processing', 'cancelled'],
       'processing': ['shipped', 'cancelled'],
       'shipped': ['completed', 'cancelled'],
@@ -483,6 +490,10 @@ class OrderService {
         await this.handleOrderShipped(order, organizationId);
         break;
       case 'completed':
+        // If order skipped 'shipped', run shipping logic first (FEFO lot assignment + stock movements)
+        if (order.status !== 'shipped') {
+          await this.handleOrderShipped(order, organizationId);
+        }
         await this.handleOrderCompleted(order, organizationId);
         break;
       case 'cancelled':
@@ -529,6 +540,18 @@ class OrderService {
     const resolvedDetails = await this._resolveLotsForDispatch(
       orderDetails, order.warehouse_id, organizationId
     );
+
+    // Write resolved lot_id back to order_details for details that had no explicit lot
+    await Promise.all(resolvedDetails.map(async (detail, i) => {
+      const original = orderDetails[i];
+      if (!original.lot_id && detail.lot_id) {
+        await this.orderDetailRepository.update(
+          detail.order_detail_id,
+          organizationId,
+          { lot_id: detail.lot_id }
+        );
+      }
+    }));
 
     const stockMovements = resolvedDetails.map(detail => ({
       organization_id: organizationId,

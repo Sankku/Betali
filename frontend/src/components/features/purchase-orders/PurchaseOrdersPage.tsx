@@ -9,10 +9,12 @@ import {
   Eye,
   Edit,
   Trash2,
+  Copy,
   FileText,
   Clock,
   Truck,
   FileDown,
+  AlertCircle,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalTitle,
+  ModalDescription,
   ModalFooter,
 } from '@/components/ui/modal';
 import { TableWithBulkActions, BulkAction } from '@/components/ui/table-with-bulk-actions';
@@ -45,6 +48,8 @@ import {
   useCancelPurchaseOrder,
   useApprovePurchaseOrder,
   useSubmitPurchaseOrder,
+  useDeletePurchaseOrder,
+  useDuplicatePurchaseOrder,
   PURCHASE_ORDER_STATUS_OPTIONS,
 } from '@/hooks/usePurchaseOrders';
 import { useSuppliers } from '@/hooks/useSuppliers';
@@ -91,6 +96,10 @@ export function PurchaseOrdersPage() {
     isOpen: boolean;
     purchaseOrder?: PurchaseOrder;
   }>({ isOpen: false });
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    isOpen: boolean;
+    purchaseOrder?: PurchaseOrder;
+  }>({ isOpen: false });
 
   // Build filters
   const filters = useMemo(() => {
@@ -110,6 +119,8 @@ export function PurchaseOrdersPage() {
   const cancelMutation = useCancelPurchaseOrder();
   const approveMutation = useApprovePurchaseOrder();
   const submitMutation = useSubmitPurchaseOrder();
+  const deleteMutation = useDeletePurchaseOrder();
+  const duplicateMutation = useDuplicatePurchaseOrder();
 
   // Handlers
   const handleCreatePurchaseOrder = useCallback(() => {
@@ -127,6 +138,28 @@ export function PurchaseOrdersPage() {
   const closeModal = useCallback(() => {
     setModalState({ isOpen: false, mode: 'create' });
   }, []);
+
+  const handleDeletePurchaseOrder = useCallback((purchaseOrder: PurchaseOrder) => {
+    setDeleteConfirmState({ isOpen: true, purchaseOrder });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteConfirmState.purchaseOrder) return;
+    try {
+      await deleteMutation.mutateAsync(deleteConfirmState.purchaseOrder.purchase_order_id);
+      setDeleteConfirmState({ isOpen: false });
+    } catch {
+      // handled in hook
+    }
+  }, [deleteConfirmState.purchaseOrder, deleteMutation]);
+
+  const handleDuplicatePurchaseOrder = useCallback(async (purchaseOrder: PurchaseOrder) => {
+    try {
+      await duplicateMutation.mutateAsync(purchaseOrder.purchase_order_id);
+    } catch {
+      // handled in hook
+    }
+  }, [duplicateMutation]);
 
   // Batch action confirmation handler
   const confirmBatchAction = useCallback(async () => {
@@ -204,7 +237,7 @@ export function PurchaseOrdersPage() {
         },
         onClick: (orders) =>
           setBatchActionModalState({ isOpen: true, action: 'approve', purchaseOrders: orders }),
-        getValidItems: (orders) => orders.filter((o) => o.status === 'pending'),
+        getValidItems: (orders) => orders.filter((o) => o.status === 'pending' || o.status === 'draft'),
       },
       {
         key: 'receive',
@@ -360,26 +393,67 @@ export function PurchaseOrdersPage() {
         header: t('common.actions'),
         cell: ({ row }: { row: any }) => {
           const order = row.original as PurchaseOrder;
+          const canEdit = order.status === 'draft';
+          const canDelete = ['draft', 'pending'].includes(order.status);
+          const canApprove = ['draft', 'pending'].includes(order.status);
           return (
             <div
-              className="data-table-no-click flex items-center justify-center gap-2"
+              className="data-table-no-click flex items-center justify-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handleViewPurchaseOrder(order)}
+                title="Ver"
               >
                 <Eye className="h-4 w-4" />
               </Button>
 
-              {order.status === 'draft' && (
+              {canEdit && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleEditPurchaseOrder(order)}
+                  title="Editar"
                 >
                   <Edit className="h-4 w-4" />
+                </Button>
+              )}
+
+              {canApprove && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => approveMutation.mutate(order.purchase_order_id)}
+                  disabled={approveMutation.isPending}
+                  title="Aprobar"
+                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDuplicatePurchaseOrder(order)}
+                disabled={duplicateMutation.isPending}
+                title="Duplicar como borrador"
+                className="text-neutral-500 hover:text-neutral-700"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeletePurchaseOrder(order)}
+                  title="Eliminar"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -387,7 +461,7 @@ export function PurchaseOrdersPage() {
         },
       },
     ],
-    [handleViewPurchaseOrder, handleEditPurchaseOrder, getStatusBadgeVariant, t]
+    [handleViewPurchaseOrder, handleEditPurchaseOrder, handleDuplicatePurchaseOrder, handleDeletePurchaseOrder, duplicateMutation.isPending, approveMutation, getStatusBadgeVariant, t]
   );
 
   // Filter components
@@ -574,6 +648,51 @@ export function PurchaseOrdersPage() {
           purchaseOrder={receiveModalState.purchaseOrder}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmState.isOpen}
+        onClose={() => setDeleteConfirmState({ isOpen: false })}
+        size="sm"
+      >
+        <ModalContent>
+          <ModalHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <ModalTitle>Eliminar orden de compra</ModalTitle>
+            <ModalDescription>
+              {deleteConfirmState.purchaseOrder && (
+                <>
+                  Estás por eliminar la OC{' '}
+                  <strong>{deleteConfirmState.purchaseOrder.purchase_order_number}</strong>.{' '}
+                  {deleteConfirmState.purchaseOrder.status === 'draft'
+                    ? 'Esta acción no se puede deshacer.'
+                    : 'La orden será cancelada.'}
+                </>
+              )}
+            </ModalDescription>
+          </ModalHeader>
+          <ModalFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmState({ isOpen: false })}
+              disabled={deleteMutation.isPending}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              loading={deleteMutation.isPending}
+              className="w-full sm:w-auto"
+            >
+              Eliminar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

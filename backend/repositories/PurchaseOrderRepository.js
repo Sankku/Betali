@@ -36,7 +36,8 @@ class PurchaseOrderRepository extends BaseRepository {
             unit_price,
             line_total,
             notes,
-            product_types!purchase_order_details_product_type_id_fkey(product_type_id, name, sku, unit)
+            product_types!purchase_order_details_product_type_id_fkey(product_type_id, name, sku, unit),
+            product_lots!purchase_order_details_lot_id_fkey(lot_id, lot_number)
           )
         `)
         .eq('purchase_order_id', purchaseOrderId)
@@ -255,6 +256,33 @@ class PurchaseOrderRepository extends BaseRepository {
       return data;
     } catch (error) {
       this.logger.error('Error deleting purchase order', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Hard delete (permanently remove) a purchase order
+   * @param {string} purchaseOrderId - Purchase Order ID
+   * @param {string} organizationId - Organization ID for tenant isolation
+   */
+  async hardDelete(purchaseOrderId, organizationId) {
+    try {
+      this.logger.info('Hard deleting purchase order', { purchaseOrderId, organizationId });
+
+      const { error } = await this.client
+        .from(this.table)
+        .delete()
+        .eq('purchase_order_id', purchaseOrderId)
+        .eq('organization_id', organizationId);
+
+      if (error) {
+        this.logger.error('Error hard deleting purchase order', { error: error.message, purchaseOrderId });
+        throw error;
+      }
+
+      this.logger.info('Purchase order hard deleted', { purchaseOrderId });
+    } catch (error) {
+      this.logger.error('Error hard deleting purchase order', { error: error.message });
       throw error;
     }
   }

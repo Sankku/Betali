@@ -54,18 +54,28 @@ export interface Order {
 export interface OrderDetail {
   order_detail_id: string;
   order_id: string;
-  product_id: string;
+  product_type_id: string;
+  lot_id?: string;
   quantity: number;
   price?: number;
-  organization_id: string;
-  created_at: string;
+  organization_id?: string;
+  created_at?: string;
   // Relations
+  product_types?: {
+    product_type_id: string;
+    name: string;
+    sku: string;
+    unit?: string;
+  };
+  product_lots?: {
+    lot_id: string;
+    lot_number: string;
+  };
+  // Legacy fallback
   products?: {
     product_id: string;
     name: string;
     batch_number?: string;
-    price: number;
-    description?: string;
   };
 }
 
@@ -75,7 +85,9 @@ export interface CreateOrderData {
   status?: Order['status'];
   notes?: string;
   items: Array<{
-    product_id: string;
+    product_id?: string;
+    product_type_id?: string;
+    lot_id?: string;
     quantity: number;
     price?: number;
   }>;

@@ -28,6 +28,18 @@ class ProductLotController {
     } catch (error) { next(error); }
   }
 
+  async getAvailableLots(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { warehouse_id } = req.query;
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+      if (!warehouse_id) return res.status(400).json({ error: 'warehouse_id query parameter is required.' });
+      const lots = await this.service.getAvailableLots(id, warehouse_id, organizationId);
+      res.json({ data: lots });
+    } catch (error) { next(error); }
+  }
+
   async getLotById(req, res, next) {
     try {
       const { id } = req.params;

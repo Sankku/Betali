@@ -188,7 +188,7 @@ export function OrdersPage() {
           hoverBg: 'hover:bg-blue-50',
         },
         onClick: orders => setBatchActionModalState({ isOpen: true, action: 'process', orders }),
-        getValidItems: orders => orders.filter(o => o.status === 'pending'),
+        getValidItems: orders => orders.filter(o => ['draft', 'pending'].includes(o.status)),
       },
       {
         key: 'fulfill',
@@ -201,7 +201,7 @@ export function OrdersPage() {
           hoverBg: 'hover:bg-purple-50',
         },
         onClick: orders => setBatchActionModalState({ isOpen: true, action: 'fulfill', orders }),
-        getValidItems: orders => orders.filter(o => o.status === 'processing'),
+        getValidItems: orders => orders.filter(o => ['draft', 'pending', 'processing'].includes(o.status)),
       },
       {
         key: 'complete',
@@ -214,7 +214,7 @@ export function OrdersPage() {
           hoverBg: 'hover:bg-green-50',
         },
         onClick: orders => setBatchActionModalState({ isOpen: true, action: 'complete', orders }),
-        getValidItems: orders => orders.filter(o => o.status === 'shipped'),
+        getValidItems: orders => orders.filter(o => ['draft', 'pending', 'processing', 'shipped'].includes(o.status)),
       },
       {
         key: 'download-pdf',
@@ -442,15 +442,17 @@ export function OrdersPage() {
         cell: ({ row }: { row: any }) => {
           const order = row.original as Order;
           const canEdit = ['pending', 'draft'].includes(order.status);
+          const canDelete = ['draft', 'pending', 'cancelled'].includes(order.status);
           return (
             <div
-              className="data-table-no-click flex items-center justify-center gap-2"
+              className="data-table-no-click flex items-center justify-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handleViewOrder(order)}
+                title="Ver"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -459,8 +461,30 @@ export function OrdersPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleEditOrder(order)}
+                  title="Editar"
                 >
                   <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => duplicateOrderMutation.mutate(order.order_id)}
+                disabled={duplicateOrderMutation.isPending}
+                title="Duplicar como borrador"
+                className="text-neutral-500 hover:text-neutral-700"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setBatchActionModalState({ isOpen: true, action: 'delete', orders: [order] })}
+                  title="Eliminar"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -468,7 +492,7 @@ export function OrdersPage() {
         },
       },
     ],
-    [handleStatusChange, handleViewOrder, handleEditOrder, clients, warehouses]
+    [handleStatusChange, handleViewOrder, handleEditOrder, duplicateOrderMutation, clients, warehouses]
   );
 
 
@@ -623,7 +647,7 @@ export function OrdersPage() {
               ) : (
                 <div className="space-y-2">
                   <p>{t('orders.page.batchActionConfirm', { action: batchActionModalState.action, count: String(batchActionModalState.orders.length) })}</p>
-                  {batchActionModalState.action === 'fulfill' && (
+                  {['fulfill', 'complete', 'process'].includes(batchActionModalState.action) && (
                     <div className="flex items-center gap-2 text-amber-600">
                       <AlertCircle className="h-4 w-4" />
                       <span>{t('orders.page.fulfillWarning')}</span>

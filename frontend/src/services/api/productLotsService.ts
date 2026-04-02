@@ -6,6 +6,8 @@ export interface ProductLot {
   product_type_id: string;
   expiration_date: string;
   origin_country: string;
+  warehouse_id: string | null;
+  warehouse_name: string | null;
   price: number;
   current_stock: number;
   organization_id: string;
@@ -17,6 +19,8 @@ export interface ProductLotFormData {
   lot_number: string;
   expiration_date: string;
   origin_country: string;
+  warehouse_id: string;
+  initial_quantity?: number;
   price: number;
 }
 

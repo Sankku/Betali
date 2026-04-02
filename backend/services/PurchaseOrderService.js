@@ -351,7 +351,7 @@ class PurchaseOrderService {
    */
   validateStatusTransition(currentStatus, newStatus) {
     const allowedTransitions = {
-      'draft': ['pending', 'cancelled'],
+      'draft': ['pending', 'approved', 'cancelled'],
       'pending': ['approved', 'cancelled'],
       'approved': ['partially_received', 'cancelled'],
       'partially_received': ['cancelled'],
@@ -645,13 +645,53 @@ class PurchaseOrderService {
         throw new Error(`Cannot delete purchase order with status: ${purchaseOrder.status}`);
       }
 
-      // Soft delete by setting status to cancelled
-      const deletedPurchaseOrder = await this.purchaseOrderRepository.delete(purchaseOrderId, organizationId);
-
-      this.logger.info('Purchase order deleted successfully', { purchaseOrderId });
-      return deletedPurchaseOrder;
+      // Hard delete draft orders; soft-delete (cancel) pending orders
+      if (purchaseOrder.status === 'draft') {
+        await this.purchaseOrderRepository.hardDelete(purchaseOrderId, organizationId);
+        this.logger.info('Purchase order hard deleted', { purchaseOrderId });
+        return { purchase_order_id: purchaseOrderId, status: 'deleted' };
+      } else {
+        const cancelled = await this.purchaseOrderRepository.delete(purchaseOrderId, organizationId);
+        this.logger.info('Purchase order cancelled', { purchaseOrderId });
+        return cancelled;
+      }
     } catch (error) {
       this.logger.error('Error deleting purchase order', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Duplicate a purchase order as a new draft
+   */
+  async duplicatePurchaseOrder(purchaseOrderId, organizationId) {
+    try {
+      this.logger.info('Duplicating purchase order', { purchaseOrderId, organizationId });
+
+      const original = await this.purchaseOrderRepository.findById(purchaseOrderId, organizationId);
+      if (!original) {
+        throw new Error('Purchase order not found or access denied');
+      }
+
+      const details = await this.purchaseOrderDetailRepository.findByPurchaseOrderId(purchaseOrderId, organizationId);
+
+      const duplicateData = {
+        supplier_id: original.supplier_id,
+        warehouse_id: original.warehouse_id,
+        notes: `Duplicado de OC #${original.purchase_order_number}`,
+        status: 'draft',
+        items: (details || []).map(d => ({
+          product_type_id: d.product_type_id,
+          quantity: d.quantity,
+          unit_price: d.unit_price,
+        })),
+      };
+
+      const created = await this.createPurchaseOrder(duplicateData, organizationId);
+      this.logger.info('Purchase order duplicated', { originalId: purchaseOrderId, newId: created.purchase_order_id });
+      return created;
+    } catch (error) {
+      this.logger.error('Error duplicating purchase order', { error: error.message });
       throw error;
     }
   }

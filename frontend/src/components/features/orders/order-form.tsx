@@ -16,10 +16,12 @@ import { useTaxRates } from '@/hooks/useTaxRates';
 import { Order } from '@/services/api/orderService';
 import { ORDER_STATUS_OPTIONS } from '@/hooks/useOrders';
 import { useRealtimePricing, formatPricing } from '@/hooks/usePricing';
+import { useAvailableLots } from '@/hooks/useAvailableStock';
 import { OrderItemWithStockValidation } from './OrderItemWithStockValidation';
 
 interface OrderItem {
   product_type_id: string;
+  lot_id?: string;
   quantity: number;
   price: number;
   product_name?: string;
@@ -34,6 +36,7 @@ interface OrderFormData {
   tax_rate_ids: string[];
   items: Array<{
     product_type_id: string;
+    lot_id?: string;
     quantity: number;
     price: number;
   }>;
@@ -43,6 +46,58 @@ interface OrderFormProps {
   form: UseFormReturn<OrderFormData>;
   mode: 'create' | 'edit' | 'view';
   isLoading?: boolean;
+}
+
+/** Inner lot selector — fetches available lots for a product+warehouse combination */
+function LotSelector({
+  productTypeId,
+  warehouseId,
+  value,
+  onChange,
+  disabled,
+}: {
+  productTypeId: string;
+  warehouseId: string;
+  value?: string;
+  onChange: (lotId: string) => void;
+  disabled?: boolean;
+}) {
+  const { data: lots, isLoading } = useAvailableLots(productTypeId, warehouseId);
+
+  if (!lots && !isLoading) return null;
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-gray-900 font-medium text-sm">
+        Lote <span className="text-gray-400 font-normal text-xs">(opcional)</span>
+      </Label>
+      <Select
+        value={value || 'auto'}
+        onValueChange={(v) => onChange(v === 'auto' ? '' : v)}
+        disabled={disabled || isLoading}
+      >
+        <SelectTrigger className="text-sm">
+          <SelectValue placeholder={isLoading ? 'Cargando lotes...' : 'Auto (recomendado)'} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="auto">
+            <span className="text-gray-500 italic">Auto (recomendado)</span>
+          </SelectItem>
+          {lots?.map((lot) => (
+            <SelectItem key={lot.lot_id} value={lot.lot_id}>
+              <div className="flex flex-col">
+                <span className="font-medium">{lot.lot_number}</span>
+                <span className="text-xs text-gray-500">
+                  Stock: {lot.available_stock}
+                  {lot.expiration_date && ` · Vence: ${new Date(lot.expiration_date).toLocaleDateString('es-AR')}`}
+                </span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
@@ -105,6 +160,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         items.every((item, index) => {
           const watchedItem = watchedValues.items[index];
           return item.product_type_id === watchedItem.product_type_id &&
+            item.lot_id === watchedItem.lot_id &&
             item.quantity === watchedItem.quantity &&
             item.price === watchedItem.price;
         });
@@ -114,6 +170,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           const productType = productTypes?.find(p => p.product_type_id === item.product_type_id);
           return {
             product_type_id: item.product_type_id,
+            lot_id: item.lot_id,
             quantity: item.quantity,
             price: item.price,
             product_name: productType?.name,
@@ -164,11 +221,14 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
         newItems[index] = {
           ...newItems[index],
           product_type_id: value as string,
+          lot_id: undefined, // reset lot when product changes
           price: 0,
           product_name: selectedProductType.name,
           product_sku: selectedProductType.sku,
         };
       }
+    } else if (field === 'lot_id') {
+      newItems[index] = { ...newItems[index], lot_id: value as string || undefined };
     } else if (field === 'quantity') {
       newItems[index] = {
         ...newItems[index],
@@ -187,20 +247,21 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
     }
 
     setItems(newItems);
-    // Update form with simplified items data
     setValue('items', newItems.map(item => ({
       product_type_id: item.product_type_id,
+      lot_id: item.lot_id,
       quantity: item.quantity,
       price: item.price,
     })));
   };
 
   const addItem = () => {
-    const newItem = { product_type_id: '', quantity: 1, price: 0 };
+    const newItem = { product_type_id: '', lot_id: undefined, quantity: 1, price: 0 };
     const newItems = [...items, newItem];
     setItems(newItems);
     setValue('items', newItems.map(item => ({
       product_type_id: item.product_type_id,
+      lot_id: item.lot_id,
       quantity: item.quantity,
       price: item.price,
     })));
@@ -212,6 +273,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
       setItems(newItems);
       setValue('items', newItems.map(item => ({
         product_type_id: item.product_type_id,
+        lot_id: item.lot_id,
         quantity: item.quantity,
         price: item.price,
       })));
@@ -372,7 +434,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           )}
           
           {items.map((item, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg bg-gray-50">
+            <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg bg-gray-50">
               <div className="md:col-span-2">
                 <Label className="text-gray-900 font-medium">{t('orders.form.product')} *</Label>
                 <Select
@@ -408,6 +470,26 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 </Select>
                 {isSubmitted && !item.product_type_id && (
                   <p className="text-sm text-red-600 mt-1">{t('orders.form.productRequired')}</p>
+                )}
+              </div>
+
+              {/* Lot selector — only shown when product and warehouse are selected */}
+              <div className="md:col-span-1">
+                {item.product_type_id && watchedValues.warehouse_id && watchedValues.warehouse_id !== 'no-warehouse' ? (
+                  <LotSelector
+                    productTypeId={item.product_type_id}
+                    warehouseId={watchedValues.warehouse_id}
+                    value={item.lot_id}
+                    onChange={(lotId) => handleItemChange(index, 'lot_id', lotId)}
+                    disabled={isViewMode}
+                  />
+                ) : (
+                  <div className="space-y-1">
+                    <Label className="text-gray-900 font-medium text-sm">
+                      Lote <span className="text-gray-400 font-normal text-xs">(opcional)</span>
+                    </Label>
+                    <div className="h-10 flex items-center text-sm text-gray-400 italic">Auto (recomendado)</div>
+                  </div>
                 )}
               </div>
 

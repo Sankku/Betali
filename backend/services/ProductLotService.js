@@ -15,7 +15,51 @@ class ProductLotService {
 
     const lotIds = lots.map(l => l.lot_id);
     const stockByLot = await this.stockRepo.getCurrentStockBulk(lotIds, null, organizationId);
-    return lots.map(lot => ({ ...lot, current_stock: stockByLot[lot.lot_id] ?? 0 }));
+
+    // Resolve warehouse names for lots that have a warehouse_id
+    const warehouseIds = [...new Set(lots.map(l => l.warehouse_id).filter(Boolean))];
+    let warehouseMap = {};
+    if (warehouseIds.length > 0) {
+      const { data: warehouses } = await this.lotRepo.client
+        .from('warehouse')
+        .select('warehouse_id, name')
+        .in('warehouse_id', warehouseIds)
+        .eq('organization_id', organizationId);
+      if (warehouses) {
+        warehouseMap = Object.fromEntries(warehouses.map(w => [w.warehouse_id, w.name]));
+      }
+    }
+
+    return lots.map(lot => ({
+      ...lot,
+      current_stock: stockByLot[lot.lot_id] ?? 0,
+      warehouse_name: lot.warehouse_id ? (warehouseMap[lot.warehouse_id] ?? null) : null,
+    }));
+  }
+
+  /**
+   * Returns non-expired lots for a product type with their stock in the given warehouse.
+   * Used by the order form to allow manual lot selection.
+   */
+  async getAvailableLots(productTypeId, warehouseId, organizationId) {
+    const now = new Date().toISOString();
+    const { data: lots, error } = await this.lotRepo.client
+      .from('product_lots')
+      .select('lot_id, lot_number, expiration_date')
+      .eq('product_type_id', productTypeId)
+      .eq('organization_id', organizationId)
+      .or(`expiration_date.is.null,expiration_date.gt.${now}`)
+      .order('expiration_date', { ascending: true, nullsFirst: false });
+
+    if (error) throw new Error(`Error fetching lots: ${error.message}`);
+    if (!lots || !lots.length) return [];
+
+    const lotIds = lots.map(l => l.lot_id);
+    const stockByLot = await this.stockRepo.getCurrentStockBulk(lotIds, warehouseId, organizationId);
+
+    return lots
+      .map(lot => ({ ...lot, available_stock: stockByLot[lot.lot_id] ?? 0 }))
+      .filter(lot => lot.available_stock > 0);
   }
 
   async getLotById(id, organizationId) {
@@ -29,7 +73,7 @@ class ProductLotService {
   }
 
   async createLot(data, productTypeId, organizationId) {
-    const { lot_number, expiration_date, price } = data;
+    const { lot_number, expiration_date, price, warehouse_id, initial_quantity } = data;
     if (!lot_number || !expiration_date || price == null) {
       const err = new Error('lot_number, expiration_date, and price are required');
       err.status = 400;
@@ -50,7 +94,23 @@ class ProductLotService {
       throw err;
     }
 
-    return this.lotRepo.create({ ...data, product_type_id: productTypeId, organization_id: organizationId });
+    const { initial_quantity: _iq, ...lotData } = data;
+    const lot = await this.lotRepo.create({ ...lotData, product_type_id: productTypeId, organization_id: organizationId });
+
+    // Create initial entry movement if quantity is provided
+    if (warehouse_id && initial_quantity && initial_quantity > 0) {
+      await this.stockRepo.create({
+        organization_id: organizationId,
+        lot_id: lot.lot_id,
+        warehouse_id,
+        movement_type: 'entry',
+        quantity: initial_quantity,
+        movement_date: new Date().toISOString(),
+        reference: `Entrada inicial lote ${lot_number}`,
+      });
+    }
+
+    return lot;
   }
 
   async updateLot(id, data, organizationId) {
@@ -151,9 +211,16 @@ class ProductLotService {
           created++;
         }
 
+        // Resolve warehouse_id and persist it on the lot record
+        const warehouseId = row.warehouse_name
+          ? warehouseMap.get(row.warehouse_name.toLowerCase().trim())
+          : undefined;
+        if (warehouseId && !existingLot) {
+          await this.lotRepo.update(lot.lot_id, { warehouse_id: warehouseId }, 'lot_id');
+        }
+
         // Initial stock movement
         if (row.initial_stock && parseInt(row.initial_stock) > 0 && row.warehouse_name) {
-          const warehouseId = warehouseMap.get(row.warehouse_name.toLowerCase().trim());
           if (!warehouseId) {
             stock_skipped.push({ row: rowNum, lot_number: row.lot_number, reason: `Warehouse '${row.warehouse_name}' not found` });
           } else {

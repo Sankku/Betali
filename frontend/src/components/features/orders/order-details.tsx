@@ -172,14 +172,14 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
                     className="flex items-start justify-between gap-4 p-5 border rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-base mb-2">{item.products?.name}</div>
-                      {item.products?.batch_number && (
-                        <div className="text-sm text-gray-600 mb-1">Lote: {item.products.batch_number}</div>
+                      <div className="font-semibold text-base mb-1">
+                        {item.product_types?.name || item.products?.name || '—'}
+                      </div>
+                      {item.product_types?.sku && (
+                        <div className="text-xs text-gray-400 font-mono mb-1">SKU: {item.product_types.sku}</div>
                       )}
-                      {item.products?.description && (
-                        <div className="text-sm text-gray-500 mt-2 line-clamp-2">
-                          {item.products.description}
-                        </div>
+                      {item.product_lots?.lot_number && (
+                        <div className="text-sm text-gray-600">Lote: {item.product_lots.lot_number}</div>
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">

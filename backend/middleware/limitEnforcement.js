@@ -119,6 +119,10 @@ async function getCurrentUsage(organizationId, resourceType) {
         tableName = 'products';
         countField = 'product_id';
         break;
+      case 'product_types':
+        tableName = 'product_types';
+        countField = 'product_type_id';
+        break;
       case 'warehouses':
         tableName = 'warehouse';
         countField = 'warehouse_id';

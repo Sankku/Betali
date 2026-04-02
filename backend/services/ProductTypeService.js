@@ -67,12 +67,14 @@ class ProductTypeService {
     if (!this.stockMovementRepo) {
       throw new Error('Stock movement repository not available');
     }
-    // Get all lots for this product type
+    // Get non-expired lots for this product type (same filter as FEFO dispatch)
+    const now = new Date().toISOString();
     const { data: lots, error } = await this.repo.client
       .from('product_lots')
       .select('lot_id')
       .eq('product_type_id', productTypeId)
-      .eq('organization_id', organizationId);
+      .eq('organization_id', organizationId)
+      .or(`expiration_date.is.null,expiration_date.gt.${now}`);
 
     if (error) throw new Error(`Error fetching lots: ${error.message}`);
     if (!lots || lots.length === 0) {

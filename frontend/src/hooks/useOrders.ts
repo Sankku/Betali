@@ -83,7 +83,14 @@ export function useCreateOrder() {
 
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, order.order_id) });
+
+      // For direct sales created as shipped/completed, stock movements are created immediately
+      if (['shipped', 'completed'].includes(order.status)) {
+        queryClient.invalidateQueries({ queryKey: ['stock'] });
+        queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+      }
 
       toast.success('Pedido creado exitosamente');
     },
@@ -107,8 +114,8 @@ export function useUpdateOrder() {
       // Backend returns { success, data: order } — unwrap to get the actual order
       const order = (response as any)?.data ?? response;
 
-      // Update detail cache at the correct key
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
+      // Invalidate detail cache so next view fetches fresh data with joins
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, order.order_id) });
 
       // Refetch list immediately so the grid reflects the new totals
       queryClient.refetchQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
@@ -135,7 +142,7 @@ export function useUpdateOrderStatus() {
     onSuccess: (response) => {
       const order = (response as any)?.data ?? response;
 
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, order.order_id), response);
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, order.order_id) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
@@ -190,9 +197,8 @@ export function useDuplicateOrder() {
 
   return useMutation({
     mutationFn: (orderId: string) => orderService.duplicateOrder(orderId),
-    onSuccess: (duplicatedOrder) => {
-      // Add the duplicated order to cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, duplicatedOrder.order_id), duplicatedOrder);
+    onSuccess: (response) => {
+      const duplicatedOrder = (response as any)?.data ?? response;
 
       // Invalidate orders list to show the new order
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
@@ -215,11 +221,10 @@ export function useProcessOrder() {
 
   return useMutation({
     mutationFn: (orderId: string) => orderService.processOrder(orderId),
-    onSuccess: (processedOrder) => {
-      // Update specific order in cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, processedOrder.order_id), processedOrder);
+    onSuccess: (response) => {
+      const processedOrder = (response as any)?.data ?? response;
 
-      // Invalidate orders list to reflect changes
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, processedOrder.order_id) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
@@ -241,11 +246,10 @@ export function useFulfillOrder() {
   return useMutation({
     mutationFn: ({ orderId, fulfillmentData }: { orderId: string; fulfillmentData?: any }) =>
       orderService.fulfillOrder(orderId, fulfillmentData),
-    onSuccess: (fulfilledOrder) => {
-      // Update specific order in cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, fulfilledOrder.order_id), fulfilledOrder);
+    onSuccess: (response) => {
+      const fulfilledOrder = (response as any)?.data ?? response;
 
-      // Invalidate orders list to reflect changes
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, fulfilledOrder.order_id) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
@@ -273,11 +277,10 @@ export function useCompleteOrder() {
 
   return useMutation({
     mutationFn: (orderId: string) => orderService.completeOrder(orderId),
-    onSuccess: (completedOrder) => {
-      // Update specific order in cache
-      queryClient.setQueryData(ORDER_QUERY_KEYS.detail(orgId, completedOrder.order_id), completedOrder);
+    onSuccess: (response) => {
+      const completedOrder = (response as any)?.data ?? response;
 
-      // Invalidate orders list to reflect changes
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, completedOrder.order_id) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
 
@@ -327,7 +330,7 @@ export function getOrderStatusColor(status: Order['status']) {
 
 // Valid status transitions based on business rules
 const VALID_STATUS_TRANSITIONS: Record<Order['status'], Order['status'][]> = {
-  'draft': ['pending', 'cancelled'],
+  'draft': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
   'pending': ['processing', 'cancelled'],
   'processing': ['shipped', 'cancelled'],
   'shipped': ['completed'],

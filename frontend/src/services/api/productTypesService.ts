@@ -122,6 +122,18 @@ export const productTypesService = {
     return response.data;
   },
 
+  async getAvailableLots(productTypeId: string, warehouseId: string): Promise<Array<{
+    lot_id: string;
+    lot_number: string;
+    expiration_date: string | null;
+    available_stock: number;
+  }>> {
+    const response = await httpClient.get<{ data: Array<{ lot_id: string; lot_number: string; expiration_date: string | null; available_stock: number; }> }>(
+      `/api/product-types/${productTypeId}/available-lots?warehouse_id=${encodeURIComponent(warehouseId)}`
+    );
+    return response.data;
+  },
+
   async bulkImport(rows: BulkImportRow[]): Promise<BulkImportResult> {
     try {
       const response = await httpClient.post<{ data: BulkImportResult }>(

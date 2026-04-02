@@ -41,12 +41,9 @@ export interface PurchaseOrderDetail {
   created_at: string;
 
   lot_id?: string | null;
-  product_lot?: {
+  product_lots?: {
     lot_id: string;
     lot_number: string;
-    expiration_date: string;
-    origin_country: string;
-    price: number;
   } | null;
 
   // Populated relations
@@ -180,7 +177,7 @@ export interface PurchaseOrderSummary {
  * Valid status transitions for purchase orders
  */
 export const VALID_STATUS_TRANSITIONS: Record<PurchaseOrderStatus, PurchaseOrderStatus[]> = {
-  draft: ['pending', 'cancelled'],
+  draft: ['pending', 'approved', 'cancelled'],
   pending: ['approved', 'cancelled'],
   approved: ['received', 'partially_received', 'cancelled'],
   partially_received: ['received', 'cancelled'],

@@ -59,7 +59,12 @@ export const ProductLotRow: React.FC<ProductLotRowProps> = ({ lot, onEdit, onDel
         </span>
       </td>
       <td className="px-4 py-2.5 text-sm text-neutral-600">
-        {lot.origin_country || '—'}
+        {lot.warehouse_name
+          ? <span className="font-medium text-neutral-800">{lot.warehouse_name}</span>
+          : <span className="text-neutral-400 italic">Sin asignar</span>}
+        {lot.origin_country && (
+          <span className="block text-xs text-neutral-400">{lot.origin_country}</span>
+        )}
       </td>
       <td className="px-4 py-2.5 text-sm font-semibold">
         <span className={lot.current_stock > 0 ? 'text-neutral-800' : 'text-neutral-400'}>

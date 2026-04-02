@@ -168,6 +168,24 @@ router.delete(
 );
 
 /**
+ * POST /api/purchase-orders/:id/duplicate
+ * Duplicate a purchase order as a new draft
+ */
+router.post(
+  '/:id/duplicate',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_CREATE || PERMISSIONS.PRODUCTS_CREATE),
+  createLimiter,
+  async (req, res, next) => {
+    try {
+      const controller = getPurchaseOrderController();
+      await controller.duplicatePurchaseOrder(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * POST /api/purchase-orders/:id/receive
  * Receive purchase order with lot assignment per line
  */

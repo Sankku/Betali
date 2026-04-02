@@ -10,6 +10,7 @@ interface ProductTypeRowProps {
   productType: ProductType;
   isExpanded: boolean;
   lotSearch?: string;
+  warehouseFilter?: string;
   onToggle: () => void;
   onAutoExpand: () => void;
   onEditType: (productType: ProductType) => void;
@@ -35,6 +36,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   productType,
   isExpanded,
   lotSearch,
+  warehouseFilter,
   onToggle,
   onAutoExpand,
   onEditType,
@@ -50,17 +52,20 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   const lotCount = lots?.length ?? 0;
   const totalStock = (lots ?? []).reduce((sum, l) => sum + (l.current_stock ?? 0), 0);
 
-  // Filter lots by lot_number when lotSearch is active
-  const visibleLots = lotSearch
-    ? (lots ?? []).filter(l => l.lot_number.toLowerCase().includes(lotSearch.toLowerCase()))
-    : (lots ?? []);
+  // Filter lots by lot_number and/or warehouse
+  const visibleLots = (lots ?? []).filter(l => {
+    if (lotSearch && !l.lot_number.toLowerCase().includes(lotSearch.toLowerCase())) return false;
+    if (warehouseFilter && l.warehouse_id !== warehouseFilter) return false;
+    return true;
+  });
 
-  // When searching, hide this row if neither the type nor any lot matches
+  // Hide this row if no lots match the active filters
   const typeMatchesSearch = lotSearch
     ? productType.name.toLowerCase().includes(lotSearch.toLowerCase()) ||
       productType.sku.toLowerCase().includes(lotSearch.toLowerCase())
     : true;
-  const hidden = !!lotSearch && !typeMatchesSearch && visibleLots.length === 0;
+  const hasActiveFilter = !!lotSearch || !!warehouseFilter;
+  const hidden = hasActiveFilter && !typeMatchesSearch && visibleLots.length === 0;
 
   // Auto-expand when lotSearch produces matches in this row
   useEffect(() => {
@@ -197,7 +202,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                       Vence
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-                      Origen
+                      Almacén
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Stock

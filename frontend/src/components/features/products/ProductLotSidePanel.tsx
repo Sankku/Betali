@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { X, Hash, Calendar, Globe, DollarSign } from 'lucide-react';
+import { X, Hash, Calendar, Globe, DollarSign, Warehouse, Package } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
+import { useWarehouses } from '../../../hooks/useWarehouse';
 import type { ProductLot, ProductLotFormData } from '../../../services/api/productLotsService';
 
 interface ProductLotSidePanelProps {
@@ -17,6 +18,8 @@ const defaultForm: ProductLotFormData = {
   lot_number: '',
   expiration_date: '',
   origin_country: '',
+  warehouse_id: '',
+  initial_quantity: undefined,
   price: 0,
 };
 
@@ -31,6 +34,7 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
   const [form, setForm] = React.useState<ProductLotFormData>(defaultForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProductLotFormData, string>>>({});
   const [submitting, setSubmitting] = React.useState(false);
+  const { data: warehouses } = useWarehouses({ enabled: isOpen });
 
   useEffect(() => {
     if (isOpen) {
@@ -38,7 +42,9 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
         setForm({
           lot_number: lot.lot_number,
           expiration_date: lot.expiration_date,
-          origin_country: lot.origin_country,
+          origin_country: lot.origin_country || '',
+          warehouse_id: lot.warehouse_id || '',
+          initial_quantity: undefined,
           price: lot.price,
         });
       } else {
@@ -48,11 +54,13 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
     }
   }, [isOpen, lot]);
 
+  const isEditMode = !!lot;
+
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof ProductLotFormData, string>> = {};
     if (!form.lot_number.trim()) newErrors.lot_number = 'El numero de lote es requerido';
     if (!form.expiration_date) newErrors.expiration_date = 'La fecha de vencimiento es requerida';
-    if (!form.origin_country.trim()) newErrors.origin_country = 'El pais de origen es requerido';
+    if (!isEditMode && !form.warehouse_id) newErrors.warehouse_id = 'El almacén es requerido';
     if (!form.price || form.price <= 0) newErrors.price = 'El precio debe ser mayor a 0';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -157,6 +165,52 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
               )}
             </div>
 
+            {/* Almacén */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
+                <Warehouse className="h-4 w-4 text-neutral-600" />
+                Almacén
+                {!isEditMode && <span className="text-danger-500">*</span>}
+              </label>
+              <select
+                value={form.warehouse_id}
+                onChange={e => handleChange('warehouse_id', e.target.value)}
+                disabled={isProcessing || isEditMode}
+                className={`w-full rounded-lg border-2 bg-white px-4 py-3 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60 ${
+                  errors.warehouse_id ? 'border-danger-500' : 'border-neutral-300'
+                }`}
+              >
+                <option value="">Seleccionar almacén...</option>
+                {warehouses?.data?.map(w => (
+                  <option key={w.warehouse_id} value={w.warehouse_id}>
+                    {w.name}{w.location ? ` — ${w.location}` : ''}
+                  </option>
+                ))}
+              </select>
+              {errors.warehouse_id && (
+                <p className="text-sm text-danger-600 font-medium">{errors.warehouse_id}</p>
+              )}
+              {isEditMode && (
+                <p className="text-xs text-neutral-400">El almacén no se puede cambiar una vez creado el lote.</p>
+              )}
+            </div>
+
+            {/* Cantidad inicial — solo en creación */}
+            {!isEditMode && (
+              <Input
+                label="Cantidad inicial (opcional)"
+                name="initial_quantity"
+                type="number"
+                min="0"
+                step="0.001"
+                value={form.initial_quantity ?? ''}
+                onChange={e => handleChange('initial_quantity', e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                placeholder="0"
+                icon={<Package className="h-4 w-4" />}
+                disabled={isProcessing}
+              />
+            )}
+
             {/* Pais de origen */}
             <Input
               label="Pais de origen"
@@ -167,7 +221,6 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
               icon={<Globe className="h-4 w-4" />}
               disabled={isProcessing}
               error={errors.origin_country}
-              required
             />
 
             {/* Precio */}

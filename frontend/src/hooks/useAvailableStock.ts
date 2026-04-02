@@ -1,6 +1,27 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { productTypesService } from '../services/api/productTypesService';
 
+export interface AvailableLot {
+  lot_id: string;
+  lot_number: string;
+  expiration_date: string | null;
+  available_stock: number;
+}
+
+export const useAvailableLots = (
+  productTypeId?: string,
+  warehouseId?: string
+): UseQueryResult<AvailableLot[], Error> => {
+  return useQuery<AvailableLot[], Error>({
+    queryKey: ['available-lots', productTypeId, warehouseId],
+    queryFn: () => productTypesService.getAvailableLots(productTypeId!, warehouseId!),
+    enabled: !!productTypeId && !!warehouseId,
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
 interface AvailableStockResponse {
   product_type_id: string;
   warehouse_id: string;

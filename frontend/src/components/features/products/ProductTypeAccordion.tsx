@@ -7,6 +7,7 @@ import type { ProductLot } from '../../../services/api/productLotsService';
 interface ProductTypeAccordionProps {
   productTypes: ProductType[];
   lotSearch?: string;
+  warehouseFilter?: string;
   onEditType: (productType: ProductType) => void;
   onDeleteType: (productType: ProductType) => void;
   onAddLot: (productType: ProductType) => void;
@@ -17,6 +18,7 @@ interface ProductTypeAccordionProps {
 export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
   productTypes,
   lotSearch,
+  warehouseFilter,
   onEditType,
   onDeleteType,
   onAddLot,
@@ -76,6 +78,7 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
               productType={pt}
               isExpanded={expandedIds.has(pt.product_type_id)}
               lotSearch={lotSearch}
+              warehouseFilter={warehouseFilter}
               onToggle={() => toggleRow(pt.product_type_id)}
               onAutoExpand={() => setExpandedIds(prev => new Set([...prev, pt.product_type_id]))}
               onEditType={onEditType}

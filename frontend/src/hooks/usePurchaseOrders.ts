@@ -263,6 +263,46 @@ export function useSubmitPurchaseOrder() {
 }
 
 /**
+ * Hook to delete a purchase order (hard-delete draft, cancel pending)
+ */
+export function useDeletePurchaseOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (purchaseOrderId: string) =>
+      purchaseOrdersService.deletePurchaseOrder(purchaseOrderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      toast.success('Orden de compra eliminada');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting purchase order:', error);
+      toast.error(translateApiError(error, 'Error al eliminar la orden de compra.'));
+    },
+  });
+}
+
+/**
+ * Hook to duplicate a purchase order as a new draft
+ */
+export function useDuplicatePurchaseOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (purchaseOrderId: string) =>
+      purchaseOrdersService.duplicate(purchaseOrderId),
+    onSuccess: (newPO) => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      toast.success(`OC duplicada como borrador: ${newPO.purchase_order_number}`);
+    },
+    onError: (error: any) => {
+      console.error('Error duplicating purchase order:', error);
+      toast.error(translateApiError(error, 'Error al duplicar la orden de compra.'));
+    },
+  });
+}
+
+/**
  * Purchase Order Status Options for UI
  */
 export const PURCHASE_ORDER_STATUS_OPTIONS = [

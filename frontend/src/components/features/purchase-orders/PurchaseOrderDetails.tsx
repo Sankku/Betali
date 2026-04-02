@@ -174,6 +174,11 @@ export function PurchaseOrderDetails({ order, onClose }: PurchaseOrderDetailsPro
                             SKU: {detail.product_types.sku}
                           </p>
                         )}
+                        {detail.product_lots?.lot_number && (
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            Lote: {detail.product_lots.lot_number}
+                          </p>
+                        )}
                         {detail.notes && (
                           <p className="text-xs text-neutral-400 mt-1 italic">{detail.notes}</p>
                         )}

@@ -28,6 +28,7 @@ import {
   useUpdateProductLot,
   useDeleteProductLot,
 } from '../../hooks/useProductLots';
+import { useWarehouses } from '../../hooks/useWarehouse';
 import type { ProductType, ProductTypeFormData } from '../../services/api/productTypesService';
 import type { ProductLot, ProductLotFormData } from '../../services/api/productLotsService';
 
@@ -61,8 +62,10 @@ const ProductsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
+  const [warehouseFilter, setWarehouseFilter] = useState<string>('');
 
   const { data: productTypes, isLoading, error } = useProductTypes();
+  const { data: warehouses } = useWarehouses({ enabled: true });
   const createProductType = useCreateProductType();
   const updateProductType = useUpdateProductType();
   const deleteProductType = useDeleteProductType();
@@ -198,7 +201,7 @@ const ProductsPage: React.FC = () => {
               </button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(['', 'standard', 'raw_material', 'finished_good'] as const).map((val) => {
               const labels: Record<string, string> = {
                 '': 'Todos',
@@ -221,6 +224,22 @@ const ProductsPage: React.FC = () => {
                 </button>
               );
             })}
+
+            {/* Warehouse filter */}
+            {warehouses?.data && warehouses.data.length > 0 && (
+              <select
+                value={warehouseFilter}
+                onChange={e => setWarehouseFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Todos los almacenes</option>
+                {warehouses.data.map(w => (
+                  <option key={w.warehouse_id} value={w.warehouse_id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -261,6 +280,7 @@ const ProductsPage: React.FC = () => {
           <ProductTypeAccordion
             productTypes={types}
             lotSearch={searchQuery.trim() || undefined}
+            warehouseFilter={warehouseFilter || undefined}
             onEditType={openEditType}
             onDeleteType={openDeleteType}
             onAddLot={openAddLot}

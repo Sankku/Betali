@@ -30,9 +30,11 @@ class OrderRepository extends BaseRepository {
           order_details(
             order_detail_id,
             product_type_id,
+            lot_id,
             quantity,
             price,
-            product_types!order_details_product_type_id_fkey(product_type_id, name, sku)
+            product_types!order_details_product_type_id_fkey(product_type_id, name, sku, unit),
+            product_lots!order_details_lot_id_fkey(lot_id, lot_number)
           )
         `)
         .eq('order_id', orderId)

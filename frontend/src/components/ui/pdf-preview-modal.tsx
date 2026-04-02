@@ -143,9 +143,9 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} size="full">
       <ModalContent>
         <ModalCloseButton onClose={onClose} />
-        <ModalHeader className="border-b border-neutral-200">
+        <ModalHeader className="border-b border-neutral-200 dark:border-neutral-700">
           <ModalTitle>{title}</ModalTitle>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             {selectedOrders.size} de {orders.length} orden(es) seleccionada(s)
           </p>
         </ModalHeader>
@@ -153,8 +153,8 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
         <ModalBody className="p-0">
           <div className="flex h-[70vh]">
             {/* Sidebar - Order Selection */}
-            <div className="w-72 border-r border-neutral-200 flex flex-col bg-neutral-50">
-              <div className="p-4 border-b border-neutral-200">
+            <div className="w-72 border-r border-neutral-200 dark:border-neutral-700 flex flex-col bg-neutral-50 dark:bg-neutral-900">
+              <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -185,8 +185,8 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                       className={cn(
                         'w-full flex items-center gap-3 p-3 rounded-lg mb-1 transition-all text-left',
                         isSelected
-                          ? 'bg-indigo-50 border border-indigo-200 text-indigo-900'
-                          : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                          ? 'bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200'
+                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                       )}
                     >
                       <div
@@ -194,7 +194,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                           'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
                           isSelected
                             ? 'bg-indigo-600 border-indigo-600'
-                            : 'border-neutral-300'
+                            : 'border-neutral-300 dark:border-neutral-600'
                         )}
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
@@ -203,7 +203,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                         <div className="text-sm font-medium truncate">
                           Pagina {index + 1}
                         </div>
-                        <div className="text-xs text-neutral-500 truncate">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                           {order.label}
                         </div>
                       </div>
@@ -214,17 +214,17 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
             </div>
 
             {/* Main Preview Area */}
-            <div className="flex-1 flex flex-col bg-neutral-100">
+            <div className="flex-1 flex flex-col bg-neutral-100 dark:bg-neutral-950">
               {isLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
-                    <p className="text-neutral-600">Generando vista previa...</p>
+                    <p className="text-neutral-600 dark:text-neutral-400">Generando vista previa...</p>
                   </div>
                 </div>
               ) : error ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-red-600">
+                  <div className="text-center text-red-600 dark:text-red-400">
                     <p>{error}</p>
                     <Button
                       variant="outline"
@@ -238,7 +238,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                 </div>
               ) : selectedOrders.size === 0 ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-neutral-500">
+                  <div className="text-center text-neutral-500 dark:text-neutral-400">
                     <p>Selecciona al menos una orden para ver la vista previa</p>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
                   {/* Page Navigation */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 py-3 bg-white border-t border-neutral-200">
+                    <div className="flex items-center justify-center gap-4 py-3 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700">
                       <Button
                         variant="outline"
                         size="icon-sm"
@@ -264,7 +264,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
-                      <span className="text-sm text-neutral-600">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
                         Pagina {currentPage} de {totalPages}
                       </span>
                       <Button

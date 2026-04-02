@@ -195,6 +195,31 @@ class PurchaseOrderController {
   }
 
   /**
+   * Duplicate purchase order as new draft
+   * POST /api/purchase-orders/:id/duplicate
+   */
+  async duplicatePurchaseOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const organizationId = req.user.currentOrganizationId;
+
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+
+      const duplicated = await this.purchaseOrderService.duplicatePurchaseOrder(id, organizationId);
+
+      res.status(201).json({
+        success: true,
+        data: duplicated,
+        message: 'Purchase order duplicated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Delete/cancel purchase order
    * DELETE /api/purchase-orders/:id
    */

@@ -381,4 +381,35 @@ export const purchaseOrdersService = {
 
     return response.blob();
   },
+
+  /**
+   * Delete a purchase order (hard-delete for draft, cancel for pending)
+   */
+  async deletePurchaseOrder(id: string): Promise<void> {
+    try {
+      if (!id || id === 'undefined' || id === 'null') {
+        throw new Error('Invalid or missing purchase order ID');
+      }
+      await httpClient.delete<{ message: string }>(`/api/purchase-orders/${id}`);
+    } catch (error) {
+      console.error(`Error deleting purchase order ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Duplicate a purchase order as a new draft
+   */
+  async duplicate(id: string): Promise<PurchaseOrder> {
+    try {
+      const response = await httpClient.post<{ data: PurchaseOrder }>(
+        `/api/purchase-orders/${id}/duplicate`,
+        {}
+      );
+      return response.data || response;
+    } catch (error) {
+      console.error(`Error duplicating purchase order ${id}:`, error);
+      throw error;
+    }
+  },
 };

@@ -287,7 +287,7 @@ class OrderController {
         status: 'draft',
         tax_rate_ids: (originalOrder.tax_amount === 0 || originalOrder.tax_amount === null) ? [] : undefined,
         items: originalOrder.order_details.map(detail => ({
-          product_id: detail.product_id,
+          product_type_id: detail.product_type_id || detail.product_id,
           quantity: detail.quantity,
           price: detail.price
         }))
