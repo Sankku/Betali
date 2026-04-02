@@ -515,8 +515,8 @@ describe('OrderController Unit Tests', () => {
       notes: 'Original notes',
       tax_amount: 50,
       order_details: [
-        { product_id: 'p-1', quantity: 2, price: 10.0 },
-        { product_id: 'p-2', quantity: 1, price: 20.0 }
+        { product_type_id: 'p-1', quantity: 2, price: 10.0 },
+        { product_type_id: 'p-2', quantity: 1, price: 20.0 }
       ]
     };
 
@@ -539,8 +539,8 @@ describe('OrderController Unit Tests', () => {
           status: 'draft',
           notes: 'Duplicated from Order #o-1',
           items: [
-            { product_id: 'p-1', quantity: 2, price: 10.0 },
-            { product_id: 'p-2', quantity: 1, price: 20.0 }
+            { product_type_id: 'p-1', quantity: 2, price: 10.0 },
+            { product_type_id: 'p-2', quantity: 1, price: 20.0 }
           ]
         }),
         'org-123'
