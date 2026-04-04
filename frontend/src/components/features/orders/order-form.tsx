@@ -59,10 +59,23 @@ function LotSelector({
   productTypeId: string;
   warehouseId: string;
   value?: string;
-  onChange: (lotId: string) => void;
+  onChange: (lotId: string, salePrice?: number | null) => void;
   disabled?: boolean;
 }) {
   const { data: lots, isLoading } = useAvailableLots(productTypeId, warehouseId);
+
+  // When lots load and we're in auto mode, notify parent with the first lot's price
+  const notifiedRef = React.useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    // Reset when product changes
+    notifiedRef.current = undefined;
+  }, [productTypeId]);
+  React.useEffect(() => {
+    if (lots && lots.length > 0 && notifiedRef.current !== productTypeId && (!value || value === '')) {
+      notifiedRef.current = productTypeId;
+      onChange('', lots[0]?.sale_price);
+    }
+  }, [lots, productTypeId]);
 
   if (!lots && !isLoading) return null;
 
@@ -73,7 +86,15 @@ function LotSelector({
       </Label>
       <Select
         value={value || 'auto'}
-        onValueChange={(v) => onChange(v === 'auto' ? '' : v)}
+        onValueChange={(v) => {
+          if (v === 'auto') {
+            const firstLot = lots?.[0];
+            onChange('', firstLot?.sale_price);
+            return;
+          }
+          const lot = lots?.find(l => l.lot_id === v);
+          onChange(v, lot?.sale_price);
+        }}
         disabled={disabled || isLoading}
       >
         <SelectTrigger className="text-sm">
@@ -222,13 +243,14 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           ...newItems[index],
           product_type_id: value as string,
           lot_id: undefined, // reset lot when product changes
-          price: 0,
+          price: selectedProductType.sale_price ?? 0,
           product_name: selectedProductType.name,
           product_sku: selectedProductType.sku,
         };
       }
     } else if (field === 'lot_id') {
       newItems[index] = { ...newItems[index], lot_id: value as string || undefined };
+      // price update from lot is handled by handleLotChange
     } else if (field === 'quantity') {
       newItems[index] = {
         ...newItems[index],
@@ -480,7 +502,10 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                     productTypeId={item.product_type_id}
                     warehouseId={watchedValues.warehouse_id}
                     value={item.lot_id}
-                    onChange={(lotId) => handleItemChange(index, 'lot_id', lotId)}
+                    onChange={(lotId, salePrice) => {
+                      handleItemChange(index, 'lot_id', lotId);
+                      if (salePrice != null) handleItemChange(index, 'price', salePrice);
+                    }}
                     disabled={isViewMode}
                   />
                 ) : (
@@ -494,14 +519,21 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
               </div>
 
               {/* Quantity with real-time stock validation */}
-              <OrderItemWithStockValidation
-                item={item}
-                index={index}
-                warehouseId={watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined}
-                onQuantityChange={handleItemChange}
-                errors={errors}
-                isViewMode={isViewMode}
-              />
+              {(() => {
+                const pt = productTypes?.find(p => p.product_type_id === item.product_type_id);
+                return (
+                  <OrderItemWithStockValidation
+                    item={item}
+                    index={index}
+                    warehouseId={watchedValues.warehouse_id !== 'no-warehouse' ? watchedValues.warehouse_id : undefined}
+                    minStock={pt?.min_stock}
+                    maxStock={pt?.max_stock}
+                    onQuantityChange={handleItemChange}
+                    errors={errors}
+                    isViewMode={isViewMode}
+                  />
+                );
+              })()}
 
               <div>
                 <Label className="text-gray-900 font-medium">{t('orders.form.price')} *</Label>

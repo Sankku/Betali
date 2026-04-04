@@ -21,6 +21,7 @@ const defaultForm: ProductLotFormData = {
   warehouse_id: '',
   initial_quantity: undefined,
   price: 0,
+  sale_price: null,
 };
 
 export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
@@ -46,6 +47,7 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
           warehouse_id: lot.warehouse_id || '',
           initial_quantity: undefined,
           price: lot.price,
+          sale_price: lot.sale_price ?? null,
         });
       } else {
         setForm(defaultForm);
@@ -175,7 +177,7 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
               <select
                 value={form.warehouse_id}
                 onChange={e => handleChange('warehouse_id', e.target.value)}
-                disabled={isProcessing || isEditMode}
+                disabled={isProcessing}
                 className={`w-full rounded-lg border-2 bg-white px-4 py-3 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60 ${
                   errors.warehouse_id ? 'border-danger-500' : 'border-neutral-300'
                 }`}
@@ -189,9 +191,6 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
               </select>
               {errors.warehouse_id && (
                 <p className="text-sm text-danger-600 font-medium">{errors.warehouse_id}</p>
-              )}
-              {isEditMode && (
-                <p className="text-xs text-neutral-400">El almacén no se puede cambiar una vez creado el lote.</p>
               )}
             </div>
 
@@ -223,21 +222,35 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
               error={errors.origin_country}
             />
 
-            {/* Precio */}
-            <Input
-              label="Precio"
-              name="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.price || ''}
-              onChange={e => handleChange('price', parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              icon={<DollarSign className="h-4 w-4" />}
-              disabled={isProcessing}
-              error={errors.price}
-              required
-            />
+            {/* Precios */}
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Precio de compra"
+                name="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price || ''}
+                onChange={e => handleChange('price', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                icon={<DollarSign className="h-4 w-4" />}
+                disabled={isProcessing}
+                error={errors.price}
+                required
+              />
+              <Input
+                label="Precio de venta"
+                name="sale_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.sale_price ?? ''}
+                onChange={e => handleChange('sale_price', e.target.value ? parseFloat(e.target.value) : null)}
+                placeholder="0.00"
+                icon={<DollarSign className="h-4 w-4" />}
+                disabled={isProcessing}
+              />
+            </div>
           </div>
 
           {/* Footer */}

@@ -401,8 +401,8 @@ export function StockMovementForm({
           {/* Lot selector — appears after a product type is selected */}
           {watchedValues.product_type_id && (
             <FormField
-              label="Lote"
-              description="Seleccionar el lote específico para este movimiento"
+              label={t('stockMovements.form.lot')}
+              description={t('stockMovements.form.lotDesc')}
               icon={<Hash className="h-4 w-4" />}
               required
               error={getFieldError('lot_id')}
@@ -413,12 +413,14 @@ export function StockMovementForm({
                 disabled={isLoading || productLotsQuery.isLoading}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={productLotsQuery.isLoading ? 'Cargando lotes...' : 'Seleccionar lote'} />
+                  <SelectValue placeholder={productLotsQuery.isLoading ? t('stockMovements.form.lotLoading') : t('stockMovements.form.lotPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {validProductLots.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-neutral-500 text-center">
-                      {productLotsQuery.isLoading ? 'Cargando lotes...' : 'No hay lotes disponibles para este producto'}
+                      {productLotsQuery.isLoading
+                        ? t('stockMovements.form.lotLoading')
+                        : t('stockMovements.form.noLotsAvailable')}
                     </div>
                   ) : (
                     validProductLots.map(lot => (
@@ -429,7 +431,7 @@ export function StockMovementForm({
                           </span>
                           {lot.expiration_date && (
                             <span className="text-xs text-neutral-500 truncate block">
-                              Vence: {new Date(lot.expiration_date).toLocaleDateString()}
+                              {t('stockMovements.form.lotExpiresPrefix')} {new Date(lot.expiration_date).toLocaleDateString()}
                             </span>
                           )}
                         </div>

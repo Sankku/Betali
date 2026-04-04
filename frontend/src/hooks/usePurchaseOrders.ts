@@ -197,11 +197,12 @@ export function useReceivePurchaseOrder() {
       // NOTE: the purchase orders query key in this codebase is camelCase 'purchaseOrders'
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', receivedPO.purchase_order_id] });
-      queryClient.invalidateQueries({ queryKey: ['product-lots'] });
+      queryClient.invalidateQueries({ queryKey: ['product-lots'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stats'] });
       // Reception creates stock movements — refresh product stock views
-      queryClient.invalidateQueries({ queryKey: ['product-types'] });
-      queryClient.invalidateQueries({ queryKey: ['available-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['product-types'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['available-stock'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['available-lots'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
 
       const msg = receivedPO.status === 'received'

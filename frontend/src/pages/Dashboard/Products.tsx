@@ -29,6 +29,7 @@ import {
   useDeleteProductLot,
 } from '../../hooks/useProductLots';
 import { useWarehouses } from '../../hooks/useWarehouse';
+import { useOrganization } from '../../context/OrganizationContext';
 import type { ProductType, ProductTypeFormData } from '../../services/api/productTypesService';
 import type { ProductLot, ProductLotFormData } from '../../services/api/productLotsService';
 
@@ -63,6 +64,9 @@ const ProductsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [warehouseFilter, setWarehouseFilter] = useState<string>('');
+
+  const { currentUserRole } = useOrganization();
+  const canSeePrices = ['super_admin', 'admin', 'manager'].includes(currentUserRole?.toLowerCase() ?? '');
 
   const { data: productTypes, isLoading, error } = useProductTypes();
   const { data: warehouses } = useWarehouses({ enabled: true });
@@ -281,6 +285,7 @@ const ProductsPage: React.FC = () => {
             productTypes={types}
             lotSearch={searchQuery.trim() || undefined}
             warehouseFilter={warehouseFilter || undefined}
+            canSeePrices={canSeePrices}
             onEditType={openEditType}
             onDeleteType={openDeleteType}
             onAddLot={openAddLot}

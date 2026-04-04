@@ -9,6 +9,7 @@ export interface ProductLot {
   warehouse_id: string | null;
   warehouse_name: string | null;
   price: number;
+  sale_price?: number | null;
   current_stock: number;
   organization_id: string;
   created_at: string;
@@ -22,6 +23,7 @@ export interface ProductLotFormData {
   warehouse_id: string;
   initial_quantity?: number;
   price: number;
+  sale_price?: number | null;
 }
 
 export const productLotsService = {

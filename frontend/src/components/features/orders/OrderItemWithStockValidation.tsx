@@ -12,6 +12,8 @@ interface OrderItemWithStockValidationProps {
   };
   index: number;
   warehouseId?: string;
+  minStock?: number | null;
+  maxStock?: number | null;
   onQuantityChange: (index: number, field: string, value: string) => void;
   errors?: Record<string, string>;
   isViewMode?: boolean;
@@ -25,6 +27,8 @@ export function OrderItemWithStockValidation({
   item,
   index,
   warehouseId,
+  minStock,
+  maxStock,
   onQuantityChange,
   errors = {},
   isViewMode = false,
@@ -41,7 +45,8 @@ export function OrderItemWithStockValidation({
   } = useStockValidation(
     item.product_type_id,
     warehouseId,
-    item.quantity
+    item.quantity,
+    { minStock, maxStock }
   );
 
   // Don't show validation if no product or warehouse selected

@@ -5,6 +5,7 @@ import type { ProductLot } from '../../../services/api/productLotsService';
 
 interface ProductLotRowProps {
   lot: ProductLot;
+  canSeeLotPrice?: boolean;
   onEdit: (lot: ProductLot) => void;
   onDelete: (lot: ProductLot) => void;
 }
@@ -36,7 +37,7 @@ function isExpiringSoon(dateStr: string): boolean {
   return diffDays > 0 && diffDays <= 30;
 }
 
-export const ProductLotRow: React.FC<ProductLotRowProps> = ({ lot, onEdit, onDelete }) => {
+export const ProductLotRow: React.FC<ProductLotRowProps> = ({ lot, canSeeLotPrice = false, onEdit, onDelete }) => {
   const expired = isExpired(lot.expiration_date);
   const expiringSoon = isExpiringSoon(lot.expiration_date);
 
@@ -72,8 +73,13 @@ export const ProductLotRow: React.FC<ProductLotRowProps> = ({ lot, onEdit, onDel
         </span>
       </td>
       <td className="px-4 py-2.5 text-sm font-semibold text-green-700">
-        ${lot.price != null ? lot.price.toFixed(2) : '0.00'}
+        {lot.sale_price != null ? `$${lot.sale_price.toFixed(2)}` : <span className="text-neutral-400 font-normal">—</span>}
       </td>
+      {canSeeLotPrice && (
+        <td className="px-4 py-2.5 text-sm font-semibold text-blue-700">
+          ${lot.price != null ? lot.price.toFixed(2) : '0.00'}
+        </td>
+      )}
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-1">
           <Button

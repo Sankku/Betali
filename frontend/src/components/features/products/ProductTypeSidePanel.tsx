@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Package, Tag, Ruler, AlertTriangle, Bell, FlaskConical } from 'lucide-react';
+import { X, Package, Tag, Ruler, AlertTriangle, Bell, FlaskConical, DollarSign } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -23,6 +23,8 @@ const defaultForm: ProductTypeFormData = {
   max_stock: undefined,
   description: '',
   alert_enabled: false,
+  purchase_price: null,
+  sale_price: null,
 };
 
 export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
@@ -49,6 +51,8 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
           max_stock: productType.max_stock,
           description: productType.description || '',
           alert_enabled: productType.alert_enabled,
+          purchase_price: productType.purchase_price ?? null,
+          sale_price: productType.sale_price ?? null,
         });
       } else {
         setForm(defaultForm);
@@ -235,6 +239,38 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
               </div>
             )}
 
+            {/* Precios de referencia */}
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Precio de venta"
+                name="sale_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.sale_price ?? ''}
+                onChange={e =>
+                  handleChange('sale_price', e.target.value ? parseFloat(e.target.value) : null)
+                }
+                placeholder="0.00"
+                icon={<DollarSign className="h-4 w-4" />}
+                disabled={isProcessing}
+              />
+              <Input
+                label="Precio de compra"
+                name="purchase_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.purchase_price ?? ''}
+                onChange={e =>
+                  handleChange('purchase_price', e.target.value ? parseFloat(e.target.value) : null)
+                }
+                placeholder="0.00"
+                icon={<DollarSign className="h-4 w-4" />}
+                disabled={isProcessing}
+              />
+            </div>
+
             {/* Alertas de inventario */}
             <div className="border-t pt-5 space-y-4">
               <div className="flex items-center gap-2">
@@ -299,7 +335,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
               Cancelar
             </Button>
             <Button type="submit" loading={isProcessing}>
-              {productType ? 'Guardar cambios' : 'Crear tipo'}
+              {productType ? 'Guardar cambios' : 'Crear producto'}
             </Button>
           </div>
         </form>

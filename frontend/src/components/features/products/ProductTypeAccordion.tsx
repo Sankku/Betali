@@ -8,6 +8,7 @@ interface ProductTypeAccordionProps {
   productTypes: ProductType[];
   lotSearch?: string;
   warehouseFilter?: string;
+  canSeePrices?: boolean;
   onEditType: (productType: ProductType) => void;
   onDeleteType: (productType: ProductType) => void;
   onAddLot: (productType: ProductType) => void;
@@ -19,6 +20,7 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
   productTypes,
   lotSearch,
   warehouseFilter,
+  canSeePrices = false,
   onEditType,
   onDeleteType,
   onAddLot,
@@ -67,6 +69,14 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
               Stock Total
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+              P. Venta
+            </th>
+            {canSeePrices && (
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                P. Compra
+              </th>
+            )}
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               Acciones
             </th>
           </tr>
@@ -79,6 +89,7 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
               isExpanded={expandedIds.has(pt.product_type_id)}
               lotSearch={lotSearch}
               warehouseFilter={warehouseFilter}
+              canSeePrices={canSeePrices}
               onToggle={() => toggleRow(pt.product_type_id)}
               onAutoExpand={() => setExpandedIds(prev => new Set([...prev, pt.product_type_id]))}
               onEditType={onEditType}

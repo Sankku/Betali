@@ -100,6 +100,7 @@ export function PurchaseOrdersPage() {
     isOpen: boolean;
     purchaseOrder?: PurchaseOrder;
   }>({ isOpen: false });
+  const [showCancelled, setShowCancelled] = useState(false);
 
   // Build filters
   const filters = useMemo(() => {
@@ -113,6 +114,11 @@ export function PurchaseOrdersPage() {
 
   // Hooks
   const { data: purchaseOrders = [], isLoading } = usePurchaseOrders({ filters });
+
+  const displayedOrders = useMemo(() => {
+    if (showCancelled || statusFilter === 'cancelled') return purchaseOrders;
+    return purchaseOrders.filter((o) => o.status !== 'cancelled');
+  }, [purchaseOrders, showCancelled, statusFilter]);
   const { data: suppliers = [] } = useSuppliers({ searchOptions: { active_only: true } });
   const { data: warehouses } = useWarehouses();
   const updateStatusMutation = useUpdatePurchaseOrderStatus();
@@ -466,6 +472,7 @@ export function PurchaseOrdersPage() {
 
   // Filter components
   const filterComponents = (
+    <div className="space-y-3">
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {/* Search */}
       <div className="relative">
@@ -526,6 +533,25 @@ export function PurchaseOrdersPage() {
         </SelectContent>
       </Select>
     </div>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={showCancelled}
+        onClick={() => setShowCancelled((v) => !v)}
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+          showCancelled ? 'bg-blue-500' : 'bg-zinc-500'
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            showCancelled ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </button>
+      <span className="text-sm text-muted-foreground">Mostrar canceladas</span>
+    </div>
+    </div>
   );
 
   return (
@@ -539,7 +565,7 @@ export function PurchaseOrdersPage() {
 
         {/* Table with Bulk Actions */}
         <TableWithBulkActions
-          data={purchaseOrders}
+          data={displayedOrders}
           columns={columns}
           loading={isLoading}
           getRowId={(row) => row.purchase_order_id}

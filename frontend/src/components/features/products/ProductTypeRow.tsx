@@ -11,6 +11,7 @@ interface ProductTypeRowProps {
   isExpanded: boolean;
   lotSearch?: string;
   warehouseFilter?: string;
+  canSeePrices?: boolean;
   onToggle: () => void;
   onAutoExpand: () => void;
   onEditType: (productType: ProductType) => void;
@@ -37,6 +38,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   isExpanded,
   lotSearch,
   warehouseFilter,
+  canSeePrices = false,
   onToggle,
   onAutoExpand,
   onEditType,
@@ -134,6 +136,18 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
             </span>
           )}
         </td>
+        <td className="px-4 py-3 text-sm font-semibold text-green-700">
+          {productType.sale_price != null
+            ? `$${productType.sale_price.toFixed(2)}`
+            : <span className="text-neutral-400 font-normal">—</span>}
+        </td>
+        {canSeePrices && (
+          <td className="px-4 py-3 text-sm font-semibold text-blue-700">
+            {productType.purchase_price != null
+              ? `$${productType.purchase_price.toFixed(2)}`
+              : <span className="text-neutral-400 font-normal">—</span>}
+          </td>
+        )}
         <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             <Button
@@ -171,7 +185,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
       {/* Expanded lots section */}
       {isExpanded && (
         <tr>
-          <td colSpan={8} className="p-0 bg-neutral-50 border-b border-neutral-200">
+          <td colSpan={canSeePrices ? 10 : 9} className="p-0 bg-neutral-50 border-b border-neutral-200">
             {lotsLoading ? (
               <div className="flex items-center gap-2 px-10 py-4 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -208,8 +222,13 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                       Stock
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-                      Precio
+                      Precio venta
                     </th>
+                    {canSeePrices && (
+                      <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                        Precio compra
+                      </th>
+                    )}
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Acciones
                     </th>
@@ -220,6 +239,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                     <ProductLotRow
                       key={lot.lot_id}
                       lot={lot}
+                      canSeeLotPrice={canSeePrices}
                       onEdit={l => onEditLot(l, productType)}
                       onDelete={onDeleteLot}
                     />

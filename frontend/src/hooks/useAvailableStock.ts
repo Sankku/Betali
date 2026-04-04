@@ -6,6 +6,7 @@ export interface AvailableLot {
   lot_number: string;
   expiration_date: string | null;
   available_stock: number;
+  sale_price?: number | null;
 }
 
 export const useAvailableLots = (
@@ -98,7 +99,8 @@ export const useAvailableStock = (
 export const useStockValidation = (
   productTypeId?: string,
   warehouseId?: string,
-  requestedQuantity?: number
+  requestedQuantity?: number,
+  options?: { maxStock?: number | null; minStock?: number | null }
 ) => {
   const { data: stock, isLoading, error: queryError } = useAvailableStock(
     productTypeId,
@@ -108,9 +110,14 @@ export const useStockValidation = (
   const availableStock = stock?.available_stock ?? 0;
   const quantity = requestedQuantity ?? 0;
 
+  // Low-stock threshold: prefer max_stock/2, then min_stock, then default 10
+  const lowStockThreshold = options?.maxStock
+    ? options.maxStock / 2
+    : (options?.minStock ?? 10);
+
   // Determine stock status
   const isSufficient = availableStock >= quantity;
-  const isLowStock = availableStock > 0 && availableStock < 10; // Configurable threshold
+  const isLowStock = availableStock > 0 && availableStock <= lowStockThreshold;
   const isOutOfStock = availableStock === 0;
 
   // Generate messages

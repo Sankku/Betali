@@ -10,6 +10,8 @@ export interface ProductType {
   max_stock?: number;
   description?: string;
   alert_enabled: boolean;
+  purchase_price?: number | null;
+  sale_price?: number | null;
   organization_id: string;
   created_at: string;
   updated_at: string;
@@ -24,6 +26,8 @@ export interface ProductTypeFormData {
   max_stock?: number;
   description?: string;
   alert_enabled?: boolean;
+  purchase_price?: number | null;
+  sale_price?: number | null;
 }
 
 export interface BulkImportRow {
@@ -127,8 +131,9 @@ export const productTypesService = {
     lot_number: string;
     expiration_date: string | null;
     available_stock: number;
+    sale_price?: number | null;
   }>> {
-    const response = await httpClient.get<{ data: Array<{ lot_id: string; lot_number: string; expiration_date: string | null; available_stock: number; }> }>(
+    const response = await httpClient.get<{ data: Array<{ lot_id: string; lot_number: string; expiration_date: string | null; available_stock: number; sale_price?: number | null; }> }>(
       `/api/product-types/${productTypeId}/available-lots?warehouse_id=${encodeURIComponent(warehouseId)}`
     );
     return response.data;
