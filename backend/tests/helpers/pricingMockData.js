@@ -240,6 +240,7 @@ const mockPricingEntities = {
     description: 'Test product for pricing',
     batch_number: `BATCH-${Date.now()}`,
     price: 100.00,
+    sale_price: 100.00,
     is_active: true,
     created_at: new Date().toISOString()
   })
