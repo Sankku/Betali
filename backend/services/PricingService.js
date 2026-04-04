@@ -217,7 +217,7 @@ class PricingService {
         if (!product) {
           throw new Error(`Product ${productTypeId} not found`);
         }
-        applicablePrice = product.price || 0;
+        applicablePrice = product.sale_price || 0;
         priceSource = 'base_price';
       }
 

@@ -1,5 +1,18 @@
 const { Logger } = require('../utils/Logger');
 
+const PRICE_SENSITIVE_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'];
+
+function stripPrice(lot) {
+  const { price, ...rest } = lot;
+  return rest;
+}
+
+function filterPrice(lots, role) {
+  if (PRICE_SENSITIVE_ROLES.includes(role)) return lots;
+  if (Array.isArray(lots)) return lots.map(stripPrice);
+  return stripPrice(lots);
+}
+
 /**
  * ProductLot controller handling HTTP requests for product lot instances
  * Follows the separation of concerns principle
@@ -14,7 +27,8 @@ class ProductLotController {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const lots = await this.service.lotRepo.findByOrg(organizationId);
-      res.json({ data: lots, meta: { total: lots.length } });
+      const data = filterPrice(lots, req.user.currentOrganizationRole);
+      res.json({ data, meta: { total: data.length } });
     } catch (error) { next(error); }
   }
 
@@ -24,7 +38,8 @@ class ProductLotController {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const lots = await this.service.getLotsByType(typeId, organizationId);
-      res.json({ data: lots, meta: { total: lots.length } });
+      const data = filterPrice(lots, req.user.currentOrganizationRole);
+      res.json({ data, meta: { total: data.length } });
     } catch (error) { next(error); }
   }
 
@@ -36,7 +51,7 @@ class ProductLotController {
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       if (!warehouse_id) return res.status(400).json({ error: 'warehouse_id query parameter is required.' });
       const lots = await this.service.getAvailableLots(id, warehouse_id, organizationId);
-      res.json({ data: lots });
+      res.json({ data: filterPrice(lots, req.user.currentOrganizationRole) });
     } catch (error) { next(error); }
   }
 
@@ -46,7 +61,7 @@ class ProductLotController {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const lot = await this.service.getLotById(id, organizationId);
-      res.json({ data: lot });
+      res.json({ data: filterPrice(lot, req.user.currentOrganizationRole) });
     } catch (error) { next(error); }
   }
 

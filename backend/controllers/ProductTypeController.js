@@ -1,5 +1,18 @@
 const { Logger } = require('../utils/Logger');
 
+const PRICE_SENSITIVE_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'];
+
+function stripPurchasePrice(type) {
+  const { purchase_price, ...rest } = type;
+  return rest;
+}
+
+function filterPurchasePrice(data, role) {
+  if (PRICE_SENSITIVE_ROLES.includes(role)) return data;
+  if (Array.isArray(data)) return data.map(stripPurchasePrice);
+  return stripPurchasePrice(data);
+}
+
 /**
  * ProductType controller handling HTTP requests for product type definitions
  * Follows the separation of concerns principle
@@ -14,7 +27,8 @@ class ProductTypeController {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const types = await this.service.getTypes(organizationId);
-      res.json({ data: types, meta: { total: types.length } });
+      const data = filterPurchasePrice(types, req.user.currentOrganizationRole);
+      res.json({ data, meta: { total: data.length } });
     } catch (error) { next(error); }
   }
 
@@ -24,7 +38,7 @@ class ProductTypeController {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const type = await this.service.getTypeById(id, organizationId);
-      res.json({ data: type });
+      res.json({ data: filterPurchasePrice(type, req.user.currentOrganizationRole) });
     } catch (error) { next(error); }
   }
 
@@ -35,7 +49,8 @@ class ProductTypeController {
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       if (!q) return res.status(400).json({ error: 'Search term is required' });
       const types = await this.service.searchTypes(q, organizationId);
-      res.json({ data: types, meta: { searchTerm: q, total: types.length } });
+      const data = filterPurchasePrice(types, req.user.currentOrganizationRole);
+      res.json({ data, meta: { searchTerm: q, total: data.length } });
     } catch (error) { next(error); }
   }
 

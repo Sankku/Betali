@@ -640,12 +640,12 @@ class PurchaseOrderService {
         throw new Error('Purchase order not found or access denied');
       }
 
-      // Only allow deletion of draft or pending orders
-      if (!['draft', 'pending'].includes(purchaseOrder.status)) {
+      // Only allow deletion/cancellation of non-completed orders
+      if (!['draft', 'pending', 'approved'].includes(purchaseOrder.status)) {
         throw new Error(`Cannot delete purchase order with status: ${purchaseOrder.status}`);
       }
 
-      // Hard delete draft orders; soft-delete (cancel) pending orders
+      // Hard delete draft orders; soft-delete (cancel) pending/approved orders
       if (purchaseOrder.status === 'draft') {
         await this.purchaseOrderRepository.hardDelete(purchaseOrderId, organizationId);
         this.logger.info('Purchase order hard deleted', { purchaseOrderId });

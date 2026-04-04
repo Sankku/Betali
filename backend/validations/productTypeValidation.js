@@ -13,6 +13,8 @@ const createProductTypeSchema = Joi.object({
   max_stock: Joi.number().min(0).optional().allow(null),
   description: Joi.string().max(1000).optional().allow('', null),
   alert_enabled: Joi.boolean().optional(),
+  purchase_price: Joi.number().min(0).optional().allow(null),
+  sale_price: Joi.number().min(0).optional().allow(null),
   senasa_product_id: Joi.string().uuid().optional().allow(null),
   branch_id: Joi.string().uuid().optional().allow(null),
 });
@@ -26,6 +28,8 @@ const updateProductTypeSchema = Joi.object({
   max_stock: Joi.number().min(0).optional().allow(null),
   description: Joi.string().max(1000).optional().allow('', null),
   alert_enabled: Joi.boolean().optional(),
+  purchase_price: Joi.number().min(0).optional().allow(null),
+  sale_price: Joi.number().min(0).optional().allow(null),
   senasa_product_id: Joi.string().uuid().optional().allow(null),
   branch_id: Joi.string().uuid().optional().allow(null),
 }).min(1);

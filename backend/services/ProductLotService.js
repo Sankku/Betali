@@ -45,7 +45,7 @@ class ProductLotService {
     const now = new Date().toISOString();
     const { data: lots, error } = await this.lotRepo.client
       .from('product_lots')
-      .select('lot_id, lot_number, expiration_date')
+      .select('lot_id, lot_number, expiration_date, sale_price')
       .eq('product_type_id', productTypeId)
       .eq('organization_id', organizationId)
       .or(`expiration_date.is.null,expiration_date.gt.${now}`)
