@@ -1,0 +1,21 @@
+sku,name,product_type,unit,lot_number,origin_country,expiration_date,price,description,initial_stock,warehouse_name
+HAR-000-KG,Harina 000,standard,kg,LOT-2025-001,Argentina,2027-12-31,1500.00,Harina de trigo 000,100,Depósito Principal
+AZU-BLA-KG,Azúcar Blanca,standard,kg,LOT-2025-002,Argentina,2028-06-30,950.00,Azúcar refinada,200,Depósito Principal
+ACE-GIR-L,Aceite de Girasol,standard,l,LOT-2025-003,Argentina,2026-11-15,2100.00,Aceite vegetal girasol,50,Depósito Principal
+SAL-FIN-KG,Sal Fina,raw_material,kg,LOT-2025-004,Chile,2030-01-01,320.00,Sal de cocina fina,150,
+LEV-SEC-G,Levadura Seca,raw_material,g,LOT-2025-005,Francia,2026-03-20,4500.00,Levadura instantánea,30,Depósito Principal
+MAN-VEG-KG,Manteca Vegetal,finished_good,kg,LOT-2025-006,Brasil,2027-08-10,3200.00,Margarina vegetal premium,80,Depósito Principal
+CHO-AMD-KG,Chocolate Amargo,raw_material,kg,LOT-2025-007,Bélgica,2028-12-01,8900.00,Chocolate amargo 70%,25,Depósito Principal
+VAN-EXT-ML,Extracto de Vainilla,standard,ml,LOT-2025-008,México,2029-05-15,12000.00,Extracto puro de vainilla,10,Depósito Principal
+CAN-MOL-G,Canela Molida,standard,g,LOT-2025-009,Sri Lanka,2027-09-30,6500.00,Canela de Ceilán,20,Depósito Principal
+MAI-ALM-KG,Almidón de Maíz,raw_material,kg,LOT-2025-010,Argentina,2028-03-15,1100.00,Fécula de maíz,120,Depósito Principal
+,Leche Entera,standard,l,LOT-2025-011,Argentina,2026-06-01,850.00,Leche entera pasteurizada,500,Depósito Principal
+QUE-CRE-KG,Queso Crema,,kg,LOT-2025-012,Argentina,2026-08-20,4200.00,Queso crema tipo philadelphia,60,Depósito Principal
+HUE-CAM-UN,Huevos Campo,standard,cajones,LOT-2025-013,Argentina,2026-05-10,3600.00,Huevos de campo,40,Depósito Principal
+DUL-LEC-KG,Dulce de Leche,finished_good,kg,LOT-2025-014,Argentina,2024-12-01,2800.00,Dulce de leche repostero,90,Depósito Principal
+MAN-MAN-KG,Manteca,standard,kg,LOT-2025-015,Argentina,2026-09-30,-500.00,Manteca sin sal,70,Depósito Principal
+CRE-DOB-L,Crema de Leche Doble,standard,l,LOT-2025-016,Argentina,2026-07-15,3100.00,Crema con 45% de grasa,45,Depósito Principal
+HARxxx,Harina Integral,standard,kg,LOT-2025-017,Argentina,2027-11-20,1650.00,Harina integral de trigo,85,Depósito Principal
+AVE-ROL-KG,Avena Arrollada,raw_material,kg,LOT-2025-018,Argentina,31-12-2028,980.00,Avena en copos,110,Depósito Principal
+COC-RAL-KG,Coco Rallado,finished_good,kg,,Indonesia,2027-06-30,5400.00,Coco rallado deshidratado,35,Depósito Principal
+POL-HON-G,Polvo de Hornear,standard,g,LOT-2025-020,Argentina,2028-02-28,2300.00,Polvo leudante doble acción,55,Depósito Principal

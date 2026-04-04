@@ -90,7 +90,7 @@ test.describe('Create Product Type', () => {
         (f as HTMLFormElement).noValidate = true;
       });
     });
-    await page.locator('button:has-text("Crear tipo")').click();
+    await page.locator('button:has-text("Crear producto")').click();
 
     // Should show React custom validation errors (.text-danger-600)
     await expect(
