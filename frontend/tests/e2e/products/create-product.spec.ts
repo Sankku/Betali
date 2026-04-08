@@ -38,7 +38,7 @@ test.describe('Create Product Type', () => {
 
     // Click the create / add product type button
     const createBtn = page.locator(
-      'button:has-text("Nuevo Tipo"), button:has-text("Agregar Tipo"), button:has-text("Add Type"), button:has-text("New Type")'
+      'button:has-text("Nuevo Producto"), button:has-text("New Product"), button:has-text("Nuevo Tipo"), button:has-text("Add Type")'
     ).first();
     await createBtn.waitFor({ state: 'visible', timeout: 10000 });
     await createBtn.click();
@@ -77,7 +77,7 @@ test.describe('Create Product Type', () => {
     await page.waitForLoadState('networkidle');
 
     const createBtn = page.locator(
-      'button:has-text("Nuevo Tipo"), button:has-text("Agregar Tipo"), button:has-text("Add Type"), button:has-text("New Type")'
+      'button:has-text("Nuevo Producto"), button:has-text("New Product"), button:has-text("Nuevo Tipo"), button:has-text("Add Type")'
     ).first();
     await createBtn.waitFor({ state: 'visible', timeout: 10000 });
     await createBtn.click();

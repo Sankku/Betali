@@ -25,7 +25,7 @@ test.describe('Multi-Tenant Data Isolation', () => {
       await page.waitForSelector('div.fixed.inset-0.z-40', { state: 'detached', timeout: 5000 }).catch(() => {});
 
       const createBtn = page.locator(
-        'button:has-text("Nuevo Tipo"), button:has-text("Agregar Tipo"), button:has-text("Add Type"), button:has-text("New Type")'
+        'button:has-text("Nuevo Producto"), button:has-text("New Product"), button:has-text("Nuevo Tipo"), button:has-text("Add Type")'
       ).first();
       await createBtn.waitFor({ state: 'visible', timeout: 10000 });
       if (!await createBtn.isEnabled()) {
