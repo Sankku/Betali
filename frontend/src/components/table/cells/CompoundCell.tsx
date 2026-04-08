@@ -30,12 +30,16 @@ export const CompoundCell: React.FC<CompoundCellProps> = ({ row, config }) => {
       {fields.map((field, index) => {
         const value = row[field.key];
         return (
-          <GenericCell
+          <div
             key={`${field.key}-${index}`}
-            value={value}
-            row={row}
-            config={{ dataType: field.type, ...field.config }}
-          />
+            className={index > 0 && layout === 'vertical' ? 'text-xs text-neutral-400 leading-tight' : undefined}
+          >
+            <GenericCell
+              value={value}
+              row={row}
+              config={{ dataType: field.type, ...field.config }}
+            />
+          </div>
         );
       })}
     </div>

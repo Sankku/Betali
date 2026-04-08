@@ -357,10 +357,13 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           <Label htmlFor="warehouse_id" className="text-gray-900 font-medium">{t('orders.form.warehouse')} <span className="text-red-500">*</span></Label>
           <Select
             value={watchedValues.warehouse_id || 'no-warehouse'}
-            onValueChange={(value) => setValue('warehouse_id', value)}
+            onValueChange={(value) => {
+              setValue('warehouse_id', value);
+              if (value && value !== 'no-warehouse') form.clearErrors('warehouse_id');
+            }}
             disabled={isViewMode}
           >
-            <SelectTrigger>
+            <SelectTrigger className={formErrors.warehouse_id ? 'border-red-500 focus:ring-red-500' : ''}>
               <SelectValue placeholder={t('orders.form.warehousePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -374,6 +377,9 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
               ))}
             </SelectContent>
           </Select>
+          {formErrors.warehouse_id && (
+            <p className="text-sm text-red-600">{formErrors.warehouse_id.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -539,8 +545,9 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
                 <Label className="text-gray-900 font-medium">{t('orders.form.price')} *</Label>
                 <Input
                   type="number"
-                  value={item.price}
-                  onChange={(e) => handleItemChange(index, 'price', Number(e.target.value))}
+                  value={item.price === 0 ? '' : item.price}
+                  placeholder="0"
+                  onChange={(e) => handleItemChange(index, 'price', e.target.value === '' ? 0 : Number(e.target.value))}
                   min="0"
                   step="0.01"
                   className={errors[`item_${index}_price`] ? 'border-red-500' : ''}
@@ -574,7 +581,7 @@ export function OrderForm({ form, mode, isLoading = false }: OrderFormProps) {
           ))}
 
           {/* Order Totals */}
-          <div className="border-t pt-4 space-y-3 bg-white p-4 rounded-lg">
+          <div className="border rounded-lg space-y-3 bg-white p-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-gray-900">{t('orders.form.orderSummary')}</h4>
               {pricingLoading && (

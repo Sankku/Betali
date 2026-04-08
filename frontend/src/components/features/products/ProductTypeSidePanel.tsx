@@ -4,6 +4,7 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { ProductFormulaEditor, type LocalFormulaItem } from './ProductFormulaEditor';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import type { ProductType, ProductTypeFormData } from '../../../services/api/productTypesService';
 
 interface ProductTypeSidePanelProps {
@@ -34,6 +35,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
   productType,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = React.useState<ProductTypeFormData>(defaultForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProductTypeFormData, string>>>({});
   const [submitting, setSubmitting] = React.useState(false);
@@ -64,10 +66,10 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof ProductTypeFormData, string>> = {};
-    if (!form.sku.trim()) newErrors.sku = 'El SKU es requerido';
-    if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!form.product_type) newErrors.product_type = 'El tipo es requerido';
-    if (!form.unit) newErrors.unit = 'La unidad es requerida';
+    if (!form.sku.trim()) newErrors.sku = t('products.sidePanel.skuRequired');
+    if (!form.name.trim()) newErrors.name = t('products.sidePanel.nameRequired');
+    if (!form.product_type) newErrors.product_type = t('products.sidePanel.typeRequired');
+    if (!form.unit) newErrors.unit = t('products.sidePanel.unitRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -116,7 +118,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
           <div className="flex items-center gap-2">
             <Package className="h-5 w-5 text-primary-600" />
             <h2 className="text-lg font-semibold text-neutral-900">
-              {productType ? 'Editar Tipo de Producto' : 'Nuevo Tipo de Producto'}
+              {productType ? t('products.sidePanel.editTitle') : t('products.sidePanel.newTitle')}
             </h2>
           </div>
           <button
@@ -133,11 +135,11 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
             {/* SKU */}
             <Input
-              label="SKU"
+              label={t('products.sidePanel.skuLabel')}
               name="sku"
               value={form.sku}
               onChange={e => handleChange('sku', e.target.value)}
-              placeholder="Ej: HAR-000-KG"
+              placeholder={t('products.sidePanel.skuPlaceholder')}
               icon={<Tag className="h-4 w-4" />}
               disabled={isProcessing}
               error={errors.sku}
@@ -146,11 +148,11 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
 
             {/* Nombre */}
             <Input
-              label="Nombre"
+              label={t('products.sidePanel.nameLabel')}
               name="name"
               value={form.name}
               onChange={e => handleChange('name', e.target.value)}
-              placeholder="Ej: Harina 000"
+              placeholder={t('products.sidePanel.namePlaceholder')}
               icon={<Package className="h-4 w-4" />}
               disabled={isProcessing}
               error={errors.name}
@@ -162,7 +164,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="product_type" className="text-sm font-semibold text-neutral-800 flex items-center gap-1">
                   <Ruler className="h-4 w-4 text-neutral-600" />
-                  Tipo
+                  {t('products.sidePanel.typeLabel')}
                   <span className="text-danger-500 ml-0.5">*</span>
                 </Label>
                 <select
@@ -172,9 +174,9 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                   disabled={isProcessing}
                   className="w-full rounded-lg border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60"
                 >
-                  <option value="standard">Estándar</option>
-                  <option value="raw_material">Materia prima</option>
-                  <option value="finished_good">Terminado</option>
+                  <option value="standard">{t('products.sidePanel.typeStandard')}</option>
+                  <option value="raw_material">{t('products.sidePanel.typeRawMaterial')}</option>
+                  <option value="finished_good">{t('products.sidePanel.typeFinishedGood')}</option>
                 </select>
                 {errors.product_type && (
                   <p className="text-sm text-danger-600 font-medium">{errors.product_type}</p>
@@ -183,7 +185,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
 
               <div className="space-y-2">
                 <Label htmlFor="unit" className="text-sm font-semibold text-neutral-800">
-                  Unidad
+                  {t('products.sidePanel.unitLabel')}
                   <span className="text-danger-500 ml-0.5">*</span>
                 </Label>
                 <select
@@ -193,13 +195,13 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                   disabled={isProcessing}
                   className="w-full rounded-lg border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60"
                 >
-                  <option value="unidad">Unidad (u)</option>
-                  <option value="kg">Kilogramo (kg)</option>
-                  <option value="g">Gramo (g)</option>
-                  <option value="mg">Miligramo (mg)</option>
-                  <option value="l">Litro (l)</option>
-                  <option value="ml">Mililitro (ml)</option>
-                  <option value="docena">Docena (doc)</option>
+                  <option value="unidad">{t('products.sidePanel.unitUnit')}</option>
+                  <option value="kg">{t('products.sidePanel.unitKg')}</option>
+                  <option value="g">{t('products.sidePanel.unitG')}</option>
+                  <option value="mg">{t('products.sidePanel.unitMg')}</option>
+                  <option value="l">{t('products.sidePanel.unitL')}</option>
+                  <option value="ml">{t('products.sidePanel.unitMl')}</option>
+                  <option value="docena">{t('products.sidePanel.unitDocena')}</option>
                 </select>
                 {errors.unit && (
                   <p className="text-sm text-danger-600 font-medium">{errors.unit}</p>
@@ -210,13 +212,13 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
             {/* Descripcion */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-semibold text-neutral-800">
-                Descripcion
+                {t('products.sidePanel.descLabel')}
               </Label>
               <textarea
                 id="description"
                 value={form.description || ''}
                 onChange={e => handleChange('description', e.target.value)}
-                placeholder="Descripcion opcional..."
+                placeholder={t('products.sidePanel.descPlaceholder')}
                 disabled={isProcessing}
                 rows={3}
                 className="w-full rounded-lg border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60 resize-none"
@@ -228,7 +230,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
               <div className="border-t pt-5 space-y-3">
                 <div className="flex items-center gap-2">
                   <FlaskConical className="h-5 w-5 text-purple-500" />
-                  <h3 className="text-sm font-semibold text-neutral-800">Fórmula de producción</h3>
+                  <h3 className="text-sm font-semibold text-neutral-800">{t('products.sidePanel.formulaTitle')}</h3>
                 </div>
                 <ProductFormulaEditor
                   finishedProductTypeId={productType?.product_type_id}
@@ -242,7 +244,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
             {/* Precios de referencia */}
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Precio de venta"
+                label={t('products.sidePanel.salePriceLabel')}
                 name="sale_price"
                 type="number"
                 min="0"
@@ -256,7 +258,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                 disabled={isProcessing}
               />
               <Input
-                label="Precio de compra"
+                label={t('products.sidePanel.purchasePriceLabel')}
                 name="purchase_price"
                 type="number"
                 min="0"
@@ -275,12 +277,12 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
             <div className="border-t pt-5 space-y-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
-                <h3 className="text-sm font-semibold text-neutral-800">Alertas de inventario</h3>
+                <h3 className="text-sm font-semibold text-neutral-800">{t('products.sidePanel.alertsTitle')}</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Stock minimo"
+                  label={t('products.sidePanel.minStockLabel')}
                   name="min_stock"
                   type="number"
                   min="0"
@@ -293,7 +295,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                   disabled={isProcessing}
                 />
                 <Input
-                  label="Stock maximo"
+                  label={t('products.sidePanel.maxStockLabel')}
                   name="max_stock"
                   type="number"
                   min="0"
@@ -302,7 +304,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                   onChange={e =>
                     handleChange('max_stock', e.target.value ? Number(e.target.value) : undefined)
                   }
-                  placeholder="Sin limite"
+                  placeholder={t('products.sidePanel.maxStockPlaceholder')}
                   disabled={isProcessing}
                 />
               </div>
@@ -318,7 +320,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                 />
                 <Label htmlFor="alert_enabled" className="text-sm font-medium text-neutral-700 flex items-center gap-2 cursor-pointer">
                   <Bell className="h-4 w-4" />
-                  Habilitar alertas
+                  {t('products.sidePanel.enableAlerts')}
                 </Label>
               </div>
             </div>
@@ -332,10 +334,10 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
               onClick={onClose}
               disabled={isProcessing}
             >
-              Cancelar
+              {t('products.sidePanel.cancel')}
             </Button>
             <Button type="submit" loading={isProcessing}>
-              {productType ? 'Guardar cambios' : 'Crear producto'}
+              {productType ? t('products.sidePanel.saveChanges') : t('products.sidePanel.createProduct')}
             </Button>
           </div>
         </form>

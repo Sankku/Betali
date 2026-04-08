@@ -61,7 +61,7 @@ export default function Welcome() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden selection:bg-primary-500/30">
+    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden selection:bg-primary-500/30" style={{ colorScheme: 'dark' }}>
       {/* Dynamic Background Gradients */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary-600/20 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
       <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary-400/20 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
@@ -86,7 +86,7 @@ export default function Welcome() {
           <span className="text-sm font-semibold tracking-wide uppercase">El sistema operativo para tu negocio</span>
         </div>
 
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-center mb-8 animate-slide-in-bottom leading-[1.1]" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-center mb-8 animate-slide-in-bottom leading-[1.1] text-white" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
           Escala tus ventas, <br className="hidden md:block"/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-300 via-primary-400 to-purple-400">
             conecta tus sucursales
@@ -120,7 +120,7 @@ export default function Welcome() {
         {/* Value Proposition Grid */}
         <div className="mt-32 w-full max-w-6xl mx-auto">
           <div className="text-center mb-16 px-4">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Todo lo que necesitas para operar</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Todo lo que necesitas para operar</h2>
             <p className="text-lg text-white/60 max-w-2xl mx-auto">Funcionalidades diseñadas por expertos en la industria para eliminar el caos operativo.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -166,7 +166,7 @@ export default function Welcome() {
         {/* Benefits Section */}
         <div className="mt-32 w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight">Deja de perder tiempo en tareas manuales</h2>
+              <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight text-white">Deja de perder tiempo en tareas manuales</h2>
               <ul className="space-y-6">
                 <BenefitItem title="Automatización inteligente" desc="Las compras y alertas de stock bajo se generan solas." />
                 <BenefitItem title="Cierre de caja en minutos" desc="Conciliación automática de efectivo, tarjetas y transferencias." />
@@ -199,7 +199,7 @@ export default function Welcome() {
         {/* CTA Bottom Section */}
         <div className="mt-32 w-full max-w-5xl mx-auto bg-gradient-to-br from-primary-900/40 to-neutral-900 border border-primary-500/20 p-12 rounded-3xl text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 blur-[80px] rounded-full pointer-events-none" />
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 relative z-10">¿Listo para transformar tu negocio?</h2>
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 relative z-10 text-white">¿Listo para transformar tu negocio?</h2>
           <p className="text-lg text-white/70 mb-8 max-w-2xl mx-auto relative z-10">
             Únete a los negocios que ya optimizan su operación con Betali. 
           </p>
@@ -314,7 +314,7 @@ function BenefitItem({ title, desc }: { title: string, desc: string }) {
         <CheckCircle2 size={18} />
       </div>
       <div>
-        <h4 className="font-bold text-lg mb-1">{title}</h4>
+        <h4 className="font-bold text-lg mb-1 text-white">{title}</h4>
         <p className="text-white/60">{desc}</p>
       </div>
     </li>
@@ -429,7 +429,7 @@ function TelegramSpotlight() {
 
       {/* Hook headline — the pain */}
       <div className="text-center mb-4">
-        <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+        <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight text-white">
           {t('welcome.telegram.hook1')}
           <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500">

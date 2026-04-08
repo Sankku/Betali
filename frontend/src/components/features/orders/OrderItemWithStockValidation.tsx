@@ -1,8 +1,9 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Alert } from '@/components/ui/alert';
+import { XCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useStockValidation } from '@/hooks/useAvailableStock';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface OrderItemWithStockValidationProps {
   item: {
@@ -49,23 +50,19 @@ export function OrderItemWithStockValidation({
     { minStock, maxStock }
   );
 
+  const { t } = useTranslation();
+
   // Don't show validation if no product or warehouse selected
   const shouldShowValidation = item.product_type_id && warehouseId;
 
   return (
-    <div className="space-y-2">
-      <Label className="text-gray-900 font-medium">
-        Cantidad *
-        {shouldShowValidation && !isLoading && (
-          <span className="ml-2 text-sm font-normal text-gray-600">
-            ({availableStock} disponibles)
-          </span>
-        )}
-      </Label>
+    <div className="space-y-1.5">
+      <Label className="text-gray-900 font-medium">{t('common.quantity')} *</Label>
 
       <Input
         type="number"
-        value={item.quantity}
+        value={item.quantity === 0 ? '' : item.quantity}
+        placeholder="1"
         onChange={(e) => onQuantityChange(index, 'quantity', e.target.value)}
         min="1"
         className={
@@ -76,42 +73,40 @@ export function OrderItemWithStockValidation({
         disabled={isViewMode || isLoading}
       />
 
-      {/* Stock validation messages */}
+      {/* Compact inline stock status — single line below input */}
       {shouldShowValidation && !isLoading && (
-        <>
-          {/* Error: Insufficient stock or out of stock */}
-          {error && (
-            <Alert variant="error">
-              {error}
-            </Alert>
+        <div className="flex items-center gap-1 text-xs min-h-[16px]">
+          {error ? (
+            <>
+              <XCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
+              <span className="text-red-600 truncate" title={error}>
+                {t('orders.form.stockError', { available: availableStock, requested: item.quantity })}
+              </span>
+            </>
+          ) : warning ? (
+            <>
+              <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+              <span className="text-amber-600">{t('orders.form.stockLow', { count: availableStock })}</span>
+            </>
+          ) : isSufficient && !isLowStock && item.quantity > 0 ? (
+            <>
+              <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+              <span className="text-green-600">{t('orders.form.stockAvailable', { count: availableStock })}</span>
+            </>
+          ) : (
+            <span className="text-neutral-400">{t('orders.form.stockAvailable', { count: availableStock })}</span>
           )}
-
-          {/* Warning: Low stock */}
-          {warning && !error && (
-            <Alert variant="warning">
-              {warning}
-            </Alert>
-          )}
-
-          {/* Success: Sufficient stock */}
-          {isSufficient && !isLowStock && item.quantity > 0 && (
-            <p className="text-sm text-green-600">
-              ✓ Stock disponible
-            </p>
-          )}
-        </>
+        </div>
       )}
 
       {/* Loading state */}
       {shouldShowValidation && isLoading && (
-        <p className="text-sm text-gray-500">Comprobando stock...</p>
+        <p className="text-xs text-neutral-400">{t('orders.form.stockChecking')}</p>
       )}
 
       {/* Form validation errors */}
       {errors[`item_${index}_quantity`] && (
-        <p className="text-sm text-red-600 mt-1">
-          {errors[`item_${index}_quantity`]}
-        </p>
+        <p className="text-xs text-red-600">{errors[`item_${index}_quantity`]}</p>
       )}
     </div>
   );

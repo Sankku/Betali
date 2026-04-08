@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ProductTypeRow } from './ProductTypeRow';
 import { TooltipHelp } from '../../ui/tooltip-help';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import type { ProductType } from '../../../services/api/productTypesService';
 import type { ProductLot } from '../../../services/api/productLotsService';
 
@@ -27,6 +28,7 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
   onEditLot,
   onDeleteLot,
 }) => {
+  const { t } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleRow = (id: string) => {
@@ -49,35 +51,35 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
             <th className="px-4 py-3 w-8" />
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               <span className="flex items-center gap-1">
-                SKU
-                <TooltipHelp content="Identificador único del producto (ej: HAR-001). Se usa para buscarlo y referenciarlo en el sistema." position="bottom" />
+                {t('products.table.colSku')}
+                <TooltipHelp content={t('products.table.skuTooltip')} position="bottom" />
               </span>
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Nombre
+              {t('products.table.colName')}
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Tipo
+              {t('products.table.colType')}
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Unidad
+              {t('products.table.colUnit')}
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Lotes
+              {t('products.table.colLots')}
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Stock Total
+              {t('products.table.colTotalStock')}
             </th>
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              P. Venta
+              {t('products.table.colSalePrice')}
             </th>
             {canSeePrices && (
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-                P. Compra
+                {t('products.table.colPurchasePrice')}
               </th>
             )}
             <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Acciones
+              {t('products.table.colActions')}
             </th>
           </tr>
         </thead>

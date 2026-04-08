@@ -55,12 +55,14 @@ interface PurchaseOrderFormProps {
   form: UseFormReturn<PurchaseOrderFormData>;
   mode: 'create' | 'edit' | 'view';
   isLoading?: boolean;
+  submitAttempted?: boolean;
 }
 
-export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ form, mode, isLoading = false, submitAttempted = false }: PurchaseOrderFormProps) {
   const { t } = useTranslation();
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   // Load data for dropdowns
   const { data: suppliers, refetch: refetchSuppliers } = useSuppliers({ searchOptions: { active_only: true } });
@@ -343,7 +345,10 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                       onValueChange={(value) => handleItemChange(index, 'product_type_id', value)}
                       disabled={isViewMode}
                     >
-                      <SelectTrigger id={`item-product-${index}`}>
+                      <SelectTrigger
+                        id={`item-product-${index}`}
+                        className={submitAttempted && !item.product_type_id ? 'border-danger-500 focus:ring-danger-500' : ''}
+                      >
                         <SelectValue placeholder={t('purchaseOrders.form.productPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -354,6 +359,9 @@ export function PurchaseOrderForm({ form, mode, isLoading = false }: PurchaseOrd
                         ))}
                       </SelectContent>
                     </Select>
+                    {submitAttempted && !item.product_type_id && (
+                      <p className="text-xs text-danger-500 mt-1">{t('purchaseOrders.form.productRequired')}</p>
+                    )}
                   </div>
 
                   {/* Quantity */}

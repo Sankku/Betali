@@ -300,9 +300,9 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
               )}
             </div>
 
-            <div className="max-h-72 overflow-y-auto border border-neutral-200 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 shadow-sm">
+            <div className="max-h-72 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 shadow-sm">
               <table className="w-full text-xs text-left">
-                <thead className="bg-neutral-50 dark:bg-neutral-800/80 sticky top-0 z-10 border-b border-neutral-200 dark:border-neutral-800 backdrop-blur-md">
+                <thead className="bg-neutral-50 dark:bg-neutral-800/80 sticky top-0 z-10 border-b border-neutral-200 dark:border-neutral-700 backdrop-blur-md">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">#</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">SKU</th>

@@ -182,7 +182,7 @@ export function TelegramSettings() {
 
             {/* Preferencias de notificaciones */}
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200 flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-800 pb-2">
+              <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200 flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-700 pb-2">
                 <Bell className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
                 {t('settings.telegram.preferencesTitle')}
               </h4>
@@ -202,7 +202,7 @@ export function TelegramSettings() {
               </div>
 
               {alertsEnabled && (
-                <div className="ml-4 pl-4 border-l-2 border-neutral-100 dark:border-neutral-800 space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                <div className="ml-4 pl-4 border-l-2 border-neutral-100 dark:border-neutral-700 space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
                   {/* Toggle: resumen diario */}
                   <div className="flex items-center justify-between gap-4 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 rounded-lg transition-colors cursor-pointer" onClick={() => setDigestEnabled(!digestEnabled)}>
                     <div className="flex-1">
@@ -219,7 +219,7 @@ export function TelegramSettings() {
 
                   {/* Time picker */}
                   {digestEnabled && (
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-900/30 rounded-lg border border-neutral-100 dark:border-neutral-800 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-900/30 rounded-lg border border-neutral-100 dark:border-neutral-700 animate-in fade-in slide-in-from-top-1 duration-300">
                       <div className="p-1.5 bg-white dark:bg-neutral-800 rounded shadow-sm border border-neutral-200 dark:border-neutral-700">
                         <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                       </div>
@@ -240,7 +240,7 @@ export function TelegramSettings() {
             </div>
 
             {/* Actions */}
-            <div className="pt-4 flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-neutral-100 dark:border-neutral-800">
+            <div className="pt-4 flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-neutral-100 dark:border-neutral-700">
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"

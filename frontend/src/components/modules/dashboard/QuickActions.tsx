@@ -1,37 +1,39 @@
 
 import { Link } from 'react-router-dom';
 import { PlusCircle, ShoppingCart, Truck, Users } from 'lucide-react';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 export function QuickActions() {
+  const { t } = useTranslation();
   const actions = [
     {
-      label: 'Nueva Venta',
+      label: t('dashboard.quickActions.newSale'),
       icon: ShoppingCart,
       to: '/dashboard/orders?action=new',
       color: 'primary',
-      description: 'Crear orden de venta'
+      description: t('dashboard.quickActions.newSaleDesc'),
     },
     {
-      label: 'Nuevo Producto',
+      label: t('dashboard.quickActions.newProduct'),
       icon: PlusCircle,
       to: '/dashboard/products?action=new',
       color: 'success',
-      description: 'Agregar al catálogo'
+      description: t('dashboard.quickActions.newProductDesc'),
     },
     {
-      label: 'Nueva Compra',
+      label: t('dashboard.quickActions.newPurchase'),
       icon: Truck,
       to: '/dashboard/purchase-orders?action=new',
       color: 'primary',
-      description: 'Reponer stock'
+      description: t('dashboard.quickActions.newPurchaseDesc'),
     },
     {
-      label: 'Nuevo Cliente',
+      label: t('dashboard.quickActions.newClient'),
       icon: Users,
       to: '/dashboard/clients?action=new',
       color: 'warning',
-      description: 'Registrar cliente'
-    }
+      description: t('dashboard.quickActions.newClientDesc'),
+    },
   ];
 
   return (

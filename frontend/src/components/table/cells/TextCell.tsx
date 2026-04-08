@@ -11,7 +11,7 @@ export const TextCell: React.FC<TextCellProps> = ({ value, config = {} }) => {
     truncate,
     transform = 'none',
     weight = 'normal',
-    size = 'base',
+    size = 'sm',
     color,
     prefix = '',
     suffix = '',

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter } from '@/components/ui/modal';
@@ -134,6 +134,7 @@ function PurchaseOrderFormModal({
       };
 
   const form = useForm<PurchaseOrderFormData>({ defaultValues: editDefaults });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
     if (!isOpen || mode !== 'edit' || !resolvedOrder) return;
@@ -162,6 +163,8 @@ function PurchaseOrderFormModal({
   }, [resolvedOrder, mode, isOpen]);
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
+    setSubmitAttempted(true);
+
     const valid = await form.trigger(['supplier_id', 'warehouse_id']);
     if (!valid) return;
 
@@ -169,7 +172,7 @@ function PurchaseOrderFormModal({
       (item) => !item.product_type_id || item.unit_price <= 0 || item.quantity <= 0
     );
     if (invalidItem) {
-      toast.error(t('purchaseOrders.modal.validationError'));
+      // Inline errors shown via submitAttempted — no toast needed
       return;
     }
 
@@ -235,7 +238,7 @@ function PurchaseOrderFormModal({
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
-            <PurchaseOrderForm form={form} mode={mode} isLoading={isLoading} />
+            <PurchaseOrderForm form={form} mode={mode} isLoading={isLoading} submitAttempted={submitAttempted} />
           </div>
 
           <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">

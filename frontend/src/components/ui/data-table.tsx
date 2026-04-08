@@ -205,7 +205,17 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: onColumnFiltersChange || setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      setRowSelection((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater;
+        // Notify parent whenever internal selection changes (e.g. select-all header checkbox)
+        if (onSelectionChange && getRowId) {
+          const selectedItems = data.filter((item) => !!next[getRowId(item)]);
+          onSelectionChange(selectedItems);
+        }
+        return next;
+      });
+    },
     onPaginationChange: onPaginationChange || setPagination,
     enableRowSelection: enableRowSelection,
     getRowId: getRowId,
@@ -392,8 +402,8 @@ export function DataTable<TData>({
                     <tr
                       key={headerGroup.id}
                       className={cn(
-                        'border-b border-neutral-200/60',
-                        index === 0 && 'bg-neutral-100'
+                        'border-b border-neutral-200',
+                        index === 0 && 'bg-neutral-50'
                       )}
                     >
                       {headerGroup.headers.map((header, index) => {
@@ -402,11 +412,10 @@ export function DataTable<TData>({
                         <th
                           key={header.id}
                           className={cn(
-                            "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider transition-colors",
-                            index !== headerGroup.headers.length - 1 && "border-r border-neutral-200",
+                            "px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide transition-colors",
                             hasFilter
-                              ? "bg-primary-50/50 text-primary-900 border-b-2 border-b-primary-600"
-                              : "text-neutral-700"
+                              ? "bg-primary-50/50 text-primary-700 border-b-2 border-b-primary-500"
+                              : "text-neutral-500"
                           )}
                         >
                           {header.isPlaceholder ? null : (
@@ -462,7 +471,7 @@ export function DataTable<TData>({
                   ))}
                 </thead>
 
-                <tbody className="divide-y divide-neutral-200/60">
+                <tbody className="divide-y divide-neutral-200">
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={validatedColumns.length} className="px-6 py-16 text-center">
@@ -498,18 +507,15 @@ export function DataTable<TData>({
                           isSelected
                             ? 'bg-primary-50/70 hover:bg-primary-50'
                             : cn(
-                                'hover:bg-primary-50/40 hover:backdrop-blur-sm',
-                                index % 2 === 0 ? 'bg-white/30' : 'bg-white/15'
+                                'hover:bg-primary-50/50',
+                                index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'
                               )
                         )}
                       >
-                        {row.getVisibleCells().map((cell, cellIndex) => (
+                        {row.getVisibleCells().map((cell) => (
                           <td
                             key={cell.id}
-                            className={cn(
-                              "px-4 py-1.5 text-sm text-neutral-800 group-hover:text-neutral-900 transition-colors duration-200",
-                              cellIndex !== row.getVisibleCells().length - 1 && "border-r border-neutral-200/60"
-                            )}
+                            className="px-4 py-2 text-sm text-neutral-700 transition-colors duration-150"
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
@@ -524,7 +530,7 @@ export function DataTable<TData>({
           </div>
         </div>
         {pagination && (
-          <div className="border-t border-neutral-200/60 bg-neutral-50 px-6 py-4">
+          <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3">
             <div className="flex items-center justify-between">
               <div className="text-sm text-neutral-700">
                 Mostrando{' '}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   /* Configuración de breakpoints personalizados */
   --breakpoint-3xl: 120rem;
@@ -104,8 +106,8 @@
     --accent-foreground: light-dark(oklch(0.09 0 0), oklch(0.98 0 0));
     --popover: light-dark(oklch(1 0 0), oklch(0.09 0 0));
     --popover-foreground: light-dark(oklch(0.09 0 0), oklch(0.98 0 0));
-    --border: light-dark(oklch(0.90 0 0), oklch(0.15 0 0));
-    --input: light-dark(oklch(0.90 0 0), oklch(0.15 0 0));
+    --border: light-dark(oklch(0.90 0 0), oklch(0.25 0 0));
+    --input: light-dark(oklch(0.90 0 0), oklch(0.25 0 0));
     --ring: oklch(0.50 0.20 206);
     
     color-scheme: light dark;
@@ -232,9 +234,9 @@
     line-height: 1.5;
   }
 
-  /* Estilos para iconos - respeta dark mode */
+  /* Iconos heredan el color del contenedor padre */
   svg {
-    color: light-dark(oklch(0.15 0 0), oklch(0.93 0 0));
+    color: inherit;
   }
 
   /* Mejorar contraste de labels */

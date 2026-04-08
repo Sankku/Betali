@@ -32,9 +32,21 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
+const statusDotVariants: Record<string, string> = {
+  success: 'bg-success-500',
+  warning: 'bg-warning-500',
+  danger: 'bg-danger-500',
+};
+
 const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant, size, ...props }, ref) => {
-    return <div ref={ref} className={cn(badgeVariants({ variant, size }), className)} {...props} />;
+  ({ className, variant, size, children, ...props }, ref) => {
+    const dotColor = variant ? statusDotVariants[variant] : undefined;
+    return (
+      <div ref={ref} className={cn(badgeVariants({ variant, size }), 'gap-1.5', className)} {...props}>
+        {dotColor && <span className={cn('inline-block w-1.5 h-1.5 rounded-full flex-shrink-0', dotColor)} />}
+        {children}
+      </div>
+    );
   }
 );
 

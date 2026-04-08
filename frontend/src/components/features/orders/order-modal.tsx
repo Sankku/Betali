@@ -97,9 +97,9 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
 
   const handleSubmit = async (data: OrderFormData) => {
     try {
-      // Validate that all items have a product selected
+      // Validate required fields — use setError so the form shows inline errors
       if (!data.warehouse_id || data.warehouse_id === 'no-warehouse') {
-        toast.error(t('orders.validation.selectWarehouse'));
+        form.setError('warehouse_id', { message: t('orders.validation.selectWarehouse') });
         return;
       }
 
@@ -109,7 +109,7 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
         return;
       }
       if (data.items.some(item => !item.product_type_id)) {
-        toast.error(t('orders.validation.allItemsNeedProduct'));
+        // Individual item errors are shown inline via isSubmitted flag in OrderForm
         return;
       }
 

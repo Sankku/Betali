@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { useOrganization } from '../../../context/OrganizationContext';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 interface ActivityItemProps {
   type: string;
@@ -12,13 +13,13 @@ interface ActivityItemProps {
   status?: string;
 }
 
-const getTypeLabel = (type: string) => {
+const getTypeLabel = (type: string, t: (key: string) => string) => {
   const types: Record<string, string> = {
-    entry: 'Entrada',
-    exit: 'Salida',
-    adjustment: 'Ajuste',
-    transfer: 'Transferencia',
-    senasa: 'SENASA'
+    entry: t('stockMovements.types.entry'),
+    exit: t('stockMovements.types.exit'),
+    adjustment: t('stockMovements.types.adjustment'),
+    transfer: t('stockMovements.types.transfer'),
+    senasa: 'SENASA',
   };
   return types[type] || type;
 };
@@ -40,7 +41,8 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   date,
   status,
 }) => {
-  const typeLabel = getTypeLabel(type);
+  const { t } = useTranslation();
+  const typeLabel = getTypeLabel(type, t);
   const typeColor = getTypeColor(type);
 
   return (
@@ -53,7 +55,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-neutral-900 dark:text-neutral-200 truncate">
-            {product || 'Producto desconocido'}
+            {product || t('dashboard.unknownProduct')}
           </p>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
             {warehouse && <span>{warehouse} • </span>}
@@ -67,6 +69,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
 
 export function ActivityList() {
   const { currentOrganization } = useOrganization();
+  const { t } = useTranslation();
   const orgId = currentOrganization?.organization_id;
 
   const { data: recentActivity, isLoading } = useQuery({
@@ -80,7 +83,7 @@ export function ActivityList() {
           movement_date,
           movement_type,
           quantity,
-          products(name),
+          product_lots(lot_number, product_types(name)),
           warehouse:warehouse_id(name)
         `
         )
@@ -98,7 +101,7 @@ export function ActivityList() {
   return (
     <div className="bg-white dark:bg-neutral-800/90 shadow-sm rounded-xl border border-neutral-100 dark:border-neutral-700/50 backdrop-blur-md h-full flex flex-col overflow-hidden">
       <div className="px-5 py-5 border-b border-neutral-100 dark:border-neutral-700/50">
-        <h3 className="text-lg font-semibold leading-6 text-neutral-900 dark:text-white tracking-tight">Movimientos Recientes</h3>
+        <h3 className="text-lg font-semibold leading-6 text-neutral-900 dark:text-white tracking-tight">{t('dashboard.recentMovements')}</h3>
       </div>
       <div className="px-4 py-3 sm:px-6 flex-1 overflow-y-auto">
         {isLoading ? (
@@ -111,14 +114,14 @@ export function ActivityList() {
               <ActivityItem
                 key={movement.movement_id}
                 type={movement.movement_type}
-                product={movement.products?.name}
+                product={(movement.product_lots as any)?.product_types?.name || (movement.product_lots as any)?.lot_number}
                 warehouse={movement.warehouse?.name}
                 date={new Date(movement.movement_date).toLocaleDateString()}
               />
             ))}
           </ul>
         ) : (
-          <p className="text-neutral-500 text-sm text-center py-4">No hay actividad reciente</p>
+          <p className="text-neutral-500 text-sm text-center py-4">{t('dashboard.noActivity')}</p>
         )}
       </div>
       <div className="px-5 py-4 border-t border-neutral-100 dark:border-neutral-700/50 bg-neutral-50 dark:bg-neutral-800/50 mt-auto">
@@ -126,7 +129,7 @@ export function ActivityList() {
           to="/dashboard/stock-movements"
           className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center justify-center sm:justify-start transition-colors duration-150"
         >
-          Ver todos los movimientos
+          {t('dashboard.viewAllMovements')}
           <span aria-hidden="true" className="ml-1">&rarr;</span>
         </Link>
       </div>

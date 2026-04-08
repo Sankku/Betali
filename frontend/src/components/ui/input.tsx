@@ -32,8 +32,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = props.id || props.name;
 
     // Auto-select all text on focus for number inputs so users can type to replace the value.
+    // setTimeout(0) is required — Chrome resets cursor position after the focus event fires,
+    // so a synchronous select() call gets immediately overridden.
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      if (type === 'number') e.target.select();
+      if (type === 'number') {
+        const target = e.target;
+        setTimeout(() => target.select(), 0);
+      }
       onFocus?.(e);
     };
 

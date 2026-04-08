@@ -30,6 +30,7 @@ import {
 } from '../../hooks/useProductLots';
 import { useWarehouses } from '../../hooks/useWarehouse';
 import { useOrganization } from '../../context/OrganizationContext';
+import { useTranslation } from '../../contexts/LanguageContext';
 import type { ProductType, ProductTypeFormData } from '../../services/api/productTypesService';
 import type { ProductLot, ProductLotFormData } from '../../services/api/productLotsService';
 
@@ -55,6 +56,7 @@ interface DeleteLotState {
 }
 
 const ProductsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [typePanelState, setTypePanelState] = useState<TypePanelState>({ isOpen: false });
   const [lotPanelState, setLotPanelState] = useState<LotPanelState>({ isOpen: false });
   const [deleteTypeState, setDeleteTypeState] = useState<DeleteTypeState>({ show: false });
@@ -153,7 +155,7 @@ const ProductsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Tipos de Producto - Dashboard</title>
+        <title>{t('products.page.heading')} - Dashboard</title>
       </Helmet>
 
       <DashboardLayout>
@@ -163,10 +165,10 @@ const ProductsPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
               <Package className="h-6 w-6 text-primary-600" />
-              Productos
+              {t('products.page.heading')}
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
-              Catálogo de productos y sus lotes de inventario
+              {t('products.page.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -176,11 +178,11 @@ const ProductsPage: React.FC = () => {
               className="flex items-center gap-2"
             >
               <Upload className="h-4 w-4" />
-              Importar CSV
+              {t('products.page.importCsv')}
             </Button>
             <Button onClick={openCreateType} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Nuevo Tipo
+              {t('products.page.newProduct')}
             </Button>
           </div>
         </div>
@@ -190,7 +192,7 @@ const ProductsPage: React.FC = () => {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
             <Input
-              placeholder="Buscar por nombre, SKU o nro. de lote..."
+              placeholder={t('products.page.searchPlaceholder')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="pl-9 pr-8"
@@ -208,10 +210,10 @@ const ProductsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             {(['', 'standard', 'raw_material', 'finished_good'] as const).map((val) => {
               const labels: Record<string, string> = {
-                '': 'Todos',
-                standard: 'Estándar',
-                raw_material: 'Mat. Prima',
-                finished_good: 'Terminado',
+                '': t('products.page.filterAll'),
+                standard: t('products.page.filterStandard'),
+                raw_material: t('products.page.filterRawMaterial'),
+                finished_good: t('products.page.filterFinishedGood'),
               };
               return (
                 <button
@@ -236,7 +238,7 @@ const ProductsPage: React.FC = () => {
                 onChange={e => setWarehouseFilter(e.target.value)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">Todos los almacenes</option>
+                <option value="">{t('products.page.filterAllWarehouses')}</option>
                 {warehouses.data.map(w => (
                   <option key={w.warehouse_id} value={w.warehouse_id}>
                     {w.name}
@@ -251,12 +253,12 @@ const ProductsPage: React.FC = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-neutral-500">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Cargando tipos de producto...
+            {t('products.page.loading')}
           </div>
         ) : error ? (
           <div className="flex items-center gap-2 p-4 bg-danger-50 border border-danger-200 rounded-xl text-danger-700 text-sm">
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-            Error al cargar los tipos de producto. Intenta recargar la pagina.
+            {t('products.page.errorLoading')}
           </div>
         ) : types.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -264,19 +266,19 @@ const ProductsPage: React.FC = () => {
               <Package className="h-8 w-8 text-neutral-400" />
             </div>
             <div>
-              <p className="text-neutral-700 font-medium">No hay tipos de producto</p>
+              <p className="text-neutral-700 font-medium">{t('products.page.emptyTitle')}</p>
               <p className="text-neutral-500 text-sm mt-1">
-                Crea tu primer tipo de producto o importa desde un CSV.
+                {t('products.page.emptyDesc')}
               </p>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                 <Upload className="h-4 w-4 mr-2" />
-                Importar CSV
+                {t('products.page.importCsv')}
               </Button>
               <Button onClick={openCreateType}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nuevo Tipo
+                {t('products.page.newProduct')}
               </Button>
             </div>
           </div>
@@ -327,16 +329,12 @@ const ProductsPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Eliminar tipo de producto</ModalTitle>
+            <ModalTitle>{t('products.page.deleteTypeTitle')}</ModalTitle>
             <ModalDescription>
-              {deleteTypeState.productType && (
-                <>
-                  Estas por eliminar{' '}
-                  <strong>{deleteTypeState.productType.name}</strong> (
-                  {deleteTypeState.productType.sku}). Esta accion eliminara tambien todos sus
-                  lotes. No se puede deshacer.
-                </>
-              )}
+              {deleteTypeState.productType && t('products.page.deleteTypeDesc', {
+                name: deleteTypeState.productType.name,
+                sku: deleteTypeState.productType.sku,
+              })}
             </ModalDescription>
           </ModalHeader>
           <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
@@ -346,7 +344,7 @@ const ProductsPage: React.FC = () => {
               disabled={deleteProductType.isPending}
               className="w-full sm:w-auto"
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -354,7 +352,7 @@ const ProductsPage: React.FC = () => {
               loading={deleteProductType.isPending}
               className="w-full sm:w-auto"
             >
-              Eliminar
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -367,15 +365,11 @@ const ProductsPage: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <ModalTitle>Eliminar lote</ModalTitle>
+            <ModalTitle>{t('products.page.deleteLotTitle')}</ModalTitle>
             <ModalDescription>
-              {deleteLotState.lot && (
-                <>
-                  Estas por eliminar el lote{' '}
-                  <strong>{deleteLotState.lot.lot_number}</strong>. Esta accion no se puede
-                  deshacer.
-                </>
-              )}
+              {deleteLotState.lot && t('products.page.deleteLotDesc', {
+                lot_number: deleteLotState.lot.lot_number,
+              })}
             </ModalDescription>
           </ModalHeader>
           <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
@@ -385,7 +379,7 @@ const ProductsPage: React.FC = () => {
               disabled={deleteProductLot.isPending}
               className="w-full sm:w-auto"
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -393,7 +387,7 @@ const ProductsPage: React.FC = () => {
               loading={deleteProductLot.isPending}
               className="w-full sm:w-auto"
             >
-              Eliminar
+              {t('common.delete')}
             </Button>
           </ModalFooter>
         </ModalContent>

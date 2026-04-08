@@ -154,32 +154,32 @@ export default function HelpPage() {
 
       <div className="space-y-8 pb-12">
         {/* Premium Header */}
-        <div className="relative overflow-hidden rounded-3xl bg-neutral-950 p-8 sm:p-12 text-white shadow-xl">
-          <div className="absolute top-0 right-0 -m-32 h-[400px] w-[400px] rounded-full bg-indigo-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 -m-32 h-[400px] w-[400px] rounded-full bg-purple-500/20 blur-3xl" />
-          
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 p-8 sm:p-12 text-white shadow-xl">
+          <div className="absolute top-0 right-0 -m-32 h-[400px] w-[400px] rounded-full bg-white/10 dark:bg-indigo-500/20 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -m-32 h-[400px] w-[400px] rounded-full bg-white/10 dark:bg-purple-500/20 blur-3xl" />
+
           <div className="relative z-10 max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
-              Domina <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Betali</span>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 text-white">
+              Domina <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-purple-200 dark:from-indigo-400 dark:to-purple-400">Betali</span>
             </h1>
-            <p className="text-lg text-neutral-300 mb-8 leading-relaxed">
+            <p className="text-lg text-white/80 dark:text-neutral-300 mb-8 leading-relaxed">
               Descubre todo el potencial de tu plataforma. Conoce módulo por módulo cómo está estructurado el sistema de gestión para acelerar el crecimiento de tu negocio.
             </p>
-            
+
             <div className="flex flex-wrap gap-4">
-              <Button 
+              <Button
                 onClick={startOnboarding}
-                size="lg" 
+                size="lg"
                 variant="default"
-                className="shadow-lg font-medium transition-all"
+                className="bg-white text-indigo-700 hover:bg-white/90 shadow-lg font-medium transition-all dark:bg-primary dark:text-white dark:hover:bg-primary/90"
               >
                 <Book className="w-5 h-5 mr-2" />
                 Iniciar Tour Guiado
               </Button>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 variant="outline"
-                className="bg-transparent border-neutral-500 text-white hover:bg-neutral-800 hover:text-white rounded-xl"
+                className="bg-transparent border-white/40 text-white hover:bg-white/10 hover:text-white rounded-xl"
                 onClick={() => document.getElementById('search-help')?.focus()}
               >
                 <Search className="w-5 h-5 mr-2" />

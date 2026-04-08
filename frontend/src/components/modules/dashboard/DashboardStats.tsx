@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Warehouse, ShoppingBag, AlertTriangle, DollarSign } from 'lucide-react';
 import { productTypesService } from '../../../services/api/productTypesService';
 import { useOrganization } from '../../../context/OrganizationContext';
+import { useTranslation } from '../../../contexts/LanguageContext';
 
 interface StatCardProps {
   title: string;
@@ -103,6 +104,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
 export function DashboardStats() {
   const { currentOrganization } = useOrganization();
+  const { t } = useTranslation();
   const orgId = currentOrganization?.organization_id;
 
   // Products Stats (Count, Value, Low Stock)
@@ -111,14 +113,44 @@ export function DashboardStats() {
     queryFn: async () => {
       const productTypes = await productTypesService.getAll();
 
-      const stats = productTypes.reduce((acc: any, pt: any) => {
-        const price = pt.price || 0;
-        return {
-          count: acc.count + 1,
-          value: acc.value + price,
-          lowStock: acc.lowStock + (pt.min_stock > 0 ? 1 : 0)
-        };
-      }, { count: 0, value: 0, lowStock: 0 });
+      // Get all lots with price
+      const { data: lots } = await supabase
+        .from('product_lots')
+        .select('lot_id, price, warehouse_id')
+        .eq('organization_id', orgId!);
+
+      // Get all stock movements to compute net stock per lot per warehouse
+      const { data: movements } = await supabase
+        .from('stock_movements')
+        .select('lot_id, warehouse_id, movement_type, quantity')
+        .eq('organization_id', orgId!);
+
+      // Compute net stock per lot (grouped by warehouse, each clamped to 0)
+      const stockByLotWarehouse: Record<string, Record<string, number>> = {};
+      movements?.forEach((m: any) => {
+        if (!stockByLotWarehouse[m.lot_id]) stockByLotWarehouse[m.lot_id] = {};
+        const wid = m.warehouse_id || '__none__';
+        if (!stockByLotWarehouse[m.lot_id][wid]) stockByLotWarehouse[m.lot_id][wid] = 0;
+        if (m.movement_type === 'entry') {
+          stockByLotWarehouse[m.lot_id][wid] += parseFloat(m.quantity);
+        } else if (['exit', 'production'].includes(m.movement_type)) {
+          stockByLotWarehouse[m.lot_id][wid] -= parseFloat(m.quantity);
+        }
+      });
+
+      // Total inventory value = sum(lot.price × net_stock_per_lot)
+      const totalValue = lots?.reduce((sum: number, lot: any) => {
+        const warehouseMap = stockByLotWarehouse[lot.lot_id] || {};
+        const netStock = Object.values(warehouseMap)
+          .reduce((s, ws) => s + Math.max(0, ws), 0);
+        return sum + (lot.price * netStock);
+      }, 0) || 0;
+
+      const stats = productTypes.reduce((acc: any, pt: any) => ({
+        count: acc.count + 1,
+        value: totalValue,
+        lowStock: acc.lowStock + (pt.min_stock > 0 ? 1 : 0),
+      }), { count: 0, value: totalValue, lowStock: 0 });
 
       return stats;
     },
@@ -171,9 +203,9 @@ export function DashboardStats() {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Valor de Inventario"
+        title={t('dashboard.stats.inventoryValue')}
         value={formatCurrency(productStats?.value || 0)}
-        description={`${productStats?.count || 0} productos total`}
+        description={t('dashboard.stats.productsTotal', { count: productStats?.count || 0 })}
         icon={<DollarSign className="h-6 w-6" />}
         to="/dashboard/products"
         color="bg-success-500"
@@ -181,9 +213,9 @@ export function DashboardStats() {
       />
 
       <StatCard
-        title="Órdenes del Mes"
+        title={t('dashboard.stats.monthlyOrders')}
         value={monthlyOrders}
-        description="Ventas este mes"
+        description={t('dashboard.stats.monthlySales')}
         icon={<ShoppingBag className="h-6 w-6" />}
         to="/dashboard/orders"
         color="bg-primary-500"
@@ -191,9 +223,9 @@ export function DashboardStats() {
       />
 
       <StatCard
-        title="Almacenes Activos"
+        title={t('dashboard.stats.activeWarehouses')}
         value={warehousesCount}
-        description="Depósitos registrados"
+        description={t('dashboard.stats.warehousesRegistered')}
         icon={<Warehouse className="h-6 w-6" />}
         to="/dashboard/warehouse"
         color="bg-blue-500"
@@ -201,9 +233,9 @@ export function DashboardStats() {
       />
 
       <StatCard
-        title="Alertas de Stock"
+        title={t('dashboard.stats.stockAlerts')}
         value={productStats?.lowStock || 0}
-        description="Productos stock bajo (<10)"
+        description={t('dashboard.stats.stockBelowMin')}
         icon={<AlertTriangle className="h-6 w-6" />}
         to="/dashboard/products"
         color="bg-warning-500"

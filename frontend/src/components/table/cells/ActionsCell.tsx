@@ -26,7 +26,7 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
       {actions.map((action) => (
         <Button
           key={action.key}

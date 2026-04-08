@@ -114,6 +114,98 @@ const ERROR_RULES: ErrorRule[] = [
     message: 'Stock insuficiente en el depósito seleccionado. Verificá el stock disponible antes de registrar la salida.',
   },
 
+  // ── Órdenes de venta (artículos) ──────────────────────────────────────────
+  {
+    match: 'Price must be positive',
+    message: 'El precio del artículo debe ser mayor a 0.',
+  },
+  {
+    match: 'Price must be a number',
+    message: 'El precio del artículo debe ser un número válido.',
+  },
+  {
+    match: 'Price can have maximum 2 decimal places',
+    message: 'El precio puede tener máximo 2 decimales.',
+  },
+  {
+    match: 'Quantity must be a number',
+    message: 'La cantidad debe ser un número válido.',
+  },
+  {
+    match: 'Quantity must be an integer',
+    message: 'La cantidad debe ser un número entero.',
+  },
+  {
+    match: 'Quantity must be at least 1',
+    message: 'La cantidad debe ser al menos 1.',
+  },
+  {
+    match: 'Quantity cannot exceed',
+    message: 'La cantidad supera el máximo permitido.',
+  },
+  {
+    match: 'Quantity is required',
+    message: 'La cantidad es requerida.',
+  },
+  {
+    match: 'Product type ID is required',
+    message: 'El producto es requerido en todos los artículos.',
+  },
+  {
+    match: 'Warehouse is required',
+    message: 'El depósito es requerido.',
+  },
+  {
+    match: 'Order must have at least 1 item',
+    message: 'El pedido debe tener al menos 1 artículo.',
+  },
+  {
+    match: 'Items are required',
+    message: 'Los artículos del pedido son requeridos.',
+  },
+  {
+    match: 'Total price must be positive',
+    message: 'El precio total debe ser mayor a 0.',
+  },
+  {
+    match: 'Order total must be positive',
+    message: 'El total del pedido debe ser mayor a 0.',
+  },
+  {
+    match: 'Order date cannot be in the future',
+    message: 'La fecha del pedido no puede ser futura.',
+  },
+  {
+    match: 'Status must be one of',
+    message: 'El estado seleccionado no es válido.',
+  },
+
+  // ── Órdenes de compra ─────────────────────────────────────────────────────
+  {
+    match: 'Unit price must be positive',
+    message: 'El precio unitario debe ser mayor a 0.',
+  },
+  {
+    match: 'Unit price must be a number',
+    message: 'El precio unitario debe ser un número válido.',
+  },
+  {
+    match: 'Supplier is required',
+    message: 'El proveedor es requerido.',
+  },
+  {
+    match: 'Purchase order must have at least 1 item',
+    message: 'La orden de compra debe tener al menos 1 artículo.',
+  },
+  {
+    match: 'Cannot modify a completed purchase order',
+    message: 'No se puede modificar una orden de compra completada.',
+  },
+  {
+    match: 'Cannot modify a cancelled purchase order',
+    message: 'No se puede modificar una orden de compra cancelada.',
+  },
+
   // ── Genéricos (van al final como última opción) ────────────────────────────
   {
     match: 'not found',
