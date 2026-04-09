@@ -75,8 +75,8 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
         });
       } else if (mode === 'edit' && resolvedFullOrder) {
         const details = resolvedFullOrder.order_details ?? [];
-        // Only reset once we have real detail records (list items won't have product_id)
-        if (details.length === 0 || !details[0]?.product_id) return;
+        // Only reset once we have real detail records (product_type_id is the identifier)
+        if (details.length === 0 || !details[0]?.product_type_id) return;
         form.reset({
           client_id: resolvedFullOrder.client_id || 'no-client',
           warehouse_id: resolvedFullOrder.warehouse_id || 'no-warehouse',
@@ -85,7 +85,8 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
           // tax_rate_ids can't be restored from saved order (backend stores tax_amount, not which rates)
           tax_rate_ids: (resolvedFullOrder as any).tax_rate_ids ?? [],
           items: details.map((detail: any) => ({
-            product_id: detail.product_id,
+            product_type_id: detail.product_type_id,
+            lot_id: detail.lot_id || undefined,
             quantity: detail.quantity,
             price: detail.price,
           })),

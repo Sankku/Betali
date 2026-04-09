@@ -470,9 +470,20 @@ class MercadoPagoService {
         this.logger.error('Failed to send payment success email via webhook:', emailError);
       }
 
+      // Sync organizations.subscription_plan so limit middleware sees the new plan immediately
+      await supabase
+        .from('organizations')
+        .update({
+          subscription_plan: plan.name,
+          subscription_status: newStatus,
+          updated_at: now.toISOString()
+        })
+        .eq('organization_id', subscription.organization_id);
+
       this.logger.info('Subscription activated successfully:', {
         subscriptionId,
         mpPaymentId,
+        planName: plan.name,
         periodEnd: periodEnd.toISOString()
       });
 

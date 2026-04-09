@@ -51,18 +51,23 @@ interface TimezoneSelectorProps {
   compact?: boolean;
 }
 
+const AUTO_TZ = '';
+const AUTO_TZ_LABEL = `Auto-detect (${Intl.DateTimeFormat().resolvedOptions().timeZone})`;
+
 export function TimezoneSelector({ value, onChange, compact = false }: TimezoneSelectorProps) {
   const { timezone, setTimezone } = useDateFormat();
 
-  // Use context's timezone as fallback if no value provided
-  const currentTimezone = value || timezone;
+  // '' means auto-detect — resolve to browser timezone for display purposes
+  const effectiveBrowserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const storedTz = value !== undefined ? value : timezone;
+  const currentTimezone = storedTz || effectiveBrowserTz;
+  const selectValue = storedTz === '' || storedTz === null || storedTz === undefined ? AUTO_TZ : storedTz;
 
   const handleChange = (newTimezone: string) => {
     if (onChange) {
       onChange(newTimezone);
     } else {
-      // Update context timezone
-      setTimezone(newTimezone);
+      setTimezone(newTimezone); // '' = auto-detect
     }
   };
 
@@ -79,17 +84,22 @@ export function TimezoneSelector({ value, onChange, compact = false }: TimezoneS
     }
   };
 
+  const allOptions = [
+    { value: AUTO_TZ, label: AUTO_TZ_LABEL },
+    ...COMMON_TIMEZONES,
+  ];
+
   if (compact) {
     return (
       <div className="flex items-center gap-2">
         <Globe className="h-4 w-4 text-gray-500" />
-        <Select value={currentTimezone} onValueChange={handleChange}>
+        <Select value={selectValue} onValueChange={handleChange}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="max-h-[300px]">
-            {COMMON_TIMEZONES.map(tz => (
-              <SelectItem key={tz.value} value={tz.value} className="text-xs">
+            {allOptions.map(tz => (
+              <SelectItem key={tz.value === AUTO_TZ ? '__auto__' : tz.value} value={tz.value} className="text-xs">
                 {tz.label}
               </SelectItem>
             ))}
@@ -105,13 +115,13 @@ export function TimezoneSelector({ value, onChange, compact = false }: TimezoneS
         <Globe className="h-4 w-4" />
         Timezone
       </Label>
-      <Select value={currentTimezone} onValueChange={handleChange}>
+      <Select value={selectValue} onValueChange={handleChange}>
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">
-          {COMMON_TIMEZONES.map(tz => (
-            <SelectItem key={tz.value} value={tz.value}>
+          {allOptions.map(tz => (
+            <SelectItem key={tz.value === AUTO_TZ ? '__auto__' : tz.value} value={tz.value}>
               {tz.label}
             </SelectItem>
           ))}

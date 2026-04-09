@@ -20,7 +20,7 @@ class OrderPdfService {
    * @param {string} organizationId - Organization ID for authorization
    * @returns {Promise<Buffer>} PDF as buffer
    */
-  async generateSalesOrderPdf(orderId, organizationId) {
+  async generateSalesOrderPdf(orderId, organizationId, lang = 'es') {
     this.logger.info('Generating sales order PDF:', { orderId });
 
     // Fetch order with all related data
@@ -73,22 +73,23 @@ class OrderPdfService {
       .eq('organization_id', organizationId)
       .single();
 
-    return this.createSalesOrderPdf(order, organization);
+    return this.createSalesOrderPdf(order, organization, lang);
   }
 
   /**
    * Create the sales order PDF document
    */
-  async createSalesOrderPdf(order, organization) {
+  async createSalesOrderPdf(order, organization, lang = 'es') {
+    const t = this.getTranslations(lang);
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
           size: 'A4',
           margin: 50,
           info: {
-            Title: `Orden de Venta - ${order.order_number}`,
+            Title: `${t.salesOrder} - ${order.order_number}`,
             Author: organization?.name || 'Betali',
-            Subject: 'Orden de Venta'
+            Subject: t.salesOrder
           }
         });
 
@@ -98,22 +99,22 @@ class OrderPdfService {
         doc.on('error', reject);
 
         // Header
-        this.renderCompanyHeader(doc, organization, 'ORDEN DE VENTA');
+        this.renderCompanyHeader(doc, organization, t.salesOrder, t);
 
         // Order info
-        this.renderOrderInfo(doc, order, 100);
+        this.renderOrderInfo(doc, order, 100, t);
 
         // Client info
-        this.renderClientInfo(doc, order.clients, 160);
+        this.renderClientInfo(doc, order.clients, 160, t);
 
         // Line items table
-        const tableEndY = this.renderLineItems(doc, order.order_details, 260);
+        const tableEndY = this.renderLineItems(doc, order.order_details, 260, t);
 
         // Totals
-        this.renderTotals(doc, order, tableEndY + 20);
+        this.renderTotals(doc, order, tableEndY + 20, t);
 
         // Footer
-        this.renderFooter(doc, order.notes);
+        this.renderFooter(doc, order.notes, t);
 
         doc.end();
       } catch (error) {
@@ -132,7 +133,7 @@ class OrderPdfService {
    * @param {string} organizationId - Organization ID for authorization
    * @returns {Promise<Buffer>} PDF as buffer
    */
-  async generatePurchaseOrderPdf(purchaseOrderId, organizationId) {
+  async generatePurchaseOrderPdf(purchaseOrderId, organizationId, lang = 'es') {
     this.logger.info('Generating purchase order PDF:', { purchaseOrderId });
 
     // Fetch purchase order with all related data
@@ -190,22 +191,23 @@ class OrderPdfService {
       .eq('organization_id', organizationId)
       .single();
 
-    return this.createPurchaseOrderPdf(purchaseOrder, organization);
+    return this.createPurchaseOrderPdf(purchaseOrder, organization, lang);
   }
 
   /**
    * Create the purchase order PDF document
    */
-  async createPurchaseOrderPdf(purchaseOrder, organization) {
+  async createPurchaseOrderPdf(purchaseOrder, organization, lang = 'es') {
+    const t = this.getTranslations(lang);
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
           size: 'A4',
           margin: 50,
           info: {
-            Title: `Orden de Compra - ${purchaseOrder.purchase_order_number}`,
+            Title: `${t.purchaseOrder} - ${purchaseOrder.purchase_order_number}`,
             Author: organization?.name || 'Betali',
-            Subject: 'Orden de Compra'
+            Subject: t.purchaseOrder
           }
         });
 
@@ -215,22 +217,22 @@ class OrderPdfService {
         doc.on('error', reject);
 
         // Header
-        this.renderCompanyHeader(doc, organization, 'ORDEN DE COMPRA');
+        this.renderCompanyHeader(doc, organization, t.purchaseOrder, t);
 
         // PO info
-        this.renderPurchaseOrderInfo(doc, purchaseOrder, 100);
+        this.renderPurchaseOrderInfo(doc, purchaseOrder, 100, t);
 
         // Supplier info
-        this.renderSupplierInfo(doc, purchaseOrder.suppliers, 160);
+        this.renderSupplierInfo(doc, purchaseOrder.suppliers, 160, t);
 
         // Line items table
-        const tableEndY = this.renderPurchaseOrderLineItems(doc, purchaseOrder.purchase_order_details, 260);
+        const tableEndY = this.renderPurchaseOrderLineItems(doc, purchaseOrder.purchase_order_details, 260, t);
 
         // Totals
-        this.renderPurchaseOrderTotals(doc, purchaseOrder, tableEndY + 20);
+        this.renderPurchaseOrderTotals(doc, purchaseOrder, tableEndY + 20, t);
 
         // Footer
-        this.renderFooter(doc, purchaseOrder.notes);
+        this.renderFooter(doc, purchaseOrder.notes, t);
 
         doc.end();
       } catch (error) {
@@ -242,6 +244,111 @@ class OrderPdfService {
   // ============================================================================
   // SHARED RENDERING METHODS
   // ============================================================================
+
+  // i18n translations
+  getTranslations(lang) {
+    const translations = {
+      es: {
+        salesOrder:         'ORDEN DE VENTA',
+        purchaseOrder:      'ORDEN DE COMPRA',
+        number:             'Número:',
+        date:               'Fecha:',
+        status:             'Estado:',
+        warehouse:          'Almacén:',
+        orderDate:          'Fecha Orden:',
+        expectedDelivery:   'Entrega Esperada:',
+        destWarehouse:      'Almacén Destino:',
+        client:             'CLIENTE',
+        supplier:           'PROVEEDOR',
+        articles:           'ARTÍCULOS',
+        products:           'PRODUCTOS',
+        product:            'Producto',
+        qty:                'Cant.',
+        received:           'Recibido',
+        unitPrice:          'Precio Unit.',
+        total:              'Total',
+        subtotal:           'Subtotal:',
+        discount:           'Descuento:',
+        tax:                'IVA:',
+        shipping:           'Envío:',
+        grandTotal:         'TOTAL:',
+        notes:              'NOTAS',
+        contact:            'Contacto:',
+        tel:                'Tel:',
+        cuit:               'CUIT:',
+        sku:                'SKU:',
+        lot:                'Lote:',
+        generatedOn:        (date) => `Documento generado automáticamente el ${date} · Betali`,
+        dateLocale:         'es-AR',
+        statuses: {
+          draft:             'Borrador',
+          pending:           'Pendiente',
+          processing:        'Procesando',
+          shipped:           'Enviado',
+          completed:         'Completado',
+          cancelled:         'Cancelado',
+          approved:          'Aprobada',
+          received:          'Recibida',
+          partially_received:'Parcialmente Recibida',
+          cancelledF:        'Cancelada',
+        },
+        statusGroups: {
+          completed: ['completado', 'recibida', 'aprobada'],
+          cancelled: ['cancelado', 'cancelada'],
+        },
+      },
+      en: {
+        salesOrder:         'SALES ORDER',
+        purchaseOrder:      'PURCHASE ORDER',
+        number:             'Number:',
+        date:               'Date:',
+        status:             'Status:',
+        warehouse:          'Warehouse:',
+        orderDate:          'Order Date:',
+        expectedDelivery:   'Expected Delivery:',
+        destWarehouse:      'Destination Warehouse:',
+        client:             'CLIENT',
+        supplier:           'SUPPLIER',
+        articles:           'ITEMS',
+        products:           'PRODUCTS',
+        product:            'Product',
+        qty:                'Qty.',
+        received:           'Received',
+        unitPrice:          'Unit Price',
+        total:              'Total',
+        subtotal:           'Subtotal:',
+        discount:           'Discount:',
+        tax:                'Tax:',
+        shipping:           'Shipping:',
+        grandTotal:         'TOTAL:',
+        notes:              'NOTES',
+        contact:            'Contact:',
+        tel:                'Tel:',
+        cuit:               'Tax ID:',
+        sku:                'SKU:',
+        lot:                'Lot:',
+        generatedOn:        (date) => `Automatically generated on ${date} · Betali`,
+        dateLocale:         'en-US',
+        statuses: {
+          draft:             'Draft',
+          pending:           'Pending',
+          processing:        'Processing',
+          shipped:           'Shipped',
+          completed:         'Completed',
+          cancelled:         'Cancelled',
+          approved:          'Approved',
+          received:          'Received',
+          partially_received:'Partially Received',
+          cancelledF:        'Cancelled',
+        },
+        statusGroups: {
+          completed: ['completed', 'received', 'approved'],
+          cancelled: ['cancelled'],
+        },
+      },
+    };
+    return translations[lang] || translations['es'];
+  }
 
   // Design tokens
   get colors() {
@@ -270,7 +377,7 @@ class OrderPdfService {
   /**
    * Render company header — accent bar + two-column layout
    */
-  renderCompanyHeader(doc, organization, documentType) {
+  renderCompanyHeader(doc, organization, documentType, t) {
     const C = this.colors;
 
     // Top accent bar
@@ -290,16 +397,20 @@ class OrderPdfService {
     if (organization?.phone)  { doc.text(organization.phone,          50, metaY); metaY += 11; }
     if (organization?.tax_id) { doc.text(`CUIT: ${organization.tax_id}`, 50, metaY); }
 
-    // Document type block (right)
+    // Document type — text only, right-aligned
     doc
-      .rect(380, 18, 165, 52)
-      .fill(C.navy);
-
-    doc
-      .fontSize(13)
+      .fontSize(15)
       .font('Helvetica-Bold')
-      .fillColor(C.white)
-      .text(documentType, 385, 26, { width: 155, align: 'center' });
+      .fillColor(C.accent)
+      .text(documentType, 300, 30, { width: 245, align: 'right' });
+
+    // Thin underline below document type
+    doc
+      .moveTo(300, 53)
+      .lineTo(545, 53)
+      .lineWidth(1.5)
+      .strokeColor(C.accent)
+      .stroke();
 
     // Thin divider
     doc
@@ -313,14 +424,17 @@ class OrderPdfService {
   /**
    * Helper: draw a status badge pill
    */
-  renderStatusBadge(doc, text, x, y) {
+  renderStatusBadge(doc, text, x, y, t) {
     const C = this.colors;
     const lowerText = (text || '').toLowerCase();
     let bg, fg;
 
-    if (['completado', 'recibida', 'aprobada'].includes(lowerText)) {
+    const completedGroup = t?.statusGroups?.completed || ['completado', 'recibida', 'aprobada'];
+    const cancelledGroup = t?.statusGroups?.cancelled || ['cancelado', 'cancelada'];
+
+    if (completedGroup.includes(lowerText)) {
       bg = C.greenBg; fg = C.green;
-    } else if (['cancelado', 'cancelada'].includes(lowerText)) {
+    } else if (cancelledGroup.includes(lowerText)) {
       bg = C.redBg;   fg = C.red;
     } else {
       bg = C.amberBg; fg = C.amber;
@@ -343,42 +457,40 @@ class OrderPdfService {
   /**
    * Render sales order info
    */
-  renderOrderInfo(doc, order, yPos) {
-    const C = this.colors;
-    const status = this.translateStatus(order.status);
+  renderOrderInfo(doc, order, yPos, t) {
+    const status = this.translateStatus(order.status, t);
 
     // Left column
-    this.renderInfoRow(doc, 'Número:',  order.order_number || `ORD-${order.order_id.substring(0, 8).toUpperCase()}`, 50, 120, yPos);
-    this.renderInfoRow(doc, 'Fecha:',   this.formatDate(order.order_date || order.created_at), 50, 120, yPos + 16);
-    this.renderInfoRow(doc, 'Estado:',  '', 50, 120, yPos + 32);
-    this.renderStatusBadge(doc, status, 120, yPos + 32);
+    this.renderInfoRow(doc, t.number,   order.order_number || `ORD-${order.order_id.substring(0, 8).toUpperCase()}`, 50, 120, yPos);
+    this.renderInfoRow(doc, t.date,     this.formatDate(order.order_date || order.created_at, t.dateLocale), 50, 120, yPos + 16);
+    this.renderInfoRow(doc, t.status,   '', 50, 120, yPos + 32);
+    this.renderStatusBadge(doc, status, 120, yPos + 32, t);
 
     // Right column
-    this.renderInfoRow(doc, 'Almacén:', order.warehouse?.name || '—', 300, 380, yPos);
+    this.renderInfoRow(doc, t.warehouse, order.warehouse?.name || '—', 300, 380, yPos);
   }
 
   /**
    * Render purchase order info
    */
-  renderPurchaseOrderInfo(doc, purchaseOrder, yPos) {
-    const C = this.colors;
-    const status = this.translatePurchaseOrderStatus(purchaseOrder.status);
+  renderPurchaseOrderInfo(doc, purchaseOrder, yPos, t) {
+    const status = this.translatePurchaseOrderStatus(purchaseOrder.status, t);
 
     // Left column
-    this.renderInfoRow(doc, 'Número:',           purchaseOrder.purchase_order_number || purchaseOrder.purchase_order_id.substring(0, 8), 50, 140, yPos);
-    this.renderInfoRow(doc, 'Fecha Orden:',      this.formatDate(purchaseOrder.order_date || purchaseOrder.created_at), 50, 140, yPos + 16);
-    this.renderInfoRow(doc, 'Entrega Esperada:', purchaseOrder.expected_delivery_date ? this.formatDate(purchaseOrder.expected_delivery_date) : '—', 50, 140, yPos + 32);
+    this.renderInfoRow(doc, t.number,           purchaseOrder.purchase_order_number || purchaseOrder.purchase_order_id.substring(0, 8), 50, 140, yPos);
+    this.renderInfoRow(doc, t.orderDate,         this.formatDate(purchaseOrder.order_date || purchaseOrder.created_at, t.dateLocale), 50, 140, yPos + 16);
+    this.renderInfoRow(doc, t.expectedDelivery,  purchaseOrder.expected_delivery_date ? this.formatDate(purchaseOrder.expected_delivery_date, t.dateLocale) : '—', 50, 140, yPos + 32);
 
     // Right column
-    this.renderInfoRow(doc, 'Estado:', '', 300, 380, yPos);
-    this.renderStatusBadge(doc, status, 380, yPos);
-    this.renderInfoRow(doc, 'Almacén Destino:', purchaseOrder.warehouse?.name || '—', 300, 400, yPos + 16);
+    this.renderInfoRow(doc, t.status, '', 300, 380, yPos);
+    this.renderStatusBadge(doc, status, 380, yPos, t);
+    this.renderInfoRow(doc, t.destWarehouse, purchaseOrder.warehouse?.name || '—', 300, 400, yPos + 16);
   }
 
   /**
    * Render contact info card (client or supplier)
    */
-  renderContactCard(doc, title, name, contact, phone, email, cuit, yPos) {
+  renderContactCard(doc, title, name, contact, phone, email, cuit, yPos, t) {
     const C = this.colors;
     const boxH = 72;
 
@@ -409,7 +521,7 @@ class OrderPdfService {
     const rightX = 330;
     let rightY = yPos + 14;
     if (phone) {
-      doc.fontSize(8.5).font('Helvetica').fillColor(C.textMuted).text(`Tel: ${phone}`, rightX, rightY);
+      doc.fontSize(8.5).font('Helvetica').fillColor(C.textMuted).text(`${t?.tel || 'Tel:'} ${phone}`, rightX, rightY);
       rightY += 13;
     }
     if (email) {
@@ -417,52 +529,54 @@ class OrderPdfService {
       rightY += 13;
     }
     if (cuit) {
-      doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.textMuted).text(`CUIT: ${cuit}`, rightX, rightY);
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.textMuted).text(`${t?.cuit || 'CUIT:'} ${cuit}`, rightX, rightY);
     }
   }
 
   /**
    * Render client info box
    */
-  renderClientInfo(doc, client, yPos) {
+  renderClientInfo(doc, client, yPos, t) {
     this.renderContactCard(
       doc,
-      'CLIENTE',
+      t.client,
       client?.name,
       client?.address,
       client?.phone,
       client?.email,
       client?.cuit,
-      yPos
+      yPos,
+      t
     );
   }
 
   /**
    * Render supplier info box
    */
-  renderSupplierInfo(doc, supplier, yPos) {
+  renderSupplierInfo(doc, supplier, yPos, t) {
     this.renderContactCard(
       doc,
-      'PROVEEDOR',
+      t.supplier,
       supplier?.name,
-      supplier?.contact_person ? `Contacto: ${supplier.contact_person}` : null,
+      supplier?.contact_person ? `${t.contact} ${supplier.contact_person}` : null,
       supplier?.phone,
       supplier?.email,
       supplier?.cuit,
-      yPos
+      yPos,
+      t
     );
   }
 
   /**
    * Render line items table for sales orders
    */
-  renderLineItems(doc, items, startY) {
+  renderLineItems(doc, items, startY, t) {
     const C = this.colors;
     const tableTop = startY;
     const colWidths = { product: 200, qty: 60, price: 80, total: 90 };
 
     // Section label
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.accent).text('ARTÍCULOS', 50, tableTop - 14);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.accent).text(t.articles, 50, tableTop - 14);
 
     // Table header
     doc
@@ -473,10 +587,10 @@ class OrderPdfService {
       .fontSize(8.5)
       .font('Helvetica-Bold')
       .fillColor(C.white)
-      .text('Producto', 60, tableTop + 9)
-      .text('Cant.', 270, tableTop + 9, { width: colWidths.qty, align: 'center' })
-      .text('Precio Unit.', 340, tableTop + 9, { width: colWidths.price, align: 'right' })
-      .text('Total', 430, tableTop + 9, { width: colWidths.total, align: 'right' });
+      .text(t.product, 60, tableTop + 9)
+      .text(t.qty, 270, tableTop + 9, { width: colWidths.qty, align: 'center' })
+      .text(t.unitPrice, 340, tableTop + 9, { width: colWidths.price, align: 'right' })
+      .text(t.total, 430, tableTop + 9, { width: colWidths.total, align: 'right' });
 
     // Table rows
     let rowY = tableTop + 30;
@@ -512,11 +626,11 @@ class OrderPdfService {
 
       let subY = rowY + 15;
       if (product.sku) {
-        doc.fontSize(7).font('Helvetica').fillColor(C.gray400).text(`SKU: ${product.sku}`, 60, subY);
+        doc.fontSize(7).font('Helvetica').fillColor(C.gray400).text(`${t.sku} ${product.sku}`, 60, subY);
         subY += 11;
       }
       if (lotNumber) {
-        doc.fillColor(C.accent).font('Helvetica-Bold').text(`Lote: ${lotNumber}`, 60, subY);
+        doc.fillColor(C.accent).font('Helvetica-Bold').text(`${t.lot} ${lotNumber}`, 60, subY);
       }
 
       rowY += rowHeight;
@@ -536,12 +650,12 @@ class OrderPdfService {
   /**
    * Render line items table for purchase orders
    */
-  renderPurchaseOrderLineItems(doc, items, startY) {
+  renderPurchaseOrderLineItems(doc, items, startY, t) {
     const C = this.colors;
     const tableTop = startY;
 
     // Section label
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.accent).text('PRODUCTOS', 50, tableTop - 14);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.accent).text(t.products, 50, tableTop - 14);
 
     // Table header
     doc
@@ -552,11 +666,11 @@ class OrderPdfService {
       .fontSize(8.5)
       .font('Helvetica-Bold')
       .fillColor(C.white)
-      .text('Producto', 60, tableTop + 9)
-      .text('Cant.', 230, tableTop + 9, { width: 40, align: 'center' })
-      .text('Recibido', 275, tableTop + 9, { width: 50, align: 'center' })
-      .text('Precio Unit.', 335, tableTop + 9, { width: 70, align: 'right' })
-      .text('Total', 420, tableTop + 9, { width: 70, align: 'right' });
+      .text(t.product, 60, tableTop + 9)
+      .text(t.qty, 230, tableTop + 9, { width: 40, align: 'center' })
+      .text(t.received, 275, tableTop + 9, { width: 50, align: 'center' })
+      .text(t.unitPrice, 335, tableTop + 9, { width: 70, align: 'right' })
+      .text(t.total, 420, tableTop + 9, { width: 70, align: 'right' });
 
     // Table rows
     let rowY = tableTop + 30;
@@ -590,11 +704,11 @@ class OrderPdfService {
 
       let subY = rowY + 15;
       if (product.sku) {
-        doc.fontSize(7).font('Helvetica').fillColor(C.gray400).text(`SKU: ${product.sku}`, 60, subY);
+        doc.fontSize(7).font('Helvetica').fillColor(C.gray400).text(`${t.sku} ${product.sku}`, 60, subY);
         subY += 11;
       }
       if (lotNumber) {
-        doc.fillColor(C.accent).font('Helvetica-Bold').text(`Lote: ${lotNumber}`, 60, subY);
+        doc.fillColor(C.accent).font('Helvetica-Bold').text(`${t.lot} ${lotNumber}`, 60, subY);
       }
 
       rowY += rowHeight;
@@ -613,7 +727,7 @@ class OrderPdfService {
   /**
    * Shared totals renderer
    */
-  renderTotalsBlock(doc, subtotal, discountAmount, taxAmount, shippingAmount, total, yPos) {
+  renderTotalsBlock(doc, subtotal, discountAmount, taxAmount, shippingAmount, total, yPos, t) {
     const C = this.colors;
     const boxX = 340;
     const boxW = 205;
@@ -639,30 +753,31 @@ class OrderPdfService {
       ry += lineH;
     };
 
-    addRow('Subtotal:', this.formatCurrency(subtotal));
+    addRow(t.subtotal, this.formatCurrency(subtotal));
     if (discountAmount > 0) {
-      doc.fontSize(9).font('Helvetica').fillColor(C.red).text('Descuento:', lx, ry);
+      doc.fontSize(9).font('Helvetica').fillColor(C.red).text(t.discount, lx, ry);
       doc.text(`-${this.formatCurrency(discountAmount)}`, lx, ry, { width: boxW - 24, align: 'right' });
       ry += lineH;
     }
-    addRow('IVA:', this.formatCurrency(taxAmount));
-    if (shippingAmount > 0) addRow('Envío:', this.formatCurrency(shippingAmount));
+    addRow(t.tax, this.formatCurrency(taxAmount));
+    if (shippingAmount > 0) addRow(t.shipping, this.formatCurrency(shippingAmount));
 
-    // Total row — dark background
-    doc.rect(boxX, yPos + subtotalBoxH, boxW, totalBoxH).fill(C.navy);
+    // Total row — accent background
+    doc.rect(boxX, yPos + subtotalBoxH, boxW, totalBoxH).fill(C.accent);
     doc
       .fontSize(11)
       .font('Helvetica-Bold')
       .fillColor(C.white)
-      .text('TOTAL:', lx, yPos + subtotalBoxH + 10);
+      .text(t.grandTotal, lx, yPos + subtotalBoxH + 10);
     doc
+      .fillColor(C.white)
       .text(this.formatCurrency(total), lx, yPos + subtotalBoxH + 10, { width: boxW - 24, align: 'right' });
   }
 
   /**
    * Render totals for sales order
    */
-  renderTotals(doc, order, yPos) {
+  renderTotals(doc, order, yPos, t) {
     this.renderTotalsBlock(
       doc,
       order.subtotal || 0,
@@ -670,14 +785,15 @@ class OrderPdfService {
       order.tax_amount || 0,
       0,
       order.total_price || order.total || 0,
-      yPos
+      yPos,
+      t
     );
   }
 
   /**
    * Render totals for purchase order
    */
-  renderPurchaseOrderTotals(doc, purchaseOrder, yPos) {
+  renderPurchaseOrderTotals(doc, purchaseOrder, yPos, t) {
     this.renderTotalsBlock(
       doc,
       purchaseOrder.subtotal || 0,
@@ -685,14 +801,15 @@ class OrderPdfService {
       purchaseOrder.tax_amount || 0,
       purchaseOrder.shipping_amount || 0,
       purchaseOrder.total || 0,
-      yPos
+      yPos,
+      t
     );
   }
 
   /**
    * Render footer
    */
-  renderFooter(doc, notes) {
+  renderFooter(doc, notes, t) {
     const C = this.colors;
     const footerY = 720;
 
@@ -700,7 +817,7 @@ class OrderPdfService {
     if (notes) {
       doc.rect(50, footerY - 55, 495, 44).fill(C.gray100);
       doc.rect(50, footerY - 55, 3, 44).fill(C.gray400);
-      doc.fontSize(7.5).font('Helvetica-Bold').fillColor(C.textMuted).text('NOTAS', 62, footerY - 48);
+      doc.fontSize(7.5).font('Helvetica-Bold').fillColor(C.textMuted).text(t.notes, 62, footerY - 48);
       doc.fontSize(8.5).font('Helvetica').fillColor(C.text).text(notes, 62, footerY - 38, { width: 470 });
     }
 
@@ -713,7 +830,7 @@ class OrderPdfService {
       .font('Helvetica')
       .fillColor(C.gray400)
       .text(
-        `Documento generado automáticamente el ${this.formatDate(new Date())} · Betali`,
+        t.generatedOn(this.formatDate(new Date(), t.dateLocale)),
         50, footerY - 12,
         { align: 'center', width: 495 }
       );
@@ -730,36 +847,30 @@ class OrderPdfService {
     }).format(amount || 0);
   }
 
-  formatDate(date) {
+  formatDate(date, locale = 'es-AR') {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('es-AR', {
+    return new Date(date).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   }
 
-  translateStatus(status) {
-    const translations = {
-      'draft': 'Borrador',
-      'pending': 'Pendiente',
-      'processing': 'Procesando',
-      'shipped': 'Enviado',
-      'completed': 'Completado',
-      'cancelled': 'Cancelado'
-    };
+  translateStatus(status, t) {
+    if (t?.statuses) {
+      const map = { draft: t.statuses.draft, pending: t.statuses.pending, processing: t.statuses.processing, shipped: t.statuses.shipped, completed: t.statuses.completed, cancelled: t.statuses.cancelled };
+      return map[status] || status;
+    }
+    const translations = { draft: 'Borrador', pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', completed: 'Completado', cancelled: 'Cancelado' };
     return translations[status] || status;
   }
 
-  translatePurchaseOrderStatus(status) {
-    const translations = {
-      'draft': 'Borrador',
-      'pending': 'Pendiente',
-      'approved': 'Aprobada',
-      'received': 'Recibida',
-      'partially_received': 'Parcialmente Recibida',
-      'cancelled': 'Cancelada'
-    };
+  translatePurchaseOrderStatus(status, t) {
+    if (t?.statuses) {
+      const map = { draft: t.statuses.draft, pending: t.statuses.pending, approved: t.statuses.approved, received: t.statuses.received, partially_received: t.statuses.partially_received, cancelled: t.statuses.cancelledF };
+      return map[status] || status;
+    }
+    const translations = { draft: 'Borrador', pending: 'Pendiente', approved: 'Aprobada', received: 'Recibida', partially_received: 'Parcialmente Recibida', cancelled: 'Cancelada' };
     return translations[status] || status;
   }
 
@@ -773,7 +884,7 @@ class OrderPdfService {
    * @param {string} organizationId - Organization ID for authorization
    * @returns {Promise<Buffer>} PDF as buffer
    */
-  async generateBatchSalesOrderPdf(orderIds, organizationId) {
+  async generateBatchSalesOrderPdf(orderIds, organizationId, lang = 'es') {
     this.logger.info('Generating batch sales order PDF:', { orderCount: orderIds.length, orderIds, organizationId });
 
     // Fetch all orders with related data
@@ -838,22 +949,23 @@ class OrderPdfService {
       .eq('organization_id', organizationId)
       .single();
 
-    return this.createBatchSalesOrderPdf(orders, organization);
+    return this.createBatchSalesOrderPdf(orders, organization, lang);
   }
 
   /**
    * Create a combined PDF document for multiple sales orders
    */
-  async createBatchSalesOrderPdf(orders, organization) {
+  async createBatchSalesOrderPdf(orders, organization, lang = 'es') {
+    const t = this.getTranslations(lang);
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
           size: 'A4',
           margin: 50,
           info: {
-            Title: `Ordenes de Venta (${orders.length})`,
+            Title: `${t.salesOrder} (${orders.length})`,
             Author: organization?.name || 'Betali',
-            Subject: 'Ordenes de Venta'
+            Subject: t.salesOrder
           }
         });
 
@@ -868,22 +980,22 @@ class OrderPdfService {
           }
 
           // Header
-          this.renderCompanyHeader(doc, organization, 'ORDEN DE VENTA');
+          this.renderCompanyHeader(doc, organization, t.salesOrder, t);
 
           // Order info
-          this.renderOrderInfo(doc, order, 100);
+          this.renderOrderInfo(doc, order, 100, t);
 
           // Client info
-          this.renderClientInfo(doc, order.clients, 160);
+          this.renderClientInfo(doc, order.clients, 160, t);
 
           // Line items table
-          const tableEndY = this.renderLineItems(doc, order.order_details, 260);
+          const tableEndY = this.renderLineItems(doc, order.order_details, 260, t);
 
           // Totals
-          this.renderTotals(doc, order, tableEndY + 20);
+          this.renderTotals(doc, order, tableEndY + 20, t);
 
           // Footer
-          this.renderFooter(doc, order.notes);
+          this.renderFooter(doc, order.notes, t);
         });
 
         doc.end();
@@ -899,7 +1011,7 @@ class OrderPdfService {
    * @param {string} organizationId - Organization ID for authorization
    * @returns {Promise<Buffer>} PDF as buffer
    */
-  async generateBatchPurchaseOrderPdf(purchaseOrderIds, organizationId) {
+  async generateBatchPurchaseOrderPdf(purchaseOrderIds, organizationId, lang = 'es') {
     this.logger.info('Generating batch purchase order PDF:', { orderCount: purchaseOrderIds.length });
 
     // Fetch all purchase orders with related data
@@ -956,22 +1068,23 @@ class OrderPdfService {
       .eq('organization_id', organizationId)
       .single();
 
-    return this.createBatchPurchaseOrderPdf(purchaseOrders, organization);
+    return this.createBatchPurchaseOrderPdf(purchaseOrders, organization, lang);
   }
 
   /**
    * Create a combined PDF document for multiple purchase orders
    */
-  async createBatchPurchaseOrderPdf(purchaseOrders, organization) {
+  async createBatchPurchaseOrderPdf(purchaseOrders, organization, lang = 'es') {
+    const t = this.getTranslations(lang);
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
           size: 'A4',
           margin: 50,
           info: {
-            Title: `Ordenes de Compra (${purchaseOrders.length})`,
+            Title: `${t.purchaseOrder} (${purchaseOrders.length})`,
             Author: organization?.name || 'Betali',
-            Subject: 'Ordenes de Compra'
+            Subject: t.purchaseOrder
           }
         });
 
@@ -986,22 +1099,22 @@ class OrderPdfService {
           }
 
           // Header
-          this.renderCompanyHeader(doc, organization, 'ORDEN DE COMPRA');
+          this.renderCompanyHeader(doc, organization, t.purchaseOrder, t);
 
           // PO info
-          this.renderPurchaseOrderInfo(doc, purchaseOrder, 100);
+          this.renderPurchaseOrderInfo(doc, purchaseOrder, 100, t);
 
           // Supplier info
-          this.renderSupplierInfo(doc, purchaseOrder.suppliers, 160);
+          this.renderSupplierInfo(doc, purchaseOrder.suppliers, 160, t);
 
           // Line items table
-          const tableEndY = this.renderPurchaseOrderLineItems(doc, purchaseOrder.purchase_order_details, 260);
+          const tableEndY = this.renderPurchaseOrderLineItems(doc, purchaseOrder.purchase_order_details, 260, t);
 
           // Totals
-          this.renderPurchaseOrderTotals(doc, purchaseOrder, tableEndY + 20);
+          this.renderPurchaseOrderTotals(doc, purchaseOrder, tableEndY + 20, t);
 
           // Footer
-          this.renderFooter(doc, purchaseOrder.notes);
+          this.renderFooter(doc, purchaseOrder.notes, t);
         });
 
         doc.end();

@@ -8,6 +8,7 @@ import { Order } from '@/services/api/orderService';
 import { getOrderStatusColor } from '@/hooks/useOrders';
 import { useDuplicateOrder } from '@/hooks/useOrders';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { useDateFormat } from '@/contexts/DateFormatContext';
 import { OrderStatusBadge } from '@/components/features/orders/order-status-badge';
 
 interface OrderDetailsProps {
@@ -17,7 +18,8 @@ interface OrderDetailsProps {
 }
 
 export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { formatDateTime } = useDateFormat();
   const duplicateOrderMutation = useDuplicateOrder();
 
   // Guard clause - if no order, show error
@@ -38,17 +40,7 @@ export function OrderDetails({ order, onClose, onEdit }: OrderDetailsProps) {
     }
   };
 
-  const locale = language === 'en' ? 'en-US' : 'es-AR';
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const formatDate = (dateString: string) => formatDateTime(dateString);
 
   const statusColor = getOrderStatusColor(order.status);
 

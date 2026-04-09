@@ -536,32 +536,11 @@ class OrderService {
     const orderDetails = order.order_details ||
       await this.orderDetailRepository.findByOrderId(order.order_id, organizationId);
 
-    // Resolve lots via FEFO for each detail
-    const resolvedDetails = await this._resolveLotsForDispatch(
-      orderDetails, order.warehouse_id, organizationId
+    // Build stock movements using multi-lot FEFO for each order detail
+    const stockMovements = await this._buildStockMovementsForDispatch(
+      orderDetails, order.warehouse_id, organizationId,
+      `#${order.order_id.slice(-8).toUpperCase()}`
     );
-
-    // Write resolved lot_id back to order_details for details that had no explicit lot
-    await Promise.all(resolvedDetails.map(async (detail, i) => {
-      const original = orderDetails[i];
-      if (!original.lot_id && detail.lot_id) {
-        await this.orderDetailRepository.update(
-          detail.order_detail_id,
-          organizationId,
-          { lot_id: detail.lot_id }
-        );
-      }
-    }));
-
-    const stockMovements = resolvedDetails.map(detail => ({
-      organization_id: organizationId,
-      lot_id: detail.lot_id,
-      warehouse_id: order.warehouse_id,
-      movement_type: 'exit',
-      quantity: detail.quantity,
-      movement_date: new Date().toISOString(),
-      reference: `#${order.order_id.slice(-8).toUpperCase()}`
-    }));
 
     if (stockMovements.length > 0) {
       await this.stockMovementRepository.createBulk(stockMovements);
@@ -576,32 +555,61 @@ class OrderService {
   }
 
   /**
-   * Resolve lot IDs for order details at dispatch time using FEFO algorithm.
-   * Details that already have an explicit lot_id are used as-is.
+   * Build stock exit movements for each order detail using multi-lot FEFO.
+   * If an explicit lot_id is set on the detail, uses that single lot.
+   * Otherwise distributes the quantity across multiple lots in FEFO order.
+   * Returns an array of stock movement objects ready for bulk insert.
    * @private
    */
-  async _resolveLotsForDispatch(details, warehouseId, organizationId) {
-    return Promise.all(details.map(async (detail) => {
-      if (detail.lot_id) return detail; // explicit lot — use as-is
+  async _buildStockMovementsForDispatch(details, warehouseId, organizationId, reference) {
+    const movements = [];
+    const movementDate = new Date().toISOString();
 
-      const assignment = await this.productLotService.fefoAssignLot(
-        detail.product_type_id,
-        warehouseId,
-        detail.quantity,
-        organizationId
-      );
-
-      if (assignment.partial) {
-        const err = new Error(
-          `Insufficient stock for product type ${detail.product_type_id}: ` +
-          `available ${assignment.available_stock}, needed ${detail.quantity}`
+    for (const detail of details) {
+      if (detail.lot_id) {
+        // Explicit lot — single movement
+        movements.push({
+          organization_id: organizationId,
+          lot_id: detail.lot_id,
+          warehouse_id: warehouseId,
+          movement_type: 'exit',
+          quantity: detail.quantity,
+          movement_date: movementDate,
+          reference,
+        });
+      } else {
+        // No explicit lot — use multi-lot FEFO assignment
+        const { assignments } = await this.productLotService.fefoAssignMultiLot(
+          detail.product_type_id,
+          warehouseId,
+          detail.quantity,
+          organizationId
         );
-        err.status = 422;
-        throw err;
-      }
 
-      return { ...detail, lot_id: assignment.lot_id };
-    }));
+        for (const { lot_id, quantity } of assignments) {
+          movements.push({
+            organization_id: organizationId,
+            lot_id,
+            warehouse_id: warehouseId,
+            movement_type: 'exit',
+            quantity,
+            movement_date: movementDate,
+            reference,
+          });
+        }
+
+        // Update the order detail with the primary (first FEFO) lot if it had none
+        if (assignments.length > 0 && detail.order_detail_id) {
+          await this.orderDetailRepository.update(
+            detail.order_detail_id,
+            organizationId,
+            { lot_id: assignments[0].lot_id }
+          );
+        }
+      }
+    }
+
+    return movements;
   }
 
   /**

@@ -63,6 +63,8 @@ export function PurchaseOrderForm({ form, mode, isLoading = false, submitAttempt
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [taxMode, setTaxMode] = useState<'percentage' | 'amount'>('amount');
+  const [taxPercentage, setTaxPercentage] = useState<string>('');
 
   // Load data for dropdowns
   const { data: suppliers, refetch: refetchSuppliers } = useSuppliers({ searchOptions: { active_only: true } });
@@ -139,6 +141,17 @@ export function PurchaseOrderForm({ form, mode, isLoading = false, submitAttempt
     watchedValues.tax_amount || 0,
     watchedValues.shipping_amount || 0
   );
+
+  // Recompute tax_amount when subtotal changes and we're in percentage mode
+  useEffect(() => {
+    if (taxMode === 'percentage' && taxPercentage) {
+      const pctNum = parseFloat(taxPercentage);
+      if (!isNaN(pctNum)) {
+        setValue('tax_amount', parseFloat((subtotal * pctNum / 100).toFixed(2)));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal, taxMode, taxPercentage]);
 
   /**
    * Add new item to purchase order
@@ -486,16 +499,69 @@ export function PurchaseOrderForm({ form, mode, isLoading = false, submitAttempt
                   position="right"
                 />
               </div>
-              <Input
-                id="tax_amount"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                {...register('tax_amount', { valueAsNumber: true })}
-                onBlur={handleMoneyBlur('tax_amount')}
-                disabled={isViewMode}
-              />
+              <div className="flex gap-2">
+                {!isViewMode && (
+                  <div className="flex rounded-md border overflow-hidden shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setTaxMode('percentage'); setTaxPercentage(''); setValue('tax_amount', 0); }}
+                      className={`px-3 py-2 text-sm font-medium transition-colors ${taxMode === 'percentage' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'}`}
+                    >
+                      {t('purchaseOrders.form.taxModePercent')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setTaxMode('amount'); setTaxPercentage(''); }}
+                      className={`px-3 py-2 text-sm font-medium transition-colors ${taxMode === 'amount' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'}`}
+                    >
+                      {t('purchaseOrders.form.taxModeAmount')}
+                    </button>
+                  </div>
+                )}
+                {taxMode === 'percentage' && !isViewMode ? (
+                  <Input
+                    id="tax_percentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="21"
+                    value={taxPercentage}
+                    onChange={(e) => {
+                      const pct = e.target.value;
+                      setTaxPercentage(pct);
+                      const pctNum = parseFloat(pct);
+                      const computed = !isNaN(pctNum) ? parseFloat((subtotal * pctNum / 100).toFixed(2)) : 0;
+                      setValue('tax_amount', computed);
+                    }}
+                    onBlur={(e) => {
+                      const pctNum = parseFloat(e.target.value);
+                      if (!isNaN(pctNum)) {
+                        setTaxPercentage(pctNum.toFixed(2));
+                        setValue('tax_amount', parseFloat((subtotal * pctNum / 100).toFixed(2)));
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                ) : (
+                  <Input
+                    id="tax_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...register('tax_amount', { valueAsNumber: true })}
+                    onBlur={handleMoneyBlur('tax_amount')}
+                    disabled={isViewMode}
+                    className="flex-1"
+                  />
+                )}
+              </div>
+              {taxMode === 'percentage' && !isViewMode && taxPercentage && (
+                <p className="text-xs text-muted-foreground">
+                  = ${(watchedValues.tax_amount || 0).toFixed(2)}
+                </p>
+              )}
             </div>
 
             {/* Shipping */}

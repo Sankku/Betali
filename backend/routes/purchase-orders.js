@@ -34,7 +34,7 @@ router.post(
   createLimiter,
   async (req, res, next) => {
     try {
-      const { orderIds } = req.body;
+      const { orderIds, lang } = req.body;
       const organizationId = req.user.currentOrganizationId;
 
       if (!organizationId) {
@@ -49,7 +49,7 @@ router.post(
         return res.status(400).json({ error: 'Maximum 50 orders per batch' });
       }
 
-      const pdfBuffer = await orderPdfService.generateBatchPurchaseOrderPdf(orderIds, organizationId);
+      const pdfBuffer = await orderPdfService.generateBatchPurchaseOrderPdf(orderIds, organizationId, lang || 'es');
 
       const fileName = `ordenes-compra-${new Date().toISOString().split('T')[0]}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
@@ -213,12 +213,13 @@ router.get(
     try {
       const purchaseOrderId = req.params.id;
       const organizationId = req.user.currentOrganizationId;
+      const lang = req.query.lang || 'es';
 
       if (!organizationId) {
         return res.status(400).json({ error: 'Organization context required' });
       }
 
-      const pdfBuffer = await orderPdfService.generatePurchaseOrderPdf(purchaseOrderId, organizationId);
+      const pdfBuffer = await orderPdfService.generatePurchaseOrderPdf(purchaseOrderId, organizationId, lang);
 
       const fileName = `orden-compra-${purchaseOrderId.substring(0, 8)}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');

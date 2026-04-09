@@ -31,26 +31,75 @@ interface DateFormatPreferences {
   dateStyle: DateFormatStyle;
   locale: string;
   timezone: string;
+  timezone_user_set?: boolean;
+}
+
+/**
+ * Parse a date value into a Date object.
+ * Date strings without timezone info (no Z, no +HH:MM) are treated as UTC,
+ * because our backend always stores UTC in TIMESTAMP WITHOUT TIME ZONE columns
+ * and Supabase returns them without the Z suffix.
+ */
+function parseDate(date: Date | string): Date {
+  if (date instanceof Date) return date;
+  if (
+    typeof date === 'string' &&
+    date.length > 0 &&
+    !date.endsWith('Z') &&
+    !date.includes('+') &&
+    !/[+-]\d{2}:\d{2}$/.test(date)
+  ) {
+    return new Date(date + 'Z');
+  }
+  return new Date(date);
 }
 
 export function DateFormatProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage or use defaults
   const [preferences, setPreferences] = useState<DateFormatPreferences>(() => {
+    const defaults: DateFormatPreferences = {
+      datePattern: 'DD/MM/YYYY',
+      dateStyle: 'short',
+      locale: 'es-ES',
+      timezone: '', // '' means auto-detect from browser
+    };
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Migration: old code saved the auto-detected browser timezone as the stored value
+        // (before '' was introduced as "auto-detect"). If the stored timezone is a non-empty
+        // string but the user explicitly_set_timezone flag is absent, it was auto-set, not
+        // user-chosen. Reset it to '' so the browser timezone is always used correctly.
+        const userExplicitlySetTz = parsed.timezone_user_set === true;
+        if (parsed.timezone && !userExplicitlySetTz) {
+          parsed.timezone = ''; // treat as auto-detect
+        }
+        return { ...defaults, ...parsed };
       }
     } catch (error) {
       // Error loading preferences, using defaults
     }
-    return {
-      datePattern: 'DD/MM/YYYY',
-      dateStyle: 'short',
-      locale: 'es-ES',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    };
+    return defaults;
   });
+
+  // On mount: migrate any stale auto-set timezone back to '' (auto-detect).
+  // This also runs after Vite HMR where the useState initializer is skipped.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const userExplicitlySetTz = parsed.timezone_user_set === true;
+        if (parsed.timezone && !userExplicitlySetTz) {
+          setPreferences(prev => ({ ...prev, timezone: '', timezone_user_set: false }));
+        }
+      }
+    } catch (error) {
+      // ignore
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save to localStorage whenever preferences change
   useEffect(() => {
@@ -74,11 +123,11 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
   };
 
   const setTimezone = (timezone: string) => {
-    setPreferences(prev => ({ ...prev, timezone }));
+    setPreferences(prev => ({ ...prev, timezone, timezone_user_set: timezone !== '' }));
   };
 
   const formatDate = (date: Date | string, styleOverride?: DateFormatStyle): string => {
-    const dateObj = date instanceof Date ? date : new Date(date);
+    const dateObj = parseDate(date);
 
     if (isNaN(dateObj.getTime())) {
       return 'Invalid date';
@@ -121,9 +170,18 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
 
       // For 'short' style, apply custom pattern if specified
       if (style === 'short' || !styleOverride) {
-        const day = dateObj.getDate().toString().padStart(2, '0');
-        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-        const year = dateObj.getFullYear();
+        // Extract date parts in the configured timezone (not browser local time)
+        const tz = preferences.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const tzParts = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).formatToParts(dateObj);
+        const tzMap = Object.fromEntries(tzParts.map(p => [p.type, p.value]));
+        const day = tzMap.day;
+        const month = tzMap.month;
+        const year = tzMap.year;
 
         switch (preferences.datePattern) {
           case 'DD/MM/YYYY':
@@ -151,7 +209,7 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
   };
 
   const formatDateTime = (date: Date | string, includeTime: boolean = true): string => {
-    const dateObj = date instanceof Date ? date : new Date(date);
+    const dateObj = parseDate(date);
 
     if (isNaN(dateObj.getTime())) {
       return 'Invalid date';
@@ -163,8 +221,9 @@ export function DateFormatProvider({ children }: { children: React.ReactNode }) 
       }
 
       const datePart = formatDate(date);
+      const tz = preferences.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
       const timePart = dateObj.toLocaleTimeString('en-US', {
-        timeZone: preferences.timezone,
+        timeZone: tz,
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,

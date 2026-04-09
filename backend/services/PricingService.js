@@ -369,6 +369,40 @@ class PricingService {
       let totalTax = 0;
       const taxBreakdown = [];
 
+      // If the user explicitly selected specific tax rates, apply those directly
+      if (Array.isArray(taxRateIds) && taxRateIds.length > 0) {
+        for (const taxRateId of taxRateIds) {
+          const taxRate = await this.taxRateRepository.findById(taxRateId, organizationId);
+          if (!taxRate || !taxRate.is_active) continue;
+
+          let taxAmount, adjustedTaxableAmount;
+          if (taxRate.is_inclusive) {
+            const baseAmount = taxableAmount / (1 + taxRate.rate);
+            taxAmount = taxableAmount - baseAmount;
+            adjustedTaxableAmount = baseAmount;
+          } else {
+            taxAmount = taxableAmount * taxRate.rate;
+            adjustedTaxableAmount = taxableAmount;
+          }
+
+          totalTax += taxAmount;
+          taxBreakdown.push({
+            tax_rate_id: taxRate.tax_rate_id,
+            name: taxRate.name,
+            rate: taxRate.rate,
+            taxable_amount: parseFloat(adjustedTaxableAmount.toFixed(2)),
+            tax_amount: parseFloat(taxAmount.toFixed(2)),
+            is_inclusive: taxRate.is_inclusive
+          });
+        }
+
+        return {
+          total_tax: parseFloat(totalTax.toFixed(2)),
+          tax_breakdown: taxBreakdown
+        };
+      }
+
+      // No explicit tax_rate_ids — fall back to product-type-level tax rates
       // Get tax rates for product types in the order
       const productTypeIds = lineItems.map(item => item.product_type_id);
       const productTaxRates = await this.productTaxGroupRepository.getProductTaxRates(

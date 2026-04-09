@@ -113,10 +113,10 @@ export function DashboardStats() {
     queryFn: async () => {
       const productTypes = await productTypesService.getAll();
 
-      // Get all lots with price
+      // Get all lots with price and product_type_id
       const { data: lots } = await supabase
         .from('product_lots')
-        .select('lot_id, price, warehouse_id')
+        .select('lot_id, price, warehouse_id, product_type_id')
         .eq('organization_id', orgId!);
 
       // Get all stock movements to compute net stock per lot per warehouse
@@ -138,19 +138,32 @@ export function DashboardStats() {
         }
       });
 
+      // Build stock per product type by summing all lots
+      const stockByProductType: Record<string, number> = {};
+      lots?.forEach((lot: any) => {
+        const warehouseMap = stockByLotWarehouse[lot.lot_id] || {};
+        const lotStock = Object.values(warehouseMap).reduce((s: number, ws: any) => s + Math.max(0, ws), 0);
+        if (!stockByProductType[lot.product_type_id]) stockByProductType[lot.product_type_id] = 0;
+        stockByProductType[lot.product_type_id] += lotStock;
+      });
+
       // Total inventory value = sum(lot.price × net_stock_per_lot)
       const totalValue = lots?.reduce((sum: number, lot: any) => {
         const warehouseMap = stockByLotWarehouse[lot.lot_id] || {};
         const netStock = Object.values(warehouseMap)
-          .reduce((s, ws) => s + Math.max(0, ws), 0);
+          .reduce((s: number, ws: any) => s + Math.max(0, ws), 0);
         return sum + (lot.price * netStock);
       }, 0) || 0;
 
-      const stats = productTypes.reduce((acc: any, pt: any) => ({
-        count: acc.count + 1,
-        value: totalValue,
-        lowStock: acc.lowStock + (pt.min_stock > 0 ? 1 : 0),
-      }), { count: 0, value: totalValue, lowStock: 0 });
+      const stats = productTypes.reduce((acc: any, pt: any) => {
+        const currentStock = stockByProductType[pt.product_type_id] ?? 0;
+        const isLowStock = pt.min_stock != null && pt.min_stock > 0 && currentStock < pt.min_stock;
+        return {
+          count: acc.count + 1,
+          value: totalValue,
+          lowStock: acc.lowStock + (isLowStock ? 1 : 0),
+        };
+      }, { count: 0, value: totalValue, lowStock: 0 });
 
       return stats;
     },

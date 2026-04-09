@@ -11,6 +11,11 @@ import {
   ReceiptLine,
 } from '../../types/purchaseOrders';
 
+// Helper to get the current UI language for PDF generation
+function getLang(): string {
+  return localStorage.getItem('betali_language_preference') || 'es';
+}
+
 // Helper to get auth headers for PDF requests
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession();
@@ -283,7 +288,7 @@ export const purchaseOrdersService = {
   async downloadPdf(id: string): Promise<void> {
     const headers = await getAuthHeaders();
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf?lang=${getLang()}`, {
       headers
     });
 
@@ -311,7 +316,7 @@ export const purchaseOrdersService = {
   async getPdfBlob(id: string): Promise<Blob> {
     const headers = await getAuthHeaders();
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/purchase-orders/${id}/pdf?lang=${getLang()}`, {
       headers
     });
 
@@ -337,7 +342,7 @@ export const purchaseOrdersService = {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ orderIds })
+      body: JSON.stringify({ orderIds, lang: getLang() })
     });
 
     if (!response.ok) {
@@ -370,7 +375,7 @@ export const purchaseOrdersService = {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ orderIds })
+      body: JSON.stringify({ orderIds, lang: getLang() })
     });
 
     if (!response.ok) {

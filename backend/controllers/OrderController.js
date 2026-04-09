@@ -283,7 +283,7 @@ class OrderController {
       const duplicateData = {
         client_id: originalOrder.client_id,
         warehouse_id: originalOrder.warehouse_id,
-        notes: `Duplicated from Order #${originalOrder.order_id}`,
+        notes: `Duplicado de la Orden #${originalOrder.order_id.slice(-8).toUpperCase()}`,
         status: 'draft',
         tax_rate_ids: (originalOrder.tax_amount === 0 || originalOrder.tax_amount === null) ? [] : undefined,
         items: originalOrder.order_details.map(detail => ({

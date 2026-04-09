@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Hash, Calendar, Globe, DollarSign, Warehouse, Package } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
+import { DatePicker } from '../../ui/date-picker';
 import { useWarehouses } from '../../../hooks/useWarehouse';
 import type { ProductLot, ProductLotFormData } from '../../../services/api/productLotsService';
 
@@ -145,20 +146,18 @@ export const ProductLotSidePanel: React.FC<ProductLotSidePanelProps> = ({
             {/* Vencimiento */}
             <div className="space-y-2">
               <label
-                htmlFor="expiration_date"
                 className="text-sm font-semibold text-neutral-800 flex items-center"
               >
                 <span className="text-neutral-600 mr-2"><Calendar className="h-4 w-4" /></span>
                 Vencimiento
                 <span className="text-danger-500 ml-1">*</span>
               </label>
-              <input
-                id="expiration_date"
-                type="date"
-                value={form.expiration_date}
-                onChange={e => handleChange('expiration_date', e.target.value)}
+              <DatePicker
+                value={form.expiration_date ? new Date(`${form.expiration_date}T00:00:00`) : undefined}
+                onChange={(date) => handleChange('expiration_date', date ? date.toISOString().split('T')[0] : '')}
                 disabled={isProcessing}
-                className={`w-full rounded-lg border-2 bg-white px-4 py-3 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-60 ${
+                placeholder="DD/MM/YYYY"
+                className={`w-full h-[48px] rounded-lg border-2 px-4 py-3 text-sm font-medium ${
                   errors.expiration_date ? 'border-danger-500' : 'border-neutral-300'
                 }`}
               />

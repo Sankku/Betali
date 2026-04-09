@@ -48,7 +48,7 @@ function createOrderRoutes(container) {
     createLimiter,
     async (req, res, next) => {
       try {
-        const { orderIds } = req.body;
+        const { orderIds, lang } = req.body;
         const organizationId = req.user.currentOrganizationId;
 
         if (!organizationId) {
@@ -63,7 +63,7 @@ function createOrderRoutes(container) {
           return res.status(400).json({ error: 'Maximum 50 orders per batch' });
         }
 
-        const pdfBuffer = await orderPdfService.generateBatchSalesOrderPdf(orderIds, organizationId);
+        const pdfBuffer = await orderPdfService.generateBatchSalesOrderPdf(orderIds, organizationId, lang || 'es');
 
         const fileName = `ordenes-${new Date().toISOString().split('T')[0]}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');
@@ -313,12 +313,13 @@ function createOrderRoutes(container) {
       try {
         const orderId = req.params.id;
         const organizationId = req.user.currentOrganizationId;
+        const lang = req.query.lang || 'es';
 
         if (!organizationId) {
           return res.status(400).json({ error: 'Organization context required' });
         }
 
-        const pdfBuffer = await orderPdfService.generateSalesOrderPdf(orderId, organizationId);
+        const pdfBuffer = await orderPdfService.generateSalesOrderPdf(orderId, organizationId, lang);
 
         const fileName = `orden-${orderId.substring(0, 8)}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');

@@ -164,6 +164,49 @@ class ProductLotService {
     return { lot_id: firstLot.lot_id, available_stock: stock, quantity_needed: quantityNeeded, partial: true };
   }
 
+  /**
+   * FEFO multi-lot assignment: distribute a quantity across multiple lots in FEFO order.
+   * Returns an array of { lot_id, quantity } assignments summing to quantityNeeded.
+   * Throws if there isn't enough total stock across all lots.
+   * @returns {{ assignments: Array<{lot_id, quantity}>, total_available: number }}
+   */
+  async fefoAssignMultiLot(productTypeId, warehouseId, quantityNeeded, organizationId) {
+    const lots = await this.lotRepo.findForFefo(productTypeId, organizationId);
+
+    if (lots.length === 0) {
+      const err = new Error('No hay lotes disponibles para este tipo de producto');
+      err.status = 422;
+      err.code = 'no_lot_available';
+      throw err;
+    }
+
+    const assignments = [];
+    let remaining = quantityNeeded;
+    let totalAvailable = 0;
+
+    for (const lot of lots) {
+      if (remaining <= 0) break;
+      const stock = await this.stockRepo.getCurrentStock(lot.lot_id, warehouseId, organizationId);
+      totalAvailable += stock;
+      if (stock <= 0) continue;
+
+      const take = Math.min(stock, remaining);
+      assignments.push({ lot_id: lot.lot_id, quantity: take });
+      remaining -= take;
+    }
+
+    if (remaining > 0) {
+      const err = new Error(
+        `Stock insuficiente para completar el pedido. Disponible: ${totalAvailable}, Solicitado: ${quantityNeeded}`
+      );
+      err.status = 422;
+      err.code = 'insufficient_stock';
+      throw err;
+    }
+
+    return { assignments, total_available: totalAvailable };
+  }
+
   async bulkImport(rows, userId, organizationId) {
     const warehouses = await this.warehouseRepo.findByOrganizationId(organizationId);
     const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase().trim(), w.warehouse_id]));

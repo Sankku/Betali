@@ -423,20 +423,25 @@ export function StockMovementForm({
                         : t('stockMovements.form.noLotsAvailable')}
                     </div>
                   ) : (
-                    validProductLots.map(lot => (
-                      <SelectItem key={lot.lot_id} value={lot.lot_id}>
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="font-semibold text-neutral-900 truncate block">
-                            {lot.lot_number}
-                          </span>
-                          {lot.expiration_date && (
-                            <span className="text-xs text-neutral-500 truncate block">
-                              {t('stockMovements.form.lotExpiresPrefix')} {new Date(lot.expiration_date).toLocaleDateString()}
+                    validProductLots.map(lot => {
+                      const maxStock = validProductTypes.find(p => p.product_type_id === watchedValues.product_type_id)?.max_stock;
+                      const isFull = maxStock != null && lot.current_stock >= maxStock;
+                      return (
+                        <SelectItem key={lot.lot_id} value={lot.lot_id}>
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className={`font-semibold truncate block ${isFull ? 'text-red-600' : 'text-neutral-900'}`}>
+                              {lot.lot_number}
+                              {isFull && <span className="ml-2 text-xs font-normal">(máximo alcanzado)</span>}
                             </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
+                            <span className="text-xs text-neutral-500 truncate block">
+                              Stock: {lot.current_stock ?? '—'}
+                              {maxStock != null && ` / máx: ${maxStock}`}
+                              {lot.expiration_date && ` · ${t('stockMovements.form.lotExpiresPrefix')} ${new Date(lot.expiration_date).toLocaleDateString()}`}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>

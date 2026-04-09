@@ -1,6 +1,11 @@
 import { httpClient } from "../http/httpClient";
 import { supabase } from "../../lib/supabase";
 
+// Helper to get the current UI language for PDF generation
+function getLang(): string {
+  return localStorage.getItem('betali_language_preference') || 'es';
+}
+
 // Helper to get auth headers for PDF requests
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession();
@@ -228,7 +233,7 @@ export const orderService = {
   async downloadPdf(orderId: string): Promise<void> {
     const headers = await getAuthHeaders();
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf?lang=${getLang()}`, {
       headers
     });
 
@@ -253,7 +258,7 @@ export const orderService = {
   async getPdfBlob(orderId: string): Promise<Blob> {
     const headers = await getAuthHeaders();
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${BASE_URL}/${orderId}/pdf?lang=${getLang()}`, {
       headers
     });
 
@@ -276,7 +281,7 @@ export const orderService = {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ orderIds })
+      body: JSON.stringify({ orderIds, lang: getLang() })
     });
 
     if (!response.ok) {
@@ -306,7 +311,7 @@ export const orderService = {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ orderIds })
+      body: JSON.stringify({ orderIds, lang: getLang() })
     });
 
     if (!response.ok) {

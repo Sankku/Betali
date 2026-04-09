@@ -133,6 +133,24 @@ class StockMovementService {
         }
       }
 
+      // Validate max_stock is not exceeded for entry/adjustment movements
+      if (['entry', 'adjustment'].includes(movementData.movement_type) && movementData.lot_id) {
+        const lot = await this.productLotRepository.findById(movementData.lot_id, organizationId);
+        if (lot && lot.product_types && lot.product_types.max_stock != null) {
+          const currentStock = await this.stockMovementRepository.getCurrentStock(
+            movementData.lot_id,
+            movementData.warehouse_id,
+            organizationId
+          );
+          const newStock = currentStock + movementData.quantity;
+          if (newStock > lot.product_types.max_stock) {
+            throw new Error(
+              `El movimiento excedería el stock máximo del producto. Actual: ${currentStock}, Máximo permitido: ${lot.product_types.max_stock}, Solicitado: ${movementData.quantity}`
+            );
+          }
+        }
+      }
+
       const movementToCreate = {
         ...movementData,
         organization_id: organizationId,
