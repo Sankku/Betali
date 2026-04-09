@@ -537,7 +537,7 @@ describe('OrderController Unit Tests', () => {
           client_id: 'c-1',
           warehouse_id: 'wh-1',
           status: 'draft',
-          notes: 'Duplicated from Order #o-1',
+          notes: 'Duplicado de la Orden #O-1',
           items: [
             { product_type_id: 'p-1', quantity: 2, price: 10.0 },
             { product_type_id: 'p-2', quantity: 1, price: 20.0 }

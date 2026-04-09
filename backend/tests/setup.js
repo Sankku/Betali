@@ -122,13 +122,21 @@ global.testUtils = {
 
 // Jest setup hooks
 beforeAll(async () => {
-  // Wait for server to be ready
-  await global.testUtils.waitForServer();
+  // Unit tests don't need the server running
+  const testPath = expect.getState().testPath || '';
+  const isUnitTest = testPath.includes('/unit/');
+  if (!isUnitTest) {
+    await global.testUtils.waitForServer();
+  }
 });
 
 afterEach(async () => {
-  // Cleanup after each test
-  await global.testUtils.cleanupTestData();
+  // Unit tests don't need DB cleanup
+  const testPath = expect.getState().testPath || '';
+  const isUnitTest = testPath.includes('/unit/');
+  if (!isUnitTest) {
+    await global.testUtils.cleanupTestData();
+  }
 });
 
 module.exports = TEST_CONFIG;
