@@ -20,7 +20,10 @@ describe('ProductLotService', () => {
       delete: jest.fn(),
     };
     mockTypeRepo = { findById: jest.fn() };
-    mockStockMovementRepo = { getCurrentStock: jest.fn() };
+    mockStockMovementRepo = {
+      getCurrentStock: jest.fn(),
+      getCurrentStockBulk: jest.fn(),
+    };
     mockWarehouseRepo = { findByOrganizationId: jest.fn() };
     mockLogger = { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() };
     service = new ProductLotService(mockLotRepo, mockTypeRepo, mockStockMovementRepo, mockWarehouseRepo, mockLogger);
@@ -32,9 +35,10 @@ describe('ProductLotService', () => {
         { lot_id: 'lot-1', expiration_date: '2026-06-01' },
         { lot_id: 'lot-2', expiration_date: '2026-12-01' },
       ]);
-      mockStockMovementRepo.getCurrentStock
-        .mockResolvedValueOnce(10)
-        .mockResolvedValueOnce(20);
+      mockStockMovementRepo.getCurrentStockBulk.mockResolvedValue({
+        'lot-1': 10,
+        'lot-2': 20,
+      });
       const result = await service.fefoAssignLot('pt-1', 'wh-1', 5, 'org-1');
       expect(result.lot_id).toBe('lot-1');
       expect(result.partial).toBe(false);
@@ -45,9 +49,10 @@ describe('ProductLotService', () => {
         { lot_id: 'lot-1', expiration_date: '2026-06-01' },
         { lot_id: 'lot-2', expiration_date: '2026-12-01' },
       ]);
-      mockStockMovementRepo.getCurrentStock
-        .mockResolvedValueOnce(2)
-        .mockResolvedValueOnce(20);
+      mockStockMovementRepo.getCurrentStockBulk.mockResolvedValue({
+        'lot-1': 2,
+        'lot-2': 20,
+      });
       const result = await service.fefoAssignLot('pt-1', 'wh-1', 5, 'org-1');
       expect(result.lot_id).toBe('lot-2');
     });
@@ -56,7 +61,9 @@ describe('ProductLotService', () => {
       mockLotRepo.findForFefo.mockResolvedValue([
         { lot_id: 'lot-1', expiration_date: '2026-06-01' },
       ]);
-      mockStockMovementRepo.getCurrentStock.mockResolvedValue(2);
+      mockStockMovementRepo.getCurrentStockBulk.mockResolvedValue({
+        'lot-1': 2,
+      });
       const result = await service.fefoAssignLot('pt-1', 'wh-1', 10, 'org-1');
       expect(result.partial).toBe(true);
       expect(result.lot_id).toBe('lot-1');
