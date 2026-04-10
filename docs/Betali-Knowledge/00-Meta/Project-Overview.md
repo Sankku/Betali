@@ -25,3 +25,6 @@ updated: 2026-04-09
 - `/frontend` - React app
 - `/backend` - Express API
 - `/docs` - Documentación
+
+## QA & Auditorías
+- [[05-QA/PRD-QA-001-Bugs-Performance-2026-04-10]] — Auditoría de bugs y performance (2026-04-10)

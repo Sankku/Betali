@@ -356,8 +356,7 @@ class ClientController {
       // Validate email
       if (email) {
         try {
-          // Use repository directly for email validation
-          const existingClient = await this.clientService.repository.findByEmail(email, organizationId);
+          const existingClient = await this.clientService.findByEmail(email, organizationId);
           validation.email.exists = !!existingClient;
         } catch (error) {
           validation.email.valid = false;
@@ -380,8 +379,8 @@ class ClientController {
    */
   buildQueryOptions(query) {
     const options = {
-      page: parseInt(query.page) || 1,
-      limit: parseInt(query.limit) || 10,
+      page: Math.max(1, parseInt(query.page) || 1),
+      limit: Math.min(100, Math.max(1, parseInt(query.limit) || 10)),
       search: query.search || '',
       branch_id: query.branch_id || ''
     };

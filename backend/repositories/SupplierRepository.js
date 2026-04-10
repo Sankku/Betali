@@ -130,15 +130,14 @@ class SupplierRepository extends BaseRepository {
    * @returns {Promise<Array>}
    */
   async findAll(options = {}) {
+    if (!options.organization_id) {
+      throw new Error('[Security] organization_id is required for findAll');
+    }
     try {
       let query = this.client
         .from(this.table)
-        .select('*');
-
-      // Apply filters
-      if (options.organization_id) {
-        query = query.eq('organization_id', options.organization_id);
-      }
+        .select('*')
+        .eq('organization_id', options.organization_id);
 
       if (options.branch_id) {
         query = query.eq('branch_id', options.branch_id);

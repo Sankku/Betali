@@ -9,6 +9,16 @@ class ClientService {
   }
 
   /**
+   * Find a client by email within an organization
+   * @param {string} email - Email address
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object|null>}
+   */
+  async findByEmail(email, organizationId) {
+    return this.repository.findByEmail(email, organizationId);
+  }
+
+  /**
    * Get all clients for an organization with filtering and pagination
    * @param {string} organizationId - Organization ID
    * @param {Object} options - Query options

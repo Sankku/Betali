@@ -110,13 +110,14 @@ export function useCreateClient() {
       if (!currentOrganization) {
         throw new Error('No organization selected');
       }
-      
+
       // The backend will automatically add organization_id, but we can validate here
       return clientService.create(clientData);
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clients', 'stats'] });
+      const orgId = currentOrganization?.organization_id;
+      queryClient.invalidateQueries({ queryKey: ['clients', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['clients', 'stats', orgId] });
       toast.success('Cliente creado exitosamente');
       return response;
     },
@@ -129,14 +130,16 @@ export function useCreateClient() {
 
 export function useUpdateClient() {
   const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateClientData }) =>
       clientService.update(id, data),
     onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      const orgId = currentOrganization?.organization_id;
+      queryClient.invalidateQueries({ queryKey: ['clients', orgId] });
       queryClient.invalidateQueries({ queryKey: ['client', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['clients', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['clients', 'stats', orgId] });
       toast.success('Cliente actualizado exitosamente');
       return response;
     },
@@ -149,12 +152,14 @@ export function useUpdateClient() {
 
 export function useDeleteClient() {
   const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
 
   return useMutation({
     mutationFn: (id: string) => clientService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clients', 'stats'] });
+      const orgId = currentOrganization?.organization_id;
+      queryClient.invalidateQueries({ queryKey: ['clients', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['clients', 'stats', orgId] });
       toast.success('Cliente eliminado exitosamente');
     },
     onError: (error: Error) => {

@@ -2,7 +2,6 @@ import { Check, Zap } from 'lucide-react';
 import { SubscriptionPlan } from '../../../services/api/subscriptionService';
 import { Button } from '../../ui/button';
 import { useTranslation } from '../../../contexts/LanguageContext';
-import { translations } from '../../../locales';
 
 interface PricingCardProps {
   plan: SubscriptionPlan;
@@ -34,14 +33,15 @@ export function PricingCard({
     ? Math.round(((plan.price_monthly * 12 - plan.price_yearly) / (plan.price_monthly * 12)) * 100)
     : 0;
 
-  // Format features from JSONB
-  const featureNameMap = translations[locale].pricing.featureNames as Record<string, string>;
+  // Format features from JSONB — use t() to look up feature names
   const features = Object.entries(plan.features || {})
     .filter(([_, value]) => value === true)
     .map(([key]) => {
-      return featureNameMap[key] || key.split('_').map(word =>
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
+      const translated = t(`pricing.featureNames.${key}`);
+      // t() returns the key path if not found — fall back to humanized key
+      return translated !== `pricing.featureNames.${key}`
+        ? translated
+        : key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     });
 
   // Add limit-based features

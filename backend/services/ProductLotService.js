@@ -151,8 +151,11 @@ class ProductLotService {
       throw err;
     }
 
+    const lotIds = lots.map(l => l.lot_id);
+    const stockMap = await this.stockRepo.getCurrentStockBulk(lotIds, warehouseId, organizationId);
+
     for (const lot of lots) {
-      const stock = await this.stockRepo.getCurrentStock(lot.lot_id, warehouseId, organizationId);
+      const stock = stockMap[lot.lot_id] ?? 0;
       if (stock > 0 && stock >= quantityNeeded) {
         return { lot_id: lot.lot_id, available_stock: stock, quantity_needed: quantityNeeded, partial: false };
       }
@@ -160,7 +163,7 @@ class ProductLotService {
 
     // No single lot has enough — return earliest available with partial flag
     const firstLot = lots[0];
-    const stock = await this.stockRepo.getCurrentStock(firstLot.lot_id, warehouseId, organizationId);
+    const stock = stockMap[firstLot.lot_id] ?? 0;
     return { lot_id: firstLot.lot_id, available_stock: stock, quantity_needed: quantityNeeded, partial: true };
   }
 
@@ -180,13 +183,16 @@ class ProductLotService {
       throw err;
     }
 
+    const lotIds = lots.map(l => l.lot_id);
+    const stockMap = await this.stockRepo.getCurrentStockBulk(lotIds, warehouseId, organizationId);
+
     const assignments = [];
     let remaining = quantityNeeded;
     let totalAvailable = 0;
 
     for (const lot of lots) {
       if (remaining <= 0) break;
-      const stock = await this.stockRepo.getCurrentStock(lot.lot_id, warehouseId, organizationId);
+      const stock = stockMap[lot.lot_id] ?? 0;
       totalAvailable += stock;
       if (stock <= 0) continue;
 

@@ -1,10 +1,5 @@
-import { es } from './es';
-import { en } from './en';
-
-export const translations = {
-  es,
-  en,
-} as const;
-
-export type Locale = keyof typeof translations;
+// Solo exportamos `es` de forma síncrona — es el locale por defecto.
+// El locale 'en' se carga dinámicamente en LanguageContext cuando el usuario lo selecciona.
+export { es } from './es';
+export type Locale = 'es' | 'en';
 export type { TranslationKeys } from './es';

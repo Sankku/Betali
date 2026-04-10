@@ -68,10 +68,14 @@ class UserRepository extends BaseRepository {
    * @returns {Promise<Array>}
    */
   async findAll(options = {}) {
+    if (!options.organization_id) {
+      throw new Error('[Security] organization_id is required for findAll');
+    }
     try {
       let query = this.client
         .from(this.table)
-        .select('*');
+        .select('*')
+        .eq('organization_id', options.organization_id);
 
       // Apply filters
       if (options.role) {
@@ -80,10 +84,6 @@ class UserRepository extends BaseRepository {
 
       if (options.is_active !== undefined) {
         query = query.eq('is_active', options.is_active);
-      }
-
-      if (options.organization_id) {
-        query = query.eq('organization_id', options.organization_id);
       }
 
       if (options.branch_id) {

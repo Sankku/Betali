@@ -37,10 +37,10 @@ export function useAuthStateChange() {
         // Skip if it's the same user session re-emitted (tab focus, token refresh, etc.)
         if (incomingUserId === lastUserIdRef.current) return;
 
-        // Genuine new login — clear all cached data so fresh data is loaded
-        queryClient.removeQueries({ queryKey: ['user-organizations'] });
-        queryClient.removeQueries({ queryKey: ['currentUser'] });
-        queryClient.removeQueries({ queryKey: ['user-context'] });
+        // Genuine new login — invalidate all user/org data so fresh data is loaded on next mount
+        queryClient.invalidateQueries({ queryKey: ['user-organizations'] });
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        queryClient.invalidateQueries({ queryKey: ['user-context'] });
         queryClient.invalidateQueries({ queryKey: ['organizations'] });
         queryClient.invalidateQueries({ queryKey: ['users'] });
 

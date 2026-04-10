@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { translations, Locale, TranslationKeys } from '../locales';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { es, Locale, TranslationKeys } from '../locales';
 
 interface LanguageContextType {
   locale: Locale;
@@ -36,6 +36,9 @@ function replacePlaceholders(text: string, params?: Record<string, string | numb
   });
 }
 
+// Cache for dynamically loaded locales so we don't re-fetch on locale toggle
+const localeCache: Record<string, any> = { es };
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage or use default (Spanish)
   const [locale, setLocaleState] = useState<Locale>(() => {
@@ -49,6 +52,25 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
     return 'es'; // Default to Spanish
   });
+
+  // Current translations object — starts with `es` synchronously, switches async
+  const [currentTranslations, setCurrentTranslations] = useState<any>(es);
+  const pendingLocaleRef = useRef<Locale | null>(null);
+
+  // Load locale file dynamically — only 'en' needs a network round-trip; 'es' is always cached
+  useEffect(() => {
+    if (localeCache[locale]) {
+      setCurrentTranslations(localeCache[locale]);
+      return;
+    }
+    pendingLocaleRef.current = locale;
+    import('../locales/en').then(({ en }) => {
+      localeCache['en'] = en;
+      if (pendingLocaleRef.current === 'en') {
+        setCurrentTranslations(en);
+      }
+    });
+  }, [locale]);
 
   // Save to localStorage whenever locale changes
   useEffect(() => {
@@ -64,7 +86,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {
-    const translation = getNestedValue(translations[locale], key);
+    const translation = getNestedValue(currentTranslations, key);
     return replacePlaceholders(translation, params);
   };
 

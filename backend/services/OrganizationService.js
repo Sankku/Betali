@@ -438,11 +438,10 @@ class OrganizationService {
       const warehouses = await this.warehouseRepository.findAll({ organization_id: organizationId });
       const warehouseIds = warehouses.map(w => w.warehouse_id);
 
-      let deletedMovements = 0;
-      for (const warehouseId of warehouseIds) {
-        const movements = await this.stockMovementRepository.deleteByFilter({ warehouse_id: warehouseId });
-        deletedMovements += movements;
-      }
+      const deletionResults = await Promise.all(
+        warehouseIds.map(wId => this.stockMovementRepository.deleteByFilter({ warehouse_id: wId }))
+      );
+      const deletedMovements = deletionResults.reduce((sum, n) => sum + n, 0);
 
       // 2. Get product IDs for this org (needed to clean up FK references before deleting products)
       const { data: orgProducts } = await supabase
