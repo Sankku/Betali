@@ -19,6 +19,8 @@ type ApiError = Error & { status?: number };
 interface ErrorRule {
   match: string | RegExp;
   message: string;
+  /** When true, the original backend message is forwarded instead of `message`. */
+  passThrough?: boolean;
 }
 
 const ERROR_RULES: ErrorRule[] = [
@@ -112,6 +114,11 @@ const ERROR_RULES: ErrorRule[] = [
   {
     match: 'Stock insuficiente',
     message: 'Stock insuficiente en el depósito seleccionado. Verificá el stock disponible antes de registrar la salida.',
+  },
+  {
+    match: 'excedería el stock máximo',
+    message: '',
+    passThrough: true,
   },
 
   // ── Órdenes de venta (artículos) ──────────────────────────────────────────
@@ -233,14 +240,13 @@ export function translateApiError(error: unknown, fallback: string): string {
   const message = err?.message ?? '';
 
   for (const rule of ERROR_RULES) {
-    if (typeof rule.match === 'string') {
-      if (message.toLowerCase().includes(rule.match.toLowerCase())) {
-        return rule.message;
-      }
-    } else {
-      if (rule.match.test(message)) {
-        return rule.message;
-      }
+    const matched =
+      typeof rule.match === 'string'
+        ? message.toLowerCase().includes(rule.match.toLowerCase())
+        : rule.match.test(message);
+
+    if (matched) {
+      return rule.passThrough ? message : rule.message;
     }
   }
 

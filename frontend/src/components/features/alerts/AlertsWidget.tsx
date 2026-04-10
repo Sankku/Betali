@@ -146,12 +146,17 @@ export function AlertsWidget({
                           {t(`alerts.types.${alert.alert_type}` as any)}
                         </span>
                         <span className="text-xs opacity-75">
-                          {alert.severity}
+                          {t(`alerts.severity.${alert.severity}` as any)}
                         </span>
                       </div>
 
                       <p className="text-sm font-medium line-clamp-2">
-                        {alert.message}
+                        {t(`alerts.messages.${alert.alert_type}` as any, {
+                          product: (alert as any).product_types?.name ?? alert.products?.name ?? '',
+                          warehouse: alert.warehouse?.name ?? '',
+                          current: alert.current_stock,
+                          min: alert.min_stock,
+                        })}
                       </p>
 
                       <div className="flex items-center gap-4 mt-2 text-xs opacity-75">

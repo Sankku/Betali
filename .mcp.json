@@ -17,6 +17,13 @@
         "CLAUDE_FLOW_MEMORY_BACKEND": "hybrid"
       },
       "autoStart": false
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "@mauricio.wolff/mcp-obsidian@latest"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/Users/santiagoalaniz/Dev/Personal/SaasRestaurant/docs/Betali-Knowledge"
+      }
     }
   }
 }

@@ -56,3 +56,6 @@ next-env.d.ts
 **/.claude-flow/sessions/
 .claude/settings.local.json
 .worktrees/
+
+# Obsidian
+/docs/Betali-Knowledge/.obsidian/

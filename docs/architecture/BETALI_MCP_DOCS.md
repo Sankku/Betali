@@ -44,20 +44,48 @@ backend/
 │   ├── database.js   # Supabase client configuration
 │   └── supabase.js   # Supabase connection setup
 ├── repositories/     # Data access layer
-│   ├── BaseRepository.js          # Base repository with CRUD operations
-│   ├── ProductRepository.js       # Product-specific queries
-│   ├── WarehouseRepository.js     # Warehouse-specific queries
-│   └── [Entity]Repository.js      # Other entity repositories
+│   ├── BaseRepository.js              # Base repository with CRUD operations
+│   ├── ProductTypeRepository.js       # Product types (paradigma actual — reemplaza ProductRepository)
+│   ├── ProductLotRepository.js        # Lotes de productos con vencimiento/trazabilidad
+│   ├── ProductFormulaRepository.js    # Fórmulas BOM para producción/manufactura
+│   ├── WarehouseRepository.js         # Warehouse-specific queries
+│   ├── OrderRepository.js             # Órdenes de venta
+│   ├── PurchaseOrderRepository.js     # Órdenes de compra
+│   ├── StockMovementRepository.js     # Movimientos de stock
+│   ├── ClientRepository.js            # Clientes
+│   ├── SupplierRepository.js          # Proveedores
+│   ├── TelegramRepository.js          # Conexiones bot Telegram
+│   ├── InventoryAlertRepository.js    # Alertas de inventario
+│   ├── TaxRateRepository.js           # Tasas de impuestos
+│   ├── DiscountRuleRepository.js      # Reglas de descuento
+│   ├── PricingTierRepository.js       # Niveles de precios
+│   ├── SubscriptionRepository.js      # Suscripciones de organizaciones
+│   └── [Entity]Repository.js          # Other entity repositories
+├── telegram/         # Bot de Telegram (grammy)
+│   ├── bot.js                         # Inicialización del bot
+│   ├── alertJob.js                    # Job de alertas automáticas
+│   ├── middleware/auth.js             # Auth por token de vinculación
+│   └── commands/                      # Comandos: start, help, stock, comprar, resumen, movimiento, conteo
 ├── services/         # Business logic layer
-│   ├── ProductService.js          # Product business rules
-│   ├── WarehouseService.js        # Warehouse business rules
-│   └── [Entity]Service.js         # Other entity services
+│   ├── ProductTypeService.js          # Product types business rules
+│   ├── ProductLotService.js           # Lotes business rules
+│   ├── ProductFormulaService.js       # Fórmulas/producción business rules
+│   ├── WarehouseService.js            # Warehouse business rules
+│   └── [Entity]Service.js             # Other entity services
 ├── controllers/      # HTTP handlers
-│   ├── ProductController.js       # Product HTTP endpoints
-│   └── [Entity]Controller.js      # Other entity controllers
+│   ├── ProductTypeController.js       # Product types HTTP endpoints
+│   ├── ProductLotController.js        # Lotes HTTP endpoints
+│   ├── ProductFormulaController.js    # Fórmulas/producción HTTP endpoints
+│   └── [Entity]Controller.js          # Other entity controllers
 ├── routes/           # Express route definitions
-│   ├── products.js               # Product routes with middleware
-│   └── [entity].js              # Other entity routes
+│   ├── productTypes.js               # Product type routes
+│   ├── productLots.js                # Product lot routes
+│   ├── productFormulas.js            # Production formula routes
+│   ├── orders.js                     # Sales order routes
+│   ├── purchase-orders.js            # Purchase order routes
+│   ├── stockMovements.js             # Stock movement routes
+│   ├── telegram.js                   # Telegram bot API + webhook routes
+│   └── [entity].js                   # Other entity routes
 ├── middleware/       # Cross-cutting concerns
 │   ├── auth.js                   # JWT authentication
 │   ├── validation.js             # Request validation

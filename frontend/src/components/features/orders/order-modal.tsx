@@ -62,39 +62,54 @@ export function OrderModal({ isOpen, onClose, mode, order }: OrderModalProps) {
     },
   });
 
+  // Effect 1: populate basic fields as soon as the modal opens (or the order changes).
+  // This runs before the full order is fetched so at least client/warehouse/status show immediately.
   useEffect(() => {
-    if (isOpen) {
-      if (mode === 'create') {
-        form.reset({
-          client_id: 'no-client',
-          warehouse_id: 'no-warehouse',
-          status: 'draft',
-          notes: '',
-          tax_rate_ids: [],
-          items: [{ product_type_id: '', quantity: 1, price: 0 }],
-        });
-      } else if (mode === 'edit' && resolvedFullOrder) {
-        const details = resolvedFullOrder.order_details ?? [];
-        // Only reset once we have real detail records (product_type_id is the identifier)
-        if (details.length === 0 || !details[0]?.product_type_id) return;
-        form.reset({
-          client_id: resolvedFullOrder.client_id || 'no-client',
-          warehouse_id: resolvedFullOrder.warehouse_id || 'no-warehouse',
-          status: resolvedFullOrder.status,
-          notes: resolvedFullOrder.notes || '',
-          // tax_rate_ids can't be restored from saved order (backend stores tax_amount, not which rates)
-          tax_rate_ids: (resolvedFullOrder as any).tax_rate_ids ?? [],
-          items: details.map((detail: any) => ({
+    if (!isOpen) return;
+    if (mode === 'create') {
+      form.reset({
+        client_id: 'no-client',
+        warehouse_id: 'no-warehouse',
+        status: 'draft',
+        notes: '',
+        tax_rate_ids: [],
+        items: [{ product_type_id: '', quantity: 1, price: 0 }],
+      });
+    } else if (mode === 'edit' && order) {
+      form.reset({
+        client_id: order.client_id || 'no-client',
+        warehouse_id: order.warehouse_id || 'no-warehouse',
+        status: order.status,
+        notes: order.notes || '',
+        tax_rate_ids: [],
+        items: [],
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, order?.order_id]);
+
+  // Effect 2: populate items and tax_rate_ids once the full order (with order_details) is fetched.
+  useEffect(() => {
+    if (!isOpen || mode !== 'edit' || !resolvedFullOrder) return;
+    const details = resolvedFullOrder.order_details ?? [];
+    form.reset({
+      client_id: resolvedFullOrder.client_id || 'no-client',
+      warehouse_id: resolvedFullOrder.warehouse_id || 'no-warehouse',
+      status: resolvedFullOrder.status,
+      notes: resolvedFullOrder.notes || '',
+      // tax_rate_ids can't be restored from saved order (backend stores tax_amount, not which rates)
+      tax_rate_ids: (resolvedFullOrder as any).tax_rate_ids ?? [],
+      items: details.length > 0
+        ? details.map((detail: any) => ({
             product_type_id: detail.product_type_id,
             lot_id: detail.lot_id || undefined,
             quantity: detail.quantity,
             price: detail.price,
-          })),
-        });
-      }
-    }
+          }))
+        : [{ product_type_id: '', quantity: 1, price: 0 }],
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, mode, resolvedFullOrder]);
+  }, [resolvedFullOrder]);
 
   const handleSubmit = async (data: OrderFormData) => {
     try {

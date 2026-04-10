@@ -276,8 +276,12 @@ class InventoryAlertRepository extends BaseRepository {
       // 4. Evaluate Alerts
       for (const product of products) {
         for (const warehouse of warehouses) {
-          const currentStock = Math.max(0, stockMap[product.product_type_id]?.[warehouse.warehouse_id] || 0);
-          
+          const warehouseStockMap = stockMap[product.product_type_id];
+          // Skip if this product has never had a stock movement in this warehouse
+          if (!warehouseStockMap || !(warehouse.warehouse_id in warehouseStockMap)) continue;
+
+          const currentStock = Math.max(0, warehouseStockMap[warehouse.warehouse_id]);
+
           let alertType = null;
           let severity = null;
           let message = null;
@@ -285,11 +289,11 @@ class InventoryAlertRepository extends BaseRepository {
           if (currentStock === 0) {
             alertType = 'out_of_stock';
             severity = 'critical';
-            message = `Product "${product.name}" is out of stock in warehouse "${warehouse.name}"`;
+            message = `"${product.name}" sin stock en "${warehouse.name}"`;
           } else if (currentStock <= product.min_stock) {
             alertType = 'low_stock';
             severity = currentStock <= (product.min_stock * 0.5) ? 'high' : 'medium';
-            message = `Product "${product.name}" is running low in warehouse "${warehouse.name}". Current: ${currentStock}, Minimum: ${product.min_stock}`;
+            message = `"${product.name}" con stock bajo en "${warehouse.name}". Actual: ${currentStock}, Mínimo: ${product.min_stock}`;
           }
 
           if (alertType) {

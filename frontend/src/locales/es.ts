@@ -153,9 +153,9 @@ export const es = {
       newSaleDesc: 'Crear orden de venta',
       newProduct: 'Nuevo Producto',
       newProductDesc: 'Agregar al catálogo',
-      newPurchase: 'Nueva Compra',
+      newPurchase: 'Agregar Compra',
       newPurchaseDesc: 'Reponer stock',
-      newClient: 'Nuevo Cliente',
+      newClient: 'Agregar Cliente',
       newClientDesc: 'Registrar cliente',
     },
     // Activity
@@ -1288,6 +1288,14 @@ export const es = {
       admin: 'Administración',
       all: 'Todos los Permisos (Super Admin)',
     },
+    timezone: {
+      label: 'Zona Horaria',
+      currentTimeLabel: 'Hora actual en la zona seleccionada:',
+      utcWarningTitle: 'Zona horaria detectada: UTC.',
+      utcWarningBody: 'Si estás en Argentina, seleccioná',
+      utcWarningLocation: 'Buenos Aires (ART)',
+      utcWarningEnd: 'para ver los horarios correctamente.',
+    },
   },
 
   // Errors
@@ -1322,6 +1330,16 @@ export const es = {
       out_of_stock: 'Sin Stock',
       overstock: 'Sobrestock',
       expiring_soon: 'Por Vencer',
+    },
+    severity: {
+      critical: 'Crítico',
+      high: 'Alto',
+      medium: 'Medio',
+      low: 'Bajo',
+    },
+    messages: {
+      out_of_stock: '"{{product}}" sin stock en "{{warehouse}}"',
+      low_stock: '"{{product}}" con stock bajo en "{{warehouse}}". Actual: {{current}}, Mínimo: {{min}}',
     },
   },
 

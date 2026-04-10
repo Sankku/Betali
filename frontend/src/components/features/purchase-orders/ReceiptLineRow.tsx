@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -155,15 +156,15 @@ export function ReceiptLineRow({ detail, value, onChange }: ReceiptLineRowProps)
                 </div>
                 <div>
                   <Label className="text-xs">Vencimiento *</Label>
-                  <Input
-                    type="date"
-                    value={value.lot.expiration_date}
-                    onChange={(e) =>
+                  <DatePicker
+                    value={value.lot.expiration_date ? new Date(value.lot.expiration_date + 'T00:00:00') : undefined}
+                    onChange={(d) =>
                       onChange({
                         ...value,
-                        lot: { ...(value.lot as Extract<ReceiptLine['lot'], { mode: 'new' }>), expiration_date: e.target.value },
+                        lot: { ...(value.lot as Extract<ReceiptLine['lot'], { mode: 'new' }>), expiration_date: d ? d.toISOString().slice(0, 10) : '' },
                       })
                     }
+                    placeholder="DD/MM/YYYY"
                     className="mt-1 h-8 text-sm"
                   />
                 </div>

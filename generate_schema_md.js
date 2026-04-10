@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const typesFile = path.join(__dirname, 'database.types.ts');
-const outputFile = path.join(__dirname, 'DATABASE_SCHEMA.md');
+const outputFile = path.join(__dirname, 'docs/Betali-Knowledge/01-Arquitectura/Database-Schema.md');
 
 try {
   const content = fs.readFileSync(typesFile, 'utf8');

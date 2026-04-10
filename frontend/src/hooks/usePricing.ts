@@ -8,7 +8,7 @@ export interface OrderPricingData {
   client_id?: string;
   warehouse_id?: string;
   items: Array<{
-    product_id: string;
+    product_type_id: string;
     quantity: number;
     price?: number;
   }>;
@@ -17,7 +17,7 @@ export interface OrderPricingData {
 }
 
 export interface PricingLineItem {
-  product_id: string;
+  product_type_id: string;
   quantity: number;
   unit_price: number;
   line_subtotal: number;
@@ -144,7 +144,7 @@ export function useRealtimePricing(orderData: OrderPricingData | null, enabled: 
     return orderData && 
       orderData.items && 
       orderData.items.length > 0 && 
-      orderData.items.every(item => item.product_id && item.quantity > 0);
+      orderData.items.every(item => item.product_type_id && item.quantity > 0);
   }, [orderData]);
 
   return {

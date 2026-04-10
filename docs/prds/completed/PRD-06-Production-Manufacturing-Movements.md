@@ -1,9 +1,23 @@
 # PRD-06: Sistema de Movimientos de Elaboración / Producción
 
-> **Estado**: Pendiente de implementación
+> **Estado**: ⚠️ Backend implementado — Frontend pendiente
 > **Prioridad**: Media
 > **Fecha de creación**: 2026-03-17
 > **Estimación**: 3-5 días de trabajo
+
+> ### Estado de implementación (2026-04-09)
+> **Backend** ✅ Completo:
+> - `backend/repositories/ProductFormulaRepository.js`
+> - `backend/services/ProductFormulaService.js`
+> - `backend/controllers/ProductFormulaController.js`
+> - `backend/routes/productFormulas.js`
+>
+> **Nota de schema**: La tabla `product_formulas` usa `finished_product_type_id` y `raw_material_type_id` (referencias a `product_types`), no directamente a `products`. El PRD documentó el schema con `products` pero la implementación migró al paradigma `product_types`.
+>
+> **Frontend** ❌ Pendiente:
+> - No hay UI para definir fórmulas/recetas (BOM)
+> - No hay pantalla para registrar movimientos de elaboración
+> - No hay visualización de producción en el dashboard
 
 ---
 

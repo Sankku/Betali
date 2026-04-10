@@ -1,6 +1,7 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { useDateFormat } from '../../../contexts/DateFormatContext';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import { Label } from '../../ui/label';
 import {
   Select,
@@ -56,6 +57,7 @@ const AUTO_TZ_LABEL = `Auto-detect (${Intl.DateTimeFormat().resolvedOptions().ti
 
 export function TimezoneSelector({ value, onChange, compact = false }: TimezoneSelectorProps) {
   const { timezone, setTimezone } = useDateFormat();
+  const { t } = useTranslation();
 
   // '' means auto-detect — resolve to browser timezone for display purposes
   const effectiveBrowserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -109,11 +111,13 @@ export function TimezoneSelector({ value, onChange, compact = false }: TimezoneS
     );
   }
 
+  const isEffectiveTzUTC = currentTimezone === 'UTC' || currentTimezone === 'Etc/UTC';
+
   return (
     <div className="space-y-3">
       <Label className="text-sm font-medium flex items-center gap-2">
         <Globe className="h-4 w-4" />
-        Timezone
+        {t('profile.timezone.label')}
       </Label>
       <Select value={selectValue} onValueChange={handleChange}>
         <SelectTrigger>
@@ -127,8 +131,16 @@ export function TimezoneSelector({ value, onChange, compact = false }: TimezoneS
           ))}
         </SelectContent>
       </Select>
+      {isEffectiveTzUTC && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+          <strong>⚠️ {t('profile.timezone.utcWarningTitle')}</strong>{' '}
+          {t('profile.timezone.utcWarningBody')}{' '}
+          <strong>{t('profile.timezone.utcWarningLocation')}</strong>{' '}
+          {t('profile.timezone.utcWarningEnd')}
+        </div>
+      )}
       <div className="bg-gray-50 rounded-lg p-3">
-        <p className="text-xs font-medium text-gray-600 mb-1">Current time in selected timezone:</p>
+        <p className="text-xs font-medium text-gray-600 mb-1">{t('profile.timezone.currentTimeLabel')}</p>
         <p className="text-lg font-semibold text-gray-900 tabular-nums">{getCurrentTime()}</p>
       </div>
     </div>

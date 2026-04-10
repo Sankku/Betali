@@ -1,10 +1,24 @@
 # PRD-08: Betali Bot — Integración con Telegram
 
-> **Estado**: Pendiente de implementación
+> **Estado**: ⚠️ Backend implementado — Frontend pendiente
 > **Prioridad**: Alta
 > **Fecha de creación**: 2026-03-24
 > **Estimación**: 8-14 días de trabajo (MVP completo)
 > **Tier**: Feature Premium (Plan Starter+)
+
+> ### Estado de implementación (2026-04-09)
+> **Backend** ✅ Completo:
+> - `backend/telegram/bot.js` — Bot grammy inicializado
+> - `backend/telegram/commands/` — Comandos: `/start`, `/help`, `/stock`, `/comprar`, `/resumen`, `/movimiento`, `/conteo`
+> - `backend/telegram/alertJob.js` — Job de alertas automáticas
+> - `backend/telegram/middleware/auth.js` — Auth por token vinculado
+> - `backend/routes/telegram.js` — API endpoints (link-token, webhook)
+> - `backend/repositories/TelegramRepository.js` — Persistencia de conexiones
+>
+> **Frontend** ❌ Pendiente:
+> - No hay UI para vincular cuenta de Telegram desde el dashboard
+> - No hay pantalla de configuración del bot
+> - No hay visualización de conexiones activas
 
 ---
 

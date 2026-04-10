@@ -22,7 +22,7 @@ interface OrderData {
 type DateRangeType = 'today' | 'week' | 'month' | 'year' | 'custom';
 
 export function TrendChart() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { currentOrganization } = useOrganization();
   const orgId = currentOrganization?.organization_id;
   const [showInfo, setShowInfo] = useState(false);
@@ -65,8 +65,10 @@ export function TrendChart() {
 
   const { startDate, endDate } = getDateRange();
 
+  const uiLocale = locale === 'es' ? 'es-AR' : 'en-US';
+
   const { data: orderTrends, isLoading } = useQuery({
-    queryKey: ['orderTrends', orgId, dateRange, customDateRange?.from, customDateRange?.to],
+    queryKey: ['orderTrends', orgId, dateRange, customDateRange?.from, customDateRange?.to, locale],
     enabled: !!orgId && (dateRange !== 'custom' || (!!customDateRange?.from && !!customDateRange?.to)),
     queryFn: async (): Promise<OrderData[]> => {
       const response = await orderService.getOrders({
@@ -78,28 +80,47 @@ export function TrendChart() {
 
       const orders = response.data || [];
 
-      // Group by date
-      const grouped: Record<string, { orders: number; total: number }> = {};
+      // Determine grouping granularity based on selected range
+      const getGrouping = (date: Date): { key: string; sortKey: string } => {
+        if (dateRange === 'year') {
+          // Group by month
+          const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          const key = date.toLocaleDateString(uiLocale, { month: 'short', year: 'numeric' });
+          return { key, sortKey };
+        }
+        if (dateRange === 'today') {
+          // Group by hour
+          const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}`;
+          const key = `${String(date.getHours()).padStart(2, '0')}:00`;
+          return { key, sortKey };
+        }
+        // week, month, custom → group by day
+        const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const key = date.toLocaleDateString(uiLocale, { month: 'short', day: 'numeric' });
+        return { key, sortKey };
+      };
+
+      const grouped: Record<string, { orders: number; total: number; sortKey: string }> = {};
 
       orders.forEach((order: any) => {
-        const date = new Date(order.order_date || order.created_at).toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-        });
+        const date = new Date(order.order_date || order.created_at);
+        const { key, sortKey } = getGrouping(date);
 
-        if (!grouped[date]) {
-          grouped[date] = { orders: 0, total: 0 };
+        if (!grouped[key]) {
+          grouped[key] = { orders: 0, total: 0, sortKey };
         }
 
-        grouped[date].orders += 1;
-        grouped[date].total += order.total || 0;
+        grouped[key].orders += 1;
+        grouped[key].total += order.total || 0;
       });
 
-      return Object.entries(grouped).map(([date, values]) => ({
-        date,
-        orders: values.orders,
-        total: Math.round(values.total * 100) / 100,
-      }));
+      return Object.entries(grouped)
+        .sort(([, a], [, b]) => a.sortKey.localeCompare(b.sortKey))
+        .map(([date, values]) => ({
+          date,
+          orders: values.orders,
+          total: Math.round(values.total * 100) / 100,
+        }));
     },
   });
 

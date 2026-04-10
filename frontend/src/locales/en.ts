@@ -153,9 +153,9 @@ export const en: TranslationKeys = {
       newSaleDesc: 'Create sale order',
       newProduct: 'New Product',
       newProductDesc: 'Add to catalog',
-      newPurchase: 'New Purchase',
+      newPurchase: 'Add Purchase',
       newPurchaseDesc: 'Restock inventory',
-      newClient: 'New Client',
+      newClient: 'Add Client',
       newClientDesc: 'Register client',
     },
     recentMovements: 'Recent Movements',
@@ -1285,6 +1285,14 @@ export const en: TranslationKeys = {
       admin: 'Admin',
       all: 'All Permissions (Super Admin)',
     },
+    timezone: {
+      label: 'Timezone',
+      currentTimeLabel: 'Current time in selected timezone:',
+      utcWarningTitle: 'Detected timezone: UTC.',
+      utcWarningBody: 'If you are in Argentina, select',
+      utcWarningLocation: 'Buenos Aires (ART)',
+      utcWarningEnd: 'to display times correctly.',
+    },
   },
 
   // Errors
@@ -1319,6 +1327,16 @@ export const en: TranslationKeys = {
       out_of_stock: 'Out of Stock',
       overstock: 'Overstock',
       expiring_soon: 'Expiring Soon',
+    },
+    severity: {
+      critical: 'Critical',
+      high: 'High',
+      medium: 'Medium',
+      low: 'Low',
+    },
+    messages: {
+      out_of_stock: '"{{product}}" is out of stock in "{{warehouse}}"',
+      low_stock: '"{{product}}" is running low in "{{warehouse}}". Current: {{current}}, Minimum: {{min}}',
     },
   },
 

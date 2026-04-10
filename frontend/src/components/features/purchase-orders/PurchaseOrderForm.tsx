@@ -63,7 +63,7 @@ export function PurchaseOrderForm({ form, mode, isLoading = false, submitAttempt
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [taxMode, setTaxMode] = useState<'percentage' | 'amount'>('amount');
+  const [taxMode, setTaxMode] = useState<'percentage' | 'amount'>('percentage');
   const [taxPercentage, setTaxPercentage] = useState<string>('');
 
   // Load data for dropdowns
