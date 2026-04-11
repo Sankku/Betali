@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import GoogleOnboarding from "./pages/GoogleOnboarding";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
@@ -73,6 +74,7 @@ function AppContent() {
                             <Route path="/register" element={<Register />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/google-onboarding" element={<GoogleOnboarding />} />
                             <Route path="/terms" element={<TermsOfService />} />
                             <Route path="/privacy" element={<PrivacyPolicy />} />
                             <Route

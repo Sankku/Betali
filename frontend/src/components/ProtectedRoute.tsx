@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useOrganization } from '../context/OrganizationContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -7,10 +8,11 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { userOrganizations, loading: orgLoading } = useOrganization();
   const location = useLocation();
 
-  if (loading) {
+  if (authLoading || orgLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -23,6 +25,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Users with no organization need to complete onboarding
+  if (userOrganizations.length === 0 && location.pathname !== '/google-onboarding') {
+    return <Navigate to="/google-onboarding" replace />;
   }
 
   return <>{children}</>;

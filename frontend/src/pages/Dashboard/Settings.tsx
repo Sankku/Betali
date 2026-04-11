@@ -6,6 +6,7 @@ import { DateFormatSettings } from '../../components/features/settings/date-form
 import { LanguageSettings } from '../../components/features/settings/language-settings';
 import { ThemeSettings } from '../../components/features/settings/theme-settings';
 import { TelegramSettings } from '../../components/features/settings/telegram-settings';
+import { PasswordSettings } from '../../components/features/settings/password-settings';
 import { useTranslation } from '../../contexts/LanguageContext';
 
 export default function Settings() {
@@ -37,6 +38,7 @@ export default function Settings() {
           <ThemeSettings />
           <DateFormatSettings />
           <TelegramSettings />
+          <PasswordSettings />
         </div>
       </div>
     </DashboardLayout>
