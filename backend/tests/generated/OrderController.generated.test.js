@@ -1,53 +1,34 @@
-class OrderController {
-  constructor(orderService) {
-    this.orderService = orderService;
-    this.createOrder = this.createOrder.bind(this);
-    this.getOrder = this.getOrder.bind(this);
-    // Add other methods as needed
-  }
+const OrderController = require('../../controllers/OrderController');
 
-  async createOrder(req, res, next) {
-    try {
-      const orderData = req.body;
-      const organizationId = req.user.currentOrganization;
-      const userId = req.user.id;
+describe('OrderController', () => {
+  let controller;
+  let mockService;
+  let mockReq;
+  let mockRes;
+  let mockNext;
 
-      const order = await this.orderService.createOrder(orderData, organizationId, userId);
+  beforeEach(() => {
+    mockService = {
+      getOrders: jest.fn(),
+      getOrderById: jest.fn(),
+      createOrder: jest.fn(),
+      updateOrder: jest.fn(),
+      deleteOrder: jest.fn(),
+    };
+    controller = new OrderController(mockService);
+    mockReq = { user: { currentOrganizationId: 'org-1', id: 'user-1' }, query: {}, body: {}, params: {} };
+    mockRes = { json: jest.fn(), status: jest.fn().mockReturnThis() };
+    mockNext = jest.fn();
+  });
 
-      res.json({
-        success: true,
-        message: 'Order created successfully',
-        data: order
-      });
-    } catch(error) {
-      next(error);
-    }
-  }
+  test('constructor sets orderService', () => {
+    expect(controller.orderService).toBe(mockService);
+  });
 
-  async getOrder(req, res, next) {
-    try {
-      const { id } = req.params;
-      const organizationId = req.user.currentOrganization;
-
-      const order = await this.orderService.getOrderById(id, organizationId);
-
-      if(!order) {
-        return res.status(404).json({
-          success: false,
-          message: 'Order not found'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: order
-      });
-    } catch(error) {
-      next(error);
-    }
-  }
-
-  // Add other methods as needed
-}
-
-module.exports = OrderController;
+  test('getOrders calls next on service error', async () => {
+    const err = new Error('db error');
+    mockService.getOrders.mockRejectedValue(err);
+    await controller.getOrders(mockReq, mockRes, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(err);
+  });
+});

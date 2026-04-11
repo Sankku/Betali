@@ -29,7 +29,7 @@ describe('ProductTypeRepository', () => {
   test('findByOrg returns array', async () => {
     repo.findAll = jest.fn().mockResolvedValue([{ product_type_id: 'pt-1' }]);
     const result = await repo.findByOrg('org-1');
-    expect(repo.findAll).toHaveBeenCalledWith({ organization_id: 'org-1' }, {});
+    expect(repo.findAll).toHaveBeenCalledWith({ organization_id: 'org-1' }, { limit: 5000 });
     expect(result).toHaveLength(1);
   });
 

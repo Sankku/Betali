@@ -124,17 +124,17 @@ global.testUtils = {
 beforeAll(async () => {
   // Unit tests don't need the server running
   const testPath = expect.getState().testPath || '';
-  const isUnitTest = testPath.includes('/unit/');
-  if (!isUnitTest) {
+  const isLocalTest = testPath.includes('/unit/') || testPath.includes('/generated/');
+  if (!isLocalTest) {
     await global.testUtils.waitForServer();
   }
 });
 
 afterEach(async () => {
-  // Unit tests don't need DB cleanup
+  // Unit/generated tests don't need DB cleanup
   const testPath = expect.getState().testPath || '';
-  const isUnitTest = testPath.includes('/unit/');
-  if (!isUnitTest) {
+  const isLocalTest = testPath.includes('/unit/') || testPath.includes('/generated/');
+  if (!isLocalTest) {
     await global.testUtils.cleanupTestData();
   }
 });

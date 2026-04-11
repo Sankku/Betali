@@ -105,6 +105,7 @@ class ProductTypeService {
       const lotNumbers = lots.map(l => l.lot_number).join(', ');
       const err = new Error(`Cannot delete product type: it has ${lots.length} associated lot(s) (${lotNumbers})`);
       err.status = 409;
+      err.lot_count = lots.length;
       err.key = 'errors.product_types.delete_blocked_by_lots';
       err.params = { count: lots.length, lot_numbers: lotNumbers };
       throw err;
