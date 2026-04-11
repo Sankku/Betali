@@ -1,6 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
-import Papa from 'papaparse';
-import { Upload, Download, CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { CheckCircle, XCircle, AlertTriangle, Rows3, Plus, Trash2, Copy } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../../ui/modal';
 import { Button } from '../../ui/button';
 import { useProductTypeImport } from '../../../hooks/useProductTypes';
@@ -8,134 +7,96 @@ import { useWarehouses } from '../../../hooks/useWarehouse';
 import type { BulkImportResult } from '../../../services/api/productTypesService';
 import {
   validateRow,
-  REQUIRED_HEADERS,
+  emptyRow,
   VALID_UNITS,
   VALID_PRODUCT_TYPES,
-  MAX_ROWS,
-  MAX_FILE_SIZE_MB,
   type ParsedRow,
 } from './_productValidation';
 
-export interface ProductImportModalProps {
+const INITIAL_ROWS = 3;
+
+export interface ProductBulkCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function downloadTemplate() {
-  const headers = [
-    'sku', 'name', 'product_type', 'unit', 'lot_number', 'origin_country',
-    'expiration_date', 'price', 'description', 'initial_stock', 'warehouse_name'
-  ];
-  const example = [
-    'HAR-000-KG', 'Harina 000', 'standard', 'kg', 'LOT-2025-001', 'Argentina',
-    '2027-12-31', '1500.00', 'Harina de trigo 000', '100', 'Depósito Principal'
-  ];
-  const csv = [headers.join(','), example.join(',')].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'plantilla_tipos_productos.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
+type Step = 'grid' | 'result';
 
-type Step = 'upload' | 'preview' | 'result';
-
-export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState<Step>('upload');
-  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [parseError, setParseError] = useState<string | null>(null);
-  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
+export const ProductBulkCreateModal: React.FC<ProductBulkCreateModalProps> = ({ isOpen, onClose }) => {
   const { data: warehousesData } = useWarehouses();
   const warehouseNames = (warehousesData?.data ?? []).map((w: { name: string }) =>
     String(w.name).toLowerCase().trim()
   );
 
+  const makeEmpty = useCallback(
+    (rowNum: number) => emptyRow(rowNum, warehouseNames),
+    [warehouseNames]
+  );
+
+  const [step, setStep] = useState<Step>('grid');
+  const [parsedRows, setParsedRows] = useState<ParsedRow[]>(() =>
+    Array.from({ length: INITIAL_ROWS }, (_, i) => emptyRow(i + 1, []))
+  );
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+  const [confirmPartial, setConfirmPartial] = useState(false);
+
   const importMutation = useProductTypeImport();
 
+  const validRows = parsedRows.filter((r) => r.errors.length === 0);
+  const invalidRows = parsedRows.filter((r) => r.errors.length > 0);
+
   const handleClose = useCallback(() => {
-    setStep('upload');
-    setParsedRows([]);
-    setParseError(null);
+    setStep('grid');
+    setParsedRows(Array.from({ length: INITIAL_ROWS }, (_, i) => makeEmpty(i + 1)));
     setImportResult(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setConfirmPartial(false);
     onClose();
-  }, [onClose]);
+  }, [onClose, makeEmpty]);
 
-  const handleFileChange = useCallback(
-    (file: File | null) => {
-      if (!file) return;
-      setParseError(null);
-
-      if (!file.name.endsWith('.csv')) {
-        setParseError('Solo se aceptan archivos .csv');
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        setParseError(`El archivo no puede superar ${MAX_FILE_SIZE_MB} MB`);
-        return;
-      }
-
-      Papa.parse<Record<string, string>>(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          if (results.data.length === 0) {
-            setParseError('El archivo está vacío');
-            return;
-          }
-          if (results.data.length > MAX_ROWS) {
-            setParseError(`El archivo tiene más de ${MAX_ROWS} filas`);
-            return;
-          }
-
-          const headers = Object.keys(results.data[0]);
-          const missing = REQUIRED_HEADERS.filter((h) => !headers.includes(h));
-          if (missing.length > 0) {
-            setParseError(`Faltan columnas requeridas: ${missing.join(', ')}`);
-            return;
-          }
-
-          const rows = results.data.map((row, i) =>
-            validateRow(row, i + 1, warehouseNames)
-          );
-          setParsedRows(rows);
-          setStep('preview');
-        },
-        error: (err) => {
-          setParseError(`Error al parsear el CSV: ${err.message}`);
-        },
+  const handleCellChange = useCallback(
+    (rowIndex: number, field: string, value: string) => {
+      setParsedRows((prev) => {
+        const next = [...prev];
+        const row = next[rowIndex];
+        const newData = { ...row.data, [field]: value } as unknown as Record<string, string>;
+        next[rowIndex] = validateRow(newData, row.rowNum, warehouseNames);
+        return next;
       });
     },
     [warehouseNames]
   );
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      handleFileChange(e.dataTransfer.files[0] ?? null);
+  const handleAddRow = useCallback(() => {
+    setParsedRows((prev) => [...prev, makeEmpty(prev.length + 1)]);
+  }, [makeEmpty]);
+
+  const handleDeleteRow = useCallback((index: number) => {
+    setParsedRows((prev) =>
+      prev.filter((_, i) => i !== index).map((r, i) => ({ ...r, rowNum: i + 1 }))
+    );
+  }, []);
+
+  const handleDuplicateRow = useCallback(
+    (index: number) => {
+      setParsedRows((prev) => {
+        const source = prev[index];
+        const clone: ParsedRow = {
+          ...source,
+          rowNum: prev.length + 1,
+        };
+        return [...prev, clone];
+      });
     },
-    [handleFileChange]
+    []
   );
 
-  const validRows = parsedRows.filter((r) => r.errors.length === 0);
-  const invalidRows = parsedRows.filter((r) => r.errors.length > 0);
-
-  const handleCellChange = useCallback((rowIndex: number, field: string, value: string) => {
-    setParsedRows(prev => {
-      const newRows = [...prev];
-      const row = newRows[rowIndex];
-      const newData = { ...row.data, [field]: value } as unknown as Record<string, string>;
-      newRows[rowIndex] = validateRow(newData, row.rowNum, warehouseNames);
-      return newRows;
-    });
-  }, [warehouseNames]);
-
-  const handleImport = async () => {
+  const handleCreate = async () => {
     if (validRows.length === 0) return;
+    if (invalidRows.length > 0 && !confirmPartial) {
+      setConfirmPartial(true);
+      return;
+    }
+    setConfirmPartial(false);
     try {
       const result = await importMutation.mutateAsync(validRows.map((r) => r.data));
       setImportResult(result);
@@ -149,69 +110,26 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
     <Modal isOpen={isOpen} onClose={handleClose} size="xl">
       <ModalHeader>
         <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          <span>Importar productos desde CSV</span>
+          <Rows3 className="h-5 w-5" />
+          <span>Crear productos en masa</span>
         </div>
       </ModalHeader>
 
       <ModalBody>
-        {/* Step 1: Upload */}
-        {step === 'upload' && (
-          <div className="space-y-5 py-2">
-            <div
-              className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-500/70 hover:bg-primary-50 dark:hover:bg-primary-500/5 transition-all group"
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="mx-auto h-10 w-10 text-neutral-400 dark:text-neutral-500 mb-3 transition-transform group-hover:-translate-y-1 group-hover:text-primary-500" />
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Arrastrá tu archivo CSV aquí o{' '}
-                <span className="text-primary-600 dark:text-primary-400 underline underline-offset-2 font-medium">seleccioná uno</span>
-              </p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-2 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full inline-block">
-                Solo .csv · Máx {MAX_FILE_SIZE_MB} MB · Máx {MAX_ROWS} filas
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-              />
-            </div>
-
-            {parseError && (
-              <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 p-3.5 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
-                <XCircle className="h-5 w-5 flex-shrink-0" />
-                {parseError}
-              </div>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadTemplate}
-              className="flex items-center gap-2 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-            >
-              <Download className="h-4 w-4 text-neutral-500" />
-              Descargar plantilla CSV
-            </Button>
-          </div>
-        )}
-
-        {/* Step 2: Preview */}
-        {step === 'preview' && (
+        {/* Step 1: Grid */}
+        {step === 'grid' && (
           <div className="space-y-4 pt-2">
-            <div className="flex gap-3 text-sm flex-wrap">
-              <span className="flex items-center gap-1.5 text-success-700 dark:text-success-400 bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/20 px-3 py-1.5 rounded-lg font-medium">
-                <CheckCircle className="h-4 w-4" /> {validRows.length} válidas
-              </span>
-              {invalidRows.length > 0 && (
-                <span className="flex items-center gap-1.5 text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 px-3 py-1.5 rounded-lg font-medium">
-                  <XCircle className="h-4 w-4" /> {invalidRows.length} con errores
+            <div className="flex gap-3 text-sm flex-wrap items-center justify-between">
+              <div className="flex gap-3 flex-wrap">
+                <span className="flex items-center gap-1.5 text-success-700 dark:text-success-400 bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/20 px-3 py-1.5 rounded-lg font-medium">
+                  <CheckCircle className="h-4 w-4" /> {validRows.length} válidas
                 </span>
-              )}
+                {invalidRows.length > 0 && (
+                  <span className="flex items-center gap-1.5 text-danger-700 dark:text-danger-400 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/20 px-3 py-1.5 rounded-lg font-medium">
+                    <XCircle className="h-4 w-4" /> {invalidRows.length} con errores
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="max-h-72 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 shadow-sm">
@@ -222,6 +140,7 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">SKU</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Nro Lote</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Nombre</th>
+                    <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">País Origen</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Precio</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Stock In.</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Unidad</th>
@@ -229,12 +148,13 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Vencimiento</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">Depósito</th>
                     <th className="px-4 py-3 font-semibold text-neutral-600 dark:text-neutral-400">Estado</th>
+                    <th className="px-2 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
                   {parsedRows.map((row, index) => (
                     <tr
-                      key={row.rowNum}
+                      key={index}
                       className={`${row.errors.length > 0 ? 'bg-danger-50 dark:bg-danger-500/5 hover:bg-danger-100 dark:hover:bg-danger-500/10' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30'} transition-colors`}
                     >
                       <td className="px-4 py-2.5 text-neutral-400 dark:text-neutral-500 align-top whitespace-nowrap pt-3">{row.rowNum}</td>
@@ -243,7 +163,7 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           type="text"
                           value={row.data.sku || ''}
                           onChange={(e) => handleCellChange(index, 'sku', e.target.value)}
-                          placeholder="—"
+                          placeholder="SKU"
                           className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('SKU')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all font-mono font-medium text-neutral-700 dark:text-neutral-300`}
                         />
                       </td>
@@ -252,7 +172,7 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           type="text"
                           value={row.data.lot_number || ''}
                           onChange={(e) => handleCellChange(index, 'lot_number', e.target.value)}
-                          placeholder="—"
+                          placeholder="Lote"
                           className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('nro de lote')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[120px] transition-all font-medium text-neutral-700 dark:text-neutral-300`}
                         />
                       </td>
@@ -261,8 +181,17 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           type="text"
                           value={row.data.name || ''}
                           onChange={(e) => handleCellChange(index, 'name', e.target.value)}
-                          placeholder="—"
-                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('name')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-full min-w-[150px] transition-all font-medium text-neutral-800 dark:text-neutral-200`}
+                          placeholder="Nombre"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('nombre')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-full min-w-[150px] transition-all font-medium text-neutral-800 dark:text-neutral-200`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={row.data.origin_country || ''}
+                          onChange={(e) => handleCellChange(index, 'origin_country', e.target.value)}
+                          placeholder="País"
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('país de origen')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[100px] transition-all text-neutral-700 dark:text-neutral-300`}
                         />
                       </td>
                       <td className="px-2 py-1.5 align-top whitespace-nowrap">
@@ -272,8 +201,8 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                             type="text"
                             value={row.data.price || ''}
                             onChange={(e) => handleCellChange(index, 'price', e.target.value)}
-                            placeholder="—"
-                            className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('price')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md pl-6 pr-2 py-1 outline-none w-[90px] transition-all text-neutral-600 dark:text-neutral-400`}
+                            placeholder="0"
+                            className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('precio')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md pl-6 pr-2 py-1 outline-none w-[90px] transition-all text-neutral-600 dark:text-neutral-400`}
                           />
                         </div>
                       </td>
@@ -295,7 +224,7 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           {row.data.unit && !VALID_UNITS.includes(row.data.unit) && (
                             <option value={row.data.unit}>{row.data.unit} (Inválido)</option>
                           )}
-                          {VALID_UNITS.map(u => (
+                          {VALID_UNITS.map((u) => (
                             <option key={u} value={u} className="text-neutral-900 dark:text-neutral-100">{u}</option>
                           ))}
                         </select>
@@ -304,10 +233,10 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                         <select
                           value={row.data.product_type || ''}
                           onChange={(e) => handleCellChange(index, 'product_type', e.target.value)}
-                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('product_type')) ? 'border-danger-400 dark:border-danger-500/50 text-danger-700 dark:text-danger-400' : 'border-transparent text-neutral-600 dark:text-neutral-400'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-1 py-1 outline-none min-w-[120px] w-full transition-all text-xs cursor-pointer capitalize`}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('tipo')) ? 'border-danger-400 dark:border-danger-500/50 text-danger-700 dark:text-danger-400' : 'border-transparent text-neutral-600 dark:text-neutral-400'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-1 py-1 outline-none min-w-[120px] w-full transition-all text-xs cursor-pointer capitalize`}
                         >
                           <option value="">(Estándar)</option>
-                          {row.data.product_type && !['standard', 'raw_material', 'finished_good'].includes(row.data.product_type) && (
+                          {row.data.product_type && !VALID_PRODUCT_TYPES.includes(row.data.product_type) && (
                             <option value={row.data.product_type}>{row.data.product_type} (Inválido)</option>
                           )}
                           <option value="standard" className="text-neutral-900 dark:text-neutral-100">Estándar</option>
@@ -320,8 +249,7 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           type="date"
                           value={row.data.expiration_date || ''}
                           onChange={(e) => handleCellChange(index, 'expiration_date', e.target.value)}
-                          placeholder="—"
-                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('expiration_date')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all text-neutral-500 dark:text-neutral-500 text-xs`}
+                          className={`bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-900 border ${row.errors.some(e => e.includes('vencimiento')) ? 'border-danger-300 dark:border-danger-500/50' : 'border-transparent'} focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-md px-2 py-1 outline-none w-[110px] transition-all text-neutral-500 dark:text-neutral-500 text-xs`}
                         />
                       </td>
                       <td className="px-2 py-1.5 align-top">
@@ -339,16 +267,16 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-2.5 align-top min-w-[200px] pt-3">
+                      <td className="px-4 py-2.5 align-top min-w-[160px] pt-3">
                         {row.errors.length > 0 ? (
                           <span className="text-danger-600 dark:text-danger-400 flex items-start gap-1.5 font-medium">
                             <XCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                            {row.errors.join(' · ')}
+                            {row.errors[0]}{row.errors.length > 1 ? ` +${row.errors.length - 1}` : ''}
                           </span>
                         ) : row.warnings.length > 0 ? (
                           <span className="text-warning-600 dark:text-warning-500 flex items-start gap-1.5 font-medium">
                             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                            {row.warnings.join(' · ')}
+                            {row.warnings[0]}
                           </span>
                         ) : (
                           <span className="text-success-600 dark:text-success-500 flex items-center gap-1.5 font-medium">
@@ -356,15 +284,46 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
                           </span>
                         )}
                       </td>
+                      <td className="px-2 py-2.5 align-top">
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateRow(index)}
+                            title="Duplicar fila"
+                            className="p-1 rounded text-neutral-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                          {parsedRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRow(index)}
+                              title="Eliminar fila"
+                              className="p-1 rounded text-neutral-400 hover:text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-500/10 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="flex items-center gap-2 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Agregar fila
+            </button>
           </div>
         )}
 
-        {/* Step 3: Result */}
+        {/* Step 2: Result */}
         {step === 'result' && importResult && (
           <div className="space-y-5 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -418,30 +377,57 @@ export const ProductImportModal: React.FC<ProductImportModalProps> = ({ isOpen, 
       </ModalBody>
 
       <ModalFooter>
-        <div className="flex gap-3 justify-end w-full">
-          {step === 'upload' && (
-            <Button variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
+        <div className="flex flex-col gap-3 w-full">
+          {step === 'grid' && confirmPartial && (
+            <div className="flex items-start gap-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/20 rounded-xl px-4 py-3 text-sm animate-in fade-in slide-in-from-bottom-1 duration-200">
+              <AlertTriangle className="h-4 w-4 text-warning-600 dark:text-warning-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-warning-800 dark:text-warning-300">
+                  {invalidRows.length} {invalidRows.length === 1 ? 'producto incompleto' : 'productos incompletos'}
+                </p>
+                <p className="text-warning-700 dark:text-warning-400 text-xs mt-0.5">
+                  ¿Querés completarlos antes, o crear solo los {validRows.length} válidos ahora?
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmPartial(false)}
+                  className="border-warning-300 dark:border-warning-500/40 text-warning-700 dark:text-warning-400 hover:bg-warning-100 dark:hover:bg-warning-500/20"
+                >
+                  Completar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleCreate}
+                  disabled={importMutation.isPending}
+                >
+                  {importMutation.isPending ? 'Creando...' : `Crear ${validRows.length} válidos`}
+                </Button>
+              </div>
+            </div>
           )}
-          {step === 'preview' && (
-            <>
-              <Button variant="outline" onClick={() => setStep('upload')}>
-                Volver
-              </Button>
-              <Button
-                onClick={handleImport}
-                disabled={validRows.length === 0 || importMutation.isPending}
-              >
-                {importMutation.isPending
-                  ? 'Importando...'
-                  : `Importar filas válidas (${validRows.length})`}
-              </Button>
-            </>
-          )}
-          {step === 'result' && (
-            <Button onClick={handleClose}>Cerrar</Button>
-          )}
+          <div className="flex gap-3 justify-end w-full">
+            {step === 'grid' && (
+              <>
+                <Button variant="outline" onClick={handleClose}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCreate}
+                  disabled={validRows.length === 0 || importMutation.isPending}
+                >
+                  {importMutation.isPending
+                    ? 'Creando...'
+                    : `Crear productos (${validRows.length})`}
+                </Button>
+              </>
+            )}
+            {step === 'result' && (
+              <Button onClick={handleClose}>Cerrar</Button>
+            )}
+          </div>
         </div>
       </ModalFooter>
     </Modal>

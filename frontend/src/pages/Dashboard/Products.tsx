@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Upload, AlertTriangle, Package, Loader2, Search, X } from 'lucide-react';
+import { Plus, Upload, Rows3, AlertTriangle, Package, Loader2, Search, X } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { DashboardLayout } from '../../components/layout/Dashboard';
@@ -17,6 +17,7 @@ import { ProductTypeAccordion } from '../../components/features/products/Product
 import { ProductTypeSidePanel } from '../../components/features/products/ProductTypeSidePanel';
 import { ProductLotSidePanel } from '../../components/features/products/ProductLotSidePanel';
 import { ProductImportModal } from '../../components/features/products/product-import-modal';
+import { ProductBulkCreateModal } from '../../components/features/products/product-bulk-create-modal';
 import {
   useProductTypes,
   useCreateProductType,
@@ -62,6 +63,7 @@ const ProductsPage: React.FC = () => {
   const [deleteTypeState, setDeleteTypeState] = useState<DeleteTypeState>({ show: false });
   const [deleteLotState, setDeleteLotState] = useState<DeleteLotState>({ show: false });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
@@ -180,6 +182,14 @@ const ProductsPage: React.FC = () => {
               <Upload className="h-4 w-4" />
               {t('products.page.importCsv')}
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkCreateOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Rows3 className="h-4 w-4" />
+              Agregar en masa
+            </Button>
             <Button onClick={openCreateType} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               {t('products.page.newProduct')}
@@ -276,6 +286,10 @@ const ProductsPage: React.FC = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 {t('products.page.importCsv')}
               </Button>
+              <Button variant="outline" onClick={() => setIsBulkCreateOpen(true)}>
+                <Rows3 className="h-4 w-4 mr-2" />
+                Agregar en masa
+              </Button>
               <Button onClick={openCreateType}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t('products.page.newProduct')}
@@ -320,6 +334,12 @@ const ProductsPage: React.FC = () => {
       <ProductImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+      />
+
+      {/* Bulk Create Modal */}
+      <ProductBulkCreateModal
+        isOpen={isBulkCreateOpen}
+        onClose={() => setIsBulkCreateOpen(false)}
       />
 
       {/* Delete Type Confirm */}

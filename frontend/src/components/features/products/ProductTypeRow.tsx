@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Edit, Trash2, Plus, Loader2 } from 'lucide-r
 import { Button } from '../../ui/button';
 import { ProductLotRow } from './ProductLotRow';
 import { useProductLots } from '../../../hooks/useProductLots';
+import { useTranslation } from '../../../contexts/LanguageContext';
 import type { ProductType } from '../../../services/api/productTypesService';
 import type { ProductLot } from '../../../services/api/productLotsService';
 
@@ -20,12 +21,6 @@ interface ProductTypeRowProps {
   onEditLot: (lot: ProductLot, productType: ProductType) => void;
   onDeleteLot: (lot: ProductLot) => void;
 }
-
-const TYPE_LABELS: Record<string, string> = {
-  standard: 'Estandar',
-  raw_material: 'Mat. Prima',
-  finished_good: 'Terminado',
-};
 
 const TYPE_STYLES: Record<string, string> = {
   standard: 'bg-neutral-100 text-neutral-700 border-neutral-300',
@@ -49,6 +44,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
 }) => {
   // Always fetch lots so the count is visible even when collapsed.
   // TanStack Query caches per typeId, so expanding is instant.
+  const { t } = useTranslation();
   const { data: lots, isLoading: lotsLoading } = useProductLots(productType.product_type_id);
 
   const lotCount = lots?.length ?? 0;
@@ -76,8 +72,14 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
     }
   }, [lotSearch, visibleLots.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const TYPE_LABEL_KEYS: Record<string, string> = {
+    standard: t('products.sidePanel.typeStandard'),
+    raw_material: t('products.sidePanel.typeRawMaterial'),
+    finished_good: t('products.sidePanel.typeFinishedGood'),
+  };
+
   const typeStyle = TYPE_STYLES[productType.product_type] || TYPE_STYLES.standard;
-  const typeLabel = TYPE_LABELS[productType.product_type] || productType.product_type;
+  const typeLabel = TYPE_LABEL_KEYS[productType.product_type] || productType.product_type;
 
   if (hidden) return null;
 
