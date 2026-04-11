@@ -56,8 +56,8 @@ export function validateRow(
 
   if (row.price) {
     const p = parseFloat(row.price);
-    if (isNaN(p) || p <= 0) {
-      errors.push(`El ${translateField('price')} debe ser un número positivo`);
+    if (isNaN(p) || p < 0) {
+      errors.push(`El ${translateField('price')} debe ser un número igual o mayor a 0`);
     } else if (p > 999999.99) {
       errors.push(`El ${translateField('price')} no puede superar 999999.99`);
     }
