@@ -210,18 +210,35 @@ class StockMovementRepository extends BaseRepository {
    */
   async getCurrentStockBulk(lotIds, warehouseId, organizationId) {
     try {
-      let query = this.client
-        .from(this.table)
-        .select('lot_id, movement_type, quantity')
-        .in('lot_id', lotIds)
-        .eq('organization_id', organizationId);
+      // When lotIds covers the entire org (or is very large), filtering by org_id alone
+      // is more efficient and avoids PostgREST URL length limits with large .in() lists.
+      // Chunk threshold: 200 IDs fits comfortably within URL limits.
+      const CHUNK_SIZE = 200;
+      let allData = [];
 
-      if (warehouseId) {
-        query = query.eq('warehouse_id', warehouseId);
+      if (lotIds.length > CHUNK_SIZE) {
+        // Query all movements for the org, then filter in JS
+        let query = this.client
+          .from(this.table)
+          .select('lot_id, movement_type, quantity, warehouse_id')
+          .eq('organization_id', organizationId);
+        if (warehouseId) query = query.eq('warehouse_id', warehouseId);
+        const { data, error } = await query;
+        if (error) throw error;
+        const lotIdSet = new Set(lotIds);
+        allData = (data || []).filter(m => lotIdSet.has(m.lot_id));
+      } else {
+        // Small batch — safe to use .in()
+        let query = this.client
+          .from(this.table)
+          .select('lot_id, movement_type, quantity, warehouse_id')
+          .in('lot_id', lotIds)
+          .eq('organization_id', organizationId);
+        if (warehouseId) query = query.eq('warehouse_id', warehouseId);
+        const { data, error } = await query;
+        if (error) throw error;
+        allData = data || [];
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
 
       // Group movements by (lot_id, warehouse_id) first, then sum per-warehouse
       // stocks clamped to 0. This avoids negative stock in one warehouse cancelling
@@ -232,7 +249,7 @@ class StockMovementRepository extends BaseRepository {
         stockByLotWarehouse[lotId] = {};
       });
 
-      data.forEach(movement => {
+      allData.forEach(movement => {
         const lid = movement.lot_id;
         const wid = movement.warehouse_id || '__none__';
         if (!stockByLotWarehouse[lid]) stockByLotWarehouse[lid] = {};

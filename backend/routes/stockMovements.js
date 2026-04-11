@@ -145,6 +145,17 @@ function createStockMovementRoutes(dependencies = {}) {
     }
   );
   
+  // DELETE /api/stock-movements/bulk - Delete movements
+  router.delete('/bulk', async (req, res, next) => {
+    try {
+      logger.info('DELETE /api/stock-movements/bulk');
+      await stockMovementController.bulkDeleteMovements(req, res, next);
+    } catch (error) {
+      logger.error('Error in DELETE /api/stock-movements/bulk', { error: error.message });
+      next(error);
+    }
+  });
+
   // DELETE /api/stock-movements/:id - Delete movement
   router.delete('/:id', async (req, res, next) => {
     try {

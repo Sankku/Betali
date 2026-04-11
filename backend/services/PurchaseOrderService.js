@@ -625,6 +625,60 @@ class PurchaseOrderService {
   }
 
   /**
+   * Bulk delete purchase orders
+   * @param {Array<string>} ids
+   * @param {string} organizationId
+   * @returns {Promise<Object>}
+   */
+  async bulkDeletePurchaseOrders(ids, organizationId) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} purchase orders`);
+
+      const { data: existing, error: existingError } = await this.purchaseOrderRepository.client
+        .from(this.purchaseOrderRepository.table)
+        .select('purchase_order_id, status')
+        .in('purchase_order_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+
+      const validOrders = existing ?? [];
+      const foundIds = validOrders.map(o => o.purchase_order_id);
+      
+      const processableIds = validOrders.filter(o => ['draft', 'pending', 'approved'].includes(o.status)).map(o => o.purchase_order_id);
+      const blockedIds = validOrders.filter(o => !['draft', 'pending', 'approved'].includes(o.status)).map(o => o.purchase_order_id);
+      
+      if (processableIds.length > 0) {
+        // Can either hard delete or soft delete. Existing code soft deletes.
+        // I will just use update status for all processable ids to cancelled, just like standard soft delete.
+        const { error: updateError } = await this.purchaseOrderRepository.client
+          .from(this.purchaseOrderRepository.table)
+          .update({ status: 'cancelled' })
+          .in('purchase_order_id', processableIds)
+          .eq('organization_id', organizationId);
+          
+        if (updateError) throw updateError;
+      }
+
+      return {
+        deleted: processableIds.length,
+        blocked: blockedIds.length,
+        not_found: ids.length - foundIds.length,
+        blocked_ids: blockedIds
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting purchase orders: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Delete/cancel purchase order
    * @param {string} purchaseOrderId - Purchase Order ID
    * @param {string} organizationId - Organization ID

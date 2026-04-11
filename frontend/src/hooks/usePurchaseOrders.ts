@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { translateApiError } from '@/utils/apiErrorTranslator';
 import { useOrganization } from '@/context/OrganizationContext';
@@ -41,6 +41,39 @@ export function usePurchaseOrders(options: UsePurchaseOrdersOptions = {}) {
     enabled: !!currentOrganization?.organization_id && (options.enabled !== false),
     staleTime: 1000 * 60 * 2, // 2 minutes
     retry: 1,
+  });
+}
+
+/**
+ * Hook to get purchase orders with infinite scroll
+ */
+export function usePurchaseOrdersInfinite(options: UsePurchaseOrdersOptions = {}, limit = 25) {
+  const { currentOrganization } = useOrganization();
+
+  return useInfiniteQuery({
+    queryKey: ['purchaseOrders', 'infinite', currentOrganization?.organization_id, options.filters],
+    queryFn: async ({ pageParam = 0 }) => {
+      try {
+        const data = await purchaseOrdersService.getAll({ 
+          ...options.filters, 
+          limit, 
+          offset: pageParam as number 
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching purchase orders:', error);
+        return [];
+      }
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < limit) {
+        return undefined;
+      }
+      return allPages.length * limit;
+    },
+    initialPageParam: 0,
+    enabled: !!currentOrganization?.organization_id && (options.enabled !== false),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -279,6 +312,35 @@ export function useDeletePurchaseOrder() {
     onError: (error: any) => {
       console.error('Error deleting purchase order:', error);
       toast.error(translateApiError(error, 'Error al eliminar la orden de compra.'));
+    },
+  });
+}
+
+/**
+ * Hook to bulk delete purchase orders
+ */
+export function useBulkDeletePurchaseOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => purchaseOrdersService.bulkDelete(ids),
+    onSuccess: (response, ids) => {
+      // Remove orders from cache
+      ids.forEach(id => {
+        queryClient.removeQueries({ queryKey: ['purchaseOrder', id] });
+      });
+
+      // Invalidate list
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+
+      toast.success(`Se cancelaron/eliminaron exitosamente ${response?.deleted || "las"} órdenes de compra`);
+      if (response?.blocked && response.blocked > 0) {
+        toast.error(`No se pudieron procesar ${response.blocked} órdenes porque ya fueron parcialmente o totalmente recibidas.`);
+      }
+    },
+    onError: (error: any) => {
+      console.error('Bulk delete purchase order error:', error);
+      toast.error(translateApiError(error, 'Error al eliminar órdenes de compra. Intenta de nuevo.'));
     },
   });
 }

@@ -26,9 +26,14 @@ export const stockMovementService = {
   /**
    * Get all the movements
    */
-  async getAll(): Promise<StockMovementWithDetails[]> {
+  async getAll(params?: { limit?: number; offset?: number }): Promise<StockMovementWithDetails[]> {
     try {
-      const response = await httpClient.get<{ data: StockMovementWithDetails[] }>('/api/stock-movements');
+      const qs = new URLSearchParams();
+      if (params?.limit) qs.set('limit', String(params.limit));
+      if (params?.offset) qs.set('offset', String(params.offset));
+      
+      const endpoint = `/api/stock-movements${qs.toString() ? `?${qs.toString()}` : ''}`;
+      const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(endpoint);
       return response.data || response;
     } catch (error) {
       console.error('Error fetching movements:', error);
@@ -141,5 +146,10 @@ export const stockMovementService = {
       console.error(`Error fetching movements by date:`, error);
       throw error;
     }
-  }
+  },
+
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; not_found: number }> {
+    const response = await httpClient.delete<{ data: { deleted: number; not_found: number } }>('/api/stock-movements/bulk', { ids });
+    return response.data;
+  },
 };

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { translateApiError } from '@/utils/apiErrorTranslator';
 import {
@@ -32,6 +32,27 @@ export function useOrders(params?: OrderQueryParams) {
     queryFn: () => orderService.getOrders(params),
     enabled: !!orgId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Get orders with infinite scroll
+export function useOrdersInfinite(params: OrderQueryParams = {}, limit = 25) {
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
+
+  return useInfiniteQuery({
+    queryKey: [...ORDER_QUERY_KEYS.lists(orgId), 'infinite', params],
+    queryFn: ({ pageParam = 1 }) => 
+      orderService.getOrders({ ...params, page: pageParam as number, limit }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -185,6 +206,39 @@ export function useDeleteOrder() {
     onError: (error: any) => {
       console.error('Delete order error:', error);
       toast.error(translateApiError(error, 'Error al eliminar el pedido. Intenta de nuevo.'));
+    },
+  });
+}
+
+// Bulk delete orders mutation
+export function useBulkDeleteOrder() {
+  const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
+  const orgId = currentOrganization?.organization_id;
+
+  return useMutation({
+    mutationFn: (ids: string[]) => orderService.bulkDelete(ids),
+    onSuccess: (response, ids) => {
+      // Remove orders from cache
+      ids.forEach(orderId => {
+        queryClient.removeQueries({ queryKey: ORDER_QUERY_KEYS.detail(orgId, orderId) });
+      });
+
+      // Invalidate orders list
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.lists(orgId) });
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.stats(orgId) });
+
+      // Invalidate products cache in case stock was affected
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+
+      toast.success(`Se eliminaron exitosamente ${response?.deleted || "los"} pedidos`);
+      if (response?.blocked && response.blocked > 0) {
+        toast.error(`No se pudieron eliminar ${response.blocked} pedidos porque ya fueron enviados o completados.`);
+      }
+    },
+    onError: (error: any) => {
+      console.error('Bulk delete order error:', error);
+      toast.error(translateApiError(error, 'Error al eliminar pedidos. Intenta de nuevo.'));
     },
   });
 }

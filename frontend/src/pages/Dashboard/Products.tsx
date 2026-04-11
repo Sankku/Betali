@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Upload, Rows3, AlertTriangle, Package, Loader2, Search, X } from 'lucide-react';
+import { Plus, Upload, Rows3, AlertTriangle, Package, Loader2, Search, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { DashboardLayout } from '../../components/layout/Dashboard';
 import { ToastContainer } from '../../components/ui/toast';
+import { toast } from '../../lib/toast';
 import {
   Modal,
   ModalContent,
@@ -18,12 +19,14 @@ import { ProductTypeSidePanel } from '../../components/features/products/Product
 import { ProductLotSidePanel } from '../../components/features/products/ProductLotSidePanel';
 import { ProductImportModal } from '../../components/features/products/product-import-modal';
 import { ProductBulkCreateModal } from '../../components/features/products/product-bulk-create-modal';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  useProductTypes,
+  useProductTypesInfinite,
   useCreateProductType,
   useUpdateProductType,
   useDeleteProductType,
 } from '../../hooks/useProductTypes';
+import { productTypesService } from '../../services/api/productTypesService';
 import {
   useCreateProductLot,
   useUpdateProductLot,
@@ -58,21 +61,65 @@ interface DeleteLotState {
 
 const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const observerTarget = useRef<HTMLDivElement>(null);
   const [typePanelState, setTypePanelState] = useState<TypePanelState>({ isOpen: false });
   const [lotPanelState, setLotPanelState] = useState<LotPanelState>({ isOpen: false });
   const [deleteTypeState, setDeleteTypeState] = useState<DeleteTypeState>({ show: false });
   const [deleteLotState, setDeleteLotState] = useState<DeleteLotState>({ show: false });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Search/filter state
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState(''); // debounced
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [warehouseFilter, setWarehouseFilter] = useState<string>('');
+  const PAGE_SIZE = 100;
+
+  // Debounce the search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { currentUserRole } = useOrganization();
   const canSeePrices = ['super_admin', 'admin', 'manager'].includes(currentUserRole?.toLowerCase() ?? '');
 
-  const { data: productTypes, isLoading, error } = useProductTypes();
+  const {
+    data: infiniteData,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useProductTypesInfinite({ limit: PAGE_SIZE, search, type: typeFilter });
+
+  const productTypes = infiniteData?.pages.flatMap(page => page.data) ?? [];
+  const meta = infiniteData?.pages[0]?.meta;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   const { data: warehouses } = useWarehouses({ enabled: true });
   const createProductType = useCreateProductType();
   const updateProductType = useUpdateProductType();
@@ -144,15 +191,42 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const types = useMemo(() => {
-    let list = productTypes ?? [];
-    // Only apply typeFilter at page level — text search is handled inside each
-    // ProductTypeRow so that lot-number matches can auto-expand the right rows.
-    if (typeFilter) {
-      list = list.filter(t => t.product_type === typeFilter);
+  const handleSelectOne = useCallback((id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(productTypes.map(pt => pt.product_type_id)));
+    } else {
+      setSelectedIds(new Set());
     }
-    return list;
-  }, [productTypes, typeFilter]);
+  }, [productTypes]);
+
+  const confirmBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const result = await productTypesService.bulkDelete([...selectedIds]);
+      if (result.blocked > 0) {
+        toast.error(`No se pudieron eliminar ${result.blocked} productos porque tienen lotes/stock asociados.`);
+      }
+      if (result.deleted > 0) {
+        toast.success(`Se eliminaron exitosamente ${result.deleted} productos.`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['product-types'] });
+      queryClient.invalidateQueries({ queryKey: ['product-types-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['product-types-infinite'] });
+      setSelectedIds(new Set());
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
 
   return (
     <>
@@ -171,6 +245,11 @@ const ProductsPage: React.FC = () => {
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
               {t('products.page.subtitle')}
+              {!isLoading && meta && meta.total > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600">
+                  {meta.total} {meta.total === 1 ? 'producto' : 'productos'}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -203,14 +282,14 @@ const ProductsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
             <Input
               placeholder={t('products.page.searchPlaceholder')}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
               className="pl-9 pr-8"
             />
-            {searchQuery && (
+            {searchInput && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchInput(''); setSearch(''); }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 <X className="h-3.5 w-3.5" />
@@ -270,7 +349,7 @@ const ProductsPage: React.FC = () => {
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             {t('products.page.errorLoading')}
           </div>
-        ) : types.length === 0 ? (
+        ) : productTypes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center">
               <Package className="h-8 w-8 text-neutral-400" />
@@ -297,17 +376,53 @@ const ProductsPage: React.FC = () => {
             </div>
           </div>
         ) : (
+          <>
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-xl text-sm">
+                <span className="font-medium text-primary-700">
+                  {selectedIds.size} {selectedIds.size === 1 ? 'producto seleccionado' : 'productos seleccionados'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-primary-500 hover:text-primary-700 text-xs underline"
+                >
+                  Deseleccionar
+                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    className="text-danger-600 border-danger-300 hover:bg-danger-50 gap-1.5"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Eliminar {selectedIds.size} {selectedIds.size === 1 ? 'producto' : 'productos'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
           <ProductTypeAccordion
-            productTypes={types}
-            lotSearch={searchQuery.trim() || undefined}
+            productTypes={productTypes}
             warehouseFilter={warehouseFilter || undefined}
             canSeePrices={canSeePrices}
+            selectedIds={selectedIds}
+            onSelectOne={handleSelectOne}
+            onSelectAll={handleSelectAll}
             onEditType={openEditType}
             onDeleteType={openDeleteType}
             onAddLot={openAddLot}
             onEditLot={openEditLot}
             onDeleteLot={openDeleteLot}
           />
+
+          {/* Infinite Scroll target */}
+          <div ref={observerTarget} className="flex justify-center p-4 min-h-[40px]">
+            {isFetchingNextPage && <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />}
+          </div>
+          </>
         )}
       </div>
 
@@ -388,7 +503,7 @@ const ProductsPage: React.FC = () => {
             <ModalTitle>{t('products.page.deleteLotTitle')}</ModalTitle>
             <ModalDescription>
               {deleteLotState.lot && t('products.page.deleteLotDesc', {
-                lot_number: deleteLotState.lot.lot_number,
+                lot_number: deleteLotState.lot.lot_number || '---',
               })}
             </ModalDescription>
           </ModalHeader>
@@ -408,6 +523,39 @@ const ProductsPage: React.FC = () => {
               className="w-full sm:w-auto"
             >
               {t('common.delete')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Bulk Delete Confirm */}
+      <Modal isOpen={showBulkDeleteConfirm} onClose={() => setShowBulkDeleteConfirm(false)} size="sm">
+        <ModalContent>
+          <ModalHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <ModalTitle>Eliminar {selectedIds.size} productos</ModalTitle>
+            <ModalDescription>
+              Esta acción eliminará permanentemente los {selectedIds.size} productos seleccionados junto con todos sus lotes y stock. No se puede deshacer.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalFooter className="flex flex-col-reverse justify-center sm:flex-row gap-3 sm:gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkDeleteConfirm(false)}
+              disabled={isBulkDeleting}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDelete}
+              loading={isBulkDeleting}
+              className="w-full sm:w-auto"
+            >
+              Eliminar todos
             </Button>
           </ModalFooter>
         </ModalContent>

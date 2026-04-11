@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { productTypesService } from "../services/api/productTypesService";
-import type { ProductTypeFormData, BulkImportRow } from "../services/api/productTypesService";
+import type { ProductTypeFormData, BulkImportRow, ProductTypesParams } from "../services/api/productTypesService";
 import { toast } from "../lib/toast";
 import { useOrganization } from "../context/OrganizationContext";
 
@@ -23,12 +23,43 @@ export function useProductTypes() {
   });
 }
 
+export function useProductTypesPaginated(params: ProductTypesParams) {
+  const { currentOrganization } = useOrganization();
+
+  return useQuery({
+    queryKey: ["product-types-paginated", currentOrganization?.organization_id, params],
+    queryFn: () => productTypesService.getPaginated(params),
+    enabled: !!currentOrganization,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev, // keep previous page visible while loading next
+    retry: 1,
+  });
+}
+
 export function useProductType(id: string) {
   return useQuery({
     queryKey: ["product-type", id],
     queryFn: () => productTypesService.getById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useProductTypesInfinite(params: Omit<ProductTypesParams, "page">) {
+  const { currentOrganization } = useOrganization();
+
+  return useInfiniteQuery({
+    queryKey: ["product-types-infinite", currentOrganization?.organization_id, params],
+    queryFn: ({ pageParam = 1 }) => productTypesService.getPaginated({ ...params, page: pageParam as number }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.meta.page < lastPage.meta.pages) {
+        return lastPage.meta.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!currentOrganization,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -39,15 +70,12 @@ export function useCreateProductType() {
     mutationFn: (data: ProductTypeFormData) => productTypesService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-types"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"] });
       toast.success("Tipo de producto creado exitosamente");
     },
     onError: (error: Error) => {
-      const isDuplicate = (error as ApiError).status === 409 || error.message?.includes('already exists');
-      toast.error(
-        isDuplicate
-          ? "Ya existe un tipo de producto con ese SKU en tu organización."
-          : "Error al crear el tipo de producto. Intenta de nuevo."
-      );
+      toast.error(error.message || "Error al crear el tipo de producto. Intenta de nuevo.");
       throw error;
     },
   });
@@ -61,16 +89,13 @@ export function useUpdateProductType() {
       productTypesService.update(id, data),
     onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["product-types"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"] });
       queryClient.invalidateQueries({ queryKey: ["product-type", variables.id] });
       toast.success("Tipo de producto actualizado exitosamente");
     },
     onError: (error: Error) => {
-      const isDuplicate = (error as ApiError).status === 409 || error.message?.includes('already exists');
-      toast.error(
-        isDuplicate
-          ? "Ya existe otro tipo de producto con ese SKU en tu organización."
-          : "Error al actualizar el tipo de producto. Intenta de nuevo."
-      );
+      toast.error(error.message || "Error al actualizar el tipo de producto. Intenta de nuevo.");
       throw error;
     },
   });
@@ -83,10 +108,12 @@ export function useDeleteProductType() {
     mutationFn: (id: string) => productTypesService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-types"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"] });
       toast.success("Tipo de producto eliminado exitosamente");
     },
-    onError: () => {
-      toast.error("Error al eliminar el tipo de producto. Intenta de nuevo.");
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar el tipo de producto. Intenta de nuevo.");
     },
   });
 }
@@ -98,9 +125,11 @@ export function useProductTypeImport() {
   return useMutation({
     mutationFn: (rows: BulkImportRow[]) => productTypesService.bulkImport(rows),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["product-types", currentOrganization?.organization_id],
-      });
+      const orgId = currentOrganization?.organization_id;
+      queryClient.invalidateQueries({ queryKey: ["product-types", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"] });
+      queryClient.invalidateQueries({ queryKey: ["product-lots", "all"] });
     },
     onError: (error: Error) => {
       console.error("Bulk import error:", error);

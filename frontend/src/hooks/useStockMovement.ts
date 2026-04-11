@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { stockMovementService, StockMovementFormData } from "../services/api/stockMovementService";
 import { toast } from "../lib/toast";
 import { translateApiError } from "../utils/apiErrorTranslator";
@@ -27,6 +27,35 @@ export function useStockMovements(options: UseStockMovementsOptions = {}) {
     refetchInterval: options.refetchInterval,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1, // Only retry once
+  });
+}
+
+export function useStockMovementsInfinite(limit = 25) {
+  const { currentOrganization } = useOrganization();
+  
+  return useInfiniteQuery({
+    queryKey: ["stockMovements", "infinite", currentOrganization?.organization_id],
+    queryFn: async ({ pageParam = 0 }) => {
+      try {
+        const data = await stockMovementService.getAll({ 
+          limit, 
+          offset: pageParam as number 
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching stock movements:', error);
+        return [];
+      }
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < limit) {
+        return undefined;
+      }
+      return allPages.length * limit;
+    },
+    initialPageParam: 0,
+    enabled: !!currentOrganization,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -99,6 +128,27 @@ export function useDeleteStockMovement() {
     },
     onError: (error: Error) => {
       toast.error(translateApiError(error, 'Error al eliminar el movimiento. Intenta de nuevo.'));
+      throw error;
+    },
+  });
+}
+
+export function useBulkDeleteStockMovement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => stockMovementService.bulkDelete(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
+      // Invalidate products cache to update stock levels
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["available-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["product-types"] });
+      
+      toast.success(`Se eliminaron exitosamente ${response.deleted} movimientos de stock.`);
+    },
+    onError: (error: Error) => {
+      toast.error(translateApiError(error, 'Error al eliminar los movimientos. Intenta de nuevo.'));
       throw error;
     },
   });

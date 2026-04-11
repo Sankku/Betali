@@ -27,6 +27,11 @@ export interface ProductLotFormData {
 }
 
 export const productLotsService = {
+  async getAll(): Promise<ProductLot[]> {
+    const response = await httpClient.get<{ data: ProductLot[] }>('/api/product-lots');
+    return response.data;
+  },
+
   async getByType(typeId: string): Promise<ProductLot[]> {
     try {
       const response = await httpClient.get<{ data: ProductLot[] }>(
@@ -79,5 +84,10 @@ export const productLotsService = {
       console.error(`Error deleting lot ${id}:`, error);
       throw error;
     }
+  },
+
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number; blocked_ids: string[] }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number; blocked_ids: string[] } }>('/api/product-lots/bulk', { ids });
+    return response.data;
   },
 };

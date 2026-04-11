@@ -43,13 +43,14 @@ import { ReceivePurchaseOrderModal } from './ReceivePurchaseOrderModal';
 import { formatDate } from '@/lib/utils';
 import { toast } from '@/lib/toast';
 import {
-  usePurchaseOrders,
+  usePurchaseOrdersInfinite,
   useUpdatePurchaseOrderStatus,
   useCancelPurchaseOrder,
   useApprovePurchaseOrder,
   useSubmitPurchaseOrder,
   useDeletePurchaseOrder,
   useDuplicatePurchaseOrder,
+  useBulkDeletePurchaseOrder,
   PURCHASE_ORDER_STATUS_OPTIONS,
 } from '@/hooks/usePurchaseOrders';
 import { useSuppliers } from '@/hooks/useSuppliers';
@@ -113,7 +114,17 @@ export function PurchaseOrdersPage() {
   }, [statusFilter, supplierFilter, warehouseFilter, searchTerm]);
 
   // Hooks
-  const { data: purchaseOrders = [], isLoading } = usePurchaseOrders({ filters });
+  const { 
+    data: infiniteData, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading 
+  } = usePurchaseOrdersInfinite({ filters }, 40);
+
+  const purchaseOrders = useMemo(() => 
+    infiniteData?.pages.flatMap(page => page) || [], 
+  [infiniteData]);
 
   const displayedOrders = useMemo(() => {
     if (showCancelled || statusFilter === 'cancelled') return purchaseOrders;
@@ -126,6 +137,7 @@ export function PurchaseOrdersPage() {
   const approveMutation = useApprovePurchaseOrder();
   const submitMutation = useSubmitPurchaseOrder();
   const deleteMutation = useDeletePurchaseOrder();
+  const bulkDeleteMutation = useBulkDeletePurchaseOrder();
   const duplicateMutation = useDuplicatePurchaseOrder();
 
   // Handlers
@@ -173,14 +185,19 @@ export function PurchaseOrdersPage() {
     if (!action || orders.length === 0) return;
 
     try {
+      if (action === 'cancel') {
+        const ids = orders.map(o => o.purchase_order_id);
+        await bulkDeleteMutation.mutateAsync(ids);
+        setBatchActionModalState({ isOpen: false, action: '', purchaseOrders: [] });
+        return;
+      }
+
       const promises = orders.map((order) => {
         switch (action) {
           case 'approve':
             return approveMutation.mutateAsync(order.purchase_order_id);
           case 'submit':
             return submitMutation.mutateAsync(order.purchase_order_id);
-          case 'cancel':
-            return cancelMutation.mutateAsync(order.purchase_order_id);
           default:
             return Promise.resolve();
         }
@@ -191,7 +208,7 @@ export function PurchaseOrdersPage() {
     } catch (error) {
       // Error handled by mutation hooks
     }
-  }, [batchActionModalState, approveMutation, submitMutation, cancelMutation]);
+  }, [batchActionModalState, approveMutation, submitMutation, bulkDeleteMutation]);
 
   /**
    * Get status badge color
@@ -299,7 +316,7 @@ export function PurchaseOrdersPage() {
           orders.filter((o) => !['cancelled', 'received'].includes(o.status)),
       },
     ],
-    []
+    [bulkDeleteMutation, duplicateMutation, approveMutation, t]
   );
 
   // Table columns configuration
@@ -575,8 +592,13 @@ export function PurchaseOrdersPage() {
           filterComponents={filterComponents}
           onRowDoubleClick={handleViewPurchaseOrder}
           emptyMessage={t('common.noResults')}
-          enablePagination={true}
-          pageSize={20}
+          enablePagination={false}
+          enableInfiniteScroll={true}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          paginationPosition="both"
+          pageSize={40}
         />
       </div>
 
@@ -648,8 +670,17 @@ export function PurchaseOrdersPage() {
             <Button
               onClick={confirmBatchAction}
               variant={batchActionModalState.action === 'cancel' ? 'destructive' : 'default'}
+              disabled={
+                approveMutation.isPending ||
+                submitMutation.isPending ||
+                bulkDeleteMutation.isPending
+              }
             >
-              {t('common.confirm')}
+              {approveMutation.isPending || 
+               submitMutation.isPending || 
+               bulkDeleteMutation.isPending 
+                ? t('common.processing') 
+                : t('common.confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>

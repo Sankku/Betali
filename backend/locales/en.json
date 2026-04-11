@@ -49,6 +49,12 @@
       "not_found": "Resource not found",
       "conflict": "Resource conflict",
       "unprocessable": "Unprocessable entity"
+    },
+    "product_types": {
+      "delete_blocked_by_lots": "Cannot delete product type: it has {{count}} associated lot(s) ({{lot_numbers}})."
+    },
+    "product_lots": {
+      "delete_blocked_by_movements": "Cannot delete lot {{lot_number}} because it has associated stock movements."
     }
   },
   "success": {

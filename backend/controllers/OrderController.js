@@ -232,6 +232,36 @@ class OrderController {
   }
 
   /**
+   * DELETE /api/orders/bulk
+   * Bulk delete (cancel) orders
+   */
+  async bulkDeleteOrders(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      this.logger.info('Bulk deleting orders', { count: ids.length, organizationId });
+      const result = await this.orderService.bulkDeleteOrders(ids, organizationId);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Bulk delete complete'
+      });
+    } catch (error) {
+      this.logger.error('Error bulk deleting orders', { error: error.message });
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/orders/stats
    * Get order statistics for dashboard
    */

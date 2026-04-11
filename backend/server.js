@@ -163,7 +163,13 @@ class Application {
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Apply global input sanitization
-    this.app.use(sanitizeMiddleware(SANITIZATION_RULES.search));
+    // Skip bulk-import: product SKUs and codes are identifiers that can contain
+    // characters like '<' which the XSS sanitizer incorrectly strips as HTML tags.
+    const globalSanitizer = sanitizeMiddleware(SANITIZATION_RULES.search);
+    this.app.use((req, res, next) => {
+      if (req.path.endsWith('/bulk-import')) return next();
+      globalSanitizer(req, res, next);
+    });
 
     // Apply internationalization middleware
     this.app.use(i18n.middleware());

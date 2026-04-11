@@ -183,6 +183,12 @@ export const orderService = {
     return httpClient.delete(`${BASE_URL}/${orderId}`);
   },
 
+  // Bulk delete/cancel orders
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number } }>(`${BASE_URL}/bulk`, { ids });
+    return response.data;
+  },
+
   // Duplicate order
   async duplicateOrder(orderId: string): Promise<Order> {
     return httpClient.post(`${BASE_URL}/${orderId}/duplicate`);

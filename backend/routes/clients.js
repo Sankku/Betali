@@ -137,6 +137,20 @@ router.put('/:id',
 );
 
 /**
+ * @route   DELETE /api/clients/bulk
+ * @desc    Bulk delete clients
+ * @access  Private (clients:delete permission required)
+ */
+router.delete('/bulk',
+  authenticateUser,
+  requirePermission(PERMISSIONS.CLIENTS_DELETE),
+  async (req, res, next) => {
+    const controller = getClientController();
+    await controller.bulkDeleteClients(req, res, next);
+  }
+);
+
+/**
  * @route   DELETE /api/clients/:id
  * @desc    Delete client
  * @access  Private (clients:delete permission required)

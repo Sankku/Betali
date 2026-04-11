@@ -129,6 +129,28 @@ export function useDeleteWarehouse() {
   });
 }
 
+export function useBulkDeleteWarehouse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => warehouseService.bulkDelete(ids),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["warehouses"] });
+      
+      if (result.blocked > 0) {
+        toast.error(`No se pudieron eliminar ${result.blocked} depósitos porque tienen movimientos de stock asociados.`);
+      }
+      if (result.deleted > 0) {
+        toast.success(`Se eliminaron exitosamente ${result.deleted} depósitos.`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(translateApiError(error, 'Error al borrar los depósitos. Intenta de nuevo.'));
+      throw error;
+    },
+  });
+}
+
 export function useWarehouseMovements(
   warehouseId: string,
   options: { limit?: number; offset?: number } = {}

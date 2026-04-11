@@ -221,6 +221,20 @@ router.put('/:id/preferred',
 );
 
 /**
+ * @route   DELETE /api/suppliers/bulk
+ * @desc    Bulk delete suppliers
+ * @access  Private (suppliers:delete permission required)
+ */
+router.delete('/bulk',
+  authenticateUser,
+  requirePermission(PERMISSIONS.SUPPLIERS_DELETE),
+  async (req, res, next) => {
+    const controller = getSupplierController();
+    await controller.bulkDeleteSuppliers(req, res, next);
+  }
+);
+
+/**
  * @route   DELETE /api/suppliers/:id
  * @desc    Delete supplier (hard delete)
  * @access  Private (suppliers:delete permission required)

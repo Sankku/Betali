@@ -26,8 +26,19 @@ class ProductLotController {
     try {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
-      const lots = await this.service.lotRepo.findByOrg(organizationId);
-      const data = filterPrice(lots, req.user.currentOrganizationRole);
+      const lots = await this.service.lotRepo.findAllByOrg(organizationId);
+      if (!lots.length) return res.json({ data: [], meta: { total: 0 } });
+
+      // Attach current_stock to each lot via a single bulk query
+      const lotIds = lots.map(l => l.lot_id);
+      const stockByLot = await this.service.stockRepo.getCurrentStockBulk(lotIds, null, organizationId);
+
+      const lotsWithStock = lots.map(lot => ({
+        ...lot,
+        current_stock: stockByLot[lot.lot_id] ?? 0,
+      }));
+
+      const data = filterPrice(lotsWithStock, req.user.currentOrganizationRole);
       res.json({ data, meta: { total: data.length } });
     } catch (error) { next(error); }
   }
@@ -82,6 +93,25 @@ class ProductLotController {
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       const lot = await this.service.updateLot(id, req.body, organizationId);
       res.json({ data: lot, message: 'Product lot updated successfully' });
+    } catch (error) { next(error); }
+  }
+
+  async bulkDeleteLots(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      const result = await this.service.bulkDeleteLots(ids, organizationId);
+      res.json({
+        success: true,
+        data: result,
+        message: 'Bulk delete complete'
+      });
     } catch (error) { next(error); }
   }
 

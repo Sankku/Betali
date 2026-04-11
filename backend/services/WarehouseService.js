@@ -224,6 +224,69 @@ class WarehouseService {
   }
 
   /**
+   * Bulk delete warehouses
+   * @param {Array<string>} ids
+   * @param {string} organizationId
+   * @returns {Promise<Object>}
+   */
+  async bulkDeleteWarehouses(ids, organizationId) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} warehouses`);
+
+      const { data: existing, error: existingError } = await this.warehouseRepository.client
+        .from(this.warehouseRepository.table)
+        .select('warehouse_id')
+        .in('warehouse_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+      const foundIds = (existing || []).map(w => w.warehouse_id);
+
+      if (foundIds.length === 0) {
+        return { deleted: 0, blocked: 0, not_found: ids.length };
+      }
+
+      const { data: moveCounts, error: moveError } = await this.stockMovementRepository.client
+        .from(this.stockMovementRepository.table)
+        .select('warehouse_id')
+        .in('warehouse_id', foundIds);
+      
+      if (moveError) throw moveError;
+      
+      const warehousesWithMovements = new Set((moveCounts || []).map(m => m.warehouse_id));
+      const deletableIds = foundIds.filter(id => !warehousesWithMovements.has(id));
+      const blockedCount = foundIds.length - deletableIds.length;
+
+      let deleted = 0;
+      if (deletableIds.length > 0) {
+        const { error: deleteError } = await this.warehouseRepository.client
+          .from(this.warehouseRepository.table)
+          .delete()
+          .in('warehouse_id', deletableIds)
+          .eq('organization_id', organizationId);
+        
+        if (deleteError) throw deleteError;
+        deleted = deletableIds.length;
+      }
+
+      return {
+        deleted,
+        blocked: blockedCount,
+        not_found: ids.length - foundIds.length
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting warehouses: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Get warehouse stock movements
    * @param {string} warehouseId - Warehouse ID
    * @param {string} organizationId - Organization ID

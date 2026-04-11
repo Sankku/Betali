@@ -26,6 +26,7 @@ import {
   useUpdateWarehouse,
   useDeactivateWarehouse,
   useDeleteWarehouse,
+  useBulkDeleteWarehouse,
 } from '../../hooks/useWarehouse';
 import { useOrganization } from '../../context/OrganizationContext';
 import { usePlanResourceLimit } from '../../hooks/useSubscriptionPlans';
@@ -64,6 +65,7 @@ const WarehousesPage: React.FC = () => {
   const updateWarehouse = useUpdateWarehouse();
   const deactivateWarehouse = useDeactivateWarehouse();
   const deleteWarehouse = useDeleteWarehouse();
+  const bulkDeleteWarehouse = useBulkDeleteWarehouse();
 
   const openModal = (mode: ModalState['mode'], warehouse?: WarehouseWithStats) => {
     setModal({ isOpen: true, mode, warehouse });
@@ -97,10 +99,11 @@ const WarehousesPage: React.FC = () => {
   const confirmDelete = async () => {
     if (showDeleteConfirm.warehouses.length > 0) {
       try {
-        for (const warehouse of showDeleteConfirm.warehouses) {
-          if (warehouse.warehouse_id) {
-            await deleteWarehouse.mutateAsync(warehouse.warehouse_id);
-          }
+        if (showDeleteConfirm.warehouses.length === 1) {
+          await deleteWarehouse.mutateAsync(showDeleteConfirm.warehouses[0].warehouse_id);
+        } else {
+          const ids = showDeleteConfirm.warehouses.map(w => w.warehouse_id).filter(Boolean);
+          await bulkDeleteWarehouse.mutateAsync(ids);
         }
         setShowDeleteConfirm({ show: false, warehouses: [] });
       } catch (error) {
@@ -131,7 +134,9 @@ const WarehousesPage: React.FC = () => {
   };
 
   const isLoaderVisible =
-    createWarehouse.isPending || updateWarehouse.isPending || deleteWarehouse.isPending || deactivateWarehouse.isPending;
+    createWarehouse.isPending || updateWarehouse.isPending || 
+    deleteWarehouse.isPending || bulkDeleteWarehouse.isPending || 
+    deactivateWarehouse.isPending;
 
   // Bulk actions configuration
   const bulkActions: BulkAction<WarehouseWithStats>[] = useMemo(() => [{
@@ -324,7 +329,7 @@ const WarehousesPage: React.FC = () => {
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              loading={deleteWarehouse.isPending}
+              loading={deleteWarehouse.isPending || bulkDeleteWarehouse.isPending}
               className="w-full sm:w-auto"
             >
               {t('common.delete')}

@@ -59,6 +59,13 @@ export interface TableWithBulkActionsProps<T = any> {
   // Limit enforcement
   createButtonDisabled?: boolean;
   createButtonTooltip?: string;
+
+  // Additional Table Options
+  paginationPosition?: 'top' | 'bottom' | 'both';
+  enableInfiniteScroll?: boolean;
+  fetchNextPage?: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
 }
 
 interface LimitAwareCreateButtonProps {
@@ -126,6 +133,11 @@ export function TableWithBulkActions<T = any>({
   customToolbarRight,
   createButtonDisabled = false,
   createButtonTooltip,
+  paginationPosition = 'both',
+  enableInfiniteScroll,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
 }: TableWithBulkActionsProps<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
 
@@ -298,6 +310,11 @@ export function TableWithBulkActions<T = any>({
             pageSize={pageSize}
             onRowDoubleClick={onRowDoubleClick}
             emptyMessage={emptyMessage}
+            paginationPosition={paginationPosition}
+            enableInfiniteScroll={enableInfiniteScroll}
+            fetchNextPage={fetchNextPage}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
           />
         </CardContent>
       </Card>

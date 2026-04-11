@@ -69,6 +69,10 @@ router.put('/:id', requirePermission(PERMISSIONS.PRODUCTS_UPDATE), validateReque
   try { await getController().updateType(req, res, next); } catch (e) { next(e); }
 });
 
+router.delete('/bulk', requirePermission(PERMISSIONS.PRODUCTS_DELETE), async (req, res, next) => {
+  try { await getController().bulkDeleteTypes(req, res, next); } catch (e) { next(e); }
+});
+
 router.delete('/:id', requirePermission(PERMISSIONS.PRODUCTS_DELETE), async (req, res, next) => {
   try { await getController().deleteType(req, res, next); } catch (e) { next(e); }
 });

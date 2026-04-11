@@ -212,6 +212,74 @@ class SupplierService {
   }
 
   /**
+   * Bulk delete suppliers
+   * @param {Array<string>} ids
+   * @param {string} organizationId
+   * @returns {Promise<Object>}
+   */
+  async bulkDeleteSuppliers(ids, organizationId) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} suppliers`);
+
+      const { data: existing, error: existingError } = await this.repository.client
+        .from(this.repository.table)
+        .select('supplier_id')
+        .in('supplier_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+      const foundIds = (existing || []).map(s => s.supplier_id);
+
+      if (foundIds.length === 0) {
+        return { deleted: 0, blocked: 0, not_found: ids.length };
+      }
+
+      let deleted = 0;
+      let blocked = 0;
+
+      const { error: deleteError } = await this.repository.client
+        .from(this.repository.table)
+        .delete()
+        .in('supplier_id', foundIds)
+        .eq('organization_id', organizationId);
+
+      if (!deleteError) {
+        deleted = foundIds.length;
+      } else {
+        this.logger.warn(`Bulk delete failed, falling back to per-item for feedback: ${deleteError.message}`);
+        for (const id of foundIds) {
+          const { error: singleError } = await this.repository.client
+            .from(this.repository.table)
+            .delete()
+            .eq('supplier_id', id)
+            .eq('organization_id', organizationId);
+          
+          if (singleError) {
+            blocked++;
+          } else {
+            deleted++;
+          }
+        }
+      }
+
+      return {
+        deleted,
+        blocked,
+        not_found: ids.length - foundIds.length
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting suppliers: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Soft delete supplier (deactivate) with organization validation
    * @param {string} supplierId - Supplier ID
    * @param {string} organizationId - Organization ID

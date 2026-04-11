@@ -37,6 +37,7 @@ import {
   useCreateSupplier,
   useUpdateSupplier,
   useDeleteSupplier,
+  useBulkDeleteSupplier,
   useDeactivateSupplier,
   useReactivateSupplier,
   useSetSupplierPreferred,
@@ -103,6 +104,7 @@ export function SuppliersPage() {
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplier = useDeleteSupplier();
+  const bulkDeleteSupplier = useBulkDeleteSupplier();
   const deactivateSupplier = useDeactivateSupplier();
   const reactivateSupplier = useReactivateSupplier();
   const setSupplierPreferred = useSetSupplierPreferred();
@@ -129,10 +131,11 @@ export function SuppliersPage() {
   const confirmDelete = async () => {
     if (showDeleteConfirm.suppliers.length > 0) {
       try {
-        for (const supplier of showDeleteConfirm.suppliers) {
-          if (supplier.supplier_id) {
-            await deleteSupplier.mutateAsync(supplier.supplier_id);
-          }
+        if (showDeleteConfirm.suppliers.length === 1) {
+          await deleteSupplier.mutateAsync(showDeleteConfirm.suppliers[0].supplier_id!);
+        } else {
+          const ids = showDeleteConfirm.suppliers.map(s => s.supplier_id!).filter(Boolean);
+          await bulkDeleteSupplier.mutateAsync(ids);
         }
         setShowDeleteConfirm({ show: false, suppliers: [] });
       } catch (error) {
@@ -586,9 +589,9 @@ export function SuppliersPage() {
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              disabled={deleteSupplier.isPending}
+              disabled={deleteSupplier.isPending || bulkDeleteSupplier.isPending}
             >
-              {deleteSupplier.isPending
+              {deleteSupplier.isPending || bulkDeleteSupplier.isPending
                 ? t('suppliers.page.deleting')
                 : showDeleteConfirm.suppliers.length === 1
                   ? t('suppliers.page.deleteSingleButton')

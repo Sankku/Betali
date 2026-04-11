@@ -9,10 +9,11 @@ import { Badge } from '../../components/ui/badge';
 import { ToastContainer } from '../../components/ui/toast';
 import { ArrowUpCircle, ArrowDownCircle, ArrowUpDown, AlertTriangle, Eye, Edit, Trash, Package, Settings2 } from 'lucide-react';
 import {
-  useStockMovements,
+  useStockMovementsInfinite,
   useCreateStockMovement,
   useUpdateStockMovement,
   useDeleteStockMovement,
+  useBulkDeleteStockMovement,
 } from '../../hooks/useStockMovement';
 import {
   StockMovementWithDetails,
@@ -48,10 +49,23 @@ export default function StockMovementsPage() {
     movements: StockMovementWithDetails[];
   }>({ isOpen: false, movements: [] });
 
-  const { data: movements = [], isLoading, error } = useStockMovements();
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading, 
+    error 
+  } = useStockMovementsInfinite(50);
+
+  const movements = useMemo(() => 
+    data?.pages.flatMap(page => page) || [], 
+  [data]);
+
   const createMovement = useCreateStockMovement();
   const updateMovement = useUpdateStockMovement();
   const deleteMovement = useDeleteStockMovement();
+  const bulkDeleteMovement = useBulkDeleteStockMovement();
 
   const openModal = useCallback(
     (mode: 'create' | 'edit' | 'view', movement?: StockMovementWithDetails) => {
@@ -83,10 +97,11 @@ export default function StockMovementsPage() {
   const confirmDelete = async () => {
     if (deleteModal.movements.length > 0) {
       try {
-        for (const movement of deleteModal.movements) {
-          if (movement.movement_id) {
-            await deleteMovement.mutateAsync(movement.movement_id);
-          }
+        if (deleteModal.movements.length === 1) {
+          await deleteMovement.mutateAsync(deleteModal.movements[0].movement_id);
+        } else {
+          const ids = deleteModal.movements.map(m => m.movement_id).filter(Boolean) as string[];
+          await bulkDeleteMovement.mutateAsync(ids);
         }
         setDeleteModal({ isOpen: false, movements: [] });
       } catch (error) {
@@ -156,7 +171,8 @@ export default function StockMovementsPage() {
       },
     },
     {
-      accessorKey: 'product',
+      id: 'product',
+      accessorFn: (row: any) => row.lot?.product_type_id?.name || '',
       header: t('stockMovements.page.columnProduct'),
       cell: ({ row }: any) => (
         <div className="flex items-center">
@@ -261,8 +277,12 @@ export default function StockMovementsPage() {
             onCreateClick={handleCreateClick}
             onRowDoubleClick={(movement) => openModal('edit', movement)}
             searchable={true}
-            enablePagination={true}
-            pageSize={25}
+            enablePagination={false}
+            enableInfiniteScroll={true}
+            fetchNextPage={fetchNextPage}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            pageSize={50}
             emptyMessage={
               !currentOrganization
                 ? t('stockMovements.page.noOrgMessage')
@@ -312,7 +332,7 @@ export default function StockMovementsPage() {
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              loading={deleteMovement.isPending}
+              loading={deleteMovement.isPending || bulkDeleteMovement.isPending}
               className="w-full sm:w-auto"
             >
               {t('common.delete')}

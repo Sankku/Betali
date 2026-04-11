@@ -23,6 +23,7 @@ import {
   useSearchClients,
   useClientStats,
   CreateClientData,
+  useBulkDeleteClient,
 } from '@/hooks/useClients';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { usePlanResourceLimit } from '@/hooks/useSubscriptionPlans';
@@ -76,12 +77,12 @@ export function ClientsPage() {
     setShowDeleteConfirm({ show: true, clients });
   };
 
+  const bulkDeleteClient = useBulkDeleteClient();
+
   const confirmDelete = async () => {
     try {
-      const promises = showDeleteConfirm.clients.map(client =>
-        deleteClient.mutateAsync(client.client_id)
-      );
-      await Promise.all(promises);
+      const ids = showDeleteConfirm.clients.map(client => client.client_id);
+      await bulkDeleteClient.mutateAsync(ids);
       setShowDeleteConfirm({ show: false, clients: [] });
     } catch (error) {
       console.error('Error deleting:', error);

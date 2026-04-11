@@ -27,6 +27,22 @@ class ProductLotRepository extends BaseRepository {
     return this.findAll({ organization_id: organizationId }, options);
   }
 
+  /** Fetch all lots for an org without a row cap — used by the Products accordion. */
+  async findAllByOrg(organizationId) {
+    if (!organizationId) throw new Error('organizationId is required');
+    try {
+      const { data, error } = await this.client
+        .from(this.table)
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      throw new Error(`Error finding all lots: ${error?.message || String(error)}`);
+    }
+  }
+
   async findByType(productTypeId, organizationId, options = {}) {
     if (!organizationId) throw new Error('organizationId is required');
     return this.findAll({ product_type_id: productTypeId, organization_id: organizationId }, options);

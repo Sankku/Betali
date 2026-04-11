@@ -32,7 +32,9 @@ function replacePlaceholders(text: string, params?: Record<string, string | numb
   if (!params) return text;
 
   return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-    return params[key]?.toString() || match;
+    const value = params[key];
+    if (value === undefined || value === null) return '---';
+    return value.toString();
   });
 }
 

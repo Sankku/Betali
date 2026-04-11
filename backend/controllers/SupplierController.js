@@ -277,6 +277,31 @@ class SupplierController {
   }
 
   /**
+   * Bulk delete suppliers
+   * DELETE /api/suppliers/bulk
+   */
+  async bulkDeleteSuppliers(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      const result = await this.supplierService.bulkDeleteSuppliers(ids, organizationId);
+      res.json({
+        success: true,
+        data: result,
+        message: 'Bulk delete complete'
+      });
+    } catch (error) { next(error); }
+  }
+
+  /**
    * Deactivate supplier (soft delete)
    * PUT /api/suppliers/:id/deactivate
    */

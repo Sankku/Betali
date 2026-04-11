@@ -23,7 +23,43 @@ class ProductTypeRepository extends BaseRepository {
 
   async findByOrg(organizationId, options = {}) {
     if (!organizationId) throw new Error('organizationId is required');
-    return this.findAll({ organization_id: organizationId }, options);
+    // Default to a high limit so form dropdowns always see all types
+    return this.findAll({ organization_id: organizationId }, { limit: 5000, ...options });
+  }
+
+  /**
+   * Paginated + filtered query for the Products page.
+   * Returns { data, total } so the controller can build meta.
+   */
+  async findByOrgFiltered(organizationId, { page = 1, limit = 100, search = '', type = '' } = {}) {
+    if (!organizationId) throw new Error('organizationId is required');
+    try {
+      let query = this.client
+        .from(this.table)
+        .select('*', { count: 'exact' })
+        .eq('organization_id', organizationId);
+
+      if (search) {
+        // Sanitise: strip % and _ to prevent injection into the ilike pattern
+        const safe = search.replace(/[%_]/g, '');
+        query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);
+      }
+      if (type) {
+        query = query.eq('product_type', type);
+      }
+
+      query = query.order('name', { ascending: true });
+
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { data: data || [], total: count || 0 };
+    } catch (error) {
+      throw new Error(`Error finding product types (filtered): ${error?.message || String(error)}`);
+    }
   }
 
   async findBySku(sku, organizationId) {

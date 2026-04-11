@@ -156,6 +156,52 @@ class ClientService {
   }
 
   /**
+   * Bulk delete clients with organization validation
+   * @param {Array<string>} ids - Array of Client IDs
+   * @param {string} organizationId - Organization ID
+   * @returns {Promise<Object>}
+   */
+  async bulkDeleteClients(ids, organizationId) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} clients`);
+
+      const { data: existing, error: existingError } = await this.repository.client
+        .from(this.repository.table)
+        .select('client_id')
+        .in('client_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+
+      const foundIds = (existing ?? []).map(c => c.client_id);
+      
+      if (foundIds.length > 0) {
+        const { error: deleteError } = await this.repository.client
+          .from(this.repository.table)
+          .delete()
+          .in('client_id', foundIds)
+          .eq('organization_id', organizationId);
+          
+        if (deleteError) throw deleteError;
+      }
+
+      return {
+        deleted: foundIds.length,
+        not_found: ids.length - foundIds.length
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting clients: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Delete client with organization validation
    * @param {string} clientId - Client ID
    * @param {string} organizationId - Organization ID

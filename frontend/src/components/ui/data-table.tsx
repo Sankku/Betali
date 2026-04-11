@@ -56,6 +56,12 @@ interface DataTableProps<TData> {
   onPaginationChange?: (pagination: PaginationState) => void;
   onSortingChange?: (sorting: SortingState) => void;
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+  paginationPosition?: 'top' | 'bottom' | 'both';
+  // Infinite scroll props
+  enableInfiniteScroll?: boolean;
+  fetchNextPage?: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
 }
 
 // `indeterminate` is a DOM property, not an HTML attribute — must be set via ref.
@@ -106,6 +112,11 @@ export function DataTable<TData>({
   onPaginationChange,
   onSortingChange,
   onColumnFiltersChange,
+  paginationPosition = 'both',
+  enableInfiniteScroll = false,
+  fetchNextPage,
+  hasNextPage = false,
+  isFetchingNextPage = false,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -324,6 +335,106 @@ export function DataTable<TData>({
     }
   };
 
+  const renderPagination = () => (
+    <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-neutral-700">
+          Mostrando{' '}
+          <span className="font-semibold text-neutral-900">
+            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+          </span>
+          {' a '}
+          <span className="font-semibold text-neutral-900">
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            )}
+          </span>
+          {' de '}
+          <span className="font-semibold text-neutral-900">
+            {table.getFilteredRowModel().rows.length}
+          </span>
+          {' resultados'}
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+            className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-neutral-300/60">
+            <span className="text-sm text-neutral-700">Página</span>
+            <span className="text-sm font-semibold text-neutral-900">
+              {table.getState().pagination.pageIndex + 1}
+            </span>
+            <span className="text-sm text-neutral-700">de</span>
+            <span className="text-sm font-semibold text-neutral-900">
+              {table.getPageCount() || 1}
+            </span>
+          </div>
+
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+            className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!enableInfiniteScroll || !hasNextPage || !fetchNextPage || isFetchingNextPage) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (bottomRef.current) {
+      observer.observe(bottomRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [enableInfiniteScroll, hasNextPage, fetchNextPage, isFetchingNextPage]);
+
   if (!validatedColumns.length) {
     return (
       <div className="bg-white rounded-lg border border-red-200 p-6">
@@ -337,6 +448,13 @@ export function DataTable<TData>({
       </div>
     );
   }
+
+  const totalRows = table.getFilteredRowModel().rows.length;
+  const showTopPagination = enablePagination && (paginationPosition === 'top' || paginationPosition === 'both');
+  const showBottomPagination = enablePagination && (
+    paginationPosition === 'bottom' || 
+    (paginationPosition === 'both' && totalRows > 10)
+  );
 
   return (
     <div className={cn('relative', className)}>
@@ -383,6 +501,8 @@ export function DataTable<TData>({
           </div>
         )}
 
+        {showTopPagination && renderPagination()}
+
         <div className="relative">
           {loading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white backdrop-blur-sm">
@@ -406,7 +526,7 @@ export function DataTable<TData>({
                         index === 0 && 'bg-neutral-50'
                       )}
                     >
-                      {headerGroup.headers.map((header, index) => {
+                      {headerGroup.headers.map((header) => {
                         const hasFilter = header.column.getFilterValue();
                         return (
                         <th
@@ -526,87 +646,31 @@ export function DataTable<TData>({
                   )}
                 </tbody>
               </table>
+              {enableInfiniteScroll && (
+                <div ref={bottomRef} className="py-6 flex justify-center items-center bg-transparent">
+                  {isFetchingNextPage ? (
+                    <div className="flex flex-col items-center gap-2 animate-fade-in">
+                      <Loading size="sm" />
+                      <span className="text-[10px] uppercase tracking-wider text-neutral-400 font-semibold">Cargando resultados</span>
+                    </div>
+                  ) : hasNextPage ? (
+                    <div className="flex flex-col items-center gap-1 opacity-50">
+                      <div className="h-1 w-1 rounded-full bg-neutral-300 animate-pulse mb-1" />
+                      <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-medium italic">Desliza para cargar más</span>
+                    </div>
+                  ) : table.getRowModel().rows.length > 0 ? (
+                    <div className="flex items-center gap-4 w-full px-8 opacity-40">
+                      <div className="h-[1px] flex-1 bg-linear-to-r from-transparent to-neutral-300" />
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-bold whitespace-nowrap">Has llegado al final</span>
+                      <div className="h-[1px] flex-1 bg-linear-to-l from-transparent to-neutral-300" />
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
         </div>
-        {pagination && (
-          <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-neutral-700">
-                Mostrando{' '}
-                <span className="font-semibold text-neutral-900">
-                  {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-                </span>
-                {' a '}
-                <span className="font-semibold text-neutral-900">
-                  {Math.min(
-                    (table.getState().pagination.pageIndex + 1) *
-                      table.getState().pagination.pageSize,
-                    table.getFilteredRowModel().rows.length
-                  )}
-                </span>
-                {' de '}
-                <span className="font-semibold text-neutral-900">
-                  {table.getFilteredRowModel().rows.length}
-                </span>
-                {' resultados'}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-neutral-300/60">
-                  <span className="text-sm text-neutral-700">Página</span>
-                  <span className="text-sm font-semibold text-neutral-900">
-                    {table.getState().pagination.pageIndex + 1}
-                  </span>
-                  <span className="text-sm text-neutral-700">de</span>
-                  <span className="text-sm font-semibold text-neutral-900">
-                    {table.getPageCount()}
-                  </span>
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                  className="bg-white border-neutral-300/60 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-neutral-700 hover:text-neutral-900"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {showBottomPagination && renderPagination()}
       </div>
     </div>
   );

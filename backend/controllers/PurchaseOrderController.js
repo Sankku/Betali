@@ -220,6 +220,36 @@ class PurchaseOrderController {
   }
 
   /**
+   * Bulk Delete (permanently remove or cancel) purchase orders
+   * DELETE /api/purchase-orders/bulk
+   */
+  async bulkDeletePurchaseOrders(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      this.logger.info('Bulk deleting purchase orders', { count: ids.length, organizationId });
+      const result = await this.purchaseOrderService.bulkDeletePurchaseOrders(ids, organizationId);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Bulk delete complete'
+      });
+    } catch (error) {
+      this.logger.error('Error bulk deleting purchase orders', { error: error.message });
+      next(error);
+    }
+  }
+
+  /**
    * Delete/cancel purchase order
    * DELETE /api/purchase-orders/:id
    */

@@ -179,6 +179,29 @@ class ClientController {
   }
 
   /**
+   * Bulk delete clients
+   * DELETE /api/clients/bulk
+   */
+  async bulkDeleteClients(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'No organization context found.' });
+      }
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      const result = await this.clientService.bulkDeleteClients(ids, organizationId);
+      res.json({ data: result, message: 'Bulk delete complete' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Delete client
    * DELETE /api/clients/:id
    */

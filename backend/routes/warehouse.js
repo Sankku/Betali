@@ -95,6 +95,17 @@ router.put(
 );
 
 router.delete(
+  '/bulk',
+  async (req, res, next) => {
+    try {
+      await warehouseController.bulkDeleteWarehouses(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.delete(
   '/:id',
   async (req, res, next) => {
     try {

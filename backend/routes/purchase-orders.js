@@ -151,6 +151,24 @@ router.patch(
 );
 
 /**
+ * DELETE /api/purchase-orders/bulk
+ * Cancel/delete multiple purchase orders
+ */
+router.delete(
+  '/bulk',
+  requirePermission(PERMISSIONS.PURCHASE_ORDERS_DELETE || PERMISSIONS.PRODUCTS_DELETE),
+  createLimiter,
+  async (req, res, next) => {
+    try {
+      const controller = getPurchaseOrderController();
+      await controller.bulkDeletePurchaseOrders(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * DELETE /api/purchase-orders/:id
  * Cancel/delete purchase order
  */

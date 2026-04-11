@@ -248,6 +248,51 @@ class StockMovementService {
   }
 
   /**
+   * Bulk delete stock movements
+   * @param {Array<string>} ids
+   * @param {string} organizationId
+   * @returns {Promise<Object>}
+   */
+  async bulkDeleteMovements(ids, organizationId) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} stock movements`);
+
+      const { data: existing, error: existingError } = await this.stockMovementRepository.client
+        .from(this.stockMovementRepository.table)
+        .select('movement_id')
+        .in('movement_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+      const foundIds = (existing || []).map(m => m.movement_id);
+
+      if (foundIds.length > 0) {
+        const { error: deleteError } = await this.stockMovementRepository.client
+          .from(this.stockMovementRepository.table)
+          .delete()
+          .in('movement_id', foundIds)
+          .eq('organization_id', organizationId);
+        
+        if (deleteError) throw deleteError;
+      }
+
+      return {
+        deleted: foundIds.length,
+        not_found: ids.length - foundIds.length
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting movements: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Get movements by lot ID within organization
    * @param {string} lotId - Product Lot ID
    * @param {string} organizationId - Organization ID

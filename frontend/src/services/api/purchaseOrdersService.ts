@@ -47,7 +47,7 @@ export const purchaseOrdersService = {
    * @param filters - Optional filters (status, supplier, date range, etc.)
    * @returns Promise<PurchaseOrder[]>
    */
-  async getAll(filters?: PurchaseOrderFilters): Promise<PurchaseOrder[]> {
+  async getAll(filters?: PurchaseOrderFilters & { limit?: number; offset?: number }): Promise<PurchaseOrder[]> {
     try {
       const params = new URLSearchParams();
 
@@ -58,6 +58,8 @@ export const purchaseOrdersService = {
         if (filters.date_from) params.append('date_from', filters.date_from);
         if (filters.date_to) params.append('date_to', filters.date_to);
         if (filters.search) params.append('search', filters.search);
+        if (filters.limit) params.append('limit', String(filters.limit));
+        if (filters.offset) params.append('offset', String(filters.offset));
       }
 
       const queryString = params.toString();
@@ -400,6 +402,14 @@ export const purchaseOrdersService = {
       console.error(`Error deleting purchase order ${id}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Bulk delete purchase orders
+   */
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number } }>(`/api/purchase-orders/bulk`, { ids });
+    return response.data;
   },
 
   /**

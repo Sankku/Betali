@@ -2,17 +2,20 @@ import React, { useEffect } from 'react';
 import { ChevronDown, ChevronRight, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { ProductLotRow } from './ProductLotRow';
-import { useProductLots } from '../../../hooks/useProductLots';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import type { ProductType } from '../../../services/api/productTypesService';
 import type { ProductLot } from '../../../services/api/productLotsService';
 
 interface ProductTypeRowProps {
   productType: ProductType;
+  lots: ProductLot[];
+  lotsLoading: boolean;
   isExpanded: boolean;
   lotSearch?: string;
   warehouseFilter?: string;
   canSeePrices?: boolean;
+  isSelected?: boolean;
+  onSelect?: (checked: boolean) => void;
   onToggle: () => void;
   onAutoExpand: () => void;
   onEditType: (productType: ProductType) => void;
@@ -30,10 +33,14 @@ const TYPE_STYLES: Record<string, string> = {
 
 export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   productType,
+  lots,
+  lotsLoading,
   isExpanded,
   lotSearch,
   warehouseFilter,
   canSeePrices = false,
+  isSelected = false,
+  onSelect,
   onToggle,
   onAutoExpand,
   onEditType,
@@ -42,13 +49,10 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   onEditLot,
   onDeleteLot,
 }) => {
-  // Always fetch lots so the count is visible even when collapsed.
-  // TanStack Query caches per typeId, so expanding is instant.
   const { t } = useTranslation();
-  const { data: lots, isLoading: lotsLoading } = useProductLots(productType.product_type_id);
 
-  const lotCount = lots?.length ?? 0;
-  const totalStock = (lots ?? []).reduce((sum, l) => sum + (l.current_stock ?? 0), 0);
+  const lotCount = lots.length;
+  const totalStock = lots.reduce((sum, l) => sum + (l.current_stock ?? 0), 0);
 
   // Filter lots by lot_number and/or warehouse
   const visibleLots = (lots ?? []).filter(l => {
@@ -88,10 +92,20 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
       {/* Type header row */}
       <tr
         className={`border-b border-neutral-200 cursor-pointer transition-colors ${
-          isExpanded ? 'bg-primary-50' : 'hover:bg-neutral-50'
+          isSelected ? 'bg-primary-50' : isExpanded ? 'bg-primary-50/60' : 'hover:bg-neutral-50'
         }`}
         onClick={onToggle}
       >
+        <td className="px-4 py-3 w-8" onClick={e => e.stopPropagation()}>
+          {onSelect ? (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={e => onSelect(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+            />
+          ) : null}
+        </td>
         <td className="px-4 py-3 w-8">
           <span className="text-neutral-400">
             {isExpanded ? (
@@ -187,7 +201,7 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
       {/* Expanded lots section */}
       {isExpanded && (
         <tr>
-          <td colSpan={canSeePrices ? 10 : 9} className="p-0 bg-neutral-50 border-b border-neutral-200">
+          <td colSpan={canSeePrices ? 11 : 10} className="p-0 bg-neutral-50 border-b border-neutral-200">
             {lotsLoading ? (
               <div className="flex items-center gap-2 px-10 py-4 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />

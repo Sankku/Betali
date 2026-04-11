@@ -154,14 +154,15 @@ class HttpClient {
   /**
    * Performs a DELETE request
    */
-  async delete<T>(endpoint: string): Promise<T> {
+  async delete<T>(endpoint: string, body?: unknown): Promise<T> {
     const headers = await this.getHeaders();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'DELETE',
         headers,
         credentials: 'include',
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
 
       if (!response.ok) {

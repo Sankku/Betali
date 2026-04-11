@@ -51,6 +51,25 @@ export interface BulkImportResult {
   stock_skipped: { row: number; lot_number: string; reason: string }[];
 }
 
+export interface ProductTypesMeta {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface ProductTypesPage {
+  data: ProductType[];
+  meta: ProductTypesMeta;
+}
+
+export interface ProductTypesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+}
+
 export const productTypesService = {
   async getAll(): Promise<ProductType[]> {
     try {
@@ -60,6 +79,16 @@ export const productTypesService = {
       console.error('Error fetching product types:', error);
       throw error;
     }
+  },
+
+  async getPaginated(params: ProductTypesParams = {}): Promise<ProductTypesPage> {
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page ?? 1));
+    qs.set('limit', String(params.limit ?? 100));
+    if (params.search) qs.set('search', params.search);
+    if (params.type) qs.set('type', params.type);
+    const response = await httpClient.get<ProductTypesPage>(`/api/product-types?${qs.toString()}`);
+    return response;
   },
 
   async getById(id: string): Promise<ProductType> {
@@ -150,5 +179,13 @@ export const productTypesService = {
       console.error('Error in bulk import:', error);
       throw error;
     }
+  },
+
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number; blocked_ids: string[] }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number; blocked_ids: string[] } }>(
+      '/api/product-types/bulk',
+      { ids }
+    );
+    return response.data;
   },
 };

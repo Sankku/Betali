@@ -118,6 +118,16 @@ export const clientService = {
     }
   },
 
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; not_found: number }> {
+    try {
+      const response = await httpClient.delete<{ data: { deleted: number; not_found: number } }>('/api/clients/bulk', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk deleting clients:', error);
+      throw error;
+    }
+  },
+
   async delete(id: string): Promise<void> {
     try {
       await httpClient.delete(`/api/clients/${id}`);

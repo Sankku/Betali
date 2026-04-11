@@ -7,6 +7,15 @@ interface ApiError extends Error {
   status?: number;
 }
 
+export function useAllProductLots() {
+  return useQuery({
+    queryKey: ["product-lots", "all"],
+    queryFn: () => productLotsService.getAll(),
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function useProductLots(typeId: string | undefined) {
   return useQuery({
     queryKey: ["product-lots", typeId],
@@ -25,6 +34,7 @@ export function useCreateProductLot() {
       productLotsService.create(typeId, data),
     onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["product-lots", variables.typeId] });
+      queryClient.invalidateQueries({ queryKey: ["product-lots", "all"] });
       toast.success("Lote creado exitosamente");
     },
     onError: (error: Error) => {
@@ -65,8 +75,28 @@ export function useDeleteProductLot() {
       queryClient.invalidateQueries({ queryKey: ["product-lots"] });
       toast.success("Lote eliminado exitosamente");
     },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar el lote. Intenta de nuevo.");
+    },
+  });
+}
+
+export function useBulkDeleteProductLot() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => productLotsService.bulkDelete(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["product-lots"] });
+      
+      toast.success(`Se eliminaron exitosamente ${response.deleted} lotes.`);
+      
+      if (response.blocked > 0) {
+        toast.error(`No se pudieron eliminar ${response.blocked} lotes porque tienen movimientos de stock asociados.`);
+      }
+    },
     onError: () => {
-      toast.error("Error al eliminar el lote. Intenta de nuevo.");
+      toast.error("Error al eliminar los lotes. Intenta de nuevo.");
     },
   });
 }

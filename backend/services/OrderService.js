@@ -331,6 +331,79 @@ class OrderService {
   }
 
   /**
+   * Bulk Delete (permanently remove or cancel) orders
+   * @param {Array<string>} ids - Array of Order IDs
+   * @param {string} organizationId - Organization ID
+   * @param {boolean} hardDelete - If true, permanently deletes the orders. If false, cancels them.
+   * @returns {Promise<Object>}
+   */
+  async bulkDeleteOrders(ids, organizationId, hardDelete = false) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const err = new Error('ids array is required and must not be empty');
+      err.status = 400;
+      throw err;
+    }
+
+    try {
+      this.logger.info(`Bulk deleting ${ids.length} orders`);
+
+      const { data: existing, error: existingError } = await this.orderRepository.client
+        .from(this.orderRepository.table)
+        .select('order_id, status')
+        .in('order_id', ids)
+        .eq('organization_id', organizationId);
+
+      if (existingError) throw existingError;
+
+      const validOrders = existing ?? [];
+      const foundIds = validOrders.map(o => o.order_id);
+      
+      let processableIds = [];
+      let blockedIds = [];
+
+      if (hardDelete) {
+        processableIds = validOrders.filter(o => !['shipped', 'completed'].includes(o.status)).map(o => o.order_id);
+        blockedIds = validOrders.filter(o => ['shipped', 'completed'].includes(o.status)).map(o => o.order_id);
+      } else {
+        processableIds = validOrders.filter(o => !['shipped', 'completed'].includes(o.status)).map(o => o.order_id);
+        blockedIds = validOrders.filter(o => ['shipped', 'completed'].includes(o.status)).map(o => o.order_id);
+      }
+      
+      if (processableIds.length > 0) {
+        if (hardDelete) {
+          const { error: deleteError } = await this.orderRepository.client
+            .from(this.orderRepository.table)
+            .delete()
+            .in('order_id', processableIds)
+            .eq('organization_id', organizationId);
+            
+          if (deleteError) throw deleteError;
+        } else {
+          // Note: for soft delete, we'd need to loop anyway or do a bulk update.
+          // Since it's usually just changing status:
+          const { error: updateError } = await this.orderRepository.client
+            .from(this.orderRepository.table)
+            .update({ status: 'cancelled' })
+            .in('order_id', processableIds)
+            .eq('organization_id', organizationId);
+            
+          if (updateError) throw updateError;
+        }
+      }
+
+      return {
+        deleted: processableIds.length,
+        blocked: blockedIds.length,
+        not_found: ids.length - foundIds.length,
+        blocked_ids: blockedIds
+      };
+    } catch (error) {
+      this.logger.error(`Error bulk deleting orders: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Delete (permanently remove) an order
    * @param {string} orderId - Order ID
    * @param {string} organizationId - Organization ID

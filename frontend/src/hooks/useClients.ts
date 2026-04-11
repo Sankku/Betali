@@ -169,6 +169,25 @@ export function useDeleteClient() {
   });
 }
 
+export function useBulkDeleteClient() {
+  const queryClient = useQueryClient();
+  const { currentOrganization } = useOrganization();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => clientService.bulkDelete(ids),
+    onSuccess: (response) => {
+      const orgId = currentOrganization?.organization_id;
+      queryClient.invalidateQueries({ queryKey: ['clients', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['clients', 'stats', orgId] });
+      toast.success(`Se eliminaron exitosamente ${response?.deleted || "los"} clientes`);
+    },
+    onError: (error: Error) => {
+      toast.error(translateApiError(error, 'Error al eliminar clientes. Intenta de nuevo.'));
+      throw error;
+    },
+  });
+}
+
 export function useSearchClients() {
   return useMutation({
     mutationFn: ({ query, options }: { query: string; options?: Omit<ClientSearchOptions, 'search'> }) => 

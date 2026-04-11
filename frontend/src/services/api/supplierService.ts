@@ -154,6 +154,14 @@ export const supplierService = {
   },
 
   /**
+   * Bulk delete suppliers
+   */
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number } }>('/api/suppliers/bulk', { ids });
+    return response.data;
+  },
+
+  /**
    * Deactivate supplier (soft delete)
    */
   async deactivate(id: string): Promise<Supplier> {

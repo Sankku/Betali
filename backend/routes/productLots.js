@@ -47,6 +47,10 @@ function createProductLotRouter() {
     try { await getController().updateLot(req, res, next); } catch (e) { next(e); }
   });
 
+  router.delete('/bulk', requirePermission(PERMISSIONS.PRODUCTS_DELETE), async (req, res, next) => {
+    try { await getController().bulkDeleteLots(req, res, next); } catch (e) { next(e); }
+  });
+
   router.delete('/:id', requirePermission(PERMISSIONS.PRODUCTS_DELETE), async (req, res, next) => {
     try { await getController().deleteLot(req, res, next); } catch (e) { next(e); }
   });

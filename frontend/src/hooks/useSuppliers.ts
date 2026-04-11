@@ -193,6 +193,33 @@ export function useDeleteSupplier() {
 }
 
 /**
+ * Hook to bulk delete suppliers
+ */
+export function useBulkDeleteSupplier() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (ids: string[]) => supplierService.bulkDelete(ids),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      queryClient.invalidateQueries({ queryKey: ['suppliers', 'stats'] });
+      
+      if (result.blocked > 0) {
+        toast.error(`No se pudieron eliminar ${result.blocked} proveedores porque tienen transacciones asociadas.`);
+      }
+      if (result.deleted > 0) {
+        toast.success(`Se eliminaron exitosamente ${result.deleted} proveedores.`);
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error bulk deleting suppliers:', error);
+      toast.error(translateApiError(error, 'Error al eliminar los proveedores. Intenta de nuevo.'));
+      throw error;
+    }
+  });
+}
+
+/**
  * Hook to deactivate a supplier
  */
 export function useDeactivateSupplier() {

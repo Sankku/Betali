@@ -120,6 +120,14 @@ export const warehouseService = {
   },
 
   /**
+   * Bulk delete warehouses
+   */
+  async bulkDelete(ids: string[]): Promise<{ deleted: number; blocked: number; not_found: number }> {
+    const response = await httpClient.delete<{ data: { deleted: number; blocked: number; not_found: number } }>('/api/warehouse/bulk', { ids });
+    return response.data;
+  },
+
+  /**
    * Get stock movements for a warehouse
    */
   async getMovements(

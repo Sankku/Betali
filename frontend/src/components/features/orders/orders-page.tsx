@@ -40,7 +40,7 @@ import { PdfPreviewModal, PdfOrderItem } from '@/components/ui/pdf-preview-modal
 import { OrderModal } from './order-modal';
 import { OrderStatusBadge } from './order-status-badge';
 import {
-  useOrders,
+  useOrdersInfinite,
   useOrderStats,
   useUpdateOrderStatus,
   useDeleteOrder,
@@ -50,6 +50,7 @@ import {
   useCompleteOrder,
   ORDER_STATUS_OPTIONS,
   getValidStatusTransitions,
+  useBulkDeleteOrder,
 } from '@/hooks/useOrders';
 import { useClients } from '@/hooks/useClients';
 import { useWarehouses } from '@/hooks/useWarehouse';
@@ -80,18 +81,25 @@ export function OrdersPage() {
 
   // Build query parameters
   const queryParams = useMemo<OrderQueryParams>(() => {
-    const params: OrderQueryParams = {
-      page: currentPage,
-      limit: 20,
+    return {
       sortBy: 'created_at',
       sortOrder: 'desc',
     };
-
-    return params;
-  }, [currentPage]);
+  }, []);
 
   // Hooks
-  const { data: ordersData, isLoading } = useOrders(queryParams);
+  const { 
+    data: infiniteOrdersData, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading 
+  } = useOrdersInfinite(queryParams, 40);
+
+  const orders = useMemo(() => 
+    infiniteOrdersData?.pages.flatMap(page => page.data) || [], 
+  [infiniteOrdersData]);
+
   const { data: orderStatsResponse } = useOrderStats();
   const orderStats = orderStatsResponse?.data;
   const { data: clientsResponse } = useClients();
@@ -100,6 +108,7 @@ export function OrdersPage() {
   const warehouses = warehousesResponse?.data || [];
   const updateOrderStatusMutation = useUpdateOrderStatus();
   const deleteOrderMutation = useDeleteOrder();
+  const bulkDeleteOrderMutation = useBulkDeleteOrder();
   const duplicateOrderMutation = useDuplicateOrder();
   const processOrderMutation = useProcessOrder();
   const fulfillOrderMutation = useFulfillOrder();
@@ -139,6 +148,13 @@ export function OrdersPage() {
     if (!action || orders.length === 0) return;
 
     try {
+      if (action === 'delete') {
+        const ids = orders.map(o => o.order_id);
+        await bulkDeleteOrderMutation.mutateAsync(ids);
+        setBatchActionModalState({ isOpen: false, action: '', orders: [] });
+        return;
+      }
+
       const promises = orders.map(order => {
         switch (action) {
           case 'process':
@@ -150,8 +166,6 @@ export function OrdersPage() {
             });
           case 'complete':
             return completeOrderMutation.mutateAsync(order.order_id);
-          case 'delete':
-            return deleteOrderMutation.mutateAsync(order.order_id);
           default:
             return Promise.resolve();
         }
@@ -167,7 +181,7 @@ export function OrdersPage() {
     processOrderMutation,
     fulfillOrderMutation,
     completeOrderMutation,
-    deleteOrderMutation,
+    bulkDeleteOrderMutation,
   ]);
 
   const closeModal = useCallback(() => {
@@ -263,7 +277,7 @@ export function OrdersPage() {
           hoverBg: 'hover:bg-red-50',
         },
         onClick: orders => setBatchActionModalState({ isOpen: true, action: 'delete', orders }),
-        getValidItems: orders => orders.filter(o => !['completed', 'shipped'].includes(o.status)),
+        getValidItems: orders => orders, // Allow all to test hard delete API, API filters natively
       },
     ],
     [duplicateOrderMutation]
@@ -595,7 +609,7 @@ export function OrdersPage() {
 
         {/* Table with Bulk Actions */}
         <TableWithBulkActions
-          data={ordersData?.data || []}
+          data={orders}
           columns={columns}
           loading={isLoading}
           getRowId={(order: Order) => order.order_id}
@@ -606,8 +620,13 @@ export function OrdersPage() {
           onRowDoubleClick={handleViewOrder}
           searchable={false}
           enableColumnFilters={true}
-          enablePagination={true}
-          pageSize={20}
+          enablePagination={false}
+          enableInfiniteScroll={true}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          paginationPosition="both"
+          pageSize={40}
           emptyMessage={t('orders.page.emptyMessage')}
         />
       </div>
@@ -671,13 +690,13 @@ export function OrdersPage() {
                 processOrderMutation.isPending ||
                 fulfillOrderMutation.isPending ||
                 completeOrderMutation.isPending ||
-                deleteOrderMutation.isPending
+                bulkDeleteOrderMutation.isPending
               }
             >
               {processOrderMutation.isPending ||
               fulfillOrderMutation.isPending ||
               completeOrderMutation.isPending ||
-              deleteOrderMutation.isPending
+              bulkDeleteOrderMutation.isPending
                 ? t('orders.page.processing')
                 : `${
                     batchActionModalState.action === 'process'

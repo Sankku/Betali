@@ -170,6 +170,29 @@ class StockMovementController {
   }
 
   /**
+   * Bulk delete stock movements
+   * DELETE /api/stock-movements/bulk
+   */
+  async bulkDeleteMovements(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+      
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      
+      const result = await this.stockMovementService.bulkDeleteMovements(ids, organizationId);
+      res.json({
+        success: true,
+        data: result,
+        message: 'Bulk delete complete'
+      });
+    } catch (error) { next(error); }
+  }
+
+  /**
    * Delete stock movement
    * DELETE /api/stock-movements/:id
    */

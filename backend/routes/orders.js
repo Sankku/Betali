@@ -121,6 +121,19 @@ function createOrderRoutes(container) {
     }
   );
 
+  // DELETE /api/orders/bulk - Bulk delete (cancel) orders
+  router.delete(
+    '/bulk',
+    createLimiter,
+    async (req, res, next) => {
+      try {
+        await orderController.bulkDeleteOrders(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   // GET /api/orders/:id - Get specific order by ID
   router.get(
     '/:id',

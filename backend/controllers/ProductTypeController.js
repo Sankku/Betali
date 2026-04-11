@@ -26,6 +26,27 @@ class ProductTypeController {
     try {
       const organizationId = req.user.currentOrganizationId;
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+
+      const { page, limit: limitParam, search, type } = req.query;
+
+      if (page !== undefined) {
+        // Paginated mode — used by the Products table
+        const pageNum = Math.max(1, parseInt(page) || 1);
+        const limitNum = Math.min(500, Math.max(1, parseInt(limitParam) || 100));
+        const { data, total } = await this.service.getTypesPaginated(organizationId, {
+          page: pageNum,
+          limit: limitNum,
+          search: search?.trim() || '',
+          type: type || '',
+        });
+        const filtered = filterPurchasePrice(data, req.user.currentOrganizationRole);
+        return res.json({
+          data: filtered,
+          meta: { total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) },
+        });
+      }
+
+      // Legacy mode — used by form dropdowns (no pagination)
       const types = await this.service.getTypes(organizationId);
       const data = filterPurchasePrice(types, req.user.currentOrganizationRole);
       res.json({ data, meta: { total: data.length } });
@@ -91,6 +112,25 @@ class ProductTypeController {
       if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
       await this.service.deleteType(id, organizationId);
       res.json({ message: 'Product type deleted successfully' });
+    } catch (error) { next(error); }
+  }
+
+  async bulkDeleteTypes(req, res, next) {
+    try {
+      const organizationId = req.user.currentOrganizationId;
+      if (!organizationId) return res.status(400).json({ error: 'No organization context found.' });
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required and must not be empty' });
+      }
+      if (ids.length > 1000) {
+        return res.status(400).json({ error: 'Cannot delete more than 1000 product types at once' });
+      }
+      const result = await this.service.bulkDeleteTypes(ids, organizationId);
+      res.json({
+        data: result,
+        message: `Bulk delete complete: ${result.deleted} deleted, ${result.blocked} blocked (have lots), ${result.not_found} not found`,
+      });
     } catch (error) { next(error); }
   }
 }
