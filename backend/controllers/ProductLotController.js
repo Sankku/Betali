@@ -29,13 +29,27 @@ class ProductLotController {
       const lots = await this.service.lotRepo.findAllByOrg(organizationId);
       if (!lots.length) return res.json({ data: [], meta: { total: 0 } });
 
-      // Attach current_stock to each lot via a single bulk query
+      // Attach current_stock and warehouse_name in bulk (2 queries total)
       const lotIds = lots.map(l => l.lot_id);
       const stockByLot = await this.service.stockRepo.getCurrentStockBulk(lotIds, null, organizationId);
+
+      const warehouseIds = [...new Set(lots.map(l => l.warehouse_id).filter(Boolean))];
+      let warehouseMap = {};
+      if (warehouseIds.length > 0) {
+        const { data: warehouses } = await this.service.lotRepo.client
+          .from('warehouse')
+          .select('warehouse_id, name')
+          .in('warehouse_id', warehouseIds)
+          .eq('organization_id', organizationId);
+        if (warehouses) {
+          warehouseMap = Object.fromEntries(warehouses.map(w => [w.warehouse_id, w.name]));
+        }
+      }
 
       const lotsWithStock = lots.map(lot => ({
         ...lot,
         current_stock: stockByLot[lot.lot_id] ?? 0,
+        warehouse_name: lot.warehouse_id ? (warehouseMap[lot.warehouse_id] ?? null) : null,
       }));
 
       const data = filterPrice(lotsWithStock, req.user.currentOrganizationRole);
