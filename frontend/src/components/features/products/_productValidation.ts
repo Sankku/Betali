@@ -1,9 +1,9 @@
 import type { BulkImportRow } from '../../../services/api/productTypesService';
 
-export const REQUIRED_HEADERS = ['sku', 'name', 'product_type', 'unit', 'lot_number', 'origin_country', 'expiration_date', 'price'];
+export const REQUIRED_HEADERS = ['sku', 'name', 'product_type', 'unit', 'origin_country', 'expiration_date', 'price'];
 export const VALID_UNITS = ['kg', 'g', 'mg', 'l', 'ml', 'unidad', 'docena'];
 export const VALID_PRODUCT_TYPES = ['standard', 'raw_material', 'finished_good'];
-export const MAX_ROWS = 500;
+export const MAX_ROWS = 1000;
 export const MAX_FILE_SIZE_MB = 5;
 
 export interface ParsedRow {
