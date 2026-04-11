@@ -151,8 +151,10 @@ class StockMovementService {
         }
       }
 
+      // Destructure to exclude frontend-only fields not present in stock_movements table
+      const { product_type_id: _unused, ...movementFields } = movementData;
       const movementToCreate = {
-        ...movementData,
+        ...movementFields,
         organization_id: organizationId,
         movement_date: movementData.movement_date || new Date().toISOString(),
         created_at: new Date().toISOString()

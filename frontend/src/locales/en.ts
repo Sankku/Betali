@@ -7,7 +7,7 @@ export const en: TranslationKeys = {
     cancel: 'Cancel',
     delete: 'Delete',
     edit: 'Edit',
-    add: 'Add',
+    add: 'New',
     search: 'Search',
     filter: 'Filter',
     export: 'Export',
@@ -153,9 +153,9 @@ export const en: TranslationKeys = {
       newSaleDesc: 'Create sale order',
       newProduct: 'New Product',
       newProductDesc: 'Add to catalog',
-      newPurchase: 'Add Purchase',
+      newPurchase: 'New Purchase',
       newPurchaseDesc: 'Restock inventory',
-      newClient: 'Add Client',
+      newClient: 'New Client',
       newClientDesc: 'Register client',
     },
     recentMovements: 'Recent Movements',
@@ -197,7 +197,7 @@ export const en: TranslationKeys = {
   // Products
   products: {
     title: 'Products',
-    add: 'Add Product',
+    add: 'New Product',
     page: {
       heading: 'Products',
       subtitle: 'Product catalog and inventory lots',
@@ -332,7 +332,7 @@ export const en: TranslationKeys = {
   // Clients
   clients: {
     title: 'Clients',
-    add: 'Add Client',
+    add: 'New Client',
     edit: 'Edit Client',
     delete: 'Delete Client',
     view: 'View Client',
@@ -380,7 +380,7 @@ export const en: TranslationKeys = {
   // Orders (Sales)
   orders: {
     title: 'Sales',
-    add: 'Add Sale',
+    add: 'New Sale',
     edit: 'Edit Sale',
     delete: 'Delete Sale',
     view: 'View Sale',
@@ -421,7 +421,7 @@ export const en: TranslationKeys = {
       notesOptional: '(optional)',
       notesPlaceholder: 'Order notes (optional)',
       orderItems: 'Order Items',
-      addItem: 'Add Item',
+      addItem: 'New Item',
       product: 'Product',
       price: 'Price',
       lineTotal: 'Line Total',
@@ -523,7 +523,7 @@ export const en: TranslationKeys = {
   // Purchase Orders
   purchaseOrders: {
     title: 'Purchases',
-    add: 'Add Purchase',
+    add: 'New Purchase',
     edit: 'Edit Purchase',
     delete: 'Delete Purchase',
     view: 'View Purchase',
@@ -591,7 +591,7 @@ export const en: TranslationKeys = {
       statusPlaceholder: 'Select status',
       statusNote: 'Status is updated via specific actions',
       productsTitle: 'Products',
-      addProduct: 'Add Product',
+      addProduct: 'New Product',
       minOneProduct: 'There must be at least one product in the purchase order',
       productLabel: 'Product',
       productPlaceholder: 'Select product',
@@ -622,7 +622,7 @@ export const en: TranslationKeys = {
   // Warehouse
   warehouse: {
     title: 'Warehouses',
-    add: 'Add Warehouse',
+    add: 'New Warehouse',
     edit: 'Edit Warehouse',
     delete: 'Delete Warehouse',
     view: 'View Warehouse',
@@ -694,7 +694,7 @@ export const en: TranslationKeys = {
   // Stock Movements
   stockMovements: {
     title: 'Stock Movements',
-    add: 'Add Movement',
+    add: 'New Movement',
     view: 'View Movement',
     fields: {
       type: 'Movement Type',
@@ -793,7 +793,7 @@ export const en: TranslationKeys = {
   // Suppliers
   suppliers: {
     title: 'Suppliers',
-    add: 'Add Supplier',
+    add: 'New Supplier',
     edit: 'Edit Supplier',
     delete: 'Delete Supplier',
     view: 'View Supplier',
@@ -927,7 +927,7 @@ export const en: TranslationKeys = {
   // Users
   users: {
     title: 'Users',
-    add: 'Add User',
+    add: 'New User',
     edit: 'Edit User',
     delete: 'Delete User',
     view: 'View User',
@@ -1477,7 +1477,7 @@ export const en: TranslationKeys = {
   // Tax Management
   taxManagement: {
     title: 'Tax Management',
-    add: 'Add Tax',
+    add: 'New Tax',
     edit: 'Edit Tax',
     delete: 'Delete Tax',
     fields: {
@@ -1507,7 +1507,7 @@ export const en: TranslationKeys = {
       exampleSalesItem3: 'Combined: varies by location',
       tableTitle: 'Tax Rates',
       tableDesc: 'Manage all your tax rates and their configurations',
-      addTaxRate: 'Add Tax Rate',
+      addTaxRate: 'New Tax Rate',
       emptyNoOrg: 'Please select or create an organization to access tax management features.',
       emptyNoRates: 'No tax rates created yet. Create your first tax rate to get started!',
       columnName: 'Tax Rate Name',
@@ -1558,7 +1558,7 @@ export const en: TranslationKeys = {
   // Organizations
   organizations: {
     title: 'Organizations',
-    add: 'Add Organization',
+    add: 'New Organization',
     edit: 'Edit Organization',
     delete: 'Delete Organization',
     view: 'View Organization',

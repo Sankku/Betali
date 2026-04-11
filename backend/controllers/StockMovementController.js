@@ -104,16 +104,19 @@ class StockMovementController {
         organizationId: req.user?.currentOrganizationId
       });
       
-      if (error.message.includes('required') || 
+      if (error.message.includes('required') ||
           error.message.includes('Required') ||
           error.message.includes('Invalid') ||
           error.message.includes('found') ||
-          error.message.includes('does not belong')) {
+          error.message.includes('does not belong') ||
+          error.message.includes('excedería el stock') ||
+          error.message.includes('insuficiente') ||
+          error.message.includes('Insuficiente')) {
         return res.status(400).json({
           error: error.message
         });
       }
-      
+
       next(error);
     }
   }

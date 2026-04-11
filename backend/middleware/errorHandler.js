@@ -32,7 +32,12 @@ const errorHandler = (err, req, res, _next) => {
     err.message.includes('has associated') ||
     err.message.includes('has stock movements') ||
     err.message.includes('Reassign') ||
-    err.message.includes('limit')
+    err.message.includes('limit') ||
+    // Stock movement business errors
+    err.message.includes('excedería el stock') ||
+    err.message.includes('Stock insuficiente') ||
+    err.message.includes('Insuficiente') ||
+    err.message.includes('insuficiente')
   ) {
     statusCode = 400;
     message = err.message;

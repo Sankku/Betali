@@ -5,7 +5,7 @@ export const es = {
     cancel: 'Cancelar',
     delete: 'Eliminar',
     edit: 'Editar',
-    add: 'Agregar',
+    add: 'Nuevo',
     search: 'Buscar',
     filter: 'Filtrar',
     export: 'Exportar',
@@ -153,9 +153,9 @@ export const es = {
       newSaleDesc: 'Crear orden de venta',
       newProduct: 'Nuevo Producto',
       newProductDesc: 'Agregar al catálogo',
-      newPurchase: 'Agregar Compra',
+      newPurchase: 'Nueva Compra',
       newPurchaseDesc: 'Reponer stock',
-      newClient: 'Agregar Cliente',
+      newClient: 'Nuevo Cliente',
       newClientDesc: 'Registrar cliente',
     },
     // Activity
@@ -198,7 +198,7 @@ export const es = {
   // Products
   products: {
     title: 'Productos',
-    add: 'Agregar Producto',
+    add: 'Nuevo Producto',
     // Page
     page: {
       heading: 'Productos',
@@ -335,7 +335,7 @@ export const es = {
   // Clients
   clients: {
     title: 'Clientes',
-    add: 'Agregar Cliente',
+    add: 'Nuevo Cliente',
     edit: 'Editar Cliente',
     delete: 'Eliminar Cliente',
     view: 'Ver Cliente',
@@ -383,7 +383,7 @@ export const es = {
   // Orders (Sales)
   orders: {
     title: 'Ventas',
-    add: 'Agregar Venta',
+    add: 'Nueva Venta',
     edit: 'Editar Venta',
     delete: 'Eliminar Venta',
     view: 'Ver Venta',
@@ -424,7 +424,7 @@ export const es = {
       notesOptional: '(opcional)',
       notesPlaceholder: 'Notas de la venta (opcional)',
       orderItems: 'Artículos del Pedido',
-      addItem: 'Agregar Artículo',
+      addItem: 'Nuevo Artículo',
       product: 'Producto',
       price: 'Precio',
       lineTotal: 'Subtotal Línea',
@@ -526,7 +526,7 @@ export const es = {
   // Purchase Orders
   purchaseOrders: {
     title: 'Compras',
-    add: 'Agregar Compra',
+    add: 'Nueva Compra',
     edit: 'Editar Compra',
     delete: 'Eliminar Compra',
     view: 'Ver Compra',
@@ -594,7 +594,7 @@ export const es = {
       statusPlaceholder: 'Seleccionar estado',
       statusNote: 'El estado se actualiza mediante acciones específicas',
       productsTitle: 'Productos',
-      addProduct: 'Agregar Producto',
+      addProduct: 'Nuevo Producto',
       minOneProduct: 'Debe haber al menos un producto en la orden de compra',
       productLabel: 'Producto',
       productPlaceholder: 'Seleccionar producto',
@@ -625,7 +625,7 @@ export const es = {
   // Warehouse
   warehouse: {
     title: 'Almacenes',
-    add: 'Agregar Almacén',
+    add: 'Nuevo Almacén',
     edit: 'Editar Almacén',
     delete: 'Eliminar Almacén',
     view: 'Ver Almacén',
@@ -697,7 +697,7 @@ export const es = {
   // Stock Movements
   stockMovements: {
     title: 'Movimientos de Stock',
-    add: 'Agregar Movimiento',
+    add: 'Nuevo Movimiento',
     view: 'Ver Movimiento',
     fields: {
       type: 'Tipo de Movimiento',
@@ -796,7 +796,7 @@ export const es = {
   // Suppliers
   suppliers: {
     title: 'Proveedores',
-    add: 'Agregar Proveedor',
+    add: 'Nuevo Proveedor',
     edit: 'Editar Proveedor',
     delete: 'Eliminar Proveedor',
     view: 'Ver Proveedor',
@@ -930,7 +930,7 @@ export const es = {
   // Users
   users: {
     title: 'Usuarios',
-    add: 'Agregar Usuario',
+    add: 'Nuevo Usuario',
     edit: 'Editar Usuario',
     delete: 'Eliminar Usuario',
     view: 'Ver Usuario',
@@ -1480,7 +1480,7 @@ export const es = {
   // Tax Management
   taxManagement: {
     title: 'Gestión de Impuestos',
-    add: 'Agregar Impuesto',
+    add: 'Nuevo Impuesto',
     edit: 'Editar Impuesto',
     delete: 'Eliminar Impuesto',
     fields: {
@@ -1510,7 +1510,7 @@ export const es = {
       exampleSalesItem3: 'Combinado: varía por ubicación',
       tableTitle: 'Tasas de Impuestos',
       tableDesc: 'Gestiona todas tus tasas de impuestos y sus configuraciones',
-      addTaxRate: 'Agregar Tasa',
+      addTaxRate: 'Nueva Tasa',
       emptyNoOrg: 'Por favor selecciona o crea una organización para acceder a la gestión de impuestos.',
       emptyNoRates: 'Aún no hay tasas de impuestos. ¡Crea tu primera tasa para comenzar!',
       columnName: 'Nombre de la Tasa',
@@ -1561,7 +1561,7 @@ export const es = {
   // Organizations
   organizations: {
     title: 'Organizaciones',
-    add: 'Agregar Organización',
+    add: 'Nueva Organización',
     edit: 'Editar Organización',
     delete: 'Eliminar Organización',
     view: 'Ver Organización',
