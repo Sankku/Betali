@@ -104,8 +104,8 @@ class ProductLotController {
       if (!Array.isArray(rows) || rows.length === 0) {
         return res.status(400).json({ error: 'products array is required and must not be empty' });
       }
-      if (rows.length > 500) {
-        return res.status(400).json({ error: 'Cannot import more than 500 products at once' });
+      if (rows.length > 1000) {
+        return res.status(400).json({ error: 'Cannot import more than 1000 products at once' });
       }
       const result = await this.service.bulkImport(rows, userId, organizationId);
       res.status(200).json({
