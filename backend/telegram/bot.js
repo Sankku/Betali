@@ -24,6 +24,16 @@ const {
   handleCancelCount
 } = require('./commands/conteo');
 const {
+  handleAjuste,
+  handleAjusteText,
+  handleProductSelected: handleAjusteProductSelected,
+  handleSearchAgain,
+  handleApplyAdjustment,
+  handleResumeAdjustment,
+  handleRestartAdjustment,
+  handleCancelAdjustment
+} = require('./commands/ajuste');
+const {
   handleMovimiento,
   handleTypeSelected,
   handleProductSelected: handleMovProductSelected,
@@ -74,13 +84,22 @@ function createBot() {
   bot.callbackQuery('comprar:confirm', requireLinkedAccount, handleConfirmOrder);
   bot.callbackQuery('comprar:cancel',  requireLinkedAccount, handleCancelOrder);
 
-  // ── Conteo físico de stock
+  // ── Conteo físico de stock (todos los productos)
   bot.command('conteo', requireLinkedAccount, handleConteo);
   bot.callbackQuery('conteo:resume',   requireLinkedAccount, handleResumeCount);
   bot.callbackQuery('conteo:restart',  requireLinkedAccount, handleRestartCount);
   bot.callbackQuery('conteo:pause',    requireLinkedAccount, handlePauseCount);
   bot.callbackQuery('conteo:apply',    requireLinkedAccount, handleApplyCount);
   bot.callbackQuery('conteo:cancel',   requireLinkedAccount, handleCancelCount);
+
+  // ── Ajuste específico de stock (búsqueda por nombre)
+  bot.command('ajuste', requireLinkedAccount, handleAjuste);
+  bot.callbackQuery(/^ajuste:sel:(.+)$/, requireLinkedAccount, handleAjusteProductSelected);
+  bot.callbackQuery('ajuste:searchagain', requireLinkedAccount, handleSearchAgain);
+  bot.callbackQuery('ajuste:apply',       requireLinkedAccount, handleApplyAdjustment);
+  bot.callbackQuery('ajuste:resume',      requireLinkedAccount, handleResumeAdjustment);
+  bot.callbackQuery('ajuste:restart',     requireLinkedAccount, handleRestartAdjustment);
+  bot.callbackQuery('ajuste:cancel',      requireLinkedAccount, handleCancelAdjustment);
 
   // ── Movimientos de stock
   bot.command('movimiento', requireLinkedAccount, handleMovimiento);
@@ -101,6 +120,10 @@ function createBot() {
     }
     if (session?.current_flow === 'movement' && session?.flow_step === 'enter_quantity') {
       return handleMovQuantityInput(ctx);
+    }
+    if (session?.current_flow === 'targeted_count') {
+      const handled = await handleAjusteText(ctx);
+      if (handled) return;
     }
     await ctx.reply(
       'No entendí ese comando. Usá /ayuda para ver los comandos disponibles.'

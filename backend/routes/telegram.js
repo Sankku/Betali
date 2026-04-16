@@ -40,6 +40,31 @@ apiRouter.post('/link-token', authenticateUser, requireOrganizationContext, asyn
 });
 
 /**
+ * GET /api/telegram/team-connections
+ * Devuelve cuántos miembros de la organización tienen Telegram vinculado.
+ * Solo devuelve conteos + nombres para no exponer datos sensibles.
+ */
+apiRouter.get('/team-connections', authenticateUser, requireOrganizationContext, async (req, res, next) => {
+  try {
+    const organizationId = req.user.currentOrganizationId;
+    const supabase = require('../lib/supabaseClient');
+
+    const { data, error } = await supabase
+      .from('telegram_connections')
+      .select('telegram_name, telegram_username, linked_at')
+      .eq('organization_id', organizationId)
+      .eq('is_active', true)
+      .order('linked_at', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ connections: data || [] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/telegram/status
  * Devuelve si el usuario actual tiene Telegram vinculado y sus preferencias.
  */

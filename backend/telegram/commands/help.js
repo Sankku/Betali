@@ -8,7 +8,8 @@ async function handleHelp(ctx) {
     `📦 *Inventario*\n` +
     `• /stock — Ver stock filtrado (críticos, todos, agotados)\n` +
     `• /resumen — Resumen rápido del estado del inventario\n` +
-    `• /conteo — Iniciar o reanudar un conteo físico de stock\n\n` +
+    `• /conteo — Conteo físico completo (todos los productos en orden)\n` +
+    `• /ajuste — Ajustar stock buscando productos específicos por nombre\n\n` +
 
     `🛒 *Compras y movimientos*\n` +
     `• /comprar — Crear una orden de compra (OC en borrador)\n` +

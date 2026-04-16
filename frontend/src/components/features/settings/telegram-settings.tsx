@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MessageCircle, Link, Unlink, ExternalLink, CheckCircle, Loader2, Copy, Bell, Clock } from 'lucide-react';
+import { MessageCircle, Link, Unlink, ExternalLink, CheckCircle, Loader2, Copy, Bell, Clock, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { useToast } from '../../../hooks/useToast';
@@ -27,6 +27,12 @@ interface TelegramConnection {
 interface TelegramStatus {
   linked: boolean;
   connection: TelegramConnection | null;
+}
+
+interface TeamConnection {
+  telegram_name: string | null;
+  telegram_username: string | null;
+  linked_at: string;
 }
 
 interface LinkTokenResponse {
@@ -68,6 +74,11 @@ export function TelegramSettings() {
   const { data: status, isLoading } = useQuery<TelegramStatus>({
     queryKey: ['telegram-status'],
     queryFn: () => httpClient.get<TelegramStatus>('/api/telegram/status'),
+  });
+
+  const { data: teamData } = useQuery<{ connections: TeamConnection[] }>({
+    queryKey: ['telegram-team-connections'],
+    queryFn: () => httpClient.get('/api/telegram/team-connections'),
   });
 
   const conn = status?.connection;
@@ -239,6 +250,32 @@ export function TelegramSettings() {
               )}
             </div>
 
+            {/* Conexiones del equipo */}
+            {teamData && teamData.connections.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200 flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-700 pb-2">
+                  <Users className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                  Equipo conectado ({teamData.connections.length})
+                </h4>
+                <div className="space-y-1.5">
+                  {teamData.connections.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 px-2 py-1 rounded-md bg-neutral-50 dark:bg-neutral-800/40">
+                      <CheckCircle className="h-3.5 w-3.5 text-success-500 shrink-0" />
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                        {c.telegram_name || 'Sin nombre'}
+                      </span>
+                      {c.telegram_username && (
+                        <span className="text-neutral-400 dark:text-neutral-500">@{c.telegram_username}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                  Cada empleado vincula su propia cuenta desde esta misma sección.
+                </p>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="pt-4 flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-neutral-100 dark:border-neutral-700">
               <div className="flex gap-2 w-full sm:w-auto">
@@ -284,10 +321,24 @@ export function TelegramSettings() {
           <div className="space-y-6">
             <div className="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20">
               <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-                {t('settings.telegram.unlinkedDesc1')}<strong className="font-semibold">{t('settings.telegram.unlinkedDescBold')}</strong>{t('settings.telegram.unlinkedDesc2')} 
+                {t('settings.telegram.unlinkedDesc1')}<strong className="font-semibold">{t('settings.telegram.unlinkedDescBold')}</strong>{t('settings.telegram.unlinkedDesc2')}
                 <span className="font-semibold text-blue-600 dark:text-blue-400 px-1 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded">@Betali_bot</span>.
               </p>
             </div>
+
+            {/* Equipo ya conectado */}
+            {teamData && teamData.connections.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 px-3 py-2 bg-neutral-50 dark:bg-neutral-800/40 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <Users className="h-4 w-4 shrink-0 text-success-500" />
+                <span>
+                  {teamData.connections.length === 1
+                    ? `1 miembro del equipo ya está conectado.`
+                    : `${teamData.connections.length} miembros del equipo ya están conectados.`
+                  }
+                  {' '}Cada empleado vincula su propia cuenta de Telegram de forma independiente.
+                </span>
+              </div>
+            )}
 
             {!deepLink ? (
               <div className="flex justify-center sm:justify-start">
