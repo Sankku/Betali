@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Package, Tag, Ruler, AlertTriangle, Bell, FlaskConical, DollarSign } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
-import { ProductFormulaEditor, type LocalFormulaItem } from './ProductFormulaEditor';
+import { ProductFormulaEditor, type LocalFormulaItem, type ProductFormulaEditorHandle } from './ProductFormulaEditor';
 import { useTranslation } from '../../../contexts/LanguageContext';
+import { useAddFormulaItem } from '../../../hooks/useProductFormula';
 import type { ProductType, ProductTypeFormData } from '../../../services/api/productTypesService';
 
 interface ProductTypeSidePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ProductTypeFormData) => Promise<void>;
+  onSubmit: (data: ProductTypeFormData) => Promise<ProductType | void>;
   productType?: ProductType;
   isLoading?: boolean;
 }
@@ -40,6 +41,8 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProductTypeFormData, string>>>({});
   const [submitting, setSubmitting] = React.useState(false);
   const [localFormulaItems, setLocalFormulaItems] = useState<LocalFormulaItem[]>([]);
+  const formulaEditorRef = useRef<ProductFormulaEditorHandle>(null);
+  const addFormulaItem = useAddFormulaItem();
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +82,26 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await onSubmit(form);
+      // Flush any pending item in the formula add-row before saving
+      if (form.product_type === 'finished_good') {
+        await formulaEditorRef.current?.flushPendingItem();
+      }
+
+      const result = await onSubmit(form);
+
+      // In create mode: save local formula items (including the one just flushed)
+      if (!productType && result && localFormulaItems.length > 0) {
+        const newProductId = (result as ProductType).product_type_id;
+        await Promise.all(
+          localFormulaItems.map(item =>
+            addFormulaItem.mutateAsync({
+              finished_product_type_id: newProductId,
+              raw_material_type_id: item.raw_material_type_id,
+              quantity_required: item.quantity_required,
+            })
+          )
+        );
+      }
       onClose();
     } catch {
       // error handled in hook
@@ -233,6 +255,7 @@ export const ProductTypeSidePanel: React.FC<ProductTypeSidePanelProps> = ({
                   <h3 className="text-sm font-semibold text-neutral-800">{t('products.sidePanel.formulaTitle')}</h3>
                 </div>
                 <ProductFormulaEditor
+                  ref={formulaEditorRef}
                   finishedProductTypeId={productType?.product_type_id}
                   mode={productType ? 'edit' : 'create'}
                   localItems={localFormulaItems}

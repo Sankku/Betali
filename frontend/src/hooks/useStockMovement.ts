@@ -80,9 +80,12 @@ export function useCreateStockMovement() {
     mutationFn: (movementData: StockMovementFormData) =>
       stockMovementService.create(movementData),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
-      // Invalidate products cache to update stock levels
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["stockMovements"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-lots"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["available-stock"], refetchType: 'all' });
       toast.success(response.message || "Movimiento creado exitosamente");
       return response;
     },
@@ -100,10 +103,13 @@ export function useUpdateStockMovement() {
     mutationFn: ({ id, data }: { id: string; data: Partial<StockMovementFormData> }) =>
       stockMovementService.update(id, data),
     onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["stockMovements"] });
+      queryClient.invalidateQueries({ queryKey: ["stockMovements"], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ["stockMovement", variables.id] });
-      // Invalidate products cache to update stock levels
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-lots"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["available-stock"], refetchType: 'all' });
       toast.success(response.message || "Movimiento actualizado exitosamente");
       return response;
     },

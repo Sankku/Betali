@@ -420,7 +420,7 @@ class StockMovementService {
     try {
       this.logger.info(`Creating production movement for org: ${organizationId}`, { data });
 
-      const { finished_product_type_id, quantity_to_produce, warehouse_id, reference } = data;
+      const { finished_product_type_id, quantity_to_produce, warehouse_id, reference, target_lot_id } = data;
 
       if (!finished_product_type_id || !quantity_to_produce || !warehouse_id) {
         throw new Error('finished_product_type_id, quantity_to_produce, and warehouse_id are required');
@@ -440,6 +440,7 @@ class StockMovementService {
         p_warehouse_id: warehouse_id,
         p_organization_id: organizationId,
         p_user_reference: reference || null,
+        p_target_lot_id: target_lot_id || null,
       });
 
       this.logger.info(`Production movement created: ${result?.reference}`);

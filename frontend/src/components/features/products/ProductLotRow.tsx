@@ -52,6 +52,9 @@ export const ProductLotRow: React.FC<ProductLotRowProps> = ({ lot, canSeeLotPric
       <td className="px-4 py-2.5 text-sm font-mono font-medium text-neutral-800">
         {lot.lot_number}
       </td>
+      <td className="px-4 py-2.5 text-sm text-neutral-500">
+        {formatDate(lot.created_at)}
+      </td>
       <td className="px-4 py-2.5 text-sm">
         <span className={dateClass}>
           {formatDate(lot.expiration_date)}

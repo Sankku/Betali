@@ -86,9 +86,13 @@ export function useCreateProductionMovement() {
     mutationFn: (data: ProductionMovementRequest) =>
       productFormulaService.createProductionMovement(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['production-preview'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-types'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['product-types-paginated'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['product-types-infinite'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['product-lots'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['available-stock'], refetchType: 'all' });
       toast.success('Elaboración registrada exitosamente');
     },
     onError: (error: Error) => {

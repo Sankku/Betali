@@ -1,10 +1,10 @@
-import React from 'react';
-import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUpDown, Package, Warehouse, Hash, FileText, Calendar, Plus } from 'lucide-react';
 import { useTranslation } from '../../../contexts/LanguageContext';
 import { useStockMovementForm } from '../../../hooks/useStockMovementForm';
 import { StockMovementFormData } from '../../../services/api/stockMovementService';
 import { useProductTypes } from '../../../hooks/useProductTypes';
-import { useProductLots } from '../../../hooks/useProductLots';
+import { useProductLots, useCreateProductLot } from '../../../hooks/useProductLots';
 import { useWarehouses } from '../../../hooks/useWarehouse';
 import { Button } from '../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
@@ -89,6 +89,11 @@ export function StockMovementForm({
   onCancel,
 }: StockMovementFormProps) {
   const { t } = useTranslation();
+  const [lotMode, setLotMode] = useState<'existing' | 'new'>('existing');
+  const [newLotData, setNewLotData] = useState({ lot_number: '', expiration_date: '', price: '0' });
+  const [newLotError, setNewLotError] = useState('');
+  const createLot = useCreateProductLot();
+
   const productTypesQuery = useProductTypes();
   const warehousesQuery   = useWarehouses();
 
@@ -115,6 +120,32 @@ export function StockMovementForm({
   const { register, watch, setValue } = form;
   const watchedValues = watch();
   const isViewMode = mode === 'view';
+
+  const handleSubmitWithLot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (lotMode === 'new' && watchedValues.movement_type === 'entry' && watchedValues.product_type_id && watchedValues.warehouse_id) {
+      if (!newLotData.lot_number.trim()) { setNewLotError('El número de lote es requerido'); return; }
+      if (!newLotData.expiration_date) { setNewLotError('La fecha de vencimiento es requerida'); return; }
+      setNewLotError('');
+      try {
+        const created = await createLot.mutateAsync({
+          typeId: watchedValues.product_type_id,
+          data: {
+            lot_number: newLotData.lot_number.trim(),
+            expiration_date: newLotData.expiration_date,
+            price: Number(newLotData.price) || 0,
+            warehouse_id: watchedValues.warehouse_id,
+          },
+        });
+        setValue('lot_id', created.lot_id, { shouldValidate: true });
+        // Small delay to let React re-render with the new lot_id before submit
+        await new Promise(r => setTimeout(r, 0));
+      } catch {
+        return; // error handled by mutation toast
+      }
+    }
+    handleSubmit(e as any);
+  };
 
   // Fetch lots for the selected product type
   const selectedProductTypeId = watchedValues.product_type_id;
@@ -228,7 +259,7 @@ export function StockMovementForm({
   const isProduction = watchedValues.movement_type === 'production';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmitWithLot} className="space-y-8">
 
       {/* Movement Type — full width */}
       <FormField
@@ -325,8 +356,8 @@ export function StockMovementForm({
                   value={watchedValues.product_type_id || ''}
                   onValueChange={v => {
                     setValue('product_type_id', v);
-                    // Reset lot when product type changes
                     setValue('lot_id', '');
+                    setLotMode('existing');
                   }}
                   disabled={isLoading}
                 >
@@ -400,52 +431,128 @@ export function StockMovementForm({
 
           {/* Lot selector — appears after a product type is selected */}
           {watchedValues.product_type_id && (
-            <FormField
-              label={t('stockMovements.form.lot')}
-              description={t('stockMovements.form.lotDesc')}
-              icon={<Hash className="h-4 w-4" />}
-              required
-              error={getFieldError('lot_id')}
-            >
-              <Select
-                value={watchedValues.lot_id || ''}
-                onValueChange={v => setValue('lot_id', v)}
-                disabled={isLoading || productLotsQuery.isLoading}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={productLotsQuery.isLoading ? t('stockMovements.form.lotLoading') : t('stockMovements.form.lotPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {validProductLots.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-neutral-500 text-center">
-                      {productLotsQuery.isLoading
-                        ? t('stockMovements.form.lotLoading')
-                        : t('stockMovements.form.noLotsAvailable')}
-                    </div>
-                  ) : (
-                    validProductLots.map(lot => {
-                      const maxStock = validProductTypes.find(p => p.product_type_id === watchedValues.product_type_id)?.max_stock;
-                      const isFull = maxStock != null && lot.current_stock >= maxStock;
-                      return (
-                        <SelectItem key={lot.lot_id} value={lot.lot_id}>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className={`font-semibold truncate block ${isFull ? 'text-red-600' : 'text-neutral-900'}`}>
-                              {lot.lot_number}
-                              {isFull && <span className="ml-2 text-xs font-normal">(máximo alcanzado)</span>}
-                            </span>
-                            <span className="text-xs text-neutral-500 truncate block">
-                              Stock: {lot.current_stock ?? '—'}
-                              {maxStock != null && ` / máx: ${maxStock}`}
-                              {lot.expiration_date && ` · ${t('stockMovements.form.lotExpiresPrefix')} ${new Date(lot.expiration_date).toLocaleDateString()}`}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
-            </FormField>
+            <div className="space-y-3">
+              {/* Toggle: only shown for entry movements */}
+              {watchedValues.movement_type === 'entry' && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setLotMode('existing'); setValue('lot_id', ''); }}
+                    className={`flex-1 py-1.5 text-xs rounded border font-medium transition-colors ${
+                      lotMode === 'existing'
+                        ? 'bg-teal-700 text-white border-teal-700'
+                        : 'bg-white text-gray-600 border-gray-300 hover:border-teal-500'
+                    }`}
+                  >
+                    Lote existente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setLotMode('new'); setValue('lot_id', '__new__'); }}
+                    className={`flex-1 py-1.5 text-xs rounded border font-medium transition-colors ${
+                      lotMode === 'new'
+                        ? 'bg-teal-700 text-white border-teal-700'
+                        : 'bg-white text-gray-600 border-gray-300 hover:border-teal-500'
+                    }`}
+                  >
+                    <Plus className="w-3 h-3 inline mr-1" />
+                    Lote nuevo
+                  </button>
+                </div>
+              )}
+
+              {/* Existing lot select */}
+              {lotMode === 'existing' && (
+                <FormField
+                  label={t('stockMovements.form.lot')}
+                  description={t('stockMovements.form.lotDesc')}
+                  icon={<Hash className="h-4 w-4" />}
+                  required
+                  error={getFieldError('lot_id')}
+                >
+                  <Select
+                    value={watchedValues.lot_id || ''}
+                    onValueChange={v => setValue('lot_id', v)}
+                    disabled={isLoading || productLotsQuery.isLoading}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={productLotsQuery.isLoading ? t('stockMovements.form.lotLoading') : t('stockMovements.form.lotPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {validProductLots.length === 0 ? (
+                        <div className="px-3 py-4 text-sm text-neutral-500 text-center">
+                          {productLotsQuery.isLoading
+                            ? t('stockMovements.form.lotLoading')
+                            : t('stockMovements.form.noLotsAvailable')}
+                        </div>
+                      ) : (
+                        validProductLots.map(lot => {
+                          const maxStock = validProductTypes.find(p => p.product_type_id === watchedValues.product_type_id)?.max_stock;
+                          const isFull = maxStock != null && lot.current_stock >= maxStock;
+                          return (
+                            <SelectItem key={lot.lot_id} value={lot.lot_id}>
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <span className={`font-semibold truncate block ${isFull ? 'text-red-600' : 'text-neutral-900'}`}>
+                                  {lot.lot_number}
+                                  {isFull && <span className="ml-2 text-xs font-normal">(máximo alcanzado)</span>}
+                                </span>
+                                <span className="text-xs text-neutral-500 truncate block">
+                                  Stock: {lot.current_stock ?? '—'}
+                                  {maxStock != null && ` / máx: ${maxStock}`}
+                                  {lot.expiration_date && ` · ${t('stockMovements.form.lotExpiresPrefix')} ${new Date(lot.expiration_date).toLocaleDateString()}`}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              )}
+
+              {/* New lot fields */}
+              {lotMode === 'new' && watchedValues.movement_type === 'entry' && (
+                <div className="border rounded p-3 space-y-2 bg-slate-50">
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Package className="w-4 h-4 text-slate-500" />
+                    Nuevo lote
+                  </p>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Número de lote *</label>
+                    <input
+                      type="text"
+                      value={newLotData.lot_number}
+                      onChange={e => setNewLotData(p => ({ ...p, lot_number: e.target.value }))}
+                      placeholder="Ej: LOT-2026-001"
+                      className="w-full border rounded px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Fecha de vencimiento *</label>
+                    <input
+                      type="date"
+                      value={newLotData.expiration_date}
+                      onChange={e => setNewLotData(p => ({ ...p, expiration_date: e.target.value }))}
+                      className="w-full border rounded px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Precio de costo</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newLotData.price}
+                      onChange={e => setNewLotData(p => ({ ...p, price: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full border rounded px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  {newLotError && <p className="text-xs text-red-600 font-medium">{newLotError}</p>}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Reference — full width */}
@@ -470,8 +577,8 @@ export function StockMovementForm({
               <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
                 {t('stockMovements.form.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && (
+              <Button type="submit" disabled={isLoading || createLot.isPending}>
+                {(isLoading || createLot.isPending) && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
                 {mode === 'create' ? t('stockMovements.form.createMovement') : t('stockMovements.form.saveChanges')}

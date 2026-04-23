@@ -13,6 +13,10 @@ interface ProductTypeRowProps {
   isExpanded: boolean;
   lotSearch?: string;
   warehouseFilter?: string;
+  lotCreatedFrom?: string;
+  lotCreatedTo?: string;
+  lotExpirationFrom?: string;
+  lotExpirationTo?: string;
   canSeePrices?: boolean;
   isSelected?: boolean;
   onSelect?: (checked: boolean) => void;
@@ -38,6 +42,10 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   isExpanded,
   lotSearch,
   warehouseFilter,
+  lotCreatedFrom,
+  lotCreatedTo,
+  lotExpirationFrom,
+  lotExpirationTo,
   canSeePrices = false,
   isSelected = false,
   onSelect,
@@ -54,27 +62,37 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
   const lotCount = lots.length;
   const totalStock = lots.reduce((sum, l) => sum + (l.current_stock ?? 0), 0);
 
-  // Filter lots by lot_number and/or warehouse
+  // Filter lots by all active lot-level filters
   const visibleLots = (lots ?? []).filter(l => {
     if (lotSearch && !l.lot_number.toLowerCase().includes(lotSearch.toLowerCase())) return false;
     if (warehouseFilter && l.warehouse_id !== warehouseFilter) return false;
+    // created_at is an ISO timestamp — compare date portion only
+    if (lotCreatedFrom && l.created_at.slice(0, 10) < lotCreatedFrom) return false;
+    if (lotCreatedTo && l.created_at.slice(0, 10) > lotCreatedTo) return false;
+    // expiration_date is stored as YYYY-MM-DD
+    if (lotExpirationFrom && l.expiration_date < lotExpirationFrom) return false;
+    if (lotExpirationTo && l.expiration_date > lotExpirationTo) return false;
     return true;
   });
 
-  // Hide this row if no lots match the active filters
+  // Hide this row if no lots match the active filters.
+  // typeMatchesSearch is true only when the lot text search also matches the product
+  // name/SKU — that keeps the row visible even if its lots don't match the text.
+  // Date-only filters have no concept of "the type itself matches", so we use false,
+  // which lets the row be hidden whenever visibleLots is empty.
   const typeMatchesSearch = lotSearch
     ? productType.name.toLowerCase().includes(lotSearch.toLowerCase()) ||
       productType.sku.toLowerCase().includes(lotSearch.toLowerCase())
-    : true;
-  const hasActiveFilter = !!lotSearch || !!warehouseFilter;
+    : false;
+  const hasActiveFilter = !!(lotSearch || warehouseFilter || lotCreatedFrom || lotCreatedTo || lotExpirationFrom || lotExpirationTo);
   const hidden = hasActiveFilter && !typeMatchesSearch && visibleLots.length === 0;
 
-  // Auto-expand when lotSearch produces matches in this row
+  // Auto-expand when any lot filter produces matches in this row
   useEffect(() => {
-    if (lotSearch && visibleLots.length > 0 && !isExpanded) {
+    if (hasActiveFilter && visibleLots.length > 0 && !isExpanded) {
       onAutoExpand();
     }
-  }, [lotSearch, visibleLots.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasActiveFilter, visibleLots.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const TYPE_LABEL_KEYS: Record<string, string> = {
     standard: t('products.sidePanel.typeStandard'),
@@ -227,6 +245,9 @@ export const ProductTypeRow: React.FC<ProductTypeRowProps> = ({
                   <tr className="border-b border-neutral-200">
                     <th className="px-4 py-2 pl-10 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Lote
+                    </th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                      Fabricado
                     </th>
                     <th className="px-4 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                       Vence

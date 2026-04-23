@@ -23,10 +23,11 @@ export interface ProductionMovementRequest {
   quantity_to_produce: number;
   warehouse_id: string;
   reference?: string;
+  target_lot_id?: string;
 }
 
 export interface ProductionMaterialCheck {
-  product_id: string;
+  product_type_id: string;
   name: string;
   quantity_required: number;
   current_stock: number;

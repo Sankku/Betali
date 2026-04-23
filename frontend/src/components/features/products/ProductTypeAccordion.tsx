@@ -10,6 +10,10 @@ interface ProductTypeAccordionProps {
   productTypes: ProductType[];
   lotSearch?: string;
   warehouseFilter?: string;
+  lotCreatedFrom?: string;
+  lotCreatedTo?: string;
+  lotExpirationFrom?: string;
+  lotExpirationTo?: string;
   canSeePrices?: boolean;
   selectedIds?: Set<string>;
   onSelectOne?: (id: string, checked: boolean) => void;
@@ -25,6 +29,10 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
   productTypes,
   lotSearch,
   warehouseFilter,
+  lotCreatedFrom,
+  lotCreatedTo,
+  lotExpirationFrom,
+  lotExpirationTo,
   canSeePrices = false,
   selectedIds = new Set(),
   onSelectOne,
@@ -131,6 +139,10 @@ export const ProductTypeAccordion: React.FC<ProductTypeAccordionProps> = ({
               isExpanded={expandedIds.has(pt.product_type_id)}
               lotSearch={lotSearch}
               warehouseFilter={warehouseFilter}
+              lotCreatedFrom={lotCreatedFrom}
+              lotCreatedTo={lotCreatedTo}
+              lotExpirationFrom={lotExpirationFrom}
+              lotExpirationTo={lotExpirationTo}
               canSeePrices={canSeePrices}
               isSelected={selectedIds.has(pt.product_type_id)}
               onSelect={onSelectOne ? (checked) => onSelectOne(pt.product_type_id, checked) : undefined}

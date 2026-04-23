@@ -91,7 +91,12 @@ class ProductLotService {
     }
 
     const { initial_quantity: _iq, ...lotData } = data;
-    const lot = await this.lotRepo.create({ ...lotData, product_type_id: productTypeId, organization_id: organizationId });
+    const lot = await this.lotRepo.create({
+      origin_country: '',
+      ...lotData,
+      product_type_id: productTypeId,
+      organization_id: organizationId,
+    });
 
     // Create initial entry movement if quantity is provided
     if (warehouse_id && initial_quantity && initial_quantity > 0) {

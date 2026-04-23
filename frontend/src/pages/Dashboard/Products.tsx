@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Upload, Rows3, AlertTriangle, Package, Loader2, Search, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Upload, Rows3, AlertTriangle, Package, Loader2, Search, X, Trash2, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { DashboardLayout } from '../../components/layout/Dashboard';
@@ -73,20 +73,49 @@ const ProductsPage: React.FC = () => {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
-  // Search/filter state
+  // Product-level filter state
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState(''); // debounced
   const [typeFilter, setTypeFilter] = useState<string>('');
-  const [warehouseFilter, setWarehouseFilter] = useState<string>('');
   const PAGE_SIZE = 100;
 
-  // Debounce the search input
+  // Lot-level filter state
+  const [showLotFilters, setShowLotFilters] = useState(false);
+  const [warehouseFilter, setWarehouseFilter] = useState<string>('');
+  const [lotSearchInput, setLotSearchInput] = useState('');
+  const [lotSearch, setLotSearch] = useState(''); // debounced
+  const [lotCreatedFrom, setLotCreatedFrom] = useState('');
+  const [lotCreatedTo, setLotCreatedTo] = useState('');
+  const [lotExpirationFrom, setLotExpirationFrom] = useState('');
+  const [lotExpirationTo, setLotExpirationTo] = useState('');
+
+  const activeLotFilterCount = [warehouseFilter, lotSearch, lotCreatedFrom, lotCreatedTo, lotExpirationFrom, lotExpirationTo].filter(Boolean).length;
+
+  const clearLotFilters = () => {
+    setWarehouseFilter('');
+    setLotSearchInput('');
+    setLotSearch('');
+    setLotCreatedFrom('');
+    setLotCreatedTo('');
+    setLotExpirationFrom('');
+    setLotExpirationTo('');
+  };
+
+  // Debounce product search
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
     }, 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  // Debounce lot search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLotSearch(lotSearchInput);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [lotSearchInput]);
 
   const { currentUserRole } = useOrganization();
   const canSeePrices = ['super_admin', 'admin', 'manager'].includes(currentUserRole?.toLowerCase() ?? '');
@@ -140,7 +169,7 @@ const ProductsPage: React.FC = () => {
         data,
       });
     } else {
-      await createProductType.mutateAsync(data);
+      return createProductType.mutateAsync(data);
     }
   };
 
@@ -277,65 +306,172 @@ const ProductsPage: React.FC = () => {
         </div>
 
         {/* Search + Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-            <Input
-              placeholder={t('products.page.searchPlaceholder')}
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              className="pl-9 pr-8"
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={() => { setSearchInput(''); setSearch(''); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {(['', 'standard', 'raw_material', 'finished_good'] as const).map((val) => {
-              const labels: Record<string, string> = {
-                '': t('products.page.filterAll'),
-                standard: t('products.page.filterStandard'),
-                raw_material: t('products.page.filterRawMaterial'),
-                finished_good: t('products.page.filterFinishedGood'),
-              };
-              return (
+        <div className="flex flex-col gap-2">
+          {/* Row 1: product search + type pills + lot filters toggle */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
+              <Input
+                placeholder={t('products.page.searchPlaceholder')}
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                className="pl-9 pr-8"
+              />
+              {searchInput && (
                 <button
-                  key={val}
                   type="button"
-                  onClick={() => setTypeFilter(val)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    typeFilter === val
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
-                  }`}
+                  onClick={() => { setSearchInput(''); setSearch(''); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
                 >
-                  {labels[val]}
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              );
-            })}
+              )}
+            </div>
 
-            {/* Warehouse filter */}
-            {warehouses?.data && warehouses.data.length > 0 && (
-              <select
-                value={warehouseFilter}
-                onChange={e => setWarehouseFilter(e.target.value)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">{t('products.page.filterAllWarehouses')}</option>
-                {warehouses.data.map(w => (
-                  <option key={w.warehouse_id} value={w.warehouse_id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {(['', 'standard', 'raw_material', 'finished_good'] as const).map((val) => {
+                const labels: Record<string, string> = {
+                  '': t('products.page.filterAll'),
+                  standard: t('products.page.filterStandard'),
+                  raw_material: t('products.page.filterRawMaterial'),
+                  finished_good: t('products.page.filterFinishedGood'),
+                };
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setTypeFilter(val)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                      typeFilter === val
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+                    }`}
+                  >
+                    {labels[val]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowLotFilters(v => !v)}
+              className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                showLotFilters || activeLotFilterCount > 0
+                  ? 'bg-primary-50 text-primary-700 border-primary-300'
+                  : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filtros de lotes
+              {activeLotFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary-600 text-white text-[10px] font-semibold">
+                  {activeLotFilterCount}
+                </span>
+              )}
+            </button>
           </div>
+
+          {/* Row 2: lot-level filters (collapsible) */}
+          {showLotFilters && (
+            <div className="flex flex-wrap items-end gap-3 p-3 bg-neutral-50 border border-neutral-200 rounded-xl">
+              {/* Lot number search */}
+              <div className="flex flex-col gap-1 min-w-[160px]">
+                <label className="text-xs font-medium text-neutral-500">Nro. de lote</label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none" />
+                  <Input
+                    placeholder="Buscar lote…"
+                    value={lotSearchInput}
+                    onChange={e => setLotSearchInput(e.target.value)}
+                    className="pl-8 pr-7 h-8 text-xs"
+                  />
+                  {lotSearchInput && (
+                    <button
+                      type="button"
+                      onClick={() => { setLotSearchInput(''); setLotSearch(''); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Warehouse filter */}
+              {warehouses?.data && warehouses.data.length > 0 && (
+                <div className="flex flex-col gap-1 min-w-[140px]">
+                  <label className="text-xs font-medium text-neutral-500">Almacén</label>
+                  <select
+                    value={warehouseFilter}
+                    onChange={e => setWarehouseFilter(e.target.value)}
+                    className="h-8 px-2.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                  >
+                    <option value="">Todos los almacenes</option>
+                    {warehouses.data.map(w => (
+                      <option key={w.warehouse_id} value={w.warehouse_id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Created date range */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-neutral-500">Fabricado entre</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    value={lotCreatedFrom}
+                    onChange={e => setLotCreatedFrom(e.target.value)}
+                    className="h-8 px-2 rounded-lg text-xs border border-neutral-200 bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                  />
+                  <span className="text-xs text-neutral-400">–</span>
+                  <input
+                    type="date"
+                    value={lotCreatedTo}
+                    min={lotCreatedFrom || undefined}
+                    onChange={e => setLotCreatedTo(e.target.value)}
+                    className="h-8 px-2 rounded-lg text-xs border border-neutral-200 bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Expiration date range */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-neutral-500">Vencimiento entre</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    value={lotExpirationFrom}
+                    onChange={e => setLotExpirationFrom(e.target.value)}
+                    className="h-8 px-2 rounded-lg text-xs border border-neutral-200 bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                  />
+                  <span className="text-xs text-neutral-400">–</span>
+                  <input
+                    type="date"
+                    value={lotExpirationTo}
+                    min={lotExpirationFrom || undefined}
+                    onChange={e => setLotExpirationTo(e.target.value)}
+                    className="h-8 px-2 rounded-lg text-xs border border-neutral-200 bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Clear filters */}
+              {activeLotFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearLotFilters}
+                  className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 border border-transparent transition-colors cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                  Limpiar
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -406,7 +542,12 @@ const ProductsPage: React.FC = () => {
 
           <ProductTypeAccordion
             productTypes={productTypes}
+            lotSearch={lotSearch || undefined}
             warehouseFilter={warehouseFilter || undefined}
+            lotCreatedFrom={lotCreatedFrom || undefined}
+            lotCreatedTo={lotCreatedTo || undefined}
+            lotExpirationFrom={lotExpirationFrom || undefined}
+            lotExpirationTo={lotExpirationTo || undefined}
             canSeePrices={canSeePrices}
             selectedIds={selectedIds}
             onSelectOne={handleSelectOne}

@@ -26,12 +26,12 @@ const createStockMovementSchema = Joi.object({
       'any.required': 'Quantity is required'
     }),
   
-  product_id: Joi.string()
+  lot_id: Joi.string()
     .guid({ version: 'uuidv4' })
     .required()
     .messages({
-      'string.guid': 'Product ID must be a valid UUID',
-      'any.required': 'Product ID is required'
+      'string.guid': 'Lot ID must be a valid UUID',
+      'any.required': 'Lot ID is required'
     }),
   
   warehouse_id: Joi.string()
@@ -96,11 +96,11 @@ const updateStockMovementSchema = Joi.object({
       'number.positive': 'Quantity must be greater than 0'
     }),
   
-  product_id: Joi.string()
+  lot_id: Joi.string()
     .guid({ version: 'uuidv4' })
     .optional()
     .messages({
-      'string.guid': 'Product ID must be a valid UUID'
+      'string.guid': 'Lot ID must be a valid UUID'
     }),
   
   warehouse_id: Joi.string()
@@ -207,13 +207,14 @@ const queryParamsSchema = Joi.object({
 });
 
 const createProductionMovementSchema = Joi.object({
-  finished_product_id: Joi.string().guid({ version: 'uuidv4' }).required()
-    .messages({ 'any.required': 'finished_product_id is required' }),
+  finished_product_type_id: Joi.string().guid({ version: 'uuidv4' }).required()
+    .messages({ 'any.required': 'finished_product_type_id is required' }),
   quantity_to_produce: Joi.number().positive().precision(4).required()
     .messages({ 'number.positive': 'quantity_to_produce must be greater than 0' }),
   warehouse_id: Joi.string().guid({ version: 'uuidv4' }).required()
     .messages({ 'any.required': 'warehouse_id is required' }),
   reference: Joi.string().trim().max(500).optional().allow(''),
+  target_lot_id: Joi.string().guid({ version: 'uuidv4' }).optional().allow(null),
 });
 
 module.exports = {

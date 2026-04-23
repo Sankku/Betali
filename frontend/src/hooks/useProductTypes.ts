@@ -88,7 +88,6 @@ export function useUpdateProductType() {
     mutationFn: ({ id, data }: { id: string; data: Partial<ProductTypeFormData> }) =>
       productTypesService.update(id, data),
     onSuccess: (_response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["product-types"] });
       queryClient.invalidateQueries({ queryKey: ["product-types-paginated"] });
       queryClient.invalidateQueries({ queryKey: ["product-types-infinite"] });
       queryClient.invalidateQueries({ queryKey: ["product-type", variables.id] });

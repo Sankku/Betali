@@ -33,8 +33,12 @@ export function useCreateProductLot() {
     mutationFn: ({ typeId, data }: { typeId: string; data: ProductLotFormData }) =>
       productLotsService.create(typeId, data),
     onSuccess: (_response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["product-lots", variables.typeId] });
-      queryClient.invalidateQueries({ queryKey: ["product-lots", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["product-lots", variables.typeId], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-lots", "all"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-paginated"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["product-types-infinite"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["available-stock"], refetchType: 'all' });
       toast.success("Lote creado exitosamente");
     },
     onError: (error: Error) => {
