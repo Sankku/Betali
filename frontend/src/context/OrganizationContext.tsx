@@ -1,3 +1,6 @@
+// Dependency order (must not be reversed — circular imports will crash bundler):
+//   QueryClientProvider → AuthContext → GlobalSyncContext → OrganizationContext
+// OrganizationContext must NEVER be imported by AuthContext or GlobalSyncContext.
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
@@ -105,6 +108,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   // If we restored a valid context from localStorage, mark as already initialised
   // synchronously so the init effect below doesn't override it before the fetch completes.
   const isInitializedRef = useRef(storedCtxRef.current !== null);
+  // Prevent the init effect from overriding state set by an in-flight switchOrganization call.
+  const isSwitchingRef = useRef(false);
 
   // Check if current user can access users section based on their role
   const canAccessUsersSection = useMemo(() => 
@@ -140,6 +145,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   // Initialize organization context when data is available
   useEffect(() => {
     if (!user || isLoading) return;
+    // Don't override state that switchOrganization is actively setting
+    if (isSwitchingRef.current) return;
 
     if (userOrganizations.length > 0) {
       if (!isInitializedRef.current) {
@@ -234,6 +241,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   }, [user]);
 
   const switchOrganization = useCallback(async (organizationId: string) => {
+    isSwitchingRef.current = true;
     setSwitching(true);
     showLoading('Switching organization...');
     try {
@@ -248,22 +256,31 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
 
       // Switch context
       const context = await apiService.organizations.switchContext(organizationId);
-      
-      if (context?.organization?.organization_id) {
-        setCurrentOrganization(context.organization);
-        setCurrentUserRole(context.userRole);
-        setCurrentPermissions(context.permissions || []);
-      } else {
+
+      // Validate the response shape before applying state (BUG-013)
+      if (
+        !context ||
+        typeof context !== 'object' ||
+        !context.organization?.organization_id ||
+        !context.userRole ||
+        !Array.isArray(context.permissions)
+      ) {
         throw new Error('Invalid context received from switch operation');
       }
-      
-      // Store the new context
+
+      // Write localStorage BEFORE state setters so that any request fired during
+      // the subsequent re-render already carries the new org ID in the header.
       localStorage.setItem('currentOrganizationId', organizationId);
       localStorage.setItem('currentOrganizationContext', JSON.stringify({
         organization: context.organization,
         userRole: context.userRole,
         permissions: context.permissions
       }));
+
+      setCurrentOrganization(context.organization);
+      setCurrentUserRole(context.userRole);
+      setCurrentPermissions(context.permissions || []);
+      isInitializedRef.current = true;
 
       // Invalidate only queries that are scoped to the previous organization.
       // Using a predicate avoids a flood of 40+ simultaneous refetches.
@@ -288,6 +305,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       console.error('Error switching organization:', error);
       throw error;
     } finally {
+      isSwitchingRef.current = false;
       setSwitching(false);
       hideLoading();
     }
@@ -301,50 +319,41 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         throw new Error('Invalid organization created');
       }
 
-      // Refetch user organizations and wait for it to complete
+      // Refetch user organizations and wait for it — propagate errors to the caller.
       await queryClient.refetchQueries({ queryKey: ['user-organizations'] });
 
-      // Read the now-fresh data from the cache
-      try {
-        const updatedUserOrgs = queryClient.getQueryData<typeof userOrganizations>(['user-organizations'])
-          ?? await apiService.organizations.getUserOrganizations();
+      // Read the now-fresh data from the cache.
+      const updatedUserOrgs = queryClient.getQueryData<typeof userOrganizations>(['user-organizations']) ?? [];
 
-        // Find the newly created organization in the updated list
-        const newOrgInList = updatedUserOrgs.find(org =>
-          org.organization?.organization_id === newOrg.organization_id
-        );
+      const newOrgInList = updatedUserOrgs.find(org =>
+        org.organization?.organization_id === newOrg.organization_id
+      );
 
-        if (newOrgInList) {
-          // Directly set the context without calling switchOrganization
-          setCurrentOrganization(newOrg);
-          setCurrentUserRole(newOrgInList.role.toUpperCase());
-          setCurrentPermissions(newOrgInList.permissions || []);
-          
-          // Store the new context
-          localStorage.setItem('currentOrganizationId', newOrg.organization_id);
-          localStorage.setItem('currentUserRole', newOrgInList.role);
-          localStorage.setItem('currentPermissions', JSON.stringify(newOrgInList.permissions || []));
-        } else {
-          // Fallback: set context directly from creation response
-          setCurrentOrganization(newOrg);
-          setCurrentUserRole('SUPER_ADMIN'); // Owner of new org
-          setCurrentPermissions(['*']); // Full permissions for owner
-          
-          localStorage.setItem('currentOrganizationId', newOrg.organization_id);
-          localStorage.setItem('currentUserRole', 'SUPER_ADMIN');
-          localStorage.setItem('currentPermissions', JSON.stringify(['*']));
-        }
+      if (newOrgInList) {
+        localStorage.setItem('currentOrganizationId', newOrg.organization_id);
+        localStorage.setItem('currentOrganizationContext', JSON.stringify({
+          organization: newOrg,
+          userRole: newOrgInList.role.toUpperCase(),
+          permissions: newOrgInList.permissions || []
+        }));
 
-      } catch (fetchError) {
-        // Fallback: set context directly from creation response
+        setCurrentOrganization(newOrg);
+        setCurrentUserRole(newOrgInList.role.toUpperCase());
+        setCurrentPermissions(newOrgInList.permissions || []);
+      } else {
+        // New org not yet in the list — use owner defaults while the query refreshes.
+        localStorage.setItem('currentOrganizationId', newOrg.organization_id);
+        localStorage.setItem('currentOrganizationContext', JSON.stringify({
+          organization: newOrg,
+          userRole: 'SUPER_ADMIN',
+          permissions: ['*']
+        }));
+
         setCurrentOrganization(newOrg);
         setCurrentUserRole('SUPER_ADMIN');
         setCurrentPermissions(['*']);
-        
-        localStorage.setItem('currentOrganizationId', newOrg.organization_id);
-        localStorage.setItem('currentUserRole', 'SUPER_ADMIN');
-        localStorage.setItem('currentPermissions', JSON.stringify(['*']));
       }
+      isInitializedRef.current = true;
 
       return newOrg;
     } catch (error) {

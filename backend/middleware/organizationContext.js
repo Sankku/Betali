@@ -78,12 +78,12 @@ const optionalOrganizationContext = (req, res, next) => {
     if (req.user && req.headers['x-organization-id']) {
       const requestedOrgId = req.headers['x-organization-id'];
       
-      // Check if user has access to the requested organization
+      // Check if user has access to the requested organization AND the org itself is active.
       const orgContext = req.user.organizationRoles?.find(
         org => org.organization_id === requestedOrgId && org.is_active !== false
       );
 
-      if (orgContext) {
+      if (orgContext && orgContext.organization?.is_active !== false) {
         req.user.currentOrganizationId = requestedOrgId;
         req.user.currentOrganization = orgContext.organization;
         req.user.currentOrganizationRole = orgContext.role.toUpperCase();

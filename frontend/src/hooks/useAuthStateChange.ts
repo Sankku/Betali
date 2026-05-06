@@ -12,7 +12,7 @@ import { supabase } from '../lib/supabase';
  */
 export function useAuthStateChange() {
   const queryClient = useQueryClient();
-  const lastUserIdRef = useRef<string | null>(undefined as unknown as null);
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const {

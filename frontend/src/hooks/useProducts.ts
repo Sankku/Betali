@@ -15,22 +15,15 @@ export function useProducts(options: UseProductsOptions = {}) {
   return useQuery({
     queryKey: ["products", currentOrganization?.organization_id],
     queryFn: async () => {
-      try {
-        const response = await productsService.getAll();
-        // Normalize the response structure for consistent access
-        if (Array.isArray(response)) {
-          return { data: response, total: response.length };
-        }
-        if (response?.data && Array.isArray(response.data)) {
-          return { data: response.data, total: response.data.length };
-        }
-        // Fallback for other response structures
-        return { data: [], total: 0 };
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        // Return empty array on error to prevent UI break
-        return { data: [], total: 0 };
+      const response = await productsService.getAll();
+      // Normalize the response structure for consistent access
+      if (Array.isArray(response)) {
+        return { data: response, total: response.length };
       }
+      if (response?.data && Array.isArray(response.data)) {
+        return { data: response.data, total: response.data.length };
+      }
+      return { data: [], total: 0 };
     },
     enabled: options.enabled !== false && !!currentOrganization,
     refetchInterval: options.refetchInterval,
@@ -64,7 +57,7 @@ export function useCreateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      const isDuplicate = (error as any).status === 409 || error.message.includes('batch number already exists');
+      const isDuplicate = (error as any).status === 409 || (error as any).code === 'DUPLICATE_BATCH';
       toast.error(isDuplicate
         ? 'Ya existe un producto con ese SKU/Número de Lote en tu organización.'
         : 'Error al crear el producto. Intenta de nuevo.'
@@ -87,7 +80,7 @@ export function useUpdateProduct() {
       return response;
     },
     onError: (error: Error) => {
-      const isDuplicate = (error as any).status === 409 || error.message.includes('batch number already exists');
+      const isDuplicate = (error as any).status === 409 || (error as any).code === 'DUPLICATE_BATCH';
       toast.error(isDuplicate
         ? 'Ya existe otro producto con ese SKU/Número de Lote en tu organización.'
         : 'Error al actualizar el producto. Intenta de nuevo.'

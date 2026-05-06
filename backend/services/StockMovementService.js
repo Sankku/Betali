@@ -86,10 +86,16 @@ class StockMovementService {
         throw new Error('Access denied: Movement does not belong to your organization');
       }
       
-      // Enrich with lot and warehouse information
+      // Enrich with lot and warehouse information.
+      // findById throws if the record is not found (e.g. soft-deleted data),
+      // so wrap each lookup individually to avoid a 500 crash.
       const [lot, warehouse] = await Promise.all([
-        movement.lot_id ? this.productLotRepository.findById(movement.lot_id, organizationId) : null,
-        movement.warehouse_id ? this.warehouseRepository.findById(movement.warehouse_id, 'warehouse_id') : null
+        movement.lot_id
+          ? this.productLotRepository.findById(movement.lot_id, organizationId).catch(() => null)
+          : null,
+        movement.warehouse_id
+          ? this.warehouseRepository.findById(movement.warehouse_id, 'warehouse_id').catch(() => null)
+          : null,
       ]);
 
       return {

@@ -74,39 +74,6 @@ class StockMovementRepository extends BaseRepository {
   }
 
   /**
-   * Find movements by date range
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {Object} options - Query options
-   * @returns {Promise<Array>}
-   */
-  async findByDateRange(startDate, endDate, options = {}) {
-    try {
-      let query = this.client
-        .from(this.table)
-        .select('*')
-        .gte('movement_date', startDate.toISOString())
-        .lte('movement_date', endDate.toISOString());
-
-      if (options.orderBy) {
-        const { column, ascending = true } = options.orderBy;
-        query = query.order(column, { ascending });
-      }
-
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      return data || [];
-    } catch (error) {
-      throw new Error(`Error finding movements by date range: ${error.message}`);
-    }
-  }
-
-  /**
    * Find movements by lot ID and organization
    * @param {string} lotId - Product Lot ID
    * @param {string} organizationId - Organization ID

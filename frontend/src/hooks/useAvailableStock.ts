@@ -15,7 +15,12 @@ export const useAvailableLots = (
 ): UseQueryResult<AvailableLot[], Error> => {
   return useQuery<AvailableLot[], Error>({
     queryKey: ['available-lots', productTypeId, warehouseId],
-    queryFn: () => productTypesService.getAvailableLots(productTypeId!, warehouseId!),
+    queryFn: () => {
+      if (!productTypeId || !warehouseId) {
+        throw new Error('Product type ID and Warehouse ID are required');
+      }
+      return productTypesService.getAvailableLots(productTypeId, warehouseId);
+    },
     enabled: !!productTypeId && !!warehouseId,
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,

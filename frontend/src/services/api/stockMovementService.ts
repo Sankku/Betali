@@ -34,7 +34,7 @@ export const stockMovementService = {
       
       const endpoint = `/api/stock-movements${qs.toString() ? `?${qs.toString()}` : ''}`;
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(endpoint);
-      return response.data || response;
+      return response.data;
     } catch (error) {
       console.error('Error fetching movements:', error);
       throw error;
@@ -47,7 +47,7 @@ export const stockMovementService = {
   async getById(id: string): Promise<StockMovementWithDetails> {
     try {
       const response = await httpClient.get<{ data: StockMovementWithDetails }>(`/api/stock-movements/${id}`);
-      return response.data || response;
+      return response.data;
     } catch (error) {
       console.error(`Error fetching movement ${id}:`, error);
       throw error;
@@ -115,7 +115,7 @@ export const stockMovementService = {
   async getByProduct(productId: string): Promise<StockMovementWithDetails[]> {
     try {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/product/${productId}`);
-      return response.data || response;
+      return response.data;
     } catch (error) {
       console.error(`Error fetching product movements ${productId}:`, error);
       throw error;
@@ -128,7 +128,7 @@ export const stockMovementService = {
   async getByWarehouse(warehouseId: string): Promise<StockMovementWithDetails[]> {
     try {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/warehouse/${warehouseId}`);
-      return response.data || response;
+      return response.data;
     } catch (error) {
       console.error(`Error fetching warehouse movements ${warehouseId}:`, error);
       throw error;
@@ -141,7 +141,7 @@ export const stockMovementService = {
   async getByDateRange(startDate: string, endDate: string): Promise<StockMovementWithDetails[]> {
     try {
       const response = await httpClient.get<{ data: StockMovementWithDetails[] }>(`/api/stock-movements/date-range?start=${startDate}&end=${endDate}`);
-      return response.data || response;
+      return response.data;
     } catch (error) {
       console.error(`Error fetching movements by date:`, error);
       throw error;
